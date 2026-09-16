@@ -265,6 +265,56 @@ public static class DeterminationStore
     }
 
     /// <summary>
+    /// R-Q41 — what the store says about delivery at a terminal position. `consumer` and
+    /// `consumption_observable` are read; a REQUIRED assurance is looked for and never
+    /// found, because the schema has no field for one.
+    /// </summary>
+    public static IReadOnlyList<DeliveryGround> ReadDeliveryGround(string path)
+    {
+        var records = new Deserializer()
+            .Deserialize<List<Dictionary<string, object>>>(File.ReadAllText(path));
+
+        return records
+            .Select(r => r.GetValueOrDefault("positions"))
+            .OfType<List<object>>()
+            .SelectMany(positions => positions.OfType<Dictionary<object, object>>())
+            .Select(entry => (entry, boundary: entry.GetValueOrDefault("boundary") as Dictionary<object, object>))
+            .Where(x => x.boundary is not null)
+            .Select(x => (x.entry, boundary: x.boundary!))
+            .Where(x => x.boundary.GetValueOrDefault("kind") as string == "terminal")
+            .Select(x => new DeliveryGround(
+                x.entry.GetValueOrDefault("fact_type") as string ?? string.Empty,
+                x.boundary.GetValueOrDefault("consumer") as string,
+                ReadObservable(x.boundary),
+                ReadRequiredAssurance(x.boundary)))
+            .ToList();
+    }
+
+    private static bool? ReadObservable(Dictionary<object, object> boundary) =>
+        boundary.GetValueOrDefault("consumption_observable") switch
+        {
+            bool b => b,
+            string s when bool.TryParse(s, out var parsed) => parsed,
+            _ => null,
+        };
+
+    /// <summary>
+    /// R-Q41 / R-GROUND. Looks for a modelled requirement and finds none, because
+    /// `determination.schema.json` has no field for one. Read, never inferred — the
+    /// temptation to derive a requirement from `consumption_observable` is exactly the
+    /// regex mistake, one field over: what we CAN observe is not what we NEED.
+    /// </summary>
+    private static DeliveryAssurance? ReadRequiredAssurance(Dictionary<object, object> boundary) =>
+        (boundary.GetValueOrDefault("delivery_assurance") as string) switch
+        {
+            "unassured" => DeliveryAssurance.Unassured,
+            "enqueued" => DeliveryAssurance.Enqueued,
+            "dispatched" => DeliveryAssurance.Dispatched,
+            "confirmed" => DeliveryAssurance.Confirmed,
+            _ => null,
+        };
+
+    /// <summary>
     /// The carrier is read, never inferred. An absent field means UNMODELLED, which is an
     /// answer. A present field outside the closed vocabulary is also unmodelled — an
     /// unrecognised value is not a licence to guess.

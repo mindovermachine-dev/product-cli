@@ -889,3 +889,119 @@ graph, and "a separate act" needs the act vocabulary, which brings back Q-41.
 > gone — is neither lost nor delivered. Under the store's own standing pattern (*no silent
 > omission*, R-Q38) this needs a stated disposition with an owner, not a default. What is
 > it?
+
+---
+
+## R-Q41 — Emil, 2026-09-16
+
+**Question put (Q-41).** *"The outbox relay is an act. `ordering.eventmodel.yaml` declares
+no automation slice for it… Should the relay be an act in the vocabulary? If it is, it
+needs a profile that does not exist. If it is not, then the thing that actually delivers
+every event this context produces is outside the model entirely."*
+
+**Answer, verbatim.**
+
+> Q-41 is assurance for external delivery - and thats important for us to have an answer
+> for. How sure do we need to be of this payload reaching the external system
+
+**Ruled:** the relay is not plumbing. It is the mechanism that **discharges a delivery
+assurance requirement**, and the requirement is a determination — a statement about risk
+we are willing to carry, not about technology.
+
+### The question splits, and the schema models exactly one half
+
+**The ceiling is already modelled**, in `boundary.consumption_observable`. If we cannot
+observe them consuming it, **no relay however good gets us above "we sent it"**. That is a
+hard constraint and it is derivable from the store as delivered:
+
+| Determination | Consumer | `consumption_observable` | Ceiling |
+|---|---|---|---|
+| DSC-0006 · `OrderConfirmed` | fulfilment | `true` | **Confirmed** — consumption is observable |
+| DSC-0004 · `OrderSummary` | the order history screen | `false` | **Dispatched** — nothing above this is obtainable |
+
+`Consumption_observability_sets_the_ceiling_on_assurance` asserts it against the real file.
+
+**The requirement is modelled nowhere.** There is no field in
+`determination.schema.json` that says how sure we need to be. Every terminal position in
+the store reads back `UndeterminableUnattributed` — nobody decided, and under R-Q37's
+closed schema that is exactly the state that should be impossible to reach silently.
+
+**`consumption_observable` is a CAPABILITY claim — can we see it? The ruling asks for a
+REQUIREMENT claim — how sure must we be?** Those are different questions and only the
+first is written down. Deriving the second from the first would be the regex mistake one
+field over, so `ReadRequiredAssurance` looks for a field, finds none, and says so.
+
+### The most useful thing the model produces
+
+A requirement above the ceiling is **not a demanding requirement — it is an unsatisfiable
+one**, and no amount of relay engineering closes it. Demanding `Confirmed` delivery to the
+order history screen, where `consumption_observable: false`, means the *boundary* has to
+change, not the code. `A_requirement_above_the_ceiling_cannot_be_met_by_any_relay` pins all
+four combinations.
+
+That is a check worth having and it needs one new field to run.
+
+### Proposed field — `boundary.delivery_assurance`
+
+Required for a `terminal` boundary, with absence stated and attributed exactly as R-Q38
+requires of `carrier`:
+
+```json
+"delivery_assurance": {
+  "$comment": "R-Q41. How sure we need to be that the payload reached the consumer. A requirement, not a capability: consumption_observable says what we CAN establish, this says what we MUST. A requirement above what consumption_observable permits is unsatisfiable by any relay and the boundary must change instead.",
+  "oneOf": [
+    { "type": "string", "enum": ["unassured", "enqueued", "dispatched", "confirmed"] },
+    { "$ref": "#/$defs/statedAbsence" }
+  ]
+}
+```
+
+with `terminal`'s `allOf` branch becoming
+`["kind", "consumer", "consumption_observable", "delivery_assurance"]`.
+
+**`$defs/statedAbsence` is proposed as a shared definition**, not a third copy. R-Q38's
+carrier absence, and this one, are the same shape — `{state: not-supplied, principal,
+reason}` — and `does_not_cover`'s `asserted-none` and `allocation.residual`'s principal are
+the same *device*. Extracting it is the mechanical half of naming the **no silent
+omission** invariant proposed under R-Q38. Fourth instance; time to name it.
+
+### Where the question actually bites, and it is not this slice
+
+`PlaceOrder` writes `OrderPlaced` with boundary `internal` — read in scope by
+`ConfirmOrder` and `OrderSummary`. **This slice has no external delivery at all.** The
+external delivery in this context is `OrderConfirmed` → fulfilment, one act downstream, at
+`ConfirmOrder`. `This_slice_has_no_external_delivery_at_all` asserts it.
+
+So the ruling names a real requirement that the built slice does not exercise, while the
+store does. The assurance question is live at `ConfirmOrder` and nowhere in `PlaceOrder`,
+and the outbox this slice writes to is feeding **internal** consumers.
+
+**Q-44 (F9).**
+> R-Q40 requires an outbox for this slice's write, whose delivery is internal. R-Q41 frames
+> the relay as assurance for *external* delivery. Both can hold — an outbox for every
+> write, assurance requirements only where we cross out — but the scoping is not stated.
+> Is the outbox required for internal writes too, and if so on what grounds, given the
+> assurance argument does not apply to them?
+
+**Q-45 (F12/F13), and it is the one worth deciding first.**
+> R-Q40 put the transport and its case handling in the **profile**, because they are "pr
+> technology". R-Q41 puts *how sure we need to be* in the **determination layer**, because
+> it is a statement about risk. That split looks right and it is not stated anywhere:
+> **the requirement is a determination, the mechanism is a profile, and the profile must
+> be able to show it discharges the requirement.** Nothing currently connects the two —
+> an `outbound: pattern: outbox` profile section and a
+> `delivery_assurance: confirmed` determination would sit in different files with no
+> relation asserted between them. Confirming the split, and then requiring the link, is
+> what would make R-Q41's answer enforceable rather than merely written down.
+
+### What is still not answered about the relay
+
+The ruling tells us *why* the relay matters. It does not settle Q-41's original question:
+whether the relay is an **act in the vocabulary**. The act vocabulary still declares six
+slices, all `command` or `read-model`; the schema's `act_type` enum still carries
+`automation` with nothing using it; and the profile still covers no automation slice. A
+relay built today conforms to nothing, so it remains deliberately unbuilt and
+`Nothing_in_this_slice_dispatches_the_outbox` still asserts its absence.
+
+**Q-41 is therefore answered as to purpose and open as to modelling**, and recorded that
+way rather than closed.

@@ -1,11 +1,13 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Forty-five — twenty-nine at Gate B,
-sixteen more raised by rulings (Q-30 … Q-43, plus Q-12b).
+**Every question this session would ask, asked.** Forty-seven — twenty-nine at Gate B,
+eighteen more raised by rulings (Q-30 … Q-45, plus Q-12b).
 
-**Eleven are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
-Q-16, Q-06, Q-37, Q-38, Q-39, Q-12, Q-40, plus Q-11 (a free consequence of Q-10), Q-36
-(by R-GROUND) and Q-35 (a free consequence of Q-39). **Thirty-four remain open.**
+**Eleven and a half are answered**, all on 2026-09-16, all recorded verbatim in
+`rulings.md`: Q-10, Q-16, Q-06, Q-37, Q-38, Q-39, Q-12, Q-40, plus Q-11 (a free consequence
+of Q-10), Q-36 (by R-GROUND) and Q-35 (a free consequence of Q-39). **Q-41 is answered as
+to purpose and open as to modelling** — R-Q41 settles what the relay is *for* without
+settling whether it is an act in the vocabulary. **Thirty-five remain open.**
 
 **The open count has gone up, not down.** Nine rulings have closed eleven questions and
 raised sixteen. That is the clearest single measurement this run produced about what
@@ -644,7 +646,7 @@ theirs; how we get it to them and what we do when that fails is ours.
 **Proceeded under** the invented mapping, unchanged.
 **Site** `PlaceOrderController.cs`; `Unroled/Adapters.cs` D-31.
 
-### Q-41 — F1 / F8, raised by ruling R-Q40
+### Q-41 — F1 / F8 — **PARTLY ANSWERED**, see `rulings.md`
 > The outbox relay is an act. `ordering.eventmodel.yaml` declares no automation slice for
 > it — the act vocabulary has six slices, all `command` or `read-model`, and the schema's
 > `act_type` enum carries `automation` with nothing using it. Should the relay be an act in
@@ -655,9 +657,17 @@ theirs; how we get it to them and what we do when that fails is ours.
 > vocabulary is complete.
 
 **Prompted by** R-Q40 requiring an outbox, and the outbox requiring a relay.
-**Proceeded under** not built. `Nothing_in_this_slice_dispatches_the_outbox` asserts the
-absence so it reads as a boundary rather than an omission.
-**Site** `Slices/PlaceOrder/Providers.cs`; `rulings.md` R-Q40.
+**Answered as to purpose** *"Q-41 is assurance for external delivery - and thats important
+for us to have an answer for. How sure do we need to be of this payload reaching the
+external system."* — Emil, 2026-09-16. The relay discharges a **delivery assurance
+requirement**, and the requirement is a determination.
+**Still open as to modelling.** Whether the relay is an act in the vocabulary is untouched:
+six slices, all `command` or `read-model`; `automation` in the schema's enum with nothing
+using it; no profile for one. A relay built today conforms to nothing, so it stays unbuilt.
+**The schema models the ceiling and not the requirement.** `consumption_observable` is a
+capability claim; the ruling asks for a requirement claim. Every terminal position reads
+back `UndeterminableUnattributed`.
+**Site** `rulings.md` R-Q41; `DeliveryAssuranceModel.cs`; `DeliveryAssuranceTests.cs`.
 
 ### Q-42 — F9, raised by ruling R-Q40
 > An outbox entry the relay cannot publish — a schema the bus rejects, a consumer
@@ -682,3 +692,32 @@ that has no answer.
 of it.
 **Proceeded under** the `Location` header is emitted as ruled; the collision is reported.
 **Site** `PlaceOrderController.cs`; `rulings.md` R-Q12.
+
+### Q-44 — F9, raised by ruling R-Q41
+> R-Q40 requires an outbox for this slice's write, whose boundary is `internal`. R-Q41
+> frames the relay as assurance for **external** delivery. Both can hold — an outbox for
+> every write, assurance requirements only where we cross out — but the scoping is not
+> stated. Is the outbox required for internal writes too, and on what grounds, given the
+> assurance argument does not apply to them?
+
+**Prompted by** finding that `PlaceOrder` has no external delivery at all: `OrderPlaced` is
+`internal`, and this context's external delivery is `OrderConfirmed` → fulfilment, one act
+downstream.
+**Proceeded under** outbox for this write regardless, per R-Q40.
+**Site** `DeliveryAssuranceTests.This_slice_has_no_external_delivery_at_all`.
+
+### Q-45 — F12 / F13, raised by ruling R-Q41
+> R-Q40 put the transport and its case handling in the **profile**, because they are "pr
+> technology". R-Q41 puts *how sure we need to be* in the **determination layer**, because
+> it is a statement about risk. That split looks right and is stated nowhere: **the
+> requirement is a determination, the mechanism is a profile, and the profile must be able
+> to show it discharges the requirement.** Nothing connects the two — an
+> `outbound: pattern: outbox` profile section and a `delivery_assurance: confirmed`
+> determination would sit in different files with no relation asserted. Confirming the
+> split and then requiring the link is what would make R-Q41 enforceable rather than
+> merely written down.
+
+**Prompted by** drafting both the `outbound:` profile section (R-Q40) and the
+`delivery_assurance` field (R-Q41) and noticing nothing ties them together.
+**Proceeded under** both proposed independently, with the gap named.
+**Site** `rulings.md` R-Q40, R-Q41.
