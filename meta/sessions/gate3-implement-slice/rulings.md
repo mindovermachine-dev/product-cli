@@ -725,3 +725,167 @@ something other than transport, with the provider reaching for the request anywa
 > its own rule.
 
 *Proceeded under:* ungoverned, asserted and named rather than resolved.
+
+---
+
+## R-Q12 — Emil, 2026-09-16
+
+**Question put (Q-12).** *"The controller must 'return a transport result derived from the
+handler's Accepted or Rejected'. Derived how? Nothing states the status for an accepted
+command, the status for a rejected one, whether a Location header is owed, or what the
+body is. Two readers produce two incompatible APIs from this profile and both conform."*
+
+**Answer, verbatim.**
+
+> Accepted is 201 with Location, Rejected is 422
+
+**Ruled.** The largest single hole this run found in the profile is closed.
+
+### The guess matched, and that is not evidence the profile was sufficient
+
+This session invented exactly this mapping at Gate B and reported it as the run's biggest
+hole. **The match proves nothing about legibility.** A second reader choosing 200/400, or
+202/409, would have conformed equally well against the profile as delivered, because the
+profile still does not say. Convergence between an author and a reader who share
+REST convention is not the specification doing work. The gap was real and the ruling, not
+the guess, is what closed it.
+
+### Two paths the ruling does not reach
+
+R-Q12 settles the two branches the profile's rule names. It leaves the exits that are
+*neither* Accepted nor Rejected, and those are still this session's inventions:
+
+| Path | Invented | Why the ruling does not cover it |
+|---|---|---|
+| invalid payload → **400** | D-23 | DSC-0002's check happens before the handler; it produces no outcome to derive from |
+| unsuppliable read position → **401** / **404** | D-19, D-31 | the profile admits two handler exits; this is a third |
+
+**Q-12b (F7)** remains open: what transport result is owed for an act that never reached
+a verdict?
+
+### And the ruling collides with DSC-0004
+
+**This is the finding of this round.**
+
+`Location: /orders/{id}` invites the caller to read what it just wrote. The only act that
+can answer that read is the `OrderSummary` read-model — and DSC-0004 declares that it *"may
+lag the event stream by up to five seconds"*, with a `proxy.known_divergence` reading:
+
+> *"A five-second window is acceptable for browsing and is **not acceptable immediately
+> after the reader's own write, where they expect to see their change**. The measured lag
+> says nothing about that case."*
+
+That is a description of precisely the case a `Location` header creates. R-Q40's outbox
+widens the window further: at 201 the event is durable but not yet on the bus, so the
+projection has not begun to lag yet.
+
+**The determination store already contained the warning that this transport decision
+triggers, and nothing in the scheme connects the two.** The resolution condition checks
+that facts resolve into the vocabulary. Nothing checks whether a build-time decision on
+one act lands inside a filed `known_divergence` on another. The two records are
+individually conformant and jointly produce a 404 for a caller following a `Location` we
+told it to follow.
+
+**Q-43 (F12).**
+> Should a `proxy.known_divergence` be *reachable* — something a later determination or a
+> profile rule can be checked against? It is currently prose in one record, read by a
+> human once, at the moment it is written. This run found the collision by building both
+> ends; nothing in the notation would have surfaced it, and the more determinations exist
+> the less likely a reader is to hold them all at once.
+
+Implemented as ruled: the `Location` header is emitted. The collision is reported, not
+worked around.
+
+---
+
+## R-Q40 — Emil, 2026-09-16
+
+**Question put (Q-40).** *"An outbound provider that references a transport type — posting
+`OrderConfirmed` to fulfilment over HTTP — is now `NotApplicable`: nothing in the amended
+`must_not` permits it and nothing forbids it. It is ungoverned. Is that the intent?"*
+
+**Answer, verbatim.**
+
+> we need to name the transport and how to handle the cases if thats ours to own, this is
+> pr technology. For a event driven system i would expect us to always have an outbox
+> pattern before sending to the eventbus
+
+**Ruled:** outbound carriage **is** ours to own. The transport and its case handling are
+named **per technology** — which places them in the profile, not in the determination
+layer. And for an event-driven system the shape is fixed: **an outbox, always, before the
+bus.**
+
+### The split this settles
+
+R-Q39 said carriage of an inbound fact is ours and carriage of an outbound fact is the
+consumer's. R-Q40 refines that, and the line is not where this session drew it:
+
+* **What the consumer does with the fact** — theirs. R-Q39 stands.
+* **How we get it to them, and what we do when that fails** — **ours**, named per
+  technology, in the profile.
+
+So Q-40's "ungoverned" was the right reading of the profile as delivered and the wrong
+place to leave it. The outbound edge is governed; the profile simply has no section for it.
+
+### What changed in the build
+
+`OrderPlacedProvider` writes to an `IOutbox`, not to a sink. Entries land `Pending`.
+
+This retires **D-27**, which has stood since Gate B as *"a failed append loses a placed
+order"*. With an outbox the enqueue is the durable act: it either succeeds before the
+caller is told anything, or the caller is told it failed. **The loss window does not
+vanish — it moves to the relay**, where a crash leaves the event stored and unpublished,
+which is recoverable rather than lost. That is the pattern working, and it is why the
+ruling is right.
+
+### What is deliberately not built
+
+**The relay is a separate act and has no profile to conform to.** Draining the outbox onto
+the bus is an automation slice, and `profile-rest-api-v1` says in as many words:
+
+> *"No profile for read-model, automation or translation slices. One act type, one
+> profile, one slice."*
+
+So a relay built here would conform to nothing. `Nothing_in_this_slice_dispatches_the_outbox`
+asserts the absence so it reads as a boundary rather than an omission.
+
+**Q-41 (F1/F8).**
+> The outbox relay is an act. `ordering.eventmodel.yaml` declares no automation slice for
+> it — the act vocabulary has six slices, all `command` or `read-model`, and the schema's
+> `act_type` enum carries `automation` with nothing using it. Should the relay be an act
+> in the vocabulary? If it is, it needs a profile that does not exist. If it is not, then
+> **the thing that actually delivers every event this context produces is outside the
+> model entirely**, which is a large omission for a scheme whose point is that the act
+> vocabulary is complete.
+
+### Proposed profile section — named, not authored
+
+R-Q40 says the transport is named per technology, so it belongs in the profile body
+alongside `roles:`. Proposed shape, for ratification:
+
+```yaml
+outbound:
+  # R-Q40. What carries our facts outward, and what happens when it fails.
+  # Per technology: this block is what changes when the stack changes.
+  pattern: outbox
+  enforcement: analyser
+  must:
+    - "a write position is recorded to the outbox, never to the bus directly"
+    - "the outbox entry is durable before the act's transport result is returned"
+    - "the relay that drains the outbox is a separate act"
+  cases:
+    relay_unavailable:   "entries remain pending; no fact is lost, publication is delayed"
+    duplicate_dispatch:  "at-least-once; consumers deduplicate on the event's identity"
+    poison_entry:        "UNSPECIFIED — needs a ruling"
+```
+
+**`must` rule 1 is analyser-checkable today** by the same reflection the role rules use: a
+provider adapting a write position may reference the outbox type and not a bus type. Rules
+2 and 3 are not — "durable before the result is returned" is an ordering claim over a call
+graph, and "a separate act" needs the act vocabulary, which brings back Q-41.
+
+**Q-42 (F9).** `poison_entry` above is left `UNSPECIFIED` deliberately rather than filled:
+> An entry the relay cannot publish — a schema the bus rejects, a consumer permanently
+> gone — is neither lost nor delivered. Under the store's own standing pattern (*no silent
+> omission*, R-Q38) this needs a stated disposition with an owner, not a default. What is
+> it?

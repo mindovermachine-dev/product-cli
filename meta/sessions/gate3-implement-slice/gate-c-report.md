@@ -1,21 +1,49 @@
 # Gate C — report
 
-**Revised 2026-09-16 against seven rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37, R-Q38, R-Q39).** The Gate C figures as first
+**Revised 2026-09-16 against nine rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37, R-Q38,
+R-Q39, R-Q12, R-Q40).** The Gate C figures as first
 issued, with no question answered, are preserved in `gate-c-report-baseline.md` so the
 before/after is comparable.
 
 Builder session. One command slice, `PlaceOrder`, under profile `rest-api-v1`, built
 from the four arrived inputs and nothing else. Builds clean under
-`TreatWarningsAsErrors` in both projects; 39 tests pass on .NET 8.
+`TreatWarningsAsErrors` in both projects; 41 tests pass on .NET 8.
 
 ---
 
+## The finding of the last round: two conformant determinations, one broken caller
+
+`Location: /orders/{id}` (R-Q12) invites the caller to read what it just wrote. The only
+act that can answer is the `OrderSummary` read-model — and DSC-0004 declares it *"may lag
+the event stream by up to five seconds"*, with a `proxy.known_divergence` that reads:
+
+> *"A five-second window is acceptable for browsing and is **not acceptable immediately
+> after the reader's own write, where they expect to see their change**."*
+
+That is a description of exactly the case the `Location` header creates, written into the
+store a month before the header was ruled. R-Q40's outbox widens it: at 201 the event is
+durable but not yet on the bus, so the projection has not begun to lag yet.
+
+**The determination store already contained the warning that this transport decision
+triggers, and nothing in the scheme connects the two.** The resolution condition checks
+that facts resolve into the vocabulary; nothing checks whether a decision on one act lands
+inside a filed `known_divergence` on another. Both records are individually conformant.
+Together they hand a caller a 404 for a link we told it to follow.
+
+This run found it by building both ends. Nothing in the notation would have surfaced it,
+and the more determinations exist the less likely a reader is to hold them all at once.
+Q-43 asks whether a `known_divergence` should be *reachable* rather than prose read once.
+
 ## The headline
 
-**40 clarifications against 3 of 13 frame categories settled without invention. Nine
-answered, thirty-one open — and the seven rulings raised eleven new questions, amended one
-rule, deleted one check, superseded one of this session's own proposals, and require one
-determination supersession and one schema patch.**
+**45 clarifications against 3 of 13 frame categories settled without invention. Eleven
+answered, thirty-four open.**
+
+**The open count went up.** Nine rulings closed eleven questions and raised sixteen. That
+is the clearest number this run produced, and it is the one to carry: on a specification
+of this shape, **answering a question is more likely to expose the next one than to reduce
+the total.** A clarification count is not a burn-down, and a build with many clarifications
+is not a build that was nearly finished.
 
 **One question was asked badly, and that is worth as much as the ones asked well.** Q-38
 offered "required or optional?" and priced the validation break as a migration cost.
@@ -51,6 +79,15 @@ real hole, and neither made the profile enforceable:
 * **R-Q06** amended the `must_not` to turn on what the provider adapts. The slice conforms
   again. **It took a rule change, not a clarification** — no reading of the original four
   inputs could have produced a conforming slice at that point.
+* **R-Q12** settled the transport mapping — the largest single hole the run found —
+  as 201 + `Location` / 422, which is exactly what this session had invented. **The match
+  proves nothing:** a reader choosing 200/400 or 202/409 would have conformed equally
+  well, because the profile still does not say. It also **collides with DSC-0004** (below).
+* **R-Q40** made outbound carriage ours after all, named per technology, with an outbox
+  always before the bus. It refines R-Q39 rather than contradicting it: what the consumer
+  does with a fact is theirs; how we get it to them and what we do when that fails is ours.
+  It **retires D-27**, which had stood since Gate B as "a failed append loses a placed
+  order".
 * **R-Q39** bounded where the carrier question may be asked at all: carriage belongs to
   the **inbound edge** — ours where an actor acts against us, theirs where we act against
   them. **It is the one ruling that needed no addition to the notation**: `role` and

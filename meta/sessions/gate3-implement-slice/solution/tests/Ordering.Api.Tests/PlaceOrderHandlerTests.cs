@@ -26,9 +26,9 @@ public sealed class PlaceOrderHandlerTests
     private const string Gbp = "GBP";
 
     private static PlaceOrderHandler Handler(Cart? cart, ActorIdentity? actor) =>
-        Handler(cart, actor, new InMemoryOrderPlacedStore());
+        Handler(cart, actor, new InMemoryOutbox());
 
-    private static PlaceOrderHandler Handler(Cart? cart, ActorIdentity? actor, InMemoryOrderPlacedStore placed)
+    private static PlaceOrderHandler Handler(Cart? cart, ActorIdentity? actor, InMemoryOutbox outbox)
     {
         var store = new InMemoryCartStore();
         if (cart is not null)
@@ -39,7 +39,7 @@ public sealed class PlaceOrderHandlerTests
         return new PlaceOrderHandler(
             new CartProvider(store),
             new ActorIdentityProvider(RequestFor(actor)),
-            new OrderPlacedProvider(placed),
+            new OrderPlacedProvider(outbox),
             new StubMint("order-1"),
             TimeProvider.System);
     }
@@ -125,7 +125,7 @@ public sealed class PlaceOrderHandlerTests
         var handler = new PlaceOrderHandler(
             new CartProvider(store),
             new ActorIdentityProvider(RequestFor(new ActorIdentity("actor-1", Gbp))),
-            new OrderPlacedProvider(new InMemoryOrderPlacedStore()),
+            new OrderPlacedProvider(new InMemoryOutbox()),
             new StubMint("order-1"),
             TimeProvider.System);
 
@@ -165,25 +165,60 @@ public sealed class PlaceOrderHandlerTests
     [Fact]
     public void Records_the_write_position_through_the_provider()
     {
-        var placed = new InMemoryOrderPlacedStore();
-        var handler = Handler(CartWith(new CartLine("sku-1", 2, 500)), new ActorIdentity("actor-1", Gbp), placed);
+        var outbox = new InMemoryOutbox();
+        var handler = Handler(CartWith(new CartLine("sku-1", 2, 500)), new ActorIdentity("actor-1", Gbp), outbox);
 
         handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
 
-        var recorded = Assert.Single(placed.Appended);
-        Assert.Equal("order-1", recorded.OrderId);
+        var recorded = Assert.Single(outbox.Entries);
+        Assert.Equal("order-1", recorded.Event.OrderId);
     }
 
     /// <summary>R-Q10 — a rejected act writes nothing.</summary>
     [Fact]
     public void Records_nothing_when_the_act_is_rejected()
     {
-        var placed = new InMemoryOrderPlacedStore();
-        var handler = Handler(CartWith(), new ActorIdentity("actor-1", Gbp), placed);
+        var outbox = new InMemoryOutbox();
+        var handler = Handler(CartWith(), new ActorIdentity("actor-1", Gbp), outbox);
 
         handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
 
-        Assert.Empty(placed.Appended);
+        Assert.Empty(outbox.Entries);
+    }
+
+    /// <summary>
+    /// R-Q40 — "For a event driven system i would expect us to always have an outbox
+    /// pattern before sending to the eventbus." The entry is durable and PENDING; nothing
+    /// in this slice puts it on a bus.
+    /// </summary>
+    [Fact]
+    public void The_write_lands_in_the_outbox_pending_publication()
+    {
+        var outbox = new InMemoryOutbox();
+        var handler = Handler(CartWith(new CartLine("sku-1", 1, 100)), new ActorIdentity("actor-1", Gbp), outbox);
+
+        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+
+        Assert.Equal(OutboxState.Pending, Assert.Single(outbox.Entries).State);
+    }
+
+    /// <summary>
+    /// And nothing here dispatches it. The relay that drains the outbox onto the bus is a
+    /// SEPARATE ACT, and the profile states it covers "no profile for read-model,
+    /// automation or translation slices" — so there is nothing for such a relay to conform
+    /// to and it is deliberately not built. Asserted so the absence reads as a boundary
+    /// rather than an omission. Q-41.
+    /// </summary>
+    [Fact]
+    public void Nothing_in_this_slice_dispatches_the_outbox()
+    {
+        var outbox = new InMemoryOutbox();
+        var handler = Handler(CartWith(new CartLine("sku-1", 1, 100)), new ActorIdentity("actor-1", Gbp), outbox);
+
+        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+
+        Assert.All(outbox.Entries, e => Assert.Equal(OutboxState.Pending, e.State));
     }
 
     /// <summary>

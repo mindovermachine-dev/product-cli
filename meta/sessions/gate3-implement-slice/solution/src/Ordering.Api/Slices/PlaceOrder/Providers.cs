@@ -17,13 +17,39 @@ public interface ICartStore
 }
 
 /// <summary>
-/// D-26 — INVENTED. No input names an event store, a stream, a bus or an outbox. The
-/// ruling R-Q10 settles who reaches it, not what it is.
+/// The outbox. R-Q40: "For a event driven system i would expect us to always have an
+/// outbox pattern before sending to the eventbus."
 /// </summary>
-public interface IOrderPlacedStore
+/// <remarks>
+/// D-26 — the abstraction is still INVENTED (no input names a store, stream, bus or
+/// outbox) but its SHAPE is now settled: the act's write lands in a durable outbox in the
+/// same breath as the decision, and something else publishes it onward later.
+///
+/// D-27 — WHAT THE RULING FIXED, AND WHAT IT MOVED. The earlier version appended
+/// straight to a sink, and this session recorded that a failed append after a successful
+/// decision loses a placed order. With an outbox the enqueue is the durable act: it
+/// either succeeds before the caller is told anything, or the caller is told it failed.
+/// The loss window does not vanish — it moves to the relay, where a crash means the event
+/// is stored and unpublished, which is recoverable rather than lost. That is the whole
+/// point of the pattern and it is why the ruling is right.
+/// </remarks>
+public interface IOutbox
 {
-    void Append(OrderPlaced placed);
+    void Enqueue(OrderPlaced placed);
 }
+
+/// <summary>Where an outbox entry has got to. R-Q40.</summary>
+public enum OutboxState
+{
+    /// <summary>Durable here, not yet on the bus.</summary>
+    Pending,
+
+    /// <summary>Handed to the event bus by the relay.</summary>
+    Dispatched,
+}
+
+/// <summary>One durable entry awaiting publication.</summary>
+public sealed record OutboxEntry(OrderPlaced Event, OutboxState State);
 
 /// <summary>
 /// Supplies the <c>Cart</c> read position.
@@ -130,7 +156,7 @@ public sealed class ActorIdentityProvider
 }
 
 /// <summary>
-/// Records the <c>OrderPlaced</c> write position.
+/// Records the <c>OrderPlaced</c> write position — into the outbox, per R-Q40.
 /// </summary>
 /// <remarks>
 /// PROFILE / provider — THE WRITE PATH, per ruling R-Q10:
@@ -150,17 +176,23 @@ public sealed class ActorIdentityProvider
 /// not declare it writes. This type records only `OrderPlaced`, which is the act's sole
 /// write position, but it does so by construction rather than by rule.
 ///
-/// D-27 — DECIDED, NARROWED BY THE RULING. The append is synchronous and
-/// non-transactional. A failure after the decision is taken still loses a placed order;
-/// what changed is that the loss now happens inside the profile rather than outside it.
-/// Q-30, Q-31.
+/// R-Q40 — the write goes to an OUTBOX, never straight to a bus. The provider is the
+/// adapter to that store, which makes its carrier `store` and keeps it clear of the
+/// amended transport `must_not` (R-Q06). **Publication to the bus is not this act.** It
+/// is a separate act performed by a relay reading the outbox, and the profile says in so
+/// many words that it has "no profile for read-model, automation or translation slices",
+/// so the relay has nothing to conform to and is deliberately not built here. Q-41.
+///
+/// D-27 — the loss window MOVED rather than closed, which is the pattern working. A
+/// failure now happens before the caller is told anything. A crash after the enqueue
+/// leaves the event durable and unpublished — recoverable, not lost. Q-30, Q-31.
 /// </remarks>
 [Slice("PlaceOrder", SliceRole.Provider)]
 public sealed class OrderPlacedProvider
 {
-    private readonly IOrderPlacedStore _store;
+    private readonly IOutbox _outbox;
 
-    public OrderPlacedProvider(IOrderPlacedStore store) => _store = store;
+    public OrderPlacedProvider(IOutbox outbox) => _outbox = outbox;
 
-    public void Record(OrderPlaced placed) => _store.Append(placed);
+    public void Record(OrderPlaced placed) => _outbox.Enqueue(placed);
 }

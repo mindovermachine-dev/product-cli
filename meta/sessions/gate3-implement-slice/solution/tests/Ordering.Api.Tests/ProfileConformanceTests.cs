@@ -166,7 +166,7 @@ public sealed class ProfileConformanceTests
             {
                 nameof(GuidOrderIdentityMint),
                 nameof(InMemoryCartStore),
-                nameof(InMemoryOrderPlacedStore),
+                nameof(InMemoryOutbox),
                 nameof(ReadPositionUnavailableMiddleware),
             },
             unroled);

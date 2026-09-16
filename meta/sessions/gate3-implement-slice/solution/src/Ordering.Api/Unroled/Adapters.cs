@@ -19,22 +19,27 @@ public sealed class InMemoryCartStore : ICartStore
 }
 
 /// <summary>
-/// D-29 — INVENTED. In-memory, same reason. Still unroled after ruling R-Q10: the
-/// PROVIDER is the adapter and carries the role; the store it adapts is behind it, which
-/// is the same shape as ICartStore on the read side.
+/// D-29 — INVENTED. In-memory, same reason. Still unroled after R-Q10: the PROVIDER is
+/// the adapter and carries the role; the store it adapts sits behind it, the same shape
+/// as ICartStore on the read side.
 /// </summary>
-public sealed class InMemoryOrderPlacedStore : IOrderPlacedStore
+/// <remarks>
+/// R-Q40 — entries land <see cref="OutboxState.Pending"/> and stay there. Nothing in this
+/// solution dispatches them, deliberately: the relay is a separate act and the profile
+/// covers no automation slice for it to conform to. Q-41.
+/// </remarks>
+public sealed class InMemoryOutbox : IOutbox
 {
-    private readonly List<OrderPlaced> _appended = new();
+    private readonly List<OutboxEntry> _entries = new();
 
-    public IReadOnlyList<OrderPlaced> Appended
+    public IReadOnlyList<OutboxEntry> Entries
     {
-        get { lock (_appended) { return _appended.ToArray(); } }
+        get { lock (_entries) { return _entries.ToArray(); } }
     }
 
-    public void Append(OrderPlaced placed)
+    public void Enqueue(OrderPlaced placed)
     {
-        lock (_appended) { _appended.Add(placed); }
+        lock (_entries) { _entries.Add(new OutboxEntry(placed, OutboxState.Pending)); }
     }
 }
 

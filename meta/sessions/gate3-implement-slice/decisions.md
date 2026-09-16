@@ -1,6 +1,6 @@
 # Decisions — every point the specification does not settle, resolved by this session
 
-Forty-eight, of which **one is withdrawn, one reversed twice, one deleted outright, and one superseded by a later ruling**. Each is marked at its site in the source with the same `D-nn` tag
+Forty-nine, of which **one is withdrawn, one reversed twice, one deleted outright, one superseded, one retired, and one settled by a later ruling**. Each is marked at its site in the source with the same `D-nn` tag
 (`grep -rn 'D-[0-9][0-9]' solution/src`), so the code and this record cannot drift.
 
 **INVENTED** = the specification is silent and this session supplied something.
@@ -47,13 +47,14 @@ that is the finding.
 | D-19 | INVENTED | An unsuppliable read position throws rather than rejecting — a third handler exit the profile does not admit. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
 | D-20a | DECIDED | A `residual` determination is **implemented**, on the reading that allocation describes discharge and not existence. If residual means "build nothing", this is behaviour the specification did not ask for. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
 | D-20b | INVENTED | The invariant name `CurrencyMatchesAccount`. DSC-0005 supplies none and `Rejected` must cite something. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
-| D-21 | INVENTED | **The entire transport mapping.** Accepted → 201 + `Location`; Rejected → 422 + ProblemDetails; invalid payload → 400. "Derived from" names a dependency, not a function. The largest single hole. | `Slices/PlaceOrder/PlaceOrderController.cs` |
+| ~~D-21~~ | **SETTLED by R-Q12** | Accepted → 201 + `Location`, Rejected → 422 — exactly what was invented, which proves nothing about legibility: 200/400 or 202/409 would have conformed equally well. The two paths that are neither Accepted nor Rejected (400 payload, 401/404 read position) remain invented. Q-12b, Q-43. | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-22 | DECIDED | All rejections map to one status; the invariant travels in the body. Branching per invariant would be "a conditional on domain state". | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-23 | DECIDED | DSC-0002's payload check lives in the controller, so the 400 path is a transport result **not** derived from Accepted-or-Rejected. That rule gives. | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-24 | INVENTED | `POST /orders`, unversioned, plural noun, resource-named rather than act-named. | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-25 | INVENTED | An unreachable default arm, because C# cannot prove the closed hierarchy exhaustive and the profile says nothing about expressing exhaustiveness in the stack. | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-26 | INVENTED | `IOrderPlacedStore` — an event store abstraction. No input names one; R-Q10 settles who adapts it, not what it is. | `Slices/PlaceOrder/Providers.cs` |
-| D-27 | DECIDED | The append is synchronous and non-transactional; no retry, no outbox, no ordering guarantee. **A failed append still loses a placed order** — R-Q10 moved the loss inside the profile, it did not prevent it. Q-30, Q-31. | `Slices/PlaceOrder/Providers.cs` |
+| ~~D-27~~ | **RETIRED by R-Q40** | Stood since Gate B as "a failed append loses a placed order". With an outbox the enqueue is the durable act: it succeeds before the caller is told anything, or the caller is told it failed. The loss window **moves to the relay**, where a crash leaves the event stored and unpublished — recoverable, not lost. | `Slices/PlaceOrder/Providers.cs` |
+| D-50 | DECIDED | The relay that drains the outbox is **not built**. It is a separate act and the profile covers "no profile for read-model, automation or translation slices", so it would conform to nothing. Asserted absent so it reads as a boundary. Q-41. | `PlaceOrderHandlerTests` |
 | D-28 | DECIDED | The token is trusted as already validated, per DSC-0003's `read_provenance`. No signature, issuer, audience or expiry check. If the gateway is absent in some deployment, this reads an attacker's claim — the direct consequence of a settled determination, recorded rather than hedged. | `Unroled/Adapters.cs` |
 | D-29 | INVENTED | In-memory stores on both sides, rather than inventing a schema. They sit behind provider-role adapters, which is the shape R-Q10 describes. | `Unroled/Adapters.cs` |
 | D-30 | INVENTED | A GUID as the order identifier. | `Unroled/Adapters.cs` |

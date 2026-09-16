@@ -37,7 +37,7 @@ builder.Services.AddScoped<PlaceOrderHandler>();
 
 // Unroled — outside every profile rule.
 builder.Services.AddSingleton<ICartStore, InMemoryCartStore>();
-builder.Services.AddSingleton<IOrderPlacedStore, InMemoryOrderPlacedStore>();
+builder.Services.AddSingleton<IOutbox, InMemoryOutbox>();   // R-Q40 — outbox, never straight to a bus.
 builder.Services.AddSingleton<IOrderIdentityMint, GuidOrderIdentityMint>();
 builder.Services.AddSingleton(TimeProvider.System);
 

@@ -1,11 +1,15 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Forty — twenty-nine at Gate B, eleven
-more raised by rulings (Q-30 … Q-40).
+**Every question this session would ask, asked.** Forty-five — twenty-nine at Gate B,
+sixteen more raised by rulings (Q-30 … Q-43, plus Q-12b).
 
-**Nine are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
-Q-16, Q-06, Q-37, Q-38, Q-39, plus Q-11 (a free consequence of Q-10), Q-36 (by R-GROUND)
-and Q-35 (a free consequence of Q-39). **Thirty-one remain open.**
+**Eleven are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
+Q-16, Q-06, Q-37, Q-38, Q-39, Q-12, Q-40, plus Q-11 (a free consequence of Q-10), Q-36
+(by R-GROUND) and Q-35 (a free consequence of Q-39). **Thirty-four remain open.**
+
+**The open count has gone up, not down.** Nine rulings have closed eleven questions and
+raised sixteen. That is the clearest single measurement this run produced about what
+answering costs.
 
 **One was asked badly.** Q-38 offered a required-or-optional choice and priced the
 validation break as a migration cost. R-Q38's answer is that the break is the *mechanism* —
@@ -341,7 +345,7 @@ with it.
 
 ## F7 — Transport realisation
 
-### Q-12
+### Q-12 — **ANSWERED**, see `rulings.md`
 > The controller `must` "return a transport result **derived from** the handler's Accepted
 > or Rejected". Derived *how*? Nothing states the status for an accepted command, the
 > status for a rejected one, whether a `Location` header is owed, or what the body is.
@@ -349,9 +353,15 @@ with it.
 > mapping meant to be free, or is it missing?
 
 **Prompted by** `profile-rest-api-v1.md:59`.
-**Proceeded under** Accepted → 201 + `Location`; Rejected → 422 + ProblemDetails;
-invalid payload → 400. All invented.
-**Site** `PlaceOrderController.cs` D-21. **This is the largest single hole found.**
+**Answered** *"Accepted is 201 with Location, Rejected is 422"* — Emil, 2026-09-16, which
+is exactly what this session invented. **The match proves nothing about legibility**: a
+reader choosing 200/400 or 202/409 would have conformed equally well, because the profile
+still does not say. The gap was real; the ruling closed it, the guess did not.
+**Two paths it does not reach** — invalid payload (400) and an unsuppliable read position
+(401/404) — are neither Accepted nor Rejected and remain invented. Q-12b.
+**And it collides with DSC-0004**, whose `proxy.known_divergence` describes precisely the
+read-after-write the `Location` header invites. Q-43.
+**Site** `PlaceOrderController.cs` D-21; `rulings.md` R-Q12.
 
 ### Q-13
 > What is the HTTP surface of `PlaceOrder` — verb, path, versioning? The profile fixes
@@ -604,7 +614,7 @@ an actor acts against us (`read` + `external`), theirs where we act against them
 edge a position sits on, which the previous four rulings each did not.
 **Site** `rulings.md` R-Q39; `CarrierModel.ModelledPosition.Edge`.
 
-### Q-40 — F9 / F12, raised by ruling R-Q39
+### Q-40 — F9 / F12 — **ANSWERED**, see `rulings.md`
 > An outbound provider that references a transport type — posting `OrderConfirmed` to
 > fulfilment over HTTP — is now `NotApplicable`: nothing in the amended `must_not` permits
 > it and nothing forbids it. It is **ungoverned**. Is that the intent? The schema is not
@@ -614,7 +624,61 @@ edge a position sits on, which the previous four rulings each did not.
 > different needs saying, or the outbound edge needs its own rule.
 
 **Prompted by** applying R-Q39 and finding the case it leaves uncovered.
-**Proceeded under** ungoverned — asserted by
-`An_outbound_transport_reference_is_ungoverned_not_permitted` so it cannot read as
-conformance.
-**Site** `rulings.md` R-Q39.
+**Answered** *"we need to name the transport and how to handle the cases if thats ours to
+own, this is pr technology. For a event driven system i would expect us to always have an
+outbox pattern before sending to the eventbus."* — Emil, 2026-09-16. Outbound carriage **is**
+ours; the transport and its cases are named **per technology**, so they belong in the
+profile. For an event-driven system: an outbox, always, before the bus.
+**It refines R-Q39 rather than contradicting it**: what the consumer does with the fact is
+theirs; how we get it to them and what we do when that fails is ours.
+**Now built as** `OrderPlacedProvider` → `IOutbox`, entries `Pending`. Retires D-27.
+**Site** `rulings.md` R-Q40; `Slices/PlaceOrder/Providers.cs`.
+
+### Q-12b — F7, raised by ruling R-Q12
+> R-Q12 settles the two branches the profile's rule names. What transport result is owed
+> for an act that never reached a verdict — an invalid payload rejected before the handler
+> (400, D-23), or a read position that could not be supplied (401/404, D-19/D-31)? Neither
+> is an Accepted or a Rejected, so neither is "derived from" one.
+
+**Prompted by** applying R-Q12 and finding it covers two of the four paths this slice has.
+**Proceeded under** the invented mapping, unchanged.
+**Site** `PlaceOrderController.cs`; `Unroled/Adapters.cs` D-31.
+
+### Q-41 — F1 / F8, raised by ruling R-Q40
+> The outbox relay is an act. `ordering.eventmodel.yaml` declares no automation slice for
+> it — the act vocabulary has six slices, all `command` or `read-model`, and the schema's
+> `act_type` enum carries `automation` with nothing using it. Should the relay be an act in
+> the vocabulary? If it is, it needs a profile that does not exist — the profile says it
+> covers "no profile for read-model, automation or translation slices". If it is not, then
+> **the thing that actually delivers every event this context produces sits outside the
+> model entirely**, which is a large omission for a scheme whose point is that the act
+> vocabulary is complete.
+
+**Prompted by** R-Q40 requiring an outbox, and the outbox requiring a relay.
+**Proceeded under** not built. `Nothing_in_this_slice_dispatches_the_outbox` asserts the
+absence so it reads as a boundary rather than an omission.
+**Site** `Slices/PlaceOrder/Providers.cs`; `rulings.md` R-Q40.
+
+### Q-42 — F9, raised by ruling R-Q40
+> An outbox entry the relay cannot publish — a schema the bus rejects, a consumer
+> permanently gone — is neither lost nor delivered. Under the store's own standing pattern
+> (*no silent omission*, R-Q38) that needs a stated disposition with an owner rather than a
+> default. What is it?
+
+**Prompted by** drafting the proposed `outbound:` profile section and reaching the case
+that has no answer.
+**Proceeded under** left `UNSPECIFIED` in the proposal rather than filled.
+**Site** `rulings.md` R-Q40.
+
+### Q-43 — F12, raised by ruling R-Q12
+> Should a `proxy.known_divergence` be **reachable** — something a later determination or a
+> profile rule can be checked against? DSC-0004's says a five-second lag is "not acceptable
+> immediately after the reader's own write"; R-Q12's `Location` header creates exactly that
+> case. The two records are individually conformant and jointly produce a 404 for a caller
+> following a Location we told it to follow. It is currently prose in one record, read by a
+> human once, at the moment it is written.
+
+**Prompted by** implementing R-Q12 and recognising DSC-0004's divergence as a description
+of it.
+**Proceeded under** the `Location` header is emitted as ruled; the collision is reported.
+**Site** `PlaceOrderController.cs`; `rulings.md` R-Q12.

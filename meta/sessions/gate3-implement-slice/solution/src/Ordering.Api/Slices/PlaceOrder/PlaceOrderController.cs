@@ -17,19 +17,45 @@ using Ordering.Api.Profile;
 ///   must_not "references a provider role directly"                                 — holds.
 ///   must_not "references a persistence type"                                       — holds.
 ///
-/// D-21 — INVENTED, AND THIS IS THE LARGEST SINGLE HOLE THIS RUN FOUND IN THE PROFILE.
-/// "Returns a transport result DERIVED FROM the handler's Accepted or Rejected" names a
-/// dependency and not a function. Nothing anywhere in the four inputs states the HTTP
-/// status for an accepted command, the status for a rejected one, whether a Location
-/// header is owed, or what the response body is. Every line of the mapping below is
-/// this session's invention:
-///     Accepted            -> 201 Created, Location: /orders/{OrderId}, body = the event
-///     Rejected            -> 422 Unprocessable Entity, ProblemDetails citing the invariant
-///     invalid payload     -> 400 Bad Request  (DSC-0002; see D-23)
-///     read position gone  -> mapped by unroled middleware (see Unroled/), not here
-/// 200 / 202 for Accepted and 400 / 409 for Rejected are all equally consistent with
-/// the specification. Two readers produce two incompatible APIs from one profile and
-/// both conform. Q-12, Q-13.
+/// D-21 — SETTLED BY RULING R-Q12, HAVING BEEN THE LARGEST HOLE IN THE PROFILE.
+///
+/// The profile says only that the controller returns "a transport result DERIVED FROM the
+/// handler's Accepted or Rejected" — a dependency, not a function. No input states a
+/// status, a Location, or a body. This session invented the mapping and reported it as
+/// the single largest hole in the run. R-Q12 settles the two branches the rule names:
+///     Accepted -> 201 Created, Location: /orders/{OrderId}
+///     Rejected -> 422 Unprocessable Entity
+/// which is what was invented here. **That the guess matched is not evidence the profile
+/// was sufficient** — a second reader guessing 200/400 or 202/409 would have conformed
+/// equally well, and the profile still does not say. The ruling fixes it; the gap it
+/// fixes was real.
+///
+/// TWO PATHS THE RULING DOES NOT REACH, still this session's inventions:
+///   * invalid payload -> 400 (DSC-0002; see D-23). Not an Accepted and not a Rejected,
+///     so the rule R-Q12 settles does not cover it.
+///   * a read position that cannot be supplied -> 401 / 404 via unroled middleware
+///     (D-19, D-31). The profile admits two handler exits and this is a third.
+/// Both remain open. Q-09, Q-12b.
+///
+/// ═══ R-Q12 COLLIDES WITH DSC-0004, AND NOTHING IN THE SCHEME CONNECTS THEM ═══
+///
+/// `Location: /orders/{id}` invites the caller to read what it just wrote. The only act
+/// that can answer that read is the `OrderSummary` read-model — and DSC-0004 declares it
+/// "may lag the event stream by up to five seconds", with a `proxy.known_divergence` that
+/// says, in its own words:
+///
+///     "A five-second window is acceptable for browsing and is not acceptable
+///      immediately after the reader's own write, where they expect to see their change."
+///
+/// That is a description of exactly the case a Location header creates. R-Q40's outbox
+/// widens it further: the event is durable at 201 but not yet on the bus, so the
+/// projection has not even begun to lag yet.
+///
+/// **The determination store already contained the warning that this transport decision
+/// triggers, and nothing connects the two.** The resolution condition checks that facts
+/// resolve; no check notices that a build-time decision on one act lands inside a filed
+/// known-divergence on another. Q-43 — reported, not worked around: the Location header
+/// is emitted as ruled.
 ///
 /// D-22 — DECIDED. Rejections map to ONE status regardless of which invariant was
 /// cited. Branching per invariant would be "a conditional on domain state", which the
