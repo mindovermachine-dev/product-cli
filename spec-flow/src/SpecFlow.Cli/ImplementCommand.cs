@@ -2,6 +2,7 @@ using System.ClientModel;
 using Microsoft.Agents.AI;
 using OpenAI;
 using OpenAI.Chat;
+using SpecFlow.Eval;
 using SpecFlow.Flow;
 using SpecFlow.Mcp;
 
@@ -24,12 +25,38 @@ internal static class ImplementCommand
         var tools = await GovernedTools
             .ConnectAsync(new SpecFlowOptions(options.Root, options.SpecBinary))
             .ConfigureAwait(false);
-        var driver = new ImplementDriver(cli, BuildStrategy(options, tools), ReviewAtTheTerminal);
-        var outcome = await driver
-            .RunAsync(new ImplementRequest(slice, actRef, options.Get("by") ?? "agent@example.invalid"))
-            .ConfigureAwait(false);
+
+        // What was built, kept so the run can be observed after the hand-off.
+        // Observing is the last thing the run does, and the least important.
+        SliceBuilt? built = null;
+        var build = BuildStrategy(options, tools);
+        var request = new ImplementRequest(slice, actRef, options.Get("by") ?? "agent@example.invalid");
+
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        var driver = new ImplementDriver(
+            cli,
+            async (opened, token) => built = await build(opened, token).ConfigureAwait(false),
+            ReviewAtTheTerminal);
+        var outcome = await driver.RunAsync(request).ConfigureAwait(false);
+        started.Stop();
 
         Report(outcome);
+
+        if (built is not null)
+        {
+            var journalled = await RunObservation.ObserveAsync(
+                options.Root,
+                request,
+                built,
+                outcome,
+                RunObservation.Arrangement.FromEnvironment(),
+                started.Elapsed).ConfigureAwait(false);
+            if (journalled is not null)
+            {
+                Console.WriteLine($"observed: {journalled}");
+            }
+        }
+
         return ExitCodes.PendingClosure;
     }
 

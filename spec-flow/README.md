@@ -167,6 +167,47 @@ dotnet run --project spec-flow/src/SpecFlow.Cli -- implement \
 To wire a model, set `SPECFLOW_MODEL_ENDPOINT` (any OpenAI-compatible endpoint
 — Scaleway, Ollama, vLLM), plus `SPECFLOW_MODEL` and `SPECFLOW_MODEL_KEY`.
 
+## Observing runs
+
+Every model-backed `spec build` writes one record to `.spec/runs/<record-id>.json`
+— named by the act-time record it observed, so the two join without an index.
+
+**Measurement, never a verdict.** The journal is beside the store, not inside
+it: not hashed, not signed, not closed, and `spec check` does not read it
+(asserted in `spec-cli/tests/boundaries.rs`). No metric it keeps can fail
+anything, and `Failed` is hard-coded false — a number nobody signed must not be
+able to fail a build. The flow already has a place where judgment is filed
+under a name, and this is deliberately not it.
+
+The default evaluators are `IEvaluator`s from `Microsoft.Extensions.AI.Evaluation`,
+but **none of them asks a model anything**:
+
+| Metric | What it observes |
+|---|---|
+| Draft coherence | whether the reply's prose agrees with the array it ended on — a builder claiming it made no determinations while emitting one has contradicted itself, and the draft carries the contradiction to a reviewer as a proposal |
+| Reviewer amendment | Jaccard distance between what was drafted and what the reviewer kept. 0 means the draft stood |
+| Determination shape | whether the addresses are shaped `det/…`; one echoing the slice name is a diagnostic, not a failure |
+
+These are arithmetic: anyone with the same inputs recomputes the same numbers,
+which is why they can run inline and be trusted later without attribution.
+
+**A judged evaluation is not one of these, and does not belong in this file.**
+Asking a model to assess a run is itself an act, on an occasion, by a named
+model, over a particular context — so it is pinned and recorded separately.
+See *Judging a run* below.
+
+**Reviewer amendment is the metric worth having.** It is the one grounded in a
+human judgment: a person looked at a draft and said what they would actually
+file. It costs nothing, it is collected on every run, and no model supplies it.
+
+The endpoint is kept as a host and the key is not kept at all, so a journal can
+be shared or committed. Read it with `jq`:
+
+```bash
+jq -r '[.ran_at, .model, (.metrics[] | select(.name=="Reviewer amendment") | .value)] | @tsv' \
+  .spec/runs/*.json
+```
+
 ## The whole flow, end to end
 
 ```bash

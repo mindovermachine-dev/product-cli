@@ -8,6 +8,7 @@
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../SpecFlow.Eval/SpecFlow.Eval.csproj" />
     <ProjectReference Include="../SpecFlow.Flow/SpecFlow.Flow.csproj" />
     <ProjectReference Include="../SpecFlow.Import/SpecFlow.Import.csproj" />
     <ProjectReference Include="../SpecFlow.Mcp/SpecFlow.Mcp.csproj" />

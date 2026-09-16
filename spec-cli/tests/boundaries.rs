@@ -124,3 +124,44 @@ fn contains_recursively(dir: &Path, needle: &str) -> bool {
     }
     false
 }
+
+/// Measurement is not a verdict: the gate cannot read the run journal.
+///
+/// `.spec/runs/` is where the agent host observes its own builds — model,
+/// duration, what a reviewer amended. None of it is hashed, signed or closed,
+/// and a number nobody signed must not be able to fail a build. The gate reads
+/// `.spec/records/` and nothing beside it, so this holds by what `check` looks
+/// at rather than by anyone remembering the distinction.
+#[test]
+fn the_gate_cannot_read_the_run_journal() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path();
+    for args in [
+        vec!["init", "-q", "."],
+        vec!["config", "user.email", "emil@example.com"],
+        vec!["config", "user.name", "Emil"],
+        vec!["commit", "-q", "--allow-empty", "-m", "init"],
+    ] {
+        std::process::Command::new("git")
+            .current_dir(root)
+            .args(&args)
+            .status()
+            .expect("git runs");
+    }
+
+    std::fs::create_dir_all(root.join(".spec/runs")).expect("journal directory");
+    std::fs::write(root.join(".spec/runs/01ABC.json"), "{ not even json ]").expect("a junk entry");
+
+    let out = std::process::Command::new(assert_cmd::cargo::cargo_bin("spec"))
+        .args(["--root", &root.display().to_string(), "check", "--ci"])
+        .output()
+        .expect("check runs");
+
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "an unreadable run record must not reach the gate: {}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+}

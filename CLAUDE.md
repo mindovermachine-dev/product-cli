@@ -449,6 +449,18 @@ split across two runtimes at the flow's own accountability boundary:
   accrual vocabulary authored by walking a transport-shaped list inherits the
   defect and every act becomes an endpoint with a better name.
 
+- **Runs are observed, never judged** (`spec-flow/src/SpecFlow.Eval/`). Every
+  model-backed `spec build` writes `.spec/runs/<record-id>.json` — model,
+  endpoint *host* (never the key), duration, drafted vs reviewed
+  determinations, plus three deterministic `IEvaluator`s from
+  `Microsoft.Extensions.AI.Evaluation`: draft coherence (does the prose agree
+  with the trailing array), reviewer amendment (Jaccard distance drafted→kept),
+  determination shape. **Measurement, never a verdict**: beside the store not
+  inside it, `Failed` hard-coded false, and `spec check` does not read it —
+  asserted in `spec-cli/tests/boundaries.rs`. No judged evaluator is wired by
+  default; a judge scoring the output of the thing it judges inherits its blind
+  spots. Reviewer amendment is the one metric grounded in a human judgment.
+
 **The boundary is the design, not packaging.** The agent host does not link the
 code that writes a closure, so there is no call it could make — the PRD's
 "structural, not instructed" requirement, held by a process boundary rather
