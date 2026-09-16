@@ -88,6 +88,9 @@ context and lands beside the first.
 | `metrics` | deterministic observations (§5) |
 | `address` | **where the run happened** — the coordinates it is comparable at (§8). Optional |
 | `arrangement` | **what answered** — the worker and how it was reached (§8). Optional |
+| `declared` | **what the run said it would do, before it did it** (§9). Optional |
+| `ground_read` | the ground actually consulted, read against `declared.ground` (§9) |
+| `attributions` | what the act claimed, and what each claim rests on (§9) |
 
 **`proposed` and `kept` are the pair worth having.** The distance between them
 is a human judgment on model output, collected on every run, supplied by no
@@ -253,7 +256,60 @@ Two readings follow, and **neither is a verdict on any single run**:
 A shift at a fixed address says the ground moved or something undeclared was
 resolved. It never says the one act was wrong.
 
-## 9. What this format does not do
+## 9. Declaration, and the escaped decision
+
+The forbidden state is a resolution nobody can be shown to have held. Three
+checks find candidates, and each is closed even though the acceptance predicate
+is not.
+
+**A run may declare before it acts:**
+
+```json
+"declared": {
+  "decision": "resolve the basket total against what the act settles",
+  "ground": ["spec_check", "spec_records"],
+  "tolerance": "what `Settle a basket` settles: …",
+  "assurance": "drafted for review; no verdict is accepted from this run"
+}
+```
+
+`decision` and `ground` are the **worker's**. `tolerance` and `assurance` are
+the **arrangement's**, and must not be taken from the worker: one setting its
+own tolerance decides how wrong it may be, and one declaring its own assurance
+prices a consequence it does not carry.
+
+The declaration is made before the act or not at all. Written afterwards it is
+a summary, and a summary cannot be contradicted by the run it summarises.
+
+**The three checks:**
+
+| Finding | Raised when |
+|---|---|
+| `undeclared` | the run declared nothing, so nothing it did can be contradicted |
+| `incomplete-declaration` | a required field is absent |
+| `declared-but-unread` | ground was named as needed and never consulted |
+| `read-but-undeclared` | ground was consulted that the declaration does not name |
+| `unattributed-claim` | a claim rests on nothing the worker declared |
+
+**`ground_read` is observed, not asked for.** What a worker says it consulted is
+its own introspection; which tools it called is a fact about the arrangement.
+The two disagreeing is the finding.
+
+**Only two of the three ground findings are computed.** The third — a
+fast-ticking ground axis with no read at act time — needs a tick rate per
+element, and this format carries none. Naming the gap is honest; reporting two
+findings as though they were all of them is not.
+
+**An attribution is the worker's own account of itself** and can be
+confabulated. Its falsifier is sharp: attribution passing on runs whose
+behaviour (§8) shows dependence on undeclared ground means the attribution is
+decorative.
+
+**These are findings, and they do not gate.** Whether a particular escape is
+tolerable is a judgement, and a judgement needs an owner. What the checks give
+that owner is a list they did not have to assemble by reading transcripts.
+
+## 10. What this format does not do
 
 - **It does not gate.** No conformance classes, no exit codes, no CI verdict.
 - **It does not decide.** A judgment is evidence a person may read before

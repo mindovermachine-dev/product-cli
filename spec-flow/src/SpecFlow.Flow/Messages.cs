@@ -19,7 +19,9 @@ public sealed record SliceBuilt(
     string RecordId,
     string Slice,
     IReadOnlyList<string> DraftDeterminations,
-    string Notes);
+    string Notes,
+    Eval.Declaration? Declared = null,
+    IReadOnlyList<string>? GroundRead = null);
 
 /// <summary>
 /// What the workflow puts to a reviewer. A draft is shown for amendment, not

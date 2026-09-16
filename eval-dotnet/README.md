@@ -150,6 +150,39 @@ is working.
 coordinates says the ground moved or something undeclared got resolved — not
 that one act was wrong.
 
+## Declaring before acting
+
+The forbidden state is a resolution nobody can be shown to have held. Catching
+it needs one thing: a worker that says what it is about to do *before* it does
+it, so that what it did can contradict what it said.
+
+```csharp
+// A separate turn, before the work. Asked afterwards it is a summary,
+// and a summary cannot be contradicted by the run it summarises.
+var declared = new Declaration(
+    Decision: "resolve the basket total against what the act settles",
+    Ground:   ["spec_check", "spec_records"]);
+
+// Tolerance and assurance are the arrangement's, never the worker's.
+declared = declared.BoundedBy(tolerance, assurance);
+
+foreach (var finding in Escape.Check(run))
+{
+    // undeclared · incomplete-declaration · declared-but-unread
+    // read-but-undeclared · unattributed-claim
+}
+```
+
+`GroundRead` is **observed, not asked for** — the tools actually invoked, not
+the worker's account of what it consulted. The two disagreeing is the finding.
+
+This is the check that earns its keep. On a live run one model declared it
+needed the act's text and never read it: `declared-but-unread`, caught
+mechanically, on work that otherwise looked fine.
+
+**Findings, not a gate.** Whether an escape is tolerable is a judgement, and a
+judgement needs an owner; nothing here decides for them.
+
 ## Using it
 
 ```csharp

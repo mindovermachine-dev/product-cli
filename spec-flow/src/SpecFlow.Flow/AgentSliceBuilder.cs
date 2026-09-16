@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Eval;
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 
 namespace SpecFlow.Flow;
 
@@ -26,18 +28,108 @@ public sealed class AgentSliceBuilder(AIAgent agent, string? extraInstructions =
     private readonly string? _extraInstructions = extraInstructions;
 
     /// <summary>The build step, shaped for the workflow's executor.</summary>
+    /// <remarks>
+    /// Two turns in one session, and the order is the point. The worker says
+    /// what it is about to resolve and what it needs before it can see what it
+    /// produced; only then does it act. A declaration asked for afterwards is a
+    /// summary, and a summary cannot be contradicted by the run it summarises.
+    /// </remarks>
     public async ValueTask<SliceBuilt> BuildAsync(
         ActRecordOpened opened,
         CancellationToken cancellationToken = default)
     {
         var session = await _agent.CreateSessionAsync(cancellationToken).ConfigureAwait(false);
+
+        var declaring = await _agent
+            .RunAsync(DeclarationPrompt(opened), session, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        var declared = ReadDeclaration(declaring.Text ?? string.Empty);
+
         var response = await _agent
             .RunAsync(Prompt(opened), session, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
         var text = response.Text ?? string.Empty;
-        return new SliceBuilt(opened.RecordId, opened.Slice, ParseDeterminations(text), text);
+        return new SliceBuilt(
+            opened.RecordId,
+            opened.Slice,
+            ParseDeterminations(text),
+            text,
+            declared,
+            [.. GroundRead(declaring).Concat(GroundRead(response)).Distinct(StringComparer.Ordinal)]);
     }
+
+    /// <summary>What the worker is asked before it is allowed to act.</summary>
+    private string DeclarationPrompt(ActRecordOpened opened) => $$"""
+        Before you do anything: say what you are about to resolve, and what you
+        need to know in order to resolve it.
+
+        Name the ground as addresses, not prose — the tools you will consult, the
+        parts of the specification you will read. Naming ground you do not use,
+        or using ground you did not name, are both findings against this run, so
+        say what you actually mean to do.
+
+        You are about to build the slice `{{opened.Slice}}` against `{{opened.ActRef}}`.
+
+        Reply with one line of JSON and nothing else:
+        {"decision": "<one sentence>", "ground": ["<address>", "..."]}
+        """;
+
+    /// <summary>
+    /// Read the declaration, or record that none was made.
+    /// </summary>
+    /// <remarks>
+    /// A worker that would not declare has not declared — the run is filed
+    /// without one and the check says so. Inventing a declaration on its behalf
+    /// would be manufacturing the very thing the check exists to look for.
+    /// </remarks>
+    public static Declaration? ReadDeclaration(string reply)
+    {
+        foreach (var line in reply.Split('\n').Reverse())
+        {
+            var trimmed = line.Trim();
+            if (!trimmed.StartsWith('{') || !trimmed.EndsWith('}'))
+            {
+                continue;
+            }
+            try
+            {
+                using var parsed = JsonDocument.Parse(trimmed);
+                var root = parsed.RootElement;
+                if (!root.TryGetProperty("decision", out var decision))
+                {
+                    continue;
+                }
+                var ground = root.TryGetProperty("ground", out var g)
+                    && g.ValueKind is JsonValueKind.Array
+                    ? g.EnumerateArray().Select(e => e.GetString() ?? "").Where(v => v.Length > 0).ToList()
+                    : [];
+                return new Declaration(decision.GetString() ?? "", ground);
+            }
+            catch (JsonException)
+            {
+                // Not the object we were looking for; keep scanning upward.
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// The tools the worker actually invoked.
+    /// </summary>
+    /// <remarks>
+    /// This is the ground it read, observed rather than asked for. A worker's
+    /// account of what it consulted is its own introspection; the call is a
+    /// fact about the arrangement, and the two disagreeing is the finding.
+    /// </remarks>
+    public static IReadOnlyList<string> GroundRead(AgentResponse response) =>
+    [
+        .. response.Messages
+            .SelectMany(m => m.Contents)
+            .OfType<FunctionCallContent>()
+            .Select(c => c.Name)
+            .Distinct(StringComparer.Ordinal),
+    ];
 
     private string Prompt(ActRecordOpened opened) => $"""
         Build the slice `{opened.Slice}` against the specification act `{opened.ActRef}`.

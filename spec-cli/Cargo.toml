@@ -25,6 +25,7 @@ dist = false
 spec-core    = { path = "../spec-core", version = "0.6.0" }
 ledger-core  = { path = "../ledger-core", version = "0.6.0" }
 product-core = { path = "../product-core", version = "0.6.0" }
+eval-core    = { path = "../eval-core", version = "0.6.0" }
 chrono     = "0.4"
 serde      = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"

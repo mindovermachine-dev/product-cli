@@ -417,6 +417,19 @@ not fit).
   and object storage address identically; `Blobs`/`IBlobs` is the whole seam,
   three methods. A backend named but not built **refuses rather than falling
   back** — Azure is declared and not yet implemented.
+- **`declared` / `ground_read` / `attributions`** are the escape checks (format
+  §9, from the same document's §4.1–4.3). A worker declares *before* acting —
+  in spec-flow a separate agent turn — and `ground_read` is **observed** from
+  the tool calls rather than asked for, so the worker's account and the
+  arrangement's fact can disagree. Tolerance and assurance are supplied by the
+  *caller*, never read off the worker. `escape::check` / `Escape.Check` raise
+  `undeclared`, `incomplete-declaration`, `declared-but-unread`,
+  `read-but-undeclared`, `unattributed-claim`. The fast-axis finding is **not**
+  computed — no tick rate is carried — and the docs say so rather than implying
+  three of three.
+- **`spec runs [--readings|--escapes] [--json]`** reads the store. It never
+  gates: exit 0 whatever it finds. spec-flow does not populate `attributions`
+  yet — the field is supported and unused, which is different from absent.
 - **`cargo t` does not cover `eval-dotnet/`** — run `dotnet test
   eval-dotnet/Eval.slnx` beside `dotnet test spec-flow/SpecFlow.slnx`.
 - **The digest law is stated once** (§6) and implemented twice, held together

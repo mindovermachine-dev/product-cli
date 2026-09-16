@@ -34,7 +34,10 @@ public sealed record ObservedRun(
     TimeSpan Duration,
     IReadOnlyList<string> Proposed,
     IReadOnlyList<string> Kept,
-    string Reply);
+    string Reply,
+    Declaration? Declared = null,
+    IReadOnlyList<string>? GroundRead = null,
+    IReadOnlyList<Attribution>? Attributions = null);
 
 /// <summary>Turning one finished run into a record in the store.</summary>
 /// <remarks>
@@ -53,12 +56,18 @@ public static class RunObservation
     /// the absence of the field tells a reader plainly.
     /// </param>
     /// <param name="arrangement">What answered, kept apart from the address.</param>
+    /// <param name="bounds">
+    /// The tolerance and assurance the <i>arrangement</i> fixed. Supplied here
+    /// rather than read off the worker's declaration: a worker stating its own
+    /// tolerance is deciding how wrong it is allowed to be.
+    /// </param>
     /// <returns>Where the record landed, or null when nothing was written.</returns>
     public static async Task<string?> ObserveAsync(
         EvalStore store,
         ObservedRun run,
         Pinned? address = null,
         Pinned? arrangement = null,
+        (string Tolerance, string Assurance)? bounds = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -86,7 +95,10 @@ public static class RunObservation
                 run.Reply,
                 Flatten(result),
                 address,
-                arrangement);
+                arrangement,
+                Bounded(run.Declared, bounds),
+                run.GroundRead,
+                run.Attributions);
 
             return store.WriteRun(record);
         }
@@ -97,6 +109,23 @@ public static class RunObservation
             return null;
         }
     }
+
+    /// <summary>
+    /// Add the arrangement's half to what the worker declared.
+    /// </summary>
+    /// <remarks>
+    /// A worker that declared nothing stays undeclared. Attaching bounds to an
+    /// absent declaration would manufacture the very thing the completeness
+    /// check exists to look for.
+    /// </remarks>
+    private static Declaration? Bounded(
+        Declaration? declared, (string Tolerance, string Assurance)? bounds)
+        => (declared, bounds) switch
+        {
+            (null, _) => null,
+            ({ } d, null) => d,
+            ({ } d, var (tolerance, assurance)) => d.BoundedBy(tolerance, assurance),
+        };
 
     /// <summary>Flatten an evaluation result into what the store keeps.</summary>
     public static IReadOnlyList<RunMetric> Flatten(EvaluationResult result) =>

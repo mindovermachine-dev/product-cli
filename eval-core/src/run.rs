@@ -3,6 +3,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::declaration::{Attribution, Declaration};
 use crate::pinned::Pinned;
 
 /// The form a run record is written in.
@@ -73,6 +74,21 @@ pub struct RunRecord {
     /// world.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub arrangement: Option<Pinned>,
+    /// **What the run said it was doing, before it did it.**
+    ///
+    /// Absent means the run predicted nothing, so nothing it did can be
+    /// contradicted by what it said it would do. That is itself a finding.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub declared: Option<Declaration>,
+    /// The ground actually consulted.
+    ///
+    /// Read against [`Declaration::ground`]: declared and never read, or read
+    /// and never declared, are different faults with different fixes.
+    #[serde(default)]
+    pub ground_read: Vec<String>,
+    /// What the act claimed, and what each claim rests on.
+    #[serde(default)]
+    pub attributions: Vec<Attribution>,
 }
 
 impl RunRecord {
@@ -99,7 +115,22 @@ impl RunRecord {
             metrics: Vec::new(),
             address: None,
             arrangement: None,
+            declared: None,
+            ground_read: Vec::new(),
+            attributions: Vec::new(),
         }
+    }
+
+    /// Record what the run declared before acting.
+    pub fn declaring(mut self, declaration: Declaration) -> Self {
+        self.declared = Some(declaration);
+        self
+    }
+
+    /// Record the ground actually consulted.
+    pub fn having_read(mut self, ground: Vec<String>) -> Self {
+        self.ground_read = ground;
+        self
     }
 
     /// Declare where this run happened.

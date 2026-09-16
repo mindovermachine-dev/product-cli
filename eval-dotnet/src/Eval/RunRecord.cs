@@ -58,10 +58,25 @@ public sealed record RunRecord(
     [property: JsonPropertyName("reply")] string? Reply,
     [property: JsonPropertyName("metrics")] IReadOnlyList<RunMetric> Metrics,
     [property: JsonPropertyName("address")] Pinned? Address = null,
-    [property: JsonPropertyName("arrangement")] Pinned? Arrangement = null)
+    [property: JsonPropertyName("arrangement")] Pinned? Arrangement = null,
+    [property: JsonPropertyName("declared")] Declaration? Declared = null,
+    [property: JsonPropertyName("ground_read")] IReadOnlyList<string>? GroundReadOrNull = null,
+    [property: JsonPropertyName("attributions")] IReadOnlyList<Attribution>? AttributionsOrNull = null)
 {
     /// <summary>The form this file is written in.</summary>
     public const string FormV1 = "eval.run-record.v1";
+
+    /// <summary>The ground actually consulted.</summary>
+    /// <remarks>
+    /// Read against <see cref="Declaration.Ground"/>: declared and never read,
+    /// or read and never declared, are different faults with different fixes.
+    /// </remarks>
+    [JsonIgnore]
+    public IReadOnlyList<string> GroundRead => GroundReadOrNull ?? [];
+
+    /// <summary>What the act claimed, and what each claim rests on.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<Attribution> Attributions => AttributionsOrNull ?? [];
 
     private static readonly JsonSerializerOptions Options = new()
     {

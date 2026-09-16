@@ -42,6 +42,8 @@ pub enum Commands {
     Records(verbs::RecordsArgs),
     /// Refuse a candidate, filing the reason. Names a principal.
     Reject(verbs::RejectArgs),
+    /// List observed runs, or read behaviour across them. Never a verdict.
+    Runs(verbs::RunsArgs),
     /// Trusted signing keys.
     #[command(subcommand)]
     Trust(TrustCommands),
@@ -82,6 +84,7 @@ pub fn run(command: Commands, root: &Path) -> i32 {
         Commands::Policy(PolicyCommands::Show(args)) => verbs::policy_show(root, &args),
         Commands::Records(args) => verbs::records(root, &args),
         Commands::Reject(args) => verbs::reject(root, &args),
+        Commands::Runs(args) => verbs::runs(root, &args),
         Commands::Trust(TrustCommands::Generate(args)) => verbs::trust_generate(root, &args),
         Commands::Trust(TrustCommands::List(args)) => verbs::trust_list(root, &args),
     };

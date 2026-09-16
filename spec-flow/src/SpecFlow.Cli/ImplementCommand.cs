@@ -49,7 +49,8 @@ internal static class ImplementCommand
                 EvalStoreOf(options),
                 Observed(request, built, outcome, started.Elapsed),
                 Address(actRef, ground),
-                Arrangement(options)).ConfigureAwait(false);
+                Arrangement(options),
+                Bounds(ground)).ConfigureAwait(false);
             if (journalled is not null)
             {
                 Console.WriteLine($"observed: {journalled}");
@@ -79,7 +80,9 @@ internal static class ImplementCommand
             elapsed,
             built.DraftDeterminations,
             outcome.ReviewedDeterminations,
-            built.Notes);
+            built.Notes,
+            built.Declared,
+            built.GroundRead ?? []);
 
     /// <summary>Which tool these runs came from, so one store can hold several.</summary>
     internal const string Tool = "spec-flow";
@@ -104,6 +107,22 @@ internal static class ImplementCommand
     private static Pinned Address(string actRef, ActGround.Ground? ground) => Pinned.Of(
         ("task", actRef),
         ("ground", ground?.Settles ?? "(unread)"));
+
+    /// <summary>
+    /// What the arrangement fixed, as against what the worker declared.
+    /// </summary>
+    /// <remarks>
+    /// Tolerance and assurance are the arrangement's to state, never the
+    /// worker's: a worker setting its own tolerance decides how wrong it may be,
+    /// and one declaring its own assurance prices a consequence it does not
+    /// carry. This flow states them plainly and modestly — the act's own text is
+    /// the bound, and a build is drafted for review rather than accepted.
+    /// </remarks>
+    private static (string Tolerance, string Assurance) Bounds(ActGround.Ground? ground) => (
+        ground is null
+            ? "the act's text, which could not be read"
+            : $"what `{ground.Name}` settles: {ground.Settles}",
+        "drafted for review; no verdict is accepted from this run");
 
     /// <summary>
     /// What answered: the worker, and where it was reached.

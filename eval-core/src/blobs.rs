@@ -28,6 +28,25 @@ pub trait Blobs: Send + Sync {
     fn list(&self, prefix: &str) -> Vec<String>;
 }
 
+/// A boxed backend is still a backend.
+///
+/// [`crate::Backend::open`] hands back a `Box<dyn Blobs>` because which one it
+/// is was decided by configuration. Without this, every caller would have to
+/// know the concrete type it asked not to know.
+impl<B: Blobs + ?Sized> Blobs for Box<B> {
+    fn put(&self, key: &str, body: &str) -> Result<String> {
+        (**self).put(key, body)
+    }
+
+    fn get(&self, key: &str) -> Result<Option<String>> {
+        (**self).get(key)
+    }
+
+    fn list(&self, prefix: &str) -> Vec<String> {
+        (**self).list(prefix)
+    }
+}
+
 /// Keyed bodies as files under a root directory.
 #[derive(Debug, Clone)]
 pub struct DiskBlobs {
