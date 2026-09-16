@@ -1,0 +1,48 @@
+# FIXTURE — NOT A DETERMINATION, NOT PART OF ANY STORE.
+#
+# This file exists only to demonstrate what ruling R-GROUND asks for: the carrier
+# MODELLED rather than inferred. It is DSC-0003 as delivered, with one field added —
+# `boundary.carrier: transport` — so the amended R-Q06 rule has ground to stand on.
+#
+# It is NOT an authored determination. It is not in `.../inputs/`, nothing loads it but
+# the test that demonstrates the proposal, and its `made_by` says so. The convention is
+# borrowed from the repository's own rule that fixture acceptances use a fixture
+# principal and live only under tests/.
+#
+# Until `carrier` is a closed vocabulary in `determination.schema.json`, this file is
+# schema-VALID — `boundary` has no `additionalProperties: false` — and still not
+# determinable ground, because nothing fixes what the string means.
+
+- id: DSC-0003
+  address:
+    act_type: command
+    act_instance: PlaceOrder
+  statement: >-
+    Who may place an order is not settled at this address.
+  extent:
+    axes:
+      slice-type:
+        state: bound-here
+      context:
+        state: silent
+      sector:
+        state: silent
+  allocation:
+    class: residual
+    carried_by: human
+    principal:
+      kind: team
+      identifier: "platform-security"
+  positions:
+    - fact_type: ActorIdentity
+      role: read
+      boundary:
+        kind: external
+        source: "identity provider, outside the modelled scope"
+        read_provenance: "OIDC token claim, validated at the gateway"
+        carrier: transport          # ← the modelled ground. The only line that differs.
+        tick_rate: fast
+  provenance:
+    made_at: build-time
+    made_by: "gate3-fixture-not-a-determination"
+    recorded: "2026-08-14T10:07:00Z"

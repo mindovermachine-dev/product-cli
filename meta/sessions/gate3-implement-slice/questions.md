@@ -1,10 +1,11 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Thirty-six — twenty-nine at Gate B,
-seven more raised by rulings (Q-30 … Q-36).
+**Every question this session would ask, asked.** Thirty-seven — twenty-nine at Gate B,
+eight more raised by rulings (Q-30 … Q-37).
 
-**Four are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
-Q-16, Q-06, and Q-11 as a free consequence of Q-10. **Thirty-two remain open.**
+**Five are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
+Q-16, Q-06, Q-11 (a free consequence of Q-10), and Q-36 by R-GROUND. **Thirty-two remain
+open.**
 
 The three rulings between them raised seven new questions and required one rule amendment,
 one schema proposal and one supersession. That is the shape of the result: **answers here
@@ -520,7 +521,7 @@ implemented identically.
 **Proceeded under** not exercised: `OrderPlacedProvider` adapts a store.
 **Site** `rulings.md` R-Q06.
 
-### Q-36 — F12, raised by ruling R-Q06
+### Q-36 — F12 — **ANSWERED by R-GROUND**
 > With a `boundary.carrier` enum added, the amended rule becomes conditional on a field the
 > determination author controls. An author who writes `carrier: transport` grants their own
 > provider the permission. Is that intended — the determination is the authority, so it
@@ -528,5 +529,22 @@ implemented identically.
 > nothing can establish?
 
 **Prompted by** proposing the carrier enum that would make R-Q06's rule machine-checkable.
-**Proceeded under** the determination is the authority; no cross-check.
-**Site** `rulings.md` R-Q06.
+**Answered** by R-GROUND: the determination layer is the ground, so the determination
+author is the authority on the carrier — and the remedy for a wrong carrier is the same as
+for any wrong determination, a supersession, not a cross-check nothing could perform. The
+check reads what is modelled and reports `Undeterminable` where nothing is.
+**Site** `rulings.md` R-GROUND; `CarrierModel.cs`.
+
+### Q-37 — F13, raised by ruling R-GROUND
+> `determination.schema.json` closes `position` with `additionalProperties: false` and
+> leaves `boundary` open. So `carrier: transport` is already schema-valid, and nothing can
+> rely on what it says. Is `boundary` open deliberately — an extension point for
+> carrier-like facts nobody has modelled — or is the missing `additionalProperties: false`
+> an oversight? Under R-GROUND the two readings are not equivalent: **an open object is
+> unmodelled ground by construction.** It is also the one object in the schema a profile
+> rule needs to determine on, while every other union in the file is emphatically closed.
+
+**Prompted by** checking whether the proposed `carrier` field would even validate.
+**Proceeded under** treating the open `boundary` as unmodelled ground: the reader accepts
+only the closed vocabulary and calls everything else unmodelled.
+**Site** `rulings.md` R-GROUND; `CarrierModel.ReadCarrier`.

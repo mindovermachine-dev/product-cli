@@ -4,163 +4,141 @@ using System.Reflection;
 using Ordering.Api.Profile;
 using Ordering.Api.Slices.PlaceOrder;
 using Xunit;
-using YamlDotNet.Serialization;
 
 /// <summary>
-/// The amended provider rule from ruling R-Q06, checked against the real determination
-/// store — and the first demonstration in this run that a profile rule is enforceable
-/// only when the checker can read the determinations.
+/// R-Q06's amended provider rule, evaluated over modelled ground per ruling R-GROUND.
 /// </summary>
 /// <remarks>
-/// R-Q06 amends the provider's <c>must_not</c>: a provider adapting a transport-borne
-/// source MAY reference a transport type; a provider adapting a store MAY NOT. That makes
-/// <c>ActorIdentityProvider</c> conforming — it adapts an OIDC token claim, which arrives
-/// on the request — and leaves the rule biting on every other provider.
+/// **The earlier version of this class inferred the carrier by matching prose in
+/// `read_provenance`. That was wrong and is deleted.** R-GROUND: "We cant add decisions
+/// to ground we havent modelled. Instead of using a regex, we need to build a proper
+/// model of what we want to determine on." The model is in `CarrierModel.cs`.
 ///
-/// **The amendment moves the rule, it does not simply relax it.** Before R-Q06 the rule
-/// was a flat prohibition: checkable by a namespace test on a type's references, and
-/// defeated by one interface. After R-Q06 it is conditional on *what the provider
-/// adapts*, which is not in the code at all — it is in the determination that declares
-/// the read position's <c>boundary</c>. So the check below does what an analyser would
-/// have to do: parse `place-order.determinations.yaml`, find the position for the fact
-/// this provider supplies, and decide from its boundary whether a transport reference is
-/// permitted here.
+/// The result of doing it properly is the finding:
 ///
-/// D-40 — THE WEAK LINK, AND IT IS IN THE SCHEMA, NOT THE CODE. Nothing in
-/// `determination.schema.json` says a boundary's carrier is transport. `read_provenance`
-/// is `{"type": "string"}` — free text. DSC-0003 says "OIDC token claim, validated at the
-/// gateway", and the only way to get "transport" out of that is to match on prose, which
-/// is what <see cref="IsTransportBorne"/> does and what no analyser should ever ship.
-/// A machine-readable `boundary.carrier` enum is proposed in `rulings.md`; until there is
-/// one, R-Q06's rule is enforceable in principle and prose-matched in practice.
+/// * Against the determination store **as delivered**, the rule is
+///   <see cref="Verdict.Undeterminable"/> for `ActorIdentity`. Not conforming, not
+///   breaching — unevaluable, because no determination says what carries the fact.
+/// * Against a fixture in which `carrier: transport` is modelled, the same rule and the
+///   same code return <see cref="Verdict.Conforms"/>.
 ///
-/// D-41 — DECIDED. A provider is matched to the fact it supplies by the return type of
-/// its single public method. Nothing states that convention; it is this session's, and an
-/// analyser would need it stated. Q-34.
+/// So the amended rule is **fully mechanical once the ground is modelled, and cannot be
+/// run at all until it is.** That is a better answer for PRD §11.4 than either "checkable"
+/// or "not checkable": the rule is not the problem, the missing model is.
+///
+/// D-42 — DECIDED, AND IT IS THE LOAD-BEARING ONE. UNDETERMINABLE is kept distinct from
+/// BREACHES. Collapsing them would report this slice as non-conforming, which is false:
+/// nothing here is known to be wrong. It is unknown. The schema makes exactly this
+/// argument for `silent` as a distinct extent state (DP-1); the same holds for
+/// enforcement, and a checker without the third value will lie in whichever direction its
+/// author defaulted.
 /// </remarks>
 public sealed class ProviderTransportCarrierTests
 {
-    private const string TransportNamespace = "Microsoft.AspNetCore.Http";
+    private static readonly string Delivered =
+        Path.Combine(AppContext.BaseDirectory, "place-order.determinations.yaml");
+
+    private static readonly string CarrierModelled =
+        Path.Combine(AppContext.BaseDirectory, "fixtures", "dsc-0003.carrier-modelled.yaml");
 
     /// <summary>
-    /// The rule, as amended by R-Q06, run over every provider role in the slice.
+    /// THE FINDING. On the store as delivered, the rule cannot be evaluated for the one
+    /// provider it matters for.
     /// </summary>
     [Fact]
-    public void Only_providers_adapting_a_transport_borne_source_reference_transport()
+    public void The_rule_is_undeterminable_on_the_delivered_store()
     {
-        var positions = ReadPositionsFor("PlaceOrder");
+        var positions = DeterminationStore.ReadPositionsFor(Delivered, "PlaceOrder");
 
-        foreach (var provider in ProviderRoles())
-        {
-            var fact = FactSuppliedBy(provider);
-            var permitted = fact is not null
-                            && positions.TryGetValue(fact, out var boundary)
-                            && IsTransportBorne(boundary);
+        Assert.False(positions["ActorIdentity"].CarrierIsModelled);
 
-            var references = ReferencesTransport(provider);
+        var verdict = ProviderTransportRule.Evaluate(
+            ReferencesTransport(typeof(ActorIdentityProvider)),
+            positions["ActorIdentity"]);
 
-            Assert.True(
-                permitted || !references,
-                $"{provider.Name} references a transport type, and the determination for "
-                + $"'{fact}' does not declare a transport-borne carrier.");
-        }
+        Assert.Equal(Verdict.Undeterminable, verdict);
     }
 
     /// <summary>
-    /// The permission is real and not vacuous: <c>ActorIdentityProvider</c> does reference
-    /// transport, and DSC-0003 is what makes that conforming.
+    /// And once the ground is modelled, the same rule and the same code decide it — with
+    /// no inference anywhere.
     /// </summary>
     [Fact]
-    public void ActorIdentityProvider_is_permitted_by_DSC_0003_and_uses_the_permission()
+    public void The_same_rule_conforms_once_the_carrier_is_modelled()
     {
-        var positions = ReadPositionsFor("PlaceOrder");
+        var positions = DeterminationStore.ReadPositionsFor(CarrierModelled, "PlaceOrder");
 
-        Assert.True(IsTransportBorne(positions["ActorIdentity"]));
-        Assert.True(ReferencesTransport(typeof(ActorIdentityProvider)));
+        Assert.Equal(Carrier.Transport, positions["ActorIdentity"].Carrier);
+
+        var verdict = ProviderTransportRule.Evaluate(
+            ReferencesTransport(typeof(ActorIdentityProvider)),
+            positions["ActorIdentity"]);
+
+        Assert.Equal(Verdict.Conforms, verdict);
     }
 
     /// <summary>
-    /// And it still bites: <c>Cart</c>'s boundary is plain <c>internal</c>, so
-    /// <c>CartProvider</c> gets no permission and takes none.
+    /// The rule still bites, and it bites without needing ground: a provider that
+    /// references no transport type conforms whatever the carrier is, so the prohibition
+    /// is never vacuous.
     /// </summary>
     [Fact]
-    public void CartProvider_gets_no_permission_and_references_no_transport()
+    public void A_provider_that_references_no_transport_conforms_without_needing_ground()
     {
-        var positions = ReadPositionsFor("PlaceOrder");
+        var positions = DeterminationStore.ReadPositionsFor(Delivered, "PlaceOrder");
 
-        Assert.False(IsTransportBorne(positions["Cart"]));
+        Assert.False(positions["Cart"].CarrierIsModelled);
         Assert.False(ReferencesTransport(typeof(CartProvider)));
-    }
 
-    // --- what an analyser would have to do -----------------------------------------
+        Assert.Equal(
+            Verdict.Conforms,
+            ProviderTransportRule.Evaluate(false, positions["Cart"]));
+    }
 
     /// <summary>
-    /// D-40. Prose-matching, because `read_provenance` is free text and the schema has no
-    /// carrier field. This is the method that should not exist.
+    /// A modelled carrier that is not transport is a real breach — the rule can say no,
+    /// which is what distinguishes it from a permission that always grants.
     /// </summary>
-    private static bool IsTransportBorne(IReadOnlyDictionary<string, string> boundary)
+    [Fact]
+    public void A_store_carrier_breaches_when_the_provider_references_transport()
     {
-        if (!boundary.TryGetValue("read_provenance", out var provenance))
-        {
-            return false;
-        }
+        var store = new ModelledPosition("Cart", "internal", Carrier.Store);
 
-        return provenance.Contains("token", StringComparison.OrdinalIgnoreCase)
-               || provenance.Contains("claim", StringComparison.OrdinalIgnoreCase)
-               || provenance.Contains("request", StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(Verdict.Breaches, ProviderTransportRule.Evaluate(true, store));
     }
 
-    private static Dictionary<string, IReadOnlyDictionary<string, string>> ReadPositionsFor(string actInstance)
+    /// <summary>
+    /// An unrecognised carrier value is UNMODELLED, not a licence to guess. This is the
+    /// regex's grave: any string outside the closed vocabulary yields no ground.
+    /// </summary>
+    [Fact]
+    public void An_unrecognised_carrier_is_unmodelled_rather_than_inferred()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "place-order.determinations.yaml");
-        var records = new Deserializer()
-            .Deserialize<List<Dictionary<string, object>>>(File.ReadAllText(path));
+        var positions = DeterminationStore.ReadPositionsFor(Delivered, "PlaceOrder");
 
-        var positions = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.Ordinal);
-
-        foreach (var record in records)
-        {
-            if (record.GetValueOrDefault("address") is not Dictionary<object, object> address
-                || address.GetValueOrDefault("act_instance") as string != actInstance
-                || record.GetValueOrDefault("positions") is not List<object> declared)
-            {
-                continue;
-            }
-
-            foreach (var entry in declared.OfType<Dictionary<object, object>>())
-            {
-                if (entry.GetValueOrDefault("role") as string != "read"
-                    || entry.GetValueOrDefault("fact_type") is not string factType)
-                {
-                    continue;
-                }
-
-                var boundary = entry.GetValueOrDefault("boundary") as Dictionary<object, object>
-                               ?? new Dictionary<object, object>();
-
-                positions[factType] = boundary.ToDictionary(
-                    kv => (string)kv.Key,
-                    kv => kv.Value as string ?? string.Empty,
-                    StringComparer.Ordinal);
-            }
-        }
-
-        return positions;
+        // `read_provenance` on ActorIdentity says "OIDC token claim, validated at the
+        // gateway" — which the deleted regex read as transport. The model reads nothing
+        // from it at all, which is correct.
+        Assert.Null(positions["ActorIdentity"].Carrier);
     }
 
-    private static IEnumerable<Type> ProviderRoles() =>
-        typeof(PlaceOrderHandler).Assembly.GetTypes()
-            .Where(t => t.GetCustomAttribute<SliceAttribute>() is { Role: SliceRole.Provider });
-
-    /// <summary>D-41 — the fact a provider supplies is its method's return type.</summary>
-    private static string? FactSuppliedBy(Type provider) =>
-        provider.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .Select(m => Nullable.GetUnderlyingType(m.ReturnType) ?? m.ReturnType)
-            .FirstOrDefault(t => t.Namespace == "Ordering.Api.Facts")
-            ?.Name;
+    /// <summary>
+    /// R-Q16 still holds and still matters: the transport reference is on the roled
+    /// provider itself. Hide it behind an unroled hop again and there is nothing for the
+    /// carrier rule to be about.
+    /// </summary>
+    [Fact]
+    public void The_transport_reference_is_held_by_the_roled_provider_itself()
+    {
+        Assert.True(ReferencesTransport(typeof(ActorIdentityProvider)));
+        Assert.Equal(
+            SliceRole.Provider,
+            typeof(ActorIdentityProvider).GetCustomAttribute<SliceAttribute>()?.Role);
+    }
 
     private static bool ReferencesTransport(Type type) =>
         type.GetConstructors()
             .SelectMany(c => c.GetParameters())
-            .Any(p => p.ParameterType.Namespace?.StartsWith(TransportNamespace, StringComparison.Ordinal) == true);
+            .Any(p => p.ParameterType.Namespace?.StartsWith(
+                "Microsoft.AspNetCore.Http", StringComparison.Ordinal) == true);
 }

@@ -4,8 +4,8 @@
 prompt, and the two rulings that scope the run. No README of the binding, no conformance
 manifest, no repository, no web search.
 
-**Result: 36 clarifications against 3 of 13 frame categories settled without invention.**
-Four answered by Emil on 2026-09-16 (`rulings.md`), thirty-two open. Read
+**Result: 37 clarifications against 3 of 13 frame categories settled without invention.**
+Five answered by Emil on 2026-09-16 (`rulings.md`), thirty-two open. Read
 `gate-c-report.md` first; `gate-c-report-baseline.md` is the unrevised version from before
 any answer arrived, kept so the before/after is comparable.
 
@@ -21,9 +21,9 @@ on authoring determinations.
 | `bootstrap.md` | first act: hashes, what was read, the reading order, the one standing rule that could not be complied with |
 | `gate-a.md` | the expectation list, written with the determinations unopened; the reading of the slice; six contradictions |
 | `frame-categories.md` | the 13-category scheme — **invented**, because the bundle never defines "frame category" |
-| `questions.md` | 36 questions, verbatim, with what prompted each and the provisional reading the build proceeded under |
+| `questions.md` | 37 questions, verbatim, with what prompted each and the provisional reading the build proceeded under |
 | `rulings.md` | Emil's answers, verbatim, with what each changed and what it raised |
-| `decisions.md` | 41 points the specification does not settle, each tagged `D-nn` at its site; one withdrawn and one reversed by rulings |
+| `decisions.md` | 42 points the specification does not settle, each tagged `D-nn` at its site; one withdrawn and one reversed by rulings |
 | `gate-c-report.md` | the Gate 3 report, revised against the rulings |
 | `gate-c-report-baseline.md` | the report as first issued, with nothing answered |
 | `solution/` | the slice: `dotnet test` → 15 passing, clean under `TreatWarningsAsErrors` |
@@ -42,12 +42,16 @@ on authoring determinations.
    **violated** once R-Q16 made roles exhaustive and left nowhere to hide → **permitted**
    once R-Q06 amended the rule to condition on the carrier. Three states, one reference,
    and the program never changed what it does.
-4. **Making a rule correct made it less enforceable.** R-Q06's amended rule is no longer
-   checkable from the assembly: it turns on the boundary the provider adapts, so a checker
-   must read the determination store — and then infer "transport" from `read_provenance`,
-   which the schema types as free text. `ProviderTransportCarrierTests` does exactly this
-   against the real determinations file and is the first thing here to enforce a profile
-   rule by reading them. A `boundary.carrier` enum is proposed.
+4. **A rule can only condition on ground the determination layer models.** R-Q06's
+   amended rule turns on the boundary the provider adapts, so it left the code entirely.
+   The first attempt inferred the carrier by matching prose in `read_provenance`; R-GROUND
+   deleted it — *"we cant add decisions to ground we havent modelled"* — for a closed
+   carrier vocabulary, a reader that never infers, and a **three-valued** verdict. Against
+   the store as delivered the rule is `Undeterminable`; against a fixture that models the
+   carrier, `Conforms`. **Fully mechanical once the ground is modelled, unrunnable until
+   it is.** The same reframing disqualifies four more profile rules that condition on
+   *domain state*, *persistence type*, *I/O* and *a decision* — none of which is modelled
+   anywhere.
 5. **Exhaustiveness has no stated edge.** Four types still declare no role and every role
    the profile offers rejects them by its own rules — two stores, an id mint that supplies
    no fact, and middleware that calls no handler. Q-33.
@@ -55,5 +59,5 @@ on authoring determinations.
 ## Running it
 
 ```bash
-cd solution && dotnet test        # 23 tests, .NET 8
+cd solution && dotnet test        # 25 tests, .NET 8
 ```

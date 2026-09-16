@@ -304,3 +304,112 @@ covers the read one.
 own provider the permission. Is that intended — the determination is the authority, so it
 decides — or does it need a check that the carrier matches the fact's actual source, which
 nothing can establish?
+
+---
+
+## R-GROUND — Emil, 2026-09-16
+
+**Prompted by** this session reporting that `ProviderTransportCarrierTests.IsTransportBorne`
+matched on prose — *"the method that should not exist"* — and proposing a `boundary.carrier`
+enum as a remedy.
+
+**Answer, verbatim.**
+
+> we have the same issue for rules as all software. We cant add decisions to ground we
+> havent modelled. We instead of using a regex, we need to build a proper model of what we
+> want to determine on
+
+**Ruled:** a determination may only be made over modelled ground. The regex is not a
+pragmatic shortcut to be tolerated until the schema catches up — it is the symptom of a
+rule determining on something nobody modelled, and the fix is the model.
+
+### What it changes in the build
+
+`IsTransportBorne` is **deleted**. `CarrierModel.cs` replaces it with:
+
+* `Carrier` — a **closed** vocabulary: `transport | store | computed | external-call`;
+* `DeterminationStore.ReadCarrier` — reads the modelled field and **never infers**. An
+  absent field is unmodelled. A value outside the vocabulary is *also* unmodelled: an
+  unrecognised string is not a licence to guess;
+* `ProviderTransportRule.Evaluate` — returning **three** values, not two.
+
+### The third verdict is the ruling's real content
+
+`Verdict.Undeterminable` is kept strictly distinct from `Verdict.Breaches`.
+
+**This is the schema's own argument, one level up.** `determination.schema.json` keeps
+`silent` as a distinct extent state because collapsing it into `does-not-travel` *"makes
+the revisit computation unsound the first time an axis is added"* (DP-1). Exactly the same
+holds for enforcement: collapsing "I have no ground for this" into "this is broken" makes
+a conformance report unsound the first time a carrier is modelled. **A checker that cannot
+say *unmodelled* will lie, in whichever direction its author defaulted** — and the prose
+regex was that lie, defaulted to *permit*.
+
+The same distinction is already load-bearing elsewhere in the scheme: `does_not_cover`
+requires the explicit `asserted-none` sentinel *"because an omitted uncovered set is
+indistinguishable from an unconsidered one"* (DP-3). An unevaluated rule and a passing
+rule are indistinguishable for the same reason, and need the same remedy.
+
+### What the modelled check now reports
+
+| Store | Carrier for `ActorIdentity` | Verdict |
+|---|---|---|
+| `place-order.determinations.yaml`, **as delivered** | not modelled | **Undeterminable** |
+| fixture with `carrier: transport` | `transport` | **Conforms** |
+
+Same rule, same code, no inference. So the honest §11.4 answer for this rule is neither
+"checkable" nor "uncheckable": **fully mechanical once the ground is modelled, and
+unrunnable until it is.** The rule was never the problem; the missing model was.
+
+And the rule still bites without needing ground at all — a provider referencing no
+transport type conforms whatever the carrier, so the prohibition is never vacuous. A
+modelled `carrier: store` against a transport-referencing provider returns `Breaches`.
+
+### The schema finding this exposes
+
+`determination.schema.json` closes `position` with `additionalProperties: false` and
+**leaves `boundary` open**. So:
+
+1. `carrier: transport` is **already schema-valid today**. The proposal is a **closure,
+   not a relaxation** — the field can be written right now, and nothing can rely on what
+   it says.
+2. More generally: **the one object a profile rule needs to determine on is the one object
+   the schema does not close.** Everywhere else the schema is emphatic about closed unions
+   — act types, extent states, allocation classes, boundary `kind`, `tick_rate` — and the
+   `$comment` on the file says the prohibitions "are not advice: the forbidden shapes have
+   no valid representation here". An open `boundary` is a hole in exactly that argument,
+   and it is where the ground for this rule was supposed to live.
+
+**Q-37 (F13).**
+> Is `boundary` open deliberately — an extension point for carrier-like facts nobody has
+> modelled yet — or is the missing `additionalProperties: false` an oversight? Under
+> R-GROUND the two readings are not equivalent: an open object is unmodelled ground by
+> construction, so anything written there can be read by a human and determined on by
+> nothing.
+
+### The fixture, and why it is not an authored determination
+
+`tests/…/fixtures/dsc-0003.carrier-modelled.yaml` is DSC-0003 with one field added. It is
+**not** in `inputs/`, nothing loads it but the test demonstrating the proposal, and its
+`made_by` reads `gate3-fixture-not-a-determination`. The convention is borrowed from the
+repository's own rule that fixture acceptances carry a fixture principal and live only
+under `tests/`. The prohibition is on filling a specification gap by authoring; this
+demonstrates what filling it would require, and leaves the filling to a principal.
+
+### The generalisation, which outlives this rule
+
+R-GROUND is not about carriers. Stated as this run met it:
+
+> **A profile rule may only condition on ground the determination layer models. A rule
+> that conditions on anything else is not enforceable — it is a reader's inference wearing
+> an analyser's clothes, and it will pass or fail on a determination author's choice of
+> words.**
+
+Read back over the profile, this disqualifies more than the transport rule. `must_not`
+"contains a conditional on **domain state**", "references a **persistence type**",
+"performs **I/O** directly", "contains a **decision**" — each conditions on ground that is
+nowhere modelled, in the determinations or the fact vocabulary. Under R-GROUND those four
+are not "hard to check"; they are **not yet checkable at all**, and each needs its ground
+modelled before the question "can Roslyn do it?" is even well-posed. That is a sharper
+statement of what this report's §11.4 table called "not mechanically checkable as written",
+and a more useful one, because it says what to do next.

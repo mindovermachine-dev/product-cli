@@ -139,32 +139,6 @@ public sealed class ProfileConformanceTests
     }
 
     /// <summary>
-    /// THE FINDING, AFTER THREE RULINGS: the profile is now satisfiable, and every rule
-    /// that survived contact is one a checker can only run by reading the determinations.
-    /// </summary>
-    /// <remarks>
-    /// This test asserted three evasions at Gate C, then one breach after R-Q16. R-Q06
-    /// amended the provider's must_not to turn on what the provider adapts, so the breach
-    /// is gone and the slice conforms again — but the rule left the code. Whether this
-    /// type may hold its transport reference is now a question about DSC-0003, not about
-    /// this assembly. See ProviderTransportCarrierTests.
-    ///
-    /// What remains here is the narrow, still-mechanical part: the provider holds the
-    /// reference ITSELF rather than through an unroled hop, which is what R-Q16 bought
-    /// and what makes the R-Q06 check meaningful. Hide the reference again and the
-    /// carrier check has nothing to look at.
-    /// </remarks>
-    [Fact]
-    public void The_transport_reference_is_held_by_the_roled_provider_itself()
-    {
-        var referenced = Assert.Single(
-            Assert.Single(typeof(ActorIdentityProvider).GetConstructors()).GetParameters());
-
-        Assert.Equal("Microsoft.AspNetCore.Http", referenced.ParameterType.Namespace);
-        Assert.Equal(SliceRole.Provider, typeof(ActorIdentityProvider).GetCustomAttribute<SliceAttribute>()?.Role);
-    }
-
-    /// <summary>
     /// Q-33 — R-Q16's boundary. Four types still declare no role, and no role in the
     /// profile fits any of them: two stores a provider adapts, an identifier mint that
     /// supplies no fact, and middleware that produces a transport result without being

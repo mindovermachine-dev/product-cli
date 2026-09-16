@@ -1,20 +1,20 @@
 # Gate C — report
 
-**Revised 2026-09-16 against three rulings (R-Q10, R-Q16, R-Q06).** The Gate C figures as first
+**Revised 2026-09-16 against four rulings (R-Q10, R-Q16, R-Q06, R-GROUND).** The Gate C figures as first
 issued, with no question answered, are preserved in `gate-c-report-baseline.md` so the
 before/after is comparable.
 
 Builder session. One command slice, `PlaceOrder`, under profile `rest-api-v1`, built
 from the four arrived inputs and nothing else. Builds clean under
-`TreatWarningsAsErrors`; 23 tests pass on .NET 8.
+`TreatWarningsAsErrors` in both projects; 25 tests pass on .NET 8.
 
 ---
 
 ## The headline
 
-**36 clarifications against 3 of 13 frame categories settled without invention. Four
-answered, thirty-two open — and the three rulings raised seven new questions, amended one
-rule, and require one supersession and one schema change.**
+**37 clarifications against 3 of 13 frame categories settled without invention. Five
+answered, thirty-two open — and the four rulings raised eight new questions, amended one
+rule, deleted one check outright, and require one supersession and one schema change.**
 
 **Answers here do not close questions one for one. They move the specification.** That is
 the single most transferable finding of this run, and it was not visible until a principal
@@ -41,6 +41,12 @@ real hole, and neither made the profile enforceable:
 * **R-Q06** amended the `must_not` to turn on what the provider adapts. The slice conforms
   again. **It took a rule change, not a clarification** — no reading of the original four
   inputs could have produced a conforming slice at that point.
+* **R-GROUND** — *"We cant add decisions to ground we havent modelled… we need to build a
+  proper model of what we want to determine on"* — deleted the prose-matching check this
+  report had offered as the best available evidence for §11.4, and replaced it with a
+  closed carrier vocabulary, a reader that never infers, and **a three-valued verdict**.
+  The rule now returns `Undeterminable` against the store as delivered and `Conforms`
+  against a fixture where the carrier is modelled. Same rule, same code, no inference.
 
 Trace one line of code through all three: `ActorIdentityProvider`'s transport reference was
 **hidden** (rule held in source text, defeated in substance) → **violated** (hop removed,
@@ -153,8 +159,8 @@ The profile marks **17 rules `enforcement: analyser`** (controller 6, handler 6,
 one better than at first issue, and the improvement came from a ruling, not from a
 clarification.
 
-**R-Q06 then moved a rule between rows, downward, and that is the most instructive event
-in this table.** The provider's transport `must_not` was in row 3 — checkable by a
+**R-Q06 then moved a rule between rows, downward, and R-GROUND showed the row was the
+wrong question.** The provider's transport `must_not` was in row 3 — checkable by a
 namespace test, defeated by one interface. R-Q16 made it genuinely checkable. R-Q06 then
 made it *correct*, and in doing so moved it to row 2: it is now conditional on the
 boundary the provider adapts, so no analyser can check it from the assembly alone. Worse,
@@ -162,17 +168,34 @@ the last step of the check has no machine-readable input — `read_provenance` i
 `{"type": "string"}`, so deciding that *"OIDC token claim, validated at the gateway"* means
 transport is a regex over prose.
 
-`ProviderTransportCarrierTests` runs that check for real, against the delivered
-`place-order.determinations.yaml`, and is **the first thing in this run to enforce a
-profile rule by reading the determinations rather than by asserting**. It is the evidence
-PRD §11.4 was missing, and the answer it gives is: *the rule is enforceable, and its last
-step is a regex over prose.* A `boundary.carrier` enum is proposed in `rulings.md`; with
-it, the rule is fully mechanical.
+**Then R-GROUND rejected the regex outright, and the replacement is the better §11.4
+answer.** `ProviderTransportCarrierTests` now runs the amended rule against the real
+`place-order.determinations.yaml` through a modelled carrier vocabulary — and reports
+`Undeterminable`, because no determination says what carries `ActorIdentity`. Against a
+fixture that models `carrier: transport`, the same code reports `Conforms`.
 
-**The general shape: making a rule correct made it less enforceable.** Flat prohibitions
-are checkable and wrong; conditional rules are right and need the determination store. If
-§11.4 is choosing which subset Roslyn carries, that trade is the thing to decide, not the
-individual rules.
+So the answer for this rule is neither "checkable" nor "uncheckable":
+
+> **Fully mechanical once the ground is modelled; unrunnable until it is. The rule was
+> never the problem — the missing model was.**
+
+**And that reframes the whole table.** This report's "not mechanically checkable as
+written" row named five rules that turn on undefined terms — *domain state*, *persistence
+type*, *I/O*, *a decision*, *derived from*. Under R-GROUND those are not five hard
+analyser problems. They are **five rules conditioning on ground the determination layer
+does not model**, and each needs its ground modelled before "can Roslyn check it?" is even
+well-posed. That is a sharper statement than "undefined term", and a more useful one,
+because it says what to do next rather than what is missing.
+
+**The third verdict is what makes any of this reportable.** `Undeterminable` is kept
+strictly distinct from `Breaches`, and the argument is the schema's own, one level up:
+`silent` is a separate extent state because collapsing it "makes the revisit computation
+unsound the first time an axis is added" (DP-1), and `does_not_cover` demands the
+`asserted-none` sentinel because "an omitted uncovered set is indistinguishable from an
+unconsidered one" (DP-3). An unevaluated rule and a passing rule are indistinguishable for
+exactly the same reason. **A conformance checker without a third value will lie, in
+whichever direction its author defaulted** — and the deleted regex was that lie, defaulted
+to *permit*.
 
 **A rule the rulings added, and it is the enforceable one.** R-Q16's exhaustiveness —
 *every type declared in the slice's source declares a role* — is checkable by reflection
@@ -265,9 +288,14 @@ A vaguer determination would have left room to dodge.
 3. **F2, fact shape.** No field of any fact is declared anywhere, which makes DSC-0002 —
    a `checked` allocation with an `operational` closure — validate this session's
    inventions against themselves. Q-07.
-4. **F12, the carrier of a fact.** New, from R-Q06. A profile rule now conditions on
-   whether a position is transport-borne, and the schema has no field that says so.
-   Proposed, not authored. Q-36.
+4. **F12, the carrier of a fact — and, under R-GROUND, unmodelled ground generally.** A
+   profile rule conditions on whether a position is transport-borne and the schema models
+   nothing that says so. Worse: the schema closes `position` with
+   `additionalProperties: false` and **leaves `boundary` open**, so `carrier: transport`
+   is already schema-valid and nothing can rely on what it says. **The one object a
+   profile rule must determine on is the one object the schema does not close**, in a file
+   whose own `$comment` insists the forbidden shapes "have no valid representation here".
+   Q-37.
 5. **F8, the boundary of exhaustiveness.** From R-Q16. Four types have no role the
    profile can give them, and every candidate role rejects them by its own rules. Q-33.
 6. **F4, the rejection rule's authority.** The profile permits rejecting only for

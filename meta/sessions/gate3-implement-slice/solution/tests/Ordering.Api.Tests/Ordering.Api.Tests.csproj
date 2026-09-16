@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +20,9 @@
          the arrived inputs, not copied, so the checker runs against the real file. -->
     <Content Include="../../../inputs/place-order.determinations.yaml"
              Link="place-order.determinations.yaml"
+             CopyToOutputDirectory="PreserveNewest" />
+    <!-- R-GROUND — a FIXTURE showing the carrier modelled. Not a determination. -->
+    <Content Include="fixtures/dsc-0003.carrier-modelled.yaml"
              CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
