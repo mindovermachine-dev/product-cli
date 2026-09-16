@@ -30,17 +30,32 @@ coupling §5 of the specification-flow PRD exists to break.
   rejections/<slug>.yml   # one filed refusal
   policy/<ulid>.yml   # one version of the check policy, append-only
   trust/<id>.yml      # one trusted public key
+  runs/<record>.json          # observation of one build — not authority
+  judgements/<record>/*.json  # a model's opinion of one run — not authority
 ```
 
 One subject per file, named by its own id. Nothing is edited after it is
 written; a correction is a new file, the same rule the ledger's log files
 carry.
 
-**`inventory.json` is a projection, not a record.** It is rebuilt wholesale by
-every `import`, carries no verdict, no ratification and no decision, and is
-written by the agent host rather than by `spec`. Deleting it loses nothing a
-re-run does not restore. Everything else under `.spec/` is authority, is
-written only by `spec`, and names a principal where one is owed.
+**Three of these are not records.** `inventory.json` is rebuilt wholesale by
+every `import`; `runs/` is what the agent host observed about its own build;
+`judgements/` is what a model said about a run. All three are written by the
+agent host rather than by `spec`, carry no verdict, no ratification and no
+decision, and name no principal — a machine cannot be one. Deleting any of them
+loses no authority: the inventory a re-run restores, and the other two are
+measurement, which is a different thing from truth.
+
+**The gate reads none of them.** `check` reads `records/`, `acts/`,
+`rejections/`, `policy/` and `trust/`, and those are the store: written only by
+`spec`, naming a principal where one is owed. A number nobody signed must not be
+able to fail a build, so the separation is by what `check` looks at rather than
+by a rule someone remembers.
+
+A judgment additionally pins **what its judge saw**: a digest over the inputs,
+recorded beside the verdict, so a reading can be tied to the state that produced
+it. Two judges disagreeing over one pinned context is a legitimate outcome, and
+both are kept.
 
 ## 2. The open record
 

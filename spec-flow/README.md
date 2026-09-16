@@ -200,8 +200,12 @@ See *Judging a run* below.
 human judgment: a person looked at a draft and said what they would actually
 file. It costs nothing, it is collected on every run, and no model supplies it.
 
-The endpoint is kept as a host and the key is not kept at all, so a journal can
-be shared or committed. Read it with `jq`:
+The endpoint is kept as a host and the key is not kept at all, so a journal is
+safe to share. It is **gitignored by default** all the same: a run record keeps
+the model's reply verbatim, which is a description of your codebase, and that is
+a decision to make deliberately rather than by not noticing. Un-ignore
+`.spec/runs/` and `.spec/judgements/` when you want the history shared across a
+team. Read it with `jq`:
 
 ```bash
 jq -r '[.ran_at, .model, (.metrics[] | select(.name=="Reviewer amendment") | .value)] | @tsv' \

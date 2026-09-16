@@ -31,3 +31,10 @@ tests/__pycache__/
 ddd-cli/tests/fixtures/csharp/obj/
 ddd-cli/tests/fixtures/csharp/bin/
 .decisions/index/
+
+# Specification flow — observation, not the store. Run journals and judgements
+# carry the model's reply text verbatim; the act store beside them (records,
+# acts, policy, trust) IS committed, because `spec check` gates on it in CI and
+# a branch carrying an unclosed record must not be able to merge.
+.spec/runs/
+.spec/judgements/
