@@ -1,6 +1,6 @@
 # Decisions — every point the specification does not settle, resolved by this session
 
-Forty-six, of which **one is withdrawn, one reversed twice, one deleted outright, and one superseded by a later ruling**. Each is marked at its site in the source with the same `D-nn` tag
+Forty-eight, of which **one is withdrawn, one reversed twice, one deleted outright, and one superseded by a later ruling**. Each is marked at its site in the source with the same `D-nn` tag
 (`grep -rn 'D-[0-9][0-9]' solution/src`), so the code and this record cannot drift.
 
 **INVENTED** = the specification is silent and this session supplied something.
@@ -33,6 +33,8 @@ that is the finding.
 | D-43 | DECIDED | A carrier value outside the closed vocabulary is treated as **unmodelled**, not guessed at. An unrecognised string is not a licence to infer. | `CarrierModel.ReadCarrier` |
 | ~~D-44~~ | **SUPERSEDED by R-Q38** | `carrier` was proposed **optional**, pricing the validation break as migration cost. The ruling is that the break is the *mechanism*: `carrier` is required, and absence is permitted only as a stated decision attributed to a named human. The optional default would have let every external position drift into silent `Undeterminable`. | `rulings.md` R-Q38 |
 | D-46 | DECIDED | The verdict is **four-valued**, not three. `UndeterminableUnattributed` (nobody decided) is kept distinct from `UndeterminableCarried` (a named principal decided, and why). Same argument as D-42, one level down: the checker learns nothing more about the carrier, it learns whose problem it is. | `CarrierModel.cs` |
+| D-48 | DECIDED | The verdict is **five-valued**. `NotApplicable` (R-Q39 — never ours to ask) is kept distinct from both Undeterminables (in scope, unanswered). Collapsing them would put every internal position into a queue of things to go and model, which inverts the ruling. | `CarrierModel.cs` |
+| D-49 | DECIDED | `Edge` is **derived** from `role` + `boundary.kind`, not asserted as a new field. R-Q39 is the one ruling that needed no addition to the notation. | `ModelledPosition.Edge` |
 | D-47 | DECIDED | A withholding naming no acceptable principal reads back as **unattributed**, not as a decision — the safe direction. `machine` is excluded, per the schema's own "a model identity cannot be an accepting principal". | `CarrierModel.ReadWithheldCarrier` |
 | D-45 | DECIDED | `Boundary_is_currently_open_which_R_Q37_rules_an_oversight` is a **pinned defect test**: it asserts the state the ruling calls wrong, so applying the fix registers as a change rather than passing silently. Delete it when R-Q37 lands. | `SchemaClosureTests.cs` |
 | D-41 | DECIDED | A provider is matched to the fact it supplies by the return type of its single public method. Nothing states the convention; two facts or a DTO breaks it. Q-34. | `ProviderTransportCarrierTests.cs` |

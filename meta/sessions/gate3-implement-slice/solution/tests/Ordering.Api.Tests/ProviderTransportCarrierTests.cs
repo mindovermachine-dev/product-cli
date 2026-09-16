@@ -53,11 +53,11 @@ public sealed class ProviderTransportCarrierTests
     {
         var positions = DeterminationStore.ReadPositionsFor(Delivered, "PlaceOrder");
 
-        Assert.False(positions["ActorIdentity"].CarrierIsModelled);
+        Assert.False(positions["ActorIdentity:read"].CarrierIsModelled);
 
         var verdict = ProviderTransportRule.Evaluate(
             ReferencesTransport(typeof(ActorIdentityProvider)),
-            positions["ActorIdentity"]);
+            positions["ActorIdentity:read"]);
 
         Assert.Equal(Verdict.UndeterminableUnattributed, verdict);
     }
@@ -71,7 +71,7 @@ public sealed class ProviderTransportCarrierTests
     public void A_withheld_carrier_is_carried_not_unattributed()
     {
         var positions = DeterminationStore.ReadPositionsFor(CarrierWithheld, "PlaceOrder");
-        var position = positions["ActorIdentity"];
+        var position = positions["ActorIdentity:read"];
 
         Assert.False(position.CarrierIsModelled);
         Assert.True(position.CarrierIsWithheldDeliberately);
@@ -93,7 +93,7 @@ public sealed class ProviderTransportCarrierTests
     public void The_withheld_carrier_names_an_accountable_human_principal()
     {
         var withheld = DeterminationStore
-            .ReadPositionsFor(CarrierWithheld, "PlaceOrder")["ActorIdentity"]
+            .ReadPositionsFor(CarrierWithheld, "PlaceOrder")["ActorIdentity:read"]
             .CarrierWithheld;
 
         Assert.NotNull(withheld);
@@ -131,11 +131,11 @@ public sealed class ProviderTransportCarrierTests
     {
         var positions = DeterminationStore.ReadPositionsFor(CarrierModelled, "PlaceOrder");
 
-        Assert.Equal(Carrier.Transport, positions["ActorIdentity"].Carrier);
+        Assert.Equal(Carrier.Transport, positions["ActorIdentity:read"].Carrier);
 
         var verdict = ProviderTransportRule.Evaluate(
             ReferencesTransport(typeof(ActorIdentityProvider)),
-            positions["ActorIdentity"]);
+            positions["ActorIdentity:read"]);
 
         Assert.Equal(Verdict.Conforms, verdict);
     }
@@ -150,24 +150,37 @@ public sealed class ProviderTransportCarrierTests
     {
         var positions = DeterminationStore.ReadPositionsFor(Delivered, "PlaceOrder");
 
-        Assert.False(positions["Cart"].CarrierIsModelled);
+        Assert.False(positions["Cart:read"].CarrierIsModelled);
         Assert.False(ReferencesTransport(typeof(CartProvider)));
 
         Assert.Equal(
             Verdict.Conforms,
-            ProviderTransportRule.Evaluate(false, positions["Cart"]));
+            ProviderTransportRule.Evaluate(false, positions["Cart:read"]));
     }
 
     /// <summary>
     /// A modelled carrier that is not transport is a real breach — the rule can say no,
     /// which is what distinguishes it from a permission that always grants.
     /// </summary>
+    /// <remarks>
+    /// R-Q39 REWROTE THIS TEST, and the compiler found it rather than a reviewer. The
+    /// breach case used to be an INTERNAL position with `carrier: store`. Under the ruling
+    /// an internal position is out of scope entirely, so that example now returns
+    /// NOT-APPLICABLE and proves nothing. The only position the rule can actually breach
+    /// on is an INBOUND one whose carrier is modelled as something other than transport:
+    /// an actor acts against us, the store says the fact arrives by a store lookup, and
+    /// the provider reaches for the request anyway.
+    ///
+    /// Worth keeping as evidence: **bounding a rule's scope silently invalidates the
+    /// examples that justified it.** Nothing in the specification would have flagged that.
+    /// </remarks>
     [Fact]
-    public void A_store_carrier_breaches_when_the_provider_references_transport()
+    public void A_store_carrier_breaches_when_an_inbound_provider_references_transport()
     {
-        var store = new ModelledPosition("Cart", "internal", Carrier.Store);
+        var inbound = new ModelledPosition("ActorIdentity", "read", "external", Carrier.Store);
 
-        Assert.Equal(Verdict.Breaches, ProviderTransportRule.Evaluate(true, store));
+        Assert.Equal(Edge.Inbound, inbound.Edge);
+        Assert.Equal(Verdict.Breaches, ProviderTransportRule.Evaluate(true, inbound));
     }
 
     /// <summary>
@@ -182,7 +195,7 @@ public sealed class ProviderTransportCarrierTests
         // `read_provenance` on ActorIdentity says "OIDC token claim, validated at the
         // gateway" — which the deleted regex read as transport. The model reads nothing
         // from it at all, which is correct.
-        Assert.Null(positions["ActorIdentity"].Carrier);
+        Assert.Null(positions["ActorIdentity:read"].Carrier);
     }
 
     /// <summary>
@@ -197,6 +210,94 @@ public sealed class ProviderTransportCarrierTests
         Assert.Equal(
             SliceRole.Provider,
             typeof(ActorIdentityProvider).GetCustomAttribute<SliceAttribute>()?.Role);
+    }
+
+    // ── R-Q39 — where the question may be asked at all ────────────────────────────
+
+    /// <summary>
+    /// The ruling read back off the delivered store. Exactly one position in it sits on
+    /// the inbound edge, and it is the one the whole carrier argument has been about.
+    /// </summary>
+    [Fact]
+    public void Only_the_inbound_edge_carries_a_carrier_question()
+    {
+        var positions = DeterminationStore.ReadPositionsFor(Delivered, "PlaceOrder");
+
+        var ours = positions.Values
+            .Where(p => p.CarrierIsOursToName)
+            .Select(p => $"{p.FactType}:{p.Role}")
+            .OrderBy(k => k, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(new[] { "ActorIdentity:read" }, ours);
+    }
+
+    /// <summary>
+    /// R-Q39 — "if we act against someone its their responsibility to name the carrier".
+    /// The store's two terminal writes are us acting outward, so their carriage is not
+    /// ours to declare and their silence is not an omission. Checked across the whole
+    /// file, not just this act, because the ruling is about edges rather than about
+    /// PlaceOrder.
+    /// </summary>
+    [Fact]
+    public void No_outbound_position_in_the_store_declares_a_carrier()
+    {
+        var outbound = DeterminationStore
+            .ReadEveryPosition(Delivered)
+            .Where(p => p.Edge == Edge.Outbound)
+            .ToArray();
+
+        Assert.Equal(2, outbound.Length);
+        Assert.All(outbound, p => Assert.False(p.CarrierIsModelled));
+        Assert.All(outbound, p => Assert.False(p.CarrierIsOursToName));
+    }
+
+    /// <summary>
+    /// The rule returns NOT-APPLICABLE on the outbound edge, which is a different answer
+    /// from either Undeterminable. Undeterminable means the question is ours and
+    /// unanswered; not-applicable means it was never ours to ask.
+    /// </summary>
+    [Fact]
+    public void The_rule_does_not_reach_an_outbound_position()
+    {
+        var outbound = new ModelledPosition("OrderConfirmed", "write", "terminal", Carrier: null);
+
+        Assert.Equal(Verdict.NotApplicable, ProviderTransportRule.Evaluate(true, outbound));
+    }
+
+    /// <summary>
+    /// And it does not reach an internal one either: no actor is acting against anyone.
+    /// `Cart` is internal, so `CartProvider` was never in the rule's scope — it conforms
+    /// because it references no transport, not because it was permitted.
+    /// </summary>
+    [Fact]
+    public void The_rule_does_not_reach_an_internal_position()
+    {
+        var internalPosition = new ModelledPosition("Cart", "read", "internal", Carrier: null);
+
+        Assert.Equal(Edge.Internal, internalPosition.Edge);
+        Assert.Equal(Verdict.NotApplicable, ProviderTransportRule.Evaluate(true, internalPosition));
+        Assert.Equal(Verdict.Conforms, ProviderTransportRule.Evaluate(false, internalPosition));
+    }
+
+    /// <summary>
+    /// THE GAP R-Q39 LEAVES, asserted so it cannot be mistaken for conformance.
+    ///
+    /// A provider that references transport against an out-of-scope position is
+    /// NOT-APPLICABLE — which is to say **ungoverned**. Nothing in the amended rule
+    /// permits it and nothing forbids it. An outbound provider posting to a webhook lands
+    /// exactly here. Whether that should stay ungoverned is Q-40.
+    /// </summary>
+    [Fact]
+    public void An_outbound_transport_reference_is_ungoverned_not_permitted()
+    {
+        var outbound = new ModelledPosition("OrderConfirmed", "write", "terminal", Carrier: null);
+
+        var verdict = ProviderTransportRule.Evaluate(referencesTransport: true, adapts: outbound);
+
+        Assert.NotEqual(Verdict.Conforms, verdict);
+        Assert.NotEqual(Verdict.Breaches, verdict);
+        Assert.Equal(Verdict.NotApplicable, verdict);
     }
 
     private static bool ReferencesTransport(Type type) =>

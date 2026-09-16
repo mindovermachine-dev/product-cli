@@ -1,11 +1,11 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Thirty-nine — twenty-nine at Gate B,
-ten more raised by rulings (Q-30 … Q-39).
+**Every question this session would ask, asked.** Forty — twenty-nine at Gate B, eleven
+more raised by rulings (Q-30 … Q-40).
 
-**Seven are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
-Q-16, Q-06, Q-37, Q-38, Q-11 (a free consequence of Q-10), and Q-36 (by R-GROUND).
-**Thirty-two remain open.**
+**Nine are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
+Q-16, Q-06, Q-37, Q-38, Q-39, plus Q-11 (a free consequence of Q-10), Q-36 (by R-GROUND)
+and Q-35 (a free consequence of Q-39). **Thirty-one remain open.**
 
 **One was asked badly.** Q-38 offered a required-or-optional choice and priced the
 validation break as a migration cost. R-Q38's answer is that the break is the *mechanism* —
@@ -516,15 +516,18 @@ implemented identically.
 **Proceeded under** return-type matching (D-41).
 **Site** `ProviderTransportCarrierTests.FactSuppliedBy`.
 
-### Q-35 — F9, raised by ruling R-Q06
+### Q-35 — F9 — **ANSWERED as a consequence of R-Q39**
 > The amended `must_not` is stated over "the position it adapts", and R-Q10 gave providers
 > a write direction. A provider that *records* to a transport sink — posting to a webhook —
 > adapts a write position, and the amendment as proposed says nothing about it. Is the
 > permission meant to cover write positions too, or is a transport-borne write forbidden?
 
 **Prompted by** the asymmetry between R-Q10 and R-Q06.
-**Proceeded under** not exercised: `OrderPlacedProvider` adapts a store.
-**Site** `rulings.md` R-Q06.
+**Answered** by R-Q39: a write to a terminal consumer is us acting outward, so the
+carriage is theirs and the rule has nothing to condition on. **Not a hole — the rule's
+correct scope.** What remains is whether an outbound transport reference should be
+governed by something else (Q-40).
+**Site** `rulings.md` R-Q39.
 
 ### Q-36 — F12 — **ANSWERED by R-GROUND**
 > With a `boundary.carrier` enum added, the amended rule becomes conditional on a field the
@@ -582,7 +585,7 @@ determination) against `UndeterminableCarried` (a named principal decided; a fil
 with an owner).
 **Site** `rulings.md` R-Q38; `CarrierModel.cs`; `fixtures/dsc-0003.carrier-withheld.yaml`.
 
-### Q-39 — F3, raised by ruling R-Q38
+### Q-39 — F3 — **ANSWERED**, see `rulings.md`
 > Should `carrier` be required for `internal` boundaries too? `Cart` is internal and read
 > through a provider that adapts *something* — a store, today. Under R-GROUND a rule
 > conditioning on carriage is unrunnable for internal positions for exactly the same reason
@@ -592,5 +595,26 @@ with an owner).
 
 **Prompted by** drafting the R-Q38 patch and having to choose which `allOf` branch
 `carrier` joins.
-**Proceeded under** `external` only, following the existing branch.
-**Site** `rulings.md` R-Q38.
+**Answered** *"carrier is for actors acting against us - if we act against someone its
+their responsibility to name the carrier and take that into account for their system
+design."* — Emil, 2026-09-16. Carriage is a property of the **inbound edge**: ours where
+an actor acts against us (`read` + `external`), theirs where we act against them (`write`
++ `terminal`), nobody's for `internal`.
+**It needed no addition to the notation** — `role` and `boundary.kind` already say which
+edge a position sits on, which the previous four rulings each did not.
+**Site** `rulings.md` R-Q39; `CarrierModel.ModelledPosition.Edge`.
+
+### Q-40 — F9 / F12, raised by ruling R-Q39
+> An outbound provider that references a transport type — posting `OrderConfirmed` to
+> fulfilment over HTTP — is now `NotApplicable`: nothing in the amended `must_not` permits
+> it and nothing forbids it. It is **ungoverned**. Is that the intent? The schema is not
+> silent about the outbound edge: a `terminal` boundary requires `consumer` and
+> `consumption_observable`, so we do model claims about what happens after we act. If we
+> model whether they can be observed consuming it, then either the reason carriage is
+> different needs saying, or the outbound edge needs its own rule.
+
+**Prompted by** applying R-Q39 and finding the case it leaves uncovered.
+**Proceeded under** ungoverned — asserted by
+`An_outbound_transport_reference_is_ungoverned_not_permitted` so it cannot read as
+conformance.
+**Site** `rulings.md` R-Q39.

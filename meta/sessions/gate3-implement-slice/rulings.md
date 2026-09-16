@@ -629,3 +629,99 @@ ruling demands.
 > reason it was for external ones, and the amended provider rule applies to every
 > provider. The `allOf` currently singles out `external` because that is where `source`
 > and `tick_rate` matter; carriage may not follow the same line.
+
+---
+
+## R-Q39 — Emil, 2026-09-16
+
+**Question put (Q-39).** *"Should `carrier` be required for `internal` boundaries too?
+`Cart` is internal and read through a provider that adapts something — a store, today.
+Under R-GROUND a rule conditioning on carriage is unrunnable for internal positions for
+exactly the same reason it was for external ones…"*
+
+**Answer, verbatim.**
+
+> carrier is for actors acting against us - if we act against someone its their
+> responsibility to name the carrier and take that into account for their system design
+
+**Ruled:** carriage is a property of the **inbound edge**, not of every position. It is
+ours to name where an actor acts against us, and theirs to name where we act against them.
+
+### The boundary kinds already say which edge a position is on
+
+No new field is needed. `role` and `boundary.kind` together give the edge:
+
+| `role` + `kind` | Edge | Whose carrier |
+|---|---|---|
+| `read` + `external` | **inbound** — an actor acts against us | **ours.** Required, per R-Q38 |
+| `write` + `terminal` | **outbound** — we act against them | **theirs**, in their store, for their design |
+| anything `internal` | neither — the chain resolves in our own scope | nobody's; no outside party exists |
+
+That is a derivation, not an assertion: `ModelledPosition.Edge` reads it off the two
+fields the schema already has. **The ruling required no addition to the notation** — which
+is itself worth recording, because the previous four rulings each did.
+
+### Read back off the delivered store
+
+`Only_the_inbound_edge_carries_a_carrier_question` walks
+`place-order.determinations.yaml` and finds **exactly one** inbound position in the entire
+file: `ActorIdentity:read` on DSC-0003 — the one position this whole carrier argument has
+been about. Every other read is `internal`; the two writes, `OrderSummary` and
+`OrderConfirmed`, are `terminal`.
+
+So the migration from R-Q37 + R-GROUND + R-Q38 stands at **one record**, and R-Q39
+confirms it is one record *for a reason* rather than by accident: DSC-0003 is the only
+place in the store where anything acts against us.
+
+### A fifth verdict, and it is not a sixth Undeterminable
+
+`Verdict.NotApplicable`. The distinction the rulings have now forced, in full:
+
+| Verdict | Means |
+|---|---|
+| `Conforms` | evaluated, holds |
+| `Breaches` | evaluated, broken |
+| `UndeterminableUnattributed` | in scope, unanswered, **nobody decided** — amend the determination |
+| `UndeterminableCarried` | in scope, unanswered, **a named principal decided** — a filed risk with an owner |
+| `NotApplicable` | **never ours to ask** — R-Q39 |
+
+`Undeterminable` means the question is ours and open. `NotApplicable` means it was never
+ours. Collapsing them would put every internal position into a queue of things to go and
+model, which is the opposite of what the ruling says.
+
+### It answers Q-35 as a consequence
+
+Q-35 asked what the amended `must_not` says about a provider that *records* to a transport
+sink. The answer is that the rule has no purchase there at all: a write to a terminal
+consumer is us acting outward, so the carriage is theirs, so there is nothing for the rule
+to condition on. **Not a hole — the rule's correct scope.**
+
+### The compiler found something a reviewer would not have
+
+The breach example in `ProviderTransportCarrierTests` used an **internal** position with
+`carrier: store`. Under R-Q39 that position is out of scope, so the example silently
+stopped demonstrating a breach and started demonstrating `NotApplicable`. It only surfaced
+because the record's shape changed and the build broke.
+
+**Bounding a rule's scope silently invalidates the examples that justified it.** Nothing
+in the specification, the schema or the profile would have flagged that, and a
+prose-and-review process would very likely have kept the stale example. Rewritten to the
+only shape that can now breach: an inbound position whose carrier is modelled as
+something other than transport, with the provider reaching for the request anyway.
+
+### The gap it leaves — Q-40
+
+**Q-40 (F9/F12).**
+> An outbound provider that references a transport type — posting `OrderConfirmed` to
+> fulfilment over HTTP — is now `NotApplicable`: nothing in the amended `must_not` permits
+> it and nothing forbids it. It is **ungoverned**, and
+> `An_outbound_transport_reference_is_ungoverned_not_permitted` asserts that rather than
+> letting it read as conformance.
+>
+> Is ungoverned the intent? The schema is not silent about the outbound edge — a
+> `terminal` boundary requires `consumer` and `consumption_observable`, so we *do* model
+> claims about what happens after we act. If we model whether they can be observed
+> consuming it, the reason carriage is different needs saying, or the outbound edge needs
+> its own rule.
+
+*Proceeded under:* ungoverned, asserted and named rather than resolved.

@@ -1,19 +1,19 @@
 # Gate C — report
 
-**Revised 2026-09-16 against six rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37, R-Q38).** The Gate C figures as first
+**Revised 2026-09-16 against seven rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37, R-Q38, R-Q39).** The Gate C figures as first
 issued, with no question answered, are preserved in `gate-c-report-baseline.md` so the
 before/after is comparable.
 
 Builder session. One command slice, `PlaceOrder`, under profile `rest-api-v1`, built
 from the four arrived inputs and nothing else. Builds clean under
-`TreatWarningsAsErrors` in both projects; 34 tests pass on .NET 8.
+`TreatWarningsAsErrors` in both projects; 39 tests pass on .NET 8.
 
 ---
 
 ## The headline
 
-**39 clarifications against 3 of 13 frame categories settled without invention. Seven
-answered, thirty-two open — and the six rulings raised ten new questions, amended one
+**40 clarifications against 3 of 13 frame categories settled without invention. Nine
+answered, thirty-one open — and the seven rulings raised eleven new questions, amended one
 rule, deleted one check, superseded one of this session's own proposals, and require one
 determination supersession and one schema patch.**
 
@@ -51,6 +51,12 @@ real hole, and neither made the profile enforceable:
 * **R-Q06** amended the `must_not` to turn on what the provider adapts. The slice conforms
   again. **It took a rule change, not a clarification** — no reading of the original four
   inputs could have produced a conforming slice at that point.
+* **R-Q39** bounded where the carrier question may be asked at all: carriage belongs to
+  the **inbound edge** — ours where an actor acts against us, theirs where we act against
+  them. **It is the one ruling that needed no addition to the notation**: `role` and
+  `boundary.kind` already say which edge a position is on, so `Edge` is derived rather
+  than declared. It answers Q-35 for free and confirms that the store's single inbound
+  position is single *for a reason*.
 * **R-Q38** made `carrier` required, with absence permitted only as a **stated decision
   attributed to a named non-machine principal** — and in doing so split R-GROUND's third
   verdict in two. `UndeterminableUnattributed` (nobody decided; amend the determination)

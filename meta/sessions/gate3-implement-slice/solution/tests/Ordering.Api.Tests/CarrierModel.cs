@@ -46,6 +46,26 @@ using YamlDotNet.Serialization;
 // allocation requires an accountable principal who "cannot be a machine" (PR-2/DP-4).
 // R-Q38 is the same device a third time. See rulings.md — the schema appears to have an
 // unnamed recurring pattern: NO SILENT OMISSION; absence is stated and attributed.
+//
+// ─── and R-Q39 bounded where the question may be asked at all ─────────────────────
+//
+// Ruling R-Q39: "carrier is for actors acting against us - if we act against someone
+// its their responsibility to name the carrier and take that into account for their
+// system design."
+//
+// So carriage is not a property of every position. It is a property of the INBOUND edge,
+// and the boundary kinds already say which edge a position sits on:
+//
+//   read  + external   an actor acts against us; something outside delivers the fact.
+//                      OURS to name. Required, per R-Q38.
+//   write + terminal   we act against someone; they consume it. THEIRS to name, in
+//                      their store, for their system design. Not ours to declare.
+//   internal           neither: the act chain resolves inside our own scope. No actor
+//                      is acting against anyone.
+//
+// That gives the rule a fifth answer, NOT-APPLICABLE, and it is a different thing again
+// from the two Undeterminables. Undeterminable means the question is in scope and
+// unanswered. Not-applicable means the question was never ours to ask.
 // ═══════════════════════════════════════════════════════════════════════════════════
 
 /// <summary>
@@ -89,6 +109,26 @@ public enum Verdict
     /// stated and carried. Remedy: none — it is a filed risk with an owner. R-Q38.
     /// </summary>
     UndeterminableCarried,
+
+    /// <summary>
+    /// The rule does not reach this position: carriage is not ours to name here. R-Q39.
+    /// Distinct from both Undeterminables — those mean the question is unanswered, this
+    /// means it was never ours to ask.
+    /// </summary>
+    NotApplicable,
+}
+
+/// <summary>Which edge of our boundary a position sits on. R-Q39.</summary>
+public enum Edge
+{
+    /// <summary>An actor acts against us. Carriage is ours to name.</summary>
+    Inbound,
+
+    /// <summary>We act against someone. Carriage is theirs to name, in their store.</summary>
+    Outbound,
+
+    /// <summary>The act chain resolves inside our own scope. Neither party is outside.</summary>
+    Internal,
 }
 
 /// <summary>
@@ -109,9 +149,10 @@ public sealed record CarrierNotSupplied(string PrincipalKind, string PrincipalId
         && !string.IsNullOrWhiteSpace(PrincipalIdentifier);
 }
 
-/// <summary>A read position as the determination store actually declares it.</summary>
+/// <summary>A position as the determination store actually declares it.</summary>
 public sealed record ModelledPosition(
     string FactType,
+    string Role,
     string Kind,
     Carrier? Carrier,
     CarrierNotSupplied? CarrierWithheld = null)
@@ -120,6 +161,21 @@ public sealed record ModelledPosition(
 
     /// <summary>R-Q38 — absence stated by a named principal, rather than absence.</summary>
     public bool CarrierIsWithheldDeliberately => CarrierWithheld is not null;
+
+    /// <summary>R-Q39 — read off the boundary kind, not asserted separately.</summary>
+    public Edge Edge => (Role, Kind) switch
+    {
+        ("read", "external") => Edge.Inbound,
+        (_, "terminal") => Edge.Outbound,
+        _ => Edge.Internal,
+    };
+
+    /// <summary>
+    /// R-Q39 — carriage is ours to name only on the inbound edge. Elsewhere its absence
+    /// is not an omission; it is out of scope, and a store that declared one would be
+    /// making a determination about someone else's system.
+    /// </summary>
+    public bool CarrierIsOursToName => Edge == Edge.Inbound;
 }
 
 /// <summary>
@@ -148,8 +204,10 @@ public static class DeterminationStore
 
             foreach (var entry in declared.OfType<Dictionary<object, object>>())
             {
-                if (entry.GetValueOrDefault("role") as string != "read"
-                    || entry.GetValueOrDefault("fact_type") is not string factType)
+                // R-Q39 — every position is read, not just the read ones: the ruling is
+                // about which edge a position sits on, so the writes must be visible too.
+                if (entry.GetValueOrDefault("fact_type") is not string factType
+                    || entry.GetValueOrDefault("role") is not string role)
                 {
                     continue;
                 }
@@ -157,8 +215,9 @@ public static class DeterminationStore
                 var boundary = entry.GetValueOrDefault("boundary") as Dictionary<object, object>
                                ?? new Dictionary<object, object>();
 
-                positions[factType] = new ModelledPosition(
+                positions[$"{factType}:{role}"] = new ModelledPosition(
                     factType,
+                    role,
                     boundary.GetValueOrDefault("kind") as string ?? string.Empty,
                     ReadCarrier(boundary),
                     ReadWithheldCarrier(boundary));
@@ -166,6 +225,43 @@ public static class DeterminationStore
         }
 
         return positions;
+    }
+
+    /// <summary>
+    /// Every position in a store, regardless of act. R-Q39 is about edges, not about one
+    /// act, so the ruling has to be checkable across the whole file.
+    /// </summary>
+    public static IReadOnlyList<ModelledPosition> ReadEveryPosition(string path)
+    {
+        var records = new Deserializer()
+            .Deserialize<List<Dictionary<string, object>>>(File.ReadAllText(path));
+
+        return records
+            .Select(r => r.GetValueOrDefault("positions"))
+            .OfType<List<object>>()
+            .SelectMany(positions => positions.OfType<Dictionary<object, object>>())
+            .Select(Read)
+            .OfType<ModelledPosition>()
+            .ToList();
+    }
+
+    private static ModelledPosition? Read(Dictionary<object, object> entry)
+    {
+        if (entry.GetValueOrDefault("fact_type") is not string factType
+            || entry.GetValueOrDefault("role") is not string role)
+        {
+            return null;
+        }
+
+        var boundary = entry.GetValueOrDefault("boundary") as Dictionary<object, object>
+                       ?? new Dictionary<object, object>();
+
+        return new ModelledPosition(
+            factType,
+            role,
+            boundary.GetValueOrDefault("kind") as string ?? string.Empty,
+            ReadCarrier(boundary),
+            ReadWithheldCarrier(boundary));
     }
 
     /// <summary>
@@ -226,6 +322,14 @@ public static class ProviderTransportRule
         if (adapts is null)
         {
             return Verdict.UndeterminableUnattributed;
+        }
+
+        // R-Q39 — carriage is ours to name only where an actor acts against us. On the
+        // outbound edge it belongs in the consumer's store, and internally there is no
+        // outside party at all. The rule has no purchase here.
+        if (!adapts.CarrierIsOursToName)
+        {
+            return Verdict.NotApplicable;
         }
 
         if (adapts.CarrierIsModelled)
