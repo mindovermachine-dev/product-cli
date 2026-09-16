@@ -208,6 +208,61 @@ jq -r '[.ran_at, .model, (.metrics[] | select(.name=="Reviewer amendment") | .va
   .spec/runs/*.json
 ```
 
+## Judging a run
+
+**Asking a model to assess a run is itself an act**, so it is a separate verb
+with its own record. It happens on its own occasion, under its own arrangement,
+over a context pinned before the model is asked anything:
+
+```bash
+export SPECFLOW_JUDGE_ENDPOINT=https://api.scaleway.ai/v1
+export SPECFLOW_JUDGE_MODEL=mistral-medium-3.5-128b
+export SPECFLOW_JUDGE_KEY=…
+
+spec judge <record-id>
+```
+
+Nothing defaults. With no judge configured the verb refuses rather than falling
+back to the builder's model — a model marking its own work is the arrangement
+least worth recording, so it is not the one you get by saying nothing.
+
+Each judgment lands at `.spec/judgements/<record-id>/<model>.<context>.json`
+and carries **who judged, what they saw, and when**:
+
+```json
+{
+  "form": "spec.judgement.v1",
+  "judges": "01M2MMTY7CY42T4BFJ5QDHAEW7",
+  "judge": { "model": "mistral-medium-3.5-128b", "identity": "model:mistral-medium-3.5-128b" },
+  "context": { "digest": "sha256:b737930b…", "shown": { "act_settles": "…", "drafted": "…" } },
+  "verdicts": [ { "name": "Determination warrant", "value": "4/5", "reason": "…" } ],
+  "ratifies_nothing": true
+}
+```
+
+A verdict without those three is a number that reads as fact and cannot be
+checked, so the record carries all of them or it is not written. The context
+digest is what makes a verdict interpretable later: re-observe the run,
+recompute, and a mismatch says the verdict was about a different state — the
+move the policy's `basis_binds` makes, for the same reason.
+
+**One run is judged more than once**, and the directory keeps every opinion: by
+a second model, by the same model later, by a bigger one when the question turns
+out to matter. Two judges over the same pinned context disagreeing is the signal,
+not a fault — a single verdict per run would be one nobody could argue with.
+
+**A judgment ratifies nothing.** There is no principal field and a machine could
+not fill one: `S002` and `L006` say so on the other side of the seam. `spec check`
+does not read `.spec/judgements/` any more than it reads `.spec/runs/`, asserted
+in `spec-cli/tests/boundaries.rs`. It is evidence a person may read before
+deciding; it decides nothing.
+
+The judge is shown what the act settles, read back through `spec acts --id`
+rather than parsed here — one reading of what the store means, or a judge and a
+CI run can be told different things about the same act. It matters: asked
+*without* the act text, two different models each answered that no determination
+could be warranted, which was the right answer to an unanswerable question.
+
 ## The whole flow, end to end
 
 ```bash

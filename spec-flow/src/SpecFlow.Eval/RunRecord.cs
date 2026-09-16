@@ -19,6 +19,12 @@ namespace SpecFlow.Eval;
 /// that accumulates credentials is a journal nobody can share, which defeats
 /// the reason for keeping one.
 /// </para>
+/// <para>
+/// The reply is kept whole. A run that drafted nothing is the interesting
+/// case, and the only way to tell a model that answered `[]` from one the
+/// parser could not read is to have what it said — a count of characters
+/// establishes that something was said and nothing else.
+/// </para>
 /// </remarks>
 public sealed record RunRecord(
     [property: JsonPropertyName("form")] string Form,
@@ -32,6 +38,7 @@ public sealed record RunRecord(
     [property: JsonPropertyName("drafted")] IReadOnlyList<string> Drafted,
     [property: JsonPropertyName("reviewed")] IReadOnlyList<string> Reviewed,
     [property: JsonPropertyName("reply_chars")] int ReplyChars,
+    [property: JsonPropertyName("reply")] string? Reply,
     [property: JsonPropertyName("metrics")] IReadOnlyList<RunMetric> Metrics)
 {
     /// <summary>The form this file is written in.</summary>

@@ -58,7 +58,7 @@ fn the_delegable_verbs_are_on_the_one_surface() {
     let dir = tempfile::tempdir().expect("tempdir");
     let out = spec(dir.path()).arg("--help").output().expect("help runs");
     let help = String::from_utf8_lossy(&out.stdout);
-    for verb in ["import", "build", "close", "check"] {
+    for verb in ["import", "build", "judge", "close", "check"] {
         assert!(help.contains(verb), "`{verb}` should appear on the one surface:\n{help}");
     }
 }
@@ -110,6 +110,23 @@ fn an_absent_option_reaches_the_host_as_absence() {
 
     let argv = argv_of(dir.path());
     assert!(!argv.contains(&"--by".to_string()), "the host's own default must stand: {argv:?}");
+}
+
+/// A judgment is delegable: it names a model, never a principal.
+#[cfg(unix)]
+#[test]
+fn judge_reaches_the_host_with_the_record_it_names() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let host = stub_host(dir.path());
+    spec(dir.path())
+        .env("SPECFLOW_BIN", &host)
+        .args(["judge", "01M2MM70GCEXEDZHPKJP7MSXT8"])
+        .output()
+        .expect("judge runs");
+
+    let argv = argv_of(dir.path());
+    assert_eq!(argv.first().map(String::as_str), Some("judge"));
+    assert_eq!(value_after(&argv, "--record").as_deref(), Some("01M2MM70GCEXEDZHPKJP7MSXT8"));
 }
 
 #[cfg(unix)]

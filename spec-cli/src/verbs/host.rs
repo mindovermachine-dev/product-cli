@@ -57,6 +57,23 @@ pub struct BuildArgs {
     pub instructions: Option<String>,
 }
 
+#[derive(Args)]
+pub struct JudgeArgs {
+    /// The act-time record whose observed run is to be judged.
+    pub record: String,
+}
+
+/// Ask a model what it makes of an observed run.
+///
+/// A separate verb because it is a separate act: it happens on its own
+/// occasion, under its own arrangement, and files its own record naming the
+/// judging model and the context it saw. It ratifies nothing — no verdict it
+/// produces reaches the gate, and a machine cannot be a principal here any
+/// more than it can at `close`.
+pub fn judge(root: &Path, args: &JudgeArgs) -> Result<Report> {
+    launch(root, "judge", &["--record".into(), args.record.clone().into()])
+}
+
 /// Re-scan a codebase into `.spec/inventory.json`.
 pub fn import(root: &Path, args: &ImportArgs) -> Result<Report> {
     launch(root, "import", &import_forwarded(args))

@@ -125,13 +125,14 @@ fn contains_recursively(dir: &Path, needle: &str) -> bool {
     false
 }
 
-/// Measurement is not a verdict: the gate cannot read the run journal.
+/// Measurement is not a verdict: the gate reads neither runs nor judgments.
 ///
-/// `.spec/runs/` is where the agent host observes its own builds — model,
-/// duration, what a reviewer amended. None of it is hashed, signed or closed,
-/// and a number nobody signed must not be able to fail a build. The gate reads
-/// `.spec/records/` and nothing beside it, so this holds by what `check` looks
-/// at rather than by anyone remembering the distinction.
+/// `.spec/runs/` is where the agent host observes its own builds, and
+/// `.spec/judgements/` is what a model said about one. Neither is hashed,
+/// signed or closed, and a machine's opinion must not be able to fail a build
+/// any more than it could close a record. The gate reads `.spec/records/` and
+/// nothing beside it, so this holds by what `check` looks at rather than by
+/// anyone remembering the distinction.
 #[test]
 fn the_gate_cannot_read_the_run_journal() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -151,6 +152,11 @@ fn the_gate_cannot_read_the_run_journal() {
 
     std::fs::create_dir_all(root.join(".spec/runs")).expect("journal directory");
     std::fs::write(root.join(".spec/runs/01ABC.json"), "{ not even json ]").expect("a junk entry");
+
+    // A model's opinion of a run is kept too, and reaches the gate no further.
+    std::fs::create_dir_all(root.join(".spec/judgements/01ABC")).expect("judgement directory");
+    std::fs::write(root.join(".spec/judgements/01ABC/m.deadbeef.json"), "{ also not json ]")
+        .expect("a junk verdict");
 
     let out = std::process::Command::new(assert_cmd::cargo::cargo_bin("spec"))
         .args(["--root", &root.display().to_string(), "check", "--ci"])

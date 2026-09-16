@@ -123,7 +123,7 @@ public class EvaluationTests
         using var repo = new SpecRepo();
         var record = new RunRecord(
             RunRecord.FormV1, "01ABC", "slice", "act/a", DateTimeOffset.UtcNow,
-            "qwen3.6-35b-a3b", "api.scaleway.ai", 1234, ["det/a"], [], 42, []);
+            "qwen3.6-35b-a3b", "api.scaleway.ai", 1234, ["det/a"], [], 42, "built it", []);
 
         var path = RunJournal.Write(repo.Root, record);
 
@@ -139,5 +139,162 @@ public class EvaluationTests
     {
         Assert.Equal(".spec/runs", RunJournal.Directory);
         Assert.DoesNotContain("records", RunJournal.Directory, StringComparison.Ordinal);
+    }
+}
+
+/// <summary>A judgment is an act: who judged, over what, on what occasion.</summary>
+public class JudgementTests
+{
+    private static RunRecord Run(params string[] drafted) => new(
+        RunRecord.FormV1, "01ABC", "settle-totals", "act/settle-a-basket",
+        DateTimeOffset.UnixEpoch, "builder-model", "api.scaleway.ai", 100,
+        drafted, [], 500, "built it", []);
+
+    [Fact]
+    public void A_context_pins_what_the_judge_was_shown()
+    {
+        var context = Judging.ContextOf(Run("det/a"));
+
+        Assert.StartsWith("sha256:", context.Digest, StringComparison.Ordinal);
+        Assert.True(context.Holds());
+        Assert.Equal("det/a", context.Shown["drafted"]);
+        Assert.Equal("(not shown)", context.Shown["act_settles"]);
+    }
+
+    /// <summary>A verdict is about a state, and says which one.</summary>
+    [Fact]
+    public void A_different_run_pins_a_different_context()
+    {
+        Assert.NotEqual(Judging.ContextOf(Run("det/a")).Digest, Judging.ContextOf(Run("det/b")).Digest);
+    }
+
+    [Fact]
+    public void The_same_run_pins_the_same_context()
+    {
+        Assert.Equal(Judging.ContextOf(Run("det/a")).Digest, Judging.ContextOf(Run("det/a")).Digest);
+    }
+
+    /// <summary>A context edited after the fact no longer holds its digest.</summary>
+    [Fact]
+    public void An_altered_context_does_not_hold()
+    {
+        var pinned = Judging.ContextOf(Run("det/a"));
+        var altered = pinned with
+        {
+            Shown = new Dictionary<string, string>(pinned.Shown, StringComparer.Ordinal)
+            {
+                ["drafted"] = "det/something-else",
+            },
+        };
+
+        Assert.False(altered.Holds());
+    }
+
+    /// <summary>What the judge was shown of the act is part of what it saw.</summary>
+    [Fact]
+    public void An_act_shown_pins_a_different_context_than_one_withheld()
+    {
+        var withheld = Judging.ContextOf(Run("det/a"));
+        var shown = Judging.ContextOf(
+            Run("det/a"),
+            new Judging.ActUnderJudgement("Settle a basket", "What the customer owes."));
+
+        Assert.NotEqual(withheld.Digest, shown.Digest);
+        Assert.Equal("What the customer owes.", shown.Shown["act_settles"]);
+        Assert.True(shown.Holds());
+    }
+
+    [Fact]
+    public void A_judge_is_named_as_a_machine()
+    {
+        Assert.Equal("model:glm-5.2", new Judge("glm-5.2", "api.scaleway.ai").Identity);
+    }
+
+    /// <summary>
+    /// Nothing a judge says ratifies anything.
+    /// </summary>
+    /// <remarks>
+    /// Carried on the record rather than implied by where the file sits: a
+    /// reader should not have to know the directory layout to learn that
+    /// nothing here was decided by anyone.
+    /// </remarks>
+    [Fact]
+    public void A_judgement_ratifies_nothing()
+    {
+        var judgement = new Judgement(
+            Judgement.FormV1, "01ABC", DateTimeOffset.UtcNow,
+            new Judge("glm-5.2", "api.scaleway.ai"), Judging.ContextOf(Run("det/a")), []);
+
+        Assert.True(judgement.RatifiesNothing);
+        Assert.Contains("\"ratifies_nothing\": true", judgement.ToJson(), StringComparison.Ordinal);
+        Assert.DoesNotContain("principal", judgement.ToJson(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void A_judge_answering_in_form_produces_a_verdict()
+    {
+        var verdicts = Judging.Read("""{"warranted": 1, "unwarranted": 0, "reason": "it names a choice"}""", 1);
+
+        Assert.Collection(verdicts, only =>
+        {
+            Assert.Equal(Judging.Verdict, only.Name);
+            Assert.Equal("1/1", only.Value);
+            Assert.Equal("Good", only.Rating);
+        });
+    }
+
+    /// <summary>A judge that would not answer is itself worth recording.</summary>
+    [Fact]
+    public void A_judge_answering_out_of_form_is_inconclusive_not_an_error()
+    {
+        var verdicts = Judging.Read("I would rather not say.", 1);
+
+        Assert.Collection(verdicts, only =>
+        {
+            Assert.Null(only.Value);
+            Assert.Equal("Inconclusive", only.Rating);
+            Assert.Contains(only.Diagnostics, d => d.Contains("did not answer", StringComparison.Ordinal));
+        });
+    }
+
+    /// <summary>One run, judged more than once, keeps both opinions.</summary>
+    [Fact]
+    public void Two_judges_of_one_run_are_both_kept()
+    {
+        using var repo = new SpecRepo();
+        var context = Judging.ContextOf(Run("det/a"));
+        foreach (var model in new[] { "glm-5.2", "qwen3.6-35b-a3b" })
+        {
+            JudgementStore.Write(repo.Root, new Judgement(
+                Judgement.FormV1, "01ABC", DateTimeOffset.UtcNow,
+                new Judge(model, "api.scaleway.ai"), context, []));
+        }
+
+        var kept = JudgementStore.Read(repo.Root, "01ABC");
+        Assert.Equal(2, kept.Count);
+        Assert.Contains(kept, j => j.Judge.Model is "glm-5.2");
+        Assert.Contains(kept, j => j.Judge.Model is "qwen3.6-35b-a3b");
+    }
+
+    /// <summary>Re-asking the same judge the same question overwrites, never accretes.</summary>
+    [Fact]
+    public void The_same_judge_over_the_same_context_files_once()
+    {
+        using var repo = new SpecRepo();
+        var judgement = new Judgement(
+            Judgement.FormV1, "01ABC", DateTimeOffset.UtcNow,
+            new Judge("glm-5.2", "api.scaleway.ai"), Judging.ContextOf(Run("det/a")), []);
+
+        Assert.Equal(
+            JudgementStore.Write(repo.Root, judgement),
+            JudgementStore.Write(repo.Root, judgement));
+        Assert.Single(JudgementStore.Read(repo.Root, "01ABC"));
+    }
+
+    /// <summary>Judgments are kept apart from the run they judge.</summary>
+    [Fact]
+    public void The_judgement_store_is_not_the_run_journal()
+    {
+        Assert.NotEqual(RunJournal.Directory, JudgementStore.Directory);
     }
 }

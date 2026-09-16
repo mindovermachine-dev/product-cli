@@ -63,6 +63,7 @@ public static class RunObservation
                 built.DraftDeterminations,
                 outcome.ReviewedDeterminations,
                 built.Notes.Length,
+                built.Notes,
                 Flatten(result));
 
             return RunJournal.Write(root, record);

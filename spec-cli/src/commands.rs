@@ -17,6 +17,8 @@ use crate::{exit, render, verbs};
 pub enum Commands {
     /// Ratify a candidate as an act. Names a principal.
     Accept(verbs::AcceptArgs),
+    /// List ratified acts, or show what one settles.
+    Acts(verbs::ActsArgs),
     /// Build a slice against an act, opening its record. Runs the agent host.
     Build(verbs::BuildArgs),
     /// List candidates with what was observed and what is unfilled.
@@ -29,6 +31,8 @@ pub enum Commands {
     Implement(verbs::ImplementArgs),
     /// Re-scan a codebase into the inventory. Runs the agent host.
     Import(verbs::ImportArgs),
+    /// Ask a model what it makes of an observed run. Ratifies nothing.
+    Judge(verbs::JudgeArgs),
     /// Join acts to entry points and report the disagreements.
     Map(verbs::MapArgs),
     /// Show or file the check policy.
@@ -65,12 +69,14 @@ pub enum PolicyCommands {
 pub fn run(command: Commands, root: &Path) -> i32 {
     let outcome = match command {
         Commands::Accept(args) => verbs::accept(root, &args),
+        Commands::Acts(args) => verbs::acts(root, &args),
         Commands::Build(args) => verbs::build(root, &args),
         Commands::Candidates(args) => verbs::candidates(root, &args),
         Commands::Check(args) => verbs::check(root, &args),
         Commands::Close(args) => verbs::close(root, &args),
         Commands::Implement(args) => verbs::implement(root, &args),
         Commands::Import(args) => verbs::import(root, &args),
+        Commands::Judge(args) => verbs::judge(root, &args),
         Commands::Map(args) => verbs::map(root, &args),
         Commands::Policy(PolicyCommands::Set(args)) => verbs::policy_set(root, &args),
         Commands::Policy(PolicyCommands::Show(args)) => verbs::policy_show(root, &args),

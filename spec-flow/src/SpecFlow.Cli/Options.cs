@@ -20,6 +20,11 @@ internal sealed record Options(string Verb, IReadOnlyDictionary<string, string> 
                      Build a slice and open its act-time record. Always exits 3:
                      the closure is a principal's act, and this process is not one.
 
+          judge      --record <id> [--root <path>]
+                     Ask a model what it makes of an observed run. A separate
+                     act: it files its own record naming the judging model and
+                     the context it saw, and it ratifies nothing.
+
           mcp        [--root <path>] [--spec <path>] [--source <path>]
                      Serve the delegable verbs over MCP on stdio. accept, reject,
                      close and policy set are withheld — each names a principal.

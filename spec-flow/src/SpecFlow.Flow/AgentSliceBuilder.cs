@@ -61,28 +61,68 @@ public sealed class AgentSliceBuilder(AIAgent agent, string? extraInstructions =
     /// Pull the trailing JSON array off the reply.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// The prompt asks for the array on one line, and models pretty-print it
+    /// anyway. Taking the instruction literally cost two real determinations on
+    /// a live run — the builder drafted them, the reviewer never saw them, and
+    /// the run was journalled as having drafted none. So the scan brackets the
+    /// last array in the reply rather than reading lines.
+    /// </para>
+    /// <para>
     /// A reply with no parsable array yields an empty draft rather than an
     /// error: an unreadable draft must not be able to stop the record from
     /// reaching its reviewer. The reviewer sees the raw notes either way.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<string> ParseDeterminations(string reply)
     {
-        foreach (var line in reply.Split('\n').Reverse())
+        var close = reply.LastIndexOf(']');
+        while (close >= 0)
         {
-            var trimmed = line.Trim();
-            if (!trimmed.StartsWith('[') || !trimmed.EndsWith(']'))
+            var open = MatchingOpen(reply, close);
+            if (open < 0)
             {
-                continue;
+                break;
             }
             try
             {
-                return JsonSerializer.Deserialize<string[]>(trimmed) ?? [];
+                if (JsonSerializer.Deserialize<string[]>(reply[open..(close + 1)]) is { } parsed)
+                {
+                    return parsed;
+                }
             }
             catch (JsonException)
             {
-                // Not the array we were looking for; keep scanning upward.
+                // Not the array we were looking for; try the one before it.
             }
+
+            // Before this array, never inside it. Descending into one that
+            // failed to parse would return a fragment of a draft as though it
+            // were the whole of it, which is the loss this scan exists to stop.
+            close = open > 0 ? reply.LastIndexOf(']', open - 1) : -1;
         }
         return [];
+    }
+
+    /// <summary>
+    /// The `[` that opens the array closing at <paramref name="close"/>, or -1.
+    /// </summary>
+    /// <remarks>
+    /// Bracket depth only. A `]` inside a string would throw the count off, but
+    /// a determination address containing one is not an address, and the parse
+    /// that follows is what actually decides.
+    /// </remarks>
+    private static int MatchingOpen(string reply, int close)
+    {
+        var depth = 0;
+        for (var at = close; at >= 0; at--)
+        {
+            depth += reply[at] switch { ']' => 1, '[' => -1, _ => 0 };
+            if (depth is 0)
+            {
+                return at;
+            }
+        }
+        return -1;
     }
 }

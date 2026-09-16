@@ -433,9 +433,10 @@ split across two runtimes at the flow's own accountability boundary:
   cannot read `.spec/inventory.json`, and `map` is where acts and entry points
   meet for the first time. Asserted in `spec-cli/tests/boundaries.rs` along
   with the other separations the flow rests on.
-- **Rust verbs:** `candidates` · `accept` · `reject` · `map` · `implement` ·
-  `close` · `check` · `policy show|set`, plus two that only *launch* the .NET
-  host — `import` → `specflow import`, and `build` → `specflow implement`
+- **Rust verbs:** `candidates` · `acts` · `accept` · `reject` · `map` ·
+  `implement` · `close` · `check` · `policy show|set`, plus three that only
+  *launch* the .NET host — `import` → `specflow import`, `build` →
+  `specflow implement`, `judge` → `specflow judge`
   (named `build` because `spec implement` is already the record-opening
   primitive the host calls back into, so the chain `spec build` → `specflow
   implement` → `spec implement` names something different at every hop).
@@ -460,6 +461,20 @@ split across two runtimes at the flow's own accountability boundary:
   asserted in `spec-cli/tests/boundaries.rs`. No judged evaluator is wired by
   default; a judge scoring the output of the thing it judges inherits its blind
   spots. Reviewer amendment is the one metric grounded in a human judgment.
+
+- **Judging a run is itself an act** (`spec judge <record>` → `specflow judge`).
+  Separate verb, separate occasion, separate arrangement
+  (`SPECFLOW_JUDGE_{ENDPOINT,MODEL,KEY}` — nothing defaults to the builder's
+  model). Each judgment lands at
+  `.spec/judgements/<record>/<model>.<context-digest>.json` carrying **who
+  judged, what they saw, and when**: the judge's `model:` identity, the
+  SHA-256-pinned context (`JudgementContext.Pin`, checkable via `Holds()`), and
+  the verdicts. One run keeps every opinion — two judges disagreeing over the
+  same pinned context is the signal. `ratifies_nothing` is on the record, there
+  is no principal field, and the gate reads neither `.spec/runs/` nor
+  `.spec/judgements/`. The judge is shown what the act settles via `spec acts
+  --id` (a read, proxied, never re-parsed in .NET) — without it two models each
+  correctly answered that nothing could be warranted.
 
 **The boundary is the design, not packaging.** The agent host does not link the
 code that writes a closure, so there is no call it could make — the PRD's
