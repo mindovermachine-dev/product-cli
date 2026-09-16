@@ -12,11 +12,17 @@ using Ordering.Api.Facts;
 /// <c>Rejected</c> carries a cited invariant and a reason, and that the pair is a closed
 /// hierarchy rather than a generic Result, are all this session's constructions.
 ///
-/// <c>Accepted</c> carrying the events is forced, not chosen: the handler <c>must</c>
-/// "emit only events the act declares it writes" and <c>must_not</c> "perform I/O
-/// directly". A handler that may emit but may not write has nowhere to put the event
-/// except its own return value. See Unroled/EventAppendingPlaceOrderHandler.cs — the
-/// egress has no home in the profile at all. Q-10.
+/// <c>Accepted</c> carrying the event was originally forced rather than chosen: with no
+/// realisation for the write position, a handler that may emit but may not write had
+/// nowhere to put the event except its own return value. Ruling R-Q10 gave the write to
+/// the provider role, so the event is now recorded through <c>OrderPlacedProvider</c>
+/// and this field is no longer load-bearing for egress.
+///
+/// D-12a — DECIDED, POST-RULING. <c>Accepted</c> still carries the event, because the
+/// controller derives a <c>Location</c> header from its <c>OrderId</c> (D-21). Whether an
+/// accepted outcome should carry its events once a provider records them is unsettled;
+/// the alternative is an empty <c>Accepted</c> and a controller that cannot build a
+/// Location. Q-30.
 ///
 /// <c>Rejected</c> carrying <c>Invariant</c> is this session's reading of the profile's
 /// read-enforced rule 2: "a rejection reason corresponds to the invariant it cites, not

@@ -1,6 +1,6 @@
 # Decisions — every point the specification does not settle, resolved by this session
 
-Thirty-seven. Each is marked at its site in the source with the same `D-nn` tag
+Thirty-nine, of which **one is withdrawn and one reversed by rulings**. Each is marked at its site in the source with the same `D-nn` tag
 (`grep -rn 'D-[0-9][0-9]' solution/src`), so the code and this record cannot drift.
 
 **INVENTED** = the specification is silent and this session supplied something.
@@ -24,11 +24,14 @@ that is the finding.
 | D-09 | INVENTED | The `PlaceOrderCommand` shape: one field, `CartId`. `ActorIdentity` is deliberately not a payload field because DSC-0003 routes it elsewhere. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
 | D-10 | DECIDED | The command doubles as the HTTP request body; no separate transport DTO. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
 | D-11 | DECIDED | DSC-0002's `does_not_cover: cross-field-consistency` is vacuous with one field; nothing is done about it. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
+| D-12a | DECIDED | Post-ruling: `Accepted` still carries the event, because the controller derives a `Location` from its `OrderId`. Whether an accepted outcome should carry events a provider has already recorded is unsettled. Q-30. | `Slices/PlaceOrder/PlaceOrderOutcome.cs` |
 | D-12 | INVENTED | `Accepted` / `Rejected` as a closed hierarchy; `Accepted` carries the event, `Rejected` carries invariant + reason. | `Slices/PlaceOrder/PlaceOrderOutcome.cs` |
 | D-13 | INVENTED | `ICartStore` and `IClaimSource` exist at all. No input names a store, stream, repository or claims source. | `Slices/PlaceOrder/Providers.cs` |
-| D-14 | DECIDED | The transport reference DSC-0003's `read_provenance` requires is moved behind `IClaimSource` so the provider's `must_not` holds in source text. **Satisfied as written, defeated in substance.** | `Slices/PlaceOrder/Providers.cs` |
+| ~~D-14~~ | **REVERSED by R-Q16** | The transport reference was moved behind `IClaimSource` so the provider's `must_not` held in source text. Roles are exhaustive, so the unroled hop has nowhere to live: `ActorIdentityProvider` holds `IHttpContextAccessor` directly and **breaks its own `must_not`, visibly**. DSC-0003, that rule and R-Q16 are jointly unsatisfiable. | `Slices/PlaceOrder/Providers.cs` |
+| D-38 | DECIDED | An exhaustiveness rule written over "every type" catches the compiler-generated async state machine behind the middleware. An analyser implementing R-Q16 must scope to types declared in source. Found by running it. | `ProfileConformanceTests.cs` |
 | D-15 | DECIDED | The provider's "where external data is required" is a sufficiency condition, not a restriction, so `CartProvider` supplies an internal fact. Under the other reading the slice cannot read its own ground. | `Slices/PlaceOrder/Providers.cs` |
 | D-16 | INVENTED | The claim names: `sub` (OIDC convention, imported) and `account_currency` (no basis at all). | `Slices/PlaceOrder/Providers.cs` |
+| D-39 | DECIDED | Stores, mint and middleware are left unroled after R-Q16, because every role the profile offers rejects them: a mint supplies no fact in a read position; middleware calling no handler cannot be a controller. Marked as breaches rather than mis-roled. Q-33. | `Unroled/` |
 | D-17 | INVENTED | `IOrderIdentityMint` as an injected abstraction, so the decision stays deterministic. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
 | D-18 | DECIDED | Rejection precedence: DSC-0001 before DSC-0005. A cart both empty and mis-currencied reports `CartNotEmpty`. Reversing it is equally supported. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
 | D-19 | INVENTED | An unsuppliable read position throws rather than rejecting — a third handler exit the profile does not admit. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
@@ -39,14 +42,14 @@ that is the finding.
 | D-23 | DECIDED | DSC-0002's payload check lives in the controller, so the 400 path is a transport result **not** derived from Accepted-or-Rejected. That rule gives. | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-24 | INVENTED | `POST /orders`, unversioned, plural noun, resource-named rather than act-named. | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-25 | INVENTED | An unreachable default arm, because C# cannot prove the closed hierarchy exhaustive and the profile says nothing about expressing exhaustiveness in the stack. | `Slices/PlaceOrder/PlaceOrderController.cs` |
-| D-26 | INVENTED | `IOrderPlacedSink` — an event store abstraction. No input names one. | `Unroled/EventAppendingPlaceOrderHandler.cs` |
-| D-27 | DECIDED | The append is synchronous and non-transactional; no retry, no outbox, no ordering guarantee. **A failed append loses a placed order.** | `Unroled/EventAppendingPlaceOrderHandler.cs` |
+| D-26 | INVENTED | `IOrderPlacedStore` — an event store abstraction. No input names one; R-Q10 settles who adapts it, not what it is. | `Slices/PlaceOrder/Providers.cs` |
+| D-27 | DECIDED | The append is synchronous and non-transactional; no retry, no outbox, no ordering guarantee. **A failed append still loses a placed order** — R-Q10 moved the loss inside the profile, it did not prevent it. Q-30, Q-31. | `Slices/PlaceOrder/Providers.cs` |
 | D-28 | DECIDED | The token is trusted as already validated, per DSC-0003's `read_provenance`. No signature, issuer, audience or expiry check. If the gateway is absent in some deployment, this reads an attacker's claim — the direct consequence of a settled determination, recorded rather than hedged. | `Unroled/Adapters.cs` |
-| D-29 | INVENTED | In-memory store and sink, rather than inventing a schema. | `Unroled/Adapters.cs` |
+| D-29 | INVENTED | In-memory stores on both sides, rather than inventing a schema. They sit behind provider-role adapters, which is the shape R-Q10 describes. | `Unroled/Adapters.cs` |
 | D-30 | INVENTED | A GUID as the order identifier. | `Unroled/Adapters.cs` |
 | D-31 | INVENTED | 401 for a missing `ActorIdentity`, 404 for a missing `Cart`. A security judgement and a REST convention, both imported wholesale. | `Unroled/Adapters.cs` |
 | D-32 | INVENTED | The composition root: registration, lifetimes, middleware order. The profile says nothing about how one role reaches another. | `Program.cs` |
-| D-33 | DECIDED | **`IPlaceOrderHandler` resolves to the unroled decorator, not to the handler.** The controller's source text calls "exactly one type declaring the handler role" while at run time the first type it reaches declares none and does the forbidden persistence. One DI line. | `Program.cs` |
+| ~~D-33~~ | **WITHDRAWN by R-Q10** | The controller reached the handler through an interface DI resolved to an unroled decorator — the profile satisfied statically, bypassed dynamically, by one line. The ruling gives the write to the provider role, so the decorator and the indirection are both gone and the controller depends on `PlaceOrderHandler` itself. **An evasion vector closed as a side effect of closing a hole.** | `Program.cs` |
 | D-34 | DECIDED | `Program` made public so tests can drive the slice. | `Program.cs` |
 | D-35 | DECIDED | Tests are written at all, and are marked as evidence rather than as discharge of any `checked` allocation. | `tests/` |
 | D-37 | DECIDED | The handler entry point is synchronous; no `CancellationToken`. Predicted by the Gate A list (item 7), decided, and **not marked until the Gate C report caught it** — the one silent resolution in this run. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |

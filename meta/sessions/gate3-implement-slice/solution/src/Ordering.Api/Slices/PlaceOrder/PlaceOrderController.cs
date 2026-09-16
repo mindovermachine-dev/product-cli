@@ -10,7 +10,7 @@ using Ordering.Api.Profile;
 /// PROFILE / controller — required: true.
 ///   must     "declares [Slice(&lt;instance&gt;, \"controller\")]"                   — below.
 ///   must     "calls exactly one type declaring the handler role for the same act
-///             instance"                                                            — IPlaceOrderHandler, one call.
+///             instance"                                                            — PlaceOrderHandler, one call. R-Q10.
 ///   must     "returns a transport result derived from the handler's Accepted or
 ///             Rejected"                                                            — SEE D-21; "derived" is undefined.
 ///   must_not "contains a conditional on domain state"                              — SEE D-22.
@@ -56,9 +56,11 @@ using Ordering.Api.Profile;
 [Slice("PlaceOrder", SliceRole.Controller)]
 public sealed class PlaceOrderController : ControllerBase
 {
-    private readonly IPlaceOrderHandler _handler;
+    // R-Q10 withdrew D-33. This is the concrete handler-role type, not an interface a
+    // DI registration can redirect to an unroled one.
+    private readonly PlaceOrderHandler _handler;
 
-    public PlaceOrderController(IPlaceOrderHandler handler) => _handler = handler;
+    public PlaceOrderController(PlaceOrderHandler handler) => _handler = handler;
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]

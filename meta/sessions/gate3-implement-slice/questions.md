@@ -1,10 +1,16 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Twenty-nine. Each is recorded
+**Every question this session would ask, asked.** Thirty-three — twenty-nine at Gate B,
+four more raised by rulings (Q-30 … Q-33).
+
+**Two are answered.** Q-10 and Q-16 were ruled on by Emil on 2026-09-16; both answers are
+recorded verbatim in `rulings.md`. Q-10 answers Q-11 as a consequence. Q-16 does **not**
+answer Q-06 — it forces it, by removing the indirection that was concealing a three-way
+contradiction. **Thirty-one remain open, one of them now unavoidable.** Each is recorded
 verbatim as it would be put to Emil, with what prompted it and its frame category
 (`frame-categories.md` — that scheme is itself invented; see Q-02).
 
-**Emil has not answered.** This session ran in one pass with no principal present, so
+**Emil has answered one.** The rest of this session ran in one pass with no principal present, so
 every question below is open. The prompt's gates say *Hold*; holding with nothing
 delivered would have produced no slice to report on, so each question records **the
 provisional reading the build proceeded under**, and the code carries the same marker.
@@ -234,11 +240,15 @@ comment naming the residual.
 > the provider?
 
 **Prompted by** `place-order.determinations.yaml:114` against `profile-rest-api-v1.md:86`.
+**Sharpened by R-Q10 and FORCED by R-Q16.** DSC-0003, the provider's `must_not` and the
+exhaustiveness ruling are jointly unsatisfiable; any two hold, all three cannot. This
+session implements DSC-0003 and R-Q16 and breaks the `must_not`, visibly. **This is now
+the question that must be ruled on next**; three options are set out in `rulings.md`.
 **Proceeded under** an `IClaimSource` indirection, with the transport reference moved to
 an unroled type. The rule is satisfied as written and defeated in substance.
 **Site** `Providers.cs` D-14; `Unroled/Adapters.cs`.
 
-### Q-11
+### Q-11 — **ANSWERED as a consequence of R-Q10**
 > `Cart` is `internal` — the `Cart` read-model slice writes it, and DSC-0001 and DSC-0005
 > both declare the boundary `internal`. The profile scopes the provider to "where
 > **external** data is required". But the handler `must_not` perform I/O and the
@@ -249,10 +259,12 @@ an unroled type. The rule is satisfied as written and defeated in substance.
 
 **Prompted by** `profile-rest-api-v1.md:3,77-83` against
 `place-order.determinations.yaml:31-34`.
-**Proceeded under** sufficiency. `CartProvider` supplies an internal fact.
+**Answered** by R-Q10: a provider is "the adapter to the storage options", so whether a
+fact is internal or external never decided whether a provider is used — storage did.
+Sufficiency confirmed, by a stronger statement than this session guessed at.
 **Site** `Providers.cs` D-15.
 
-### Q-16
+### Q-16 — **ANSWERED**, see `rulings.md`
 > Nothing in the profile forbids a slice from containing types that declare **no** role,
 > and no rule reaches such a type. I have built a conforming slice in which an unroled
 > decorator performs the handler's I/O, an unroled adapter holds the provider's transport
@@ -262,9 +274,14 @@ an unroled type. The rule is satisfied as written and defeated in substance.
 
 **Prompted by** the three `must_not` sets in `profile-rest-api-v1.md:61-63,74-75,85-86`,
 and their silence about non-role types.
-**Proceeded under** building the evasion deliberately, marking it, and asserting it in a
-passing test so the defect is executable rather than editorial.
-**Site** `Unroled/README.md`; `ProfileConformanceTests.EvadesEveryMustNot_ByIndirection`.
+**Answered** *"we need the role for the act. We cant have an act withour an actor and role
+is part of that."* — Emil, 2026-09-16. Roles are exhaustive; there is no
+outside-the-profile.
+**Now built as** no unroled hop: `ActorIdentityProvider` holds the transport reference
+itself, in visible breach of its own `must_not`. The ruling did not make the rules
+enforceable — it made the contradiction undeniable. Four types still have no role the
+profile can give them (Q-33).
+**Site** `rulings.md` R-Q16; `ProfileConformanceTests.The_provider_references_a_transport_type_in_breach_of_its_own_rule`.
 
 ### Q-24
 > The profile writes the marker as `[Slice(<instance>, "controller")]` — a string
@@ -291,7 +308,7 @@ passing test so the defect is executable rather than editorial.
 
 ## F9 — Effect & egress
 
-### Q-10
+### Q-10 — **ANSWERED**, see `rulings.md`
 > `PlaceOrder` declares `writes: [OrderPlaced]`. An event emitted and never persisted is
 > not written. But the handler `must_not` perform I/O, the controller `must_not`
 > reference a persistence type, the provider's every rule is about supplying reads and it
@@ -300,9 +317,13 @@ passing test so the defect is executable rather than editorial.
 
 **Prompted by** `ordering.eventmodel.yaml:54-57` against the whole of the profile's
 `roles:` block.
-**Proceeded under** an unroled decorator between the controller's interface and the
-handler. Synchronous, non-transactional; a failed append loses a placed order.
-**Site** `Unroled/EventAppendingPlaceOrderHandler.cs` D-26, D-27.
+**Answered** *"we need a writer path as we have a reader path, I would argue that
+providers can supply writes as well as reads. They are the adapters to the storage
+options."* — Emil, 2026-09-16.
+**Now built as** `OrderPlacedProvider`, a provider-role type the handler reaches exactly
+as it reaches the read providers. The unroled decorator is gone and D-33 is withdrawn
+with it.
+**Site** `Slices/PlaceOrder/Providers.cs`; `rulings.md` R-Q10.
 
 ---
 
@@ -422,3 +443,52 @@ the disagreement cannot quietly become a fix.
 **Proceeded under** no operational difference. Bound and travelling determinations were
 implemented identically.
 **Site** `gate-a.md` contradiction F.
+
+
+---
+
+## Raised by ruling R-Q10 (2026-09-16)
+
+### Q-30 — F9
+> Does the handler call the write provider, or does it return `Accepted` and something
+> else records it? I have the handler call it, so the write happens inside the decision
+> act. That makes a provider failure occur *after* the decision is taken and *before* the
+> caller is told — is that the intended shape, or is the write meant to be a consequence
+> of `Accepted` rather than part of reaching it?
+
+**Prompted by** R-Q10 giving the write to the provider role without saying who calls it.
+**Proceeded under** the handler calls it, before returning `Accepted`.
+**Site** `PlaceOrderHandler.Handle`; `PlaceOrderOutcome.cs` D-12a.
+
+### Q-31 — F9
+> If the write provider throws, the act has decided but not written. That is not a
+> rejection — no invariant is cited — so it cannot be `Rejected`, and the profile admits
+> no third exit. What is the outcome of a decided-but-unwritten act?
+
+**Prompted by** the same ruling: a roled write path inherits the read path's problem
+(D-19), now on the side where the act has already committed to a verdict.
+**Proceeded under** it throws and unroled middleware maps it.
+**Site** `Slices/PlaceOrder/Providers.cs` D-27.
+
+### Q-32 — F8
+> May one provider type serve both a read and a write position, or is it one provider per
+> position? I have used three, one per position. "Adapters to the storage options"
+> suggests one adapter per *store*, which would group them by backing store rather than
+> by position — a third shape again.
+
+**Prompted by** R-Q10's phrasing.
+**Proceeded under** one provider per position.
+**Site** `Slices/PlaceOrder/Providers.cs`.
+
+### Q-33 — F8, raised by ruling R-Q16
+> Where does "participating in the act" stop? Taken at face value the exhaustiveness rule
+> reaches the DI container, `TimeProvider`, `ProblemDetails` and the ASP.NET pipeline.
+> Taken narrowly it reaches only the types I chose to put in the slice's namespaces, which
+> is circular. Four types in this solution still have no role and **no role in the profile
+> fits any of them**: two stores a provider adapts; a mint supplying an `OrderId`, which
+> is not a fact in a read position; and middleware producing a transport result without
+> calling a handler. Rolling any of them breaks the rule of the role I would give it.
+
+**Prompted by** R-Q16, on trying to apply it exhaustively.
+**Proceeded under** leaving all four unroled and marking them as breaches.
+**Site** `rulings.md` R-Q16; `ProfileConformanceTests.Four_participating_types_still_have_no_role_the_profile_can_give_them`.

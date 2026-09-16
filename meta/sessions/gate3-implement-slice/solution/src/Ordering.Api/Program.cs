@@ -8,13 +8,20 @@ using Ordering.Api.Unroled;
 // nothing about how one role reaches another, who registers them, or what lifetimes
 // they take. D-32 — every line below is invented.
 //
-// D-33 — DECIDED, AND IT IS THE LOAD-BEARING ONE. `IPlaceOrderHandler` resolves to
-// `EventAppendingPlaceOrderHandler`, not to `PlaceOrderHandler`. The controller calls
-// the interface, so its source text calls "exactly one type declaring the handler role
-// for the same act instance" — while at run time the first type it reaches declares no
-// role at all and performs the persistence the profile forbids every role it names.
-// The profile is satisfied statically and bypassed dynamically by one DI registration.
-// See Unroled/README.md and Q-16.
+// D-33 — WITHDRAWN by ruling R-Q10. This registration used to resolve the controller's
+// handler interface to an unroled decorator that performed the persistence the profile
+// forbids every role it names — the profile satisfied statically and bypassed
+// dynamically by one line here. The ruling gives the write to the provider role, so the
+// line is gone and the controller reaches the handler-role type directly.
+//
+// R-Q16 — "we need the role for the act. We cant have an act without an actor and role
+// is part of that." So the unroled claim adapter is gone too: ActorIdentityProvider now
+// holds the IHttpContextAccessor reference itself, in the open, in visible breach of the
+// provider's must_not. See Providers.cs and Q-06, which that ruling forces.
+//
+// What survives below is the boundary question R-Q16 leaves open: the stores, the mint
+// and the middleware still declare no role, because no role in the profile fits them and
+// "participating in the act" has no stated edge. Q-33.
 // ---------------------------------------------------------------------------
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,13 +32,12 @@ builder.Services.AddHttpContextAccessor();
 // Profile roles.
 builder.Services.AddScoped<CartProvider>();
 builder.Services.AddScoped<ActorIdentityProvider>();
+builder.Services.AddScoped<OrderPlacedProvider>();   // R-Q10 — the write path.
 builder.Services.AddScoped<PlaceOrderHandler>();
 
 // Unroled — outside every profile rule.
-builder.Services.AddScoped<IPlaceOrderHandler, EventAppendingPlaceOrderHandler>();
-builder.Services.AddScoped<IClaimSource, HttpContextClaimSource>();
 builder.Services.AddSingleton<ICartStore, InMemoryCartStore>();
-builder.Services.AddSingleton<IOrderPlacedSink, InMemoryOrderPlacedSink>();
+builder.Services.AddSingleton<IOrderPlacedStore, InMemoryOrderPlacedStore>();
 builder.Services.AddSingleton<IOrderIdentityMint, GuidOrderIdentityMint>();
 builder.Services.AddSingleton(TimeProvider.System);
 

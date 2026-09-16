@@ -3,15 +3,13 @@ namespace Ordering.Api.Slices.PlaceOrder;
 using Ordering.Api.Facts;
 using Ordering.Api.Profile;
 
-/// <summary>
-/// The contract the controller calls. Kept separate from the handler type so that the
-/// egress decorator (Unroled/) can sit between them without the controller referencing
-/// it — see D-19, which is a finding about the profile, not a design flourish.
-/// </summary>
-public interface IPlaceOrderHandler
-{
-    PlaceOrderOutcome Handle(PlaceOrderCommand command);
-}
+// D-33 — WITHDRAWN by ruling R-Q10. There was an `IPlaceOrderHandler` interface here so
+// that an unroled egress decorator could sit between the controller and the handler,
+// because the profile gave the write position no home. The ruling gives the write to the
+// provider role, so the decorator is gone and with it the indirection: the controller now
+// depends on this concrete type, and the profile's "calls exactly one type declaring the
+// handler role for the same act instance" is true at run time and not only in source
+// text. The ruling closed an evasion vector as a side effect of closing a hole.
 
 /// <summary>
 /// D-17 — INVENTED. Nothing settles that an order has an identifier or who mints it, and
@@ -77,21 +75,24 @@ public interface IOrderIdentityMint
 ///   * no idempotency and no concurrency control. Two calls place two orders. Q-23.
 /// </remarks>
 [Slice("PlaceOrder", SliceRole.Handler)]
-public sealed class PlaceOrderHandler : IPlaceOrderHandler
+public sealed class PlaceOrderHandler
 {
     private readonly CartProvider _carts;
     private readonly ActorIdentityProvider _actors;
+    private readonly OrderPlacedProvider _placed;
     private readonly IOrderIdentityMint _mint;
     private readonly TimeProvider _clock;
 
     public PlaceOrderHandler(
         CartProvider carts,
         ActorIdentityProvider actors,
+        OrderPlacedProvider placed,
         IOrderIdentityMint mint,
         TimeProvider clock)
     {
         _carts = carts;
         _actors = actors;
+        _placed = placed;
         _mint = mint;
         _clock = clock;
     }
@@ -162,6 +163,12 @@ public sealed class PlaceOrderHandler : IPlaceOrderHandler
             Lines: cart.Lines,
             TotalMinorUnits: cart.TotalMinorUnits,
             OccurredAt: _clock.GetUtcNow());
+
+        // R-Q10 — the write position, recorded through the provider that adapts the store.
+        // Q-30: the write happens inside the decision act, before Accepted is returned.
+        // Q-31: if this throws, the act has decided and not written, which is neither
+        // Accepted nor Rejected. Both open.
+        _placed.Record(placed);
 
         return new PlaceOrderOutcome.Accepted(placed);
     }

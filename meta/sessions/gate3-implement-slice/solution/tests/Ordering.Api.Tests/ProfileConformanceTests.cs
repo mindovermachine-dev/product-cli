@@ -1,6 +1,7 @@
 namespace Ordering.Api.Tests;
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Ordering.Api.Profile;
 using Ordering.Api.Slices.PlaceOrder;
 using Ordering.Api.Unroled;
@@ -49,8 +50,38 @@ public sealed class ProfileConformanceTests
     /// external per DSC-0003 and the vocabulary's own note.
     /// </summary>
     [Fact]
-    public void Provider_roles_are_declared_for_the_external_read_position() =>
-        Assert.Equal(2, RoleTypes(SliceRole.Provider).Count());
+    public void Provider_roles_are_declared_for_every_position_requiring_storage() =>
+        Assert.Equal(3, RoleTypes(SliceRole.Provider).Count());
+
+    /// <summary>
+    /// R-Q10 — "providers can supply writes as well as reads. They are the adapters to
+    /// the storage options." The write position is roled, so the profile reaches it.
+    /// </summary>
+    [Fact]
+    public void The_write_position_is_carried_by_a_provider_role()
+    {
+        var writer = Assert.Single(
+            RoleTypes(SliceRole.Provider).Where(t => t.Name == nameof(OrderPlacedProvider)));
+
+        var records = Assert.Single(
+            writer.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+
+        Assert.Equal(typeof(Ordering.Api.Facts.OrderPlaced), Assert.Single(records.GetParameters()).ParameterType);
+    }
+
+    /// <summary>
+    /// R-Q10 withdrew D-33: the controller reaches the handler-role type directly, so
+    /// "calls exactly one type declaring the handler role for the same act instance"
+    /// holds at run time and not only in source text.
+    /// </summary>
+    [Fact]
+    public void The_controller_depends_on_the_handler_role_type_itself()
+    {
+        var dependency = Assert.Single(
+            Assert.Single(typeof(PlaceOrderController).GetConstructors()).GetParameters());
+
+        Assert.Equal(SliceRole.Handler, dependency.ParameterType.GetCustomAttribute<SliceAttribute>()?.Role);
+    }
 
     /// <summary>
     /// handler must "exposes a single entry point taking the command and returning
@@ -108,29 +139,64 @@ public sealed class ProfileConformanceTests
     }
 
     /// <summary>
-    /// THE FINDING. Every <c>must_not</c> in the profile holds while the slice does the
-    /// forbidden work through unroled types. This test passing is the defect report.
+    /// THE FINDING, AFTER TWO RULINGS: a known, visible violation of the profile.
+    /// </summary>
+    /// <remarks>
+    /// This test asserted three evasions at Gate C. R-Q10 removed two by giving the write
+    /// position to the provider role. R-Q16 — "we need the role for the act. We cant have
+    /// an act without an actor and role is part of that" — removed the third by removing
+    /// the place an unroled type could stand.
+    ///
+    /// What is left is not an evasion. It is a breach, and it is asserted here so it
+    /// cannot be mistaken for an oversight: <c>ActorIdentityProvider</c> references a
+    /// transport type, which its role <c>must_not</c> do. DSC-0003 puts the fact on the
+    /// request; the profile forbids the provider from touching the request; R-Q16 forbids
+    /// anyone else from carrying it. All three cannot hold.
+    ///
+    /// **The rulings did not make the rules enforceable. They made the conflict
+    /// undeniable, which is better.** Q-06 is now forced.
+    /// </remarks>
+    [Fact]
+    public void The_provider_references_a_transport_type_in_breach_of_its_own_rule()
+    {
+        var referenced = Assert.Single(
+            Assert.Single(typeof(ActorIdentityProvider).GetConstructors()).GetParameters());
+
+        Assert.Equal("Microsoft.AspNetCore.Http", referenced.ParameterType.Namespace);
+        Assert.Equal(SliceRole.Provider, typeof(ActorIdentityProvider).GetCustomAttribute<SliceAttribute>()?.Role);
+    }
+
+    /// <summary>
+    /// Q-33 — R-Q16's boundary. Four types still declare no role, and no role in the
+    /// profile fits any of them: two stores a provider adapts, an identifier mint that
+    /// supplies no fact, and middleware that produces a transport result without being
+    /// the controller. Either "participating in the act" stops short of them, or the
+    /// profile needs roles it does not have.
     /// </summary>
     [Fact]
-    public void EvadesEveryMustNot_ByIndirection()
+    public void Four_participating_types_still_have_no_role_the_profile_can_give_them()
     {
-        // The unroled types that do the forbidden work carry no role at all,
-        // so not one profile rule reaches them.
-        foreach (var evader in new[]
-                 {
-                     typeof(EventAppendingPlaceOrderHandler),  // performs the act's I/O
-                     typeof(HttpContextClaimSource),           // references a transport type
-                     typeof(InMemoryOrderPlacedSink),          // is the persistence type
-                 })
-        {
-            Assert.Null(evader.GetCustomAttribute<SliceAttribute>());
-        }
+        // D-38 — the compiler generates types too. The async state machine behind the
+        // middleware's InvokeAsync is a class in this namespace with no role, and an
+        // exhaustiveness rule stated over "every type" catches it. So the rule R-Q16 asks
+        // for cannot be written over types as the CLR sees them; it needs "every type
+        // declared in source". A small point that only shows up once you try to run it.
+        var unroled = Slice.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && t.Namespace == "Ordering.Api.Unroled")
+            .Where(t => t.GetCustomAttribute<CompilerGeneratedAttribute>() is null)
+            .Where(t => t.GetCustomAttribute<SliceAttribute>() is null)
+            .Select(t => t.Name)
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToArray();
 
-        // And the controller's declared dependency is an interface, so its source text
-        // reaches "exactly one type declaring the handler role" while the composition
-        // root puts an unroled type first in the call chain.
-        var dependency = Assert.Single(typeof(PlaceOrderController).GetConstructors()).GetParameters();
-        Assert.Equal(typeof(IPlaceOrderHandler), Assert.Single(dependency).ParameterType);
-        Assert.Null(typeof(IPlaceOrderHandler).GetCustomAttribute<SliceAttribute>());
+        Assert.Equal(
+            new[]
+            {
+                nameof(GuidOrderIdentityMint),
+                nameof(InMemoryCartStore),
+                nameof(InMemoryOrderPlacedStore),
+                nameof(ReadPositionUnavailableMiddleware),
+            },
+            unroled);
     }
 }

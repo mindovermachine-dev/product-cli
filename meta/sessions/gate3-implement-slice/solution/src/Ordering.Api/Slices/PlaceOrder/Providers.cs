@@ -17,27 +17,12 @@ public interface ICartStore
 }
 
 /// <summary>
-/// The already-validated claim set for the act in progress.
+/// D-26 — INVENTED. No input names an event store, a stream, a bus or an outbox. The
+/// ruling R-Q10 settles who reaches it, not what it is.
 /// </summary>
-/// <remarks>
-/// D-14 — INVENTED, AND THIS IS THE PROFILE'S SHARPEST CONFLICT, NOT A CONVENIENCE.
-///
-/// DSC-0003 settles that <c>ActorIdentity</c>'s <c>read_provenance</c> is an
-/// "OIDC token claim, validated at the gateway". The only place a request's token claim
-/// exists is the HTTP request. The profile says the provider is the role that supplies
-/// read-position facts, and in the same breath says a provider <c>must_not</c>
-/// "reference a transport type". The one permitted supplier of this fact may not touch
-/// the only thing that carries it.
-///
-/// This interface is the indirection that makes the conflict disappear from the
-/// provider's source text without making it disappear from the program: the provider
-/// references <c>IClaimSource</c>, and an unroled type in the composition root feeds it
-/// from <c>HttpContext</c>. The rule is satisfied as written and defeated in substance.
-/// That is reported as a finding, not offered as a solution. Q-06, Q-16.
-/// </remarks>
-public interface IClaimSource
+public interface IOrderPlacedStore
 {
-    string? Find(string claimType);
+    void Append(OrderPlaced placed);
 }
 
 /// <summary>
@@ -90,18 +75,45 @@ public sealed class CartProvider
 /// <c>account_currency</c> is an outright invention with no OIDC basis at all — see
 /// Facts.cs D-07 and Q-05. A different reader gets different claim names here and the
 /// slice silently reads nothing.
+///
+/// ═══ D-14 — REVERSED BY RULING R-Q16. THIS TYPE KNOWINGLY VIOLATES THE PROFILE. ═══
+///
+/// It references <c>IHttpContextAccessor</c>. A provider <c>must_not</c> "reference a
+/// transport type". The violation is deliberate, visible, and the only way to obey the
+/// ruling.
+///
+/// Before R-Q16 this read through an <c>IClaimSource</c> interface that an unroled type
+/// fed from <c>HttpContext</c> — the rule satisfied in source text while the transport
+/// read happened one hop away. R-Q16 settles that "we need the role for the act. We cant
+/// have an act without an actor and role is part of that", so every type participating in
+/// the act declares a role and the unroled hop has nowhere to live. The reference comes
+/// home to the roled type, where an analyser would see it.
+///
+/// THREE RULES ARE NOW JOINTLY UNSATISFIABLE, and no implementation escapes it:
+///   1. DSC-0003          — ActorIdentity arrives as an OIDC token claim on the request.
+///   2. profile/provider  — must_not "references a transport type".
+///   3. ruling R-Q16      — every type participating in the act declares a role.
+/// Any two can hold. All three cannot. The evasion was what hid that, and closing the
+/// evasion is what made it undeniable — which is the ruling working as intended.
+///
+/// This session implements (1) and (3) and breaks (2), because (2) is the only one of
+/// the three that is a rule about source text rather than about what the act does.
+/// Q-06 is now forced and is the next thing that needs a ruling.
 /// </remarks>
 [Slice("PlaceOrder", SliceRole.Provider)]
 public sealed class ActorIdentityProvider
 {
-    private readonly IClaimSource _claims;
+    private readonly IHttpContextAccessor _requests;
 
-    public ActorIdentityProvider(IClaimSource claims) => _claims = claims;
+    public ActorIdentityProvider(IHttpContextAccessor requests) => _requests = requests;
 
     public ActorIdentity? Supply()
     {
-        var actorId = _claims.Find("sub");
-        var accountCurrency = _claims.Find("account_currency");
+        // DSC-0003: the token was validated at the gateway, so nothing here re-validates.
+        var principal = _requests.HttpContext?.User;
+
+        var actorId = principal?.FindFirst("sub")?.Value;
+        var accountCurrency = principal?.FindFirst("account_currency")?.Value;
 
         if (string.IsNullOrWhiteSpace(actorId) || string.IsNullOrWhiteSpace(accountCurrency))
         {
@@ -110,4 +122,40 @@ public sealed class ActorIdentityProvider
 
         return new ActorIdentity(actorId, accountCurrency);
     }
+}
+
+/// <summary>
+/// Records the <c>OrderPlaced</c> write position.
+/// </summary>
+/// <remarks>
+/// PROFILE / provider — THE WRITE PATH, per ruling R-Q10:
+/// "we need a writer path as we have a reader path, I would argue that providers can
+/// supply writes as well as reads. They are the adapters to the storage options."
+///
+/// Before that ruling this was an unroled decorator, because the profile gave the write
+/// position no realisation: the handler may not perform I/O, the controller may not name
+/// a persistence type, and every provider rule was about supplying reads. Q-10 is
+/// answered; the write now happens inside a type the profile constrains, and it is
+/// reached the same way the read providers are, so the handler's
+/// must_not "performs I/O directly" holds for the same reason it held for reads.
+///
+/// PROPOSED, NOT AUTHORED — see rulings.md. The provider role's `must` list has no rule
+/// for the write direction. "Every fact it supplies is declared in a read position on
+/// the act" has no mirror, so nothing yet stops a provider recording a fact the act does
+/// not declare it writes. This type records only `OrderPlaced`, which is the act's sole
+/// write position, but it does so by construction rather than by rule.
+///
+/// D-27 — DECIDED, NARROWED BY THE RULING. The append is synchronous and
+/// non-transactional. A failure after the decision is taken still loses a placed order;
+/// what changed is that the loss now happens inside the profile rather than outside it.
+/// Q-30, Q-31.
+/// </remarks>
+[Slice("PlaceOrder", SliceRole.Provider)]
+public sealed class OrderPlacedProvider
+{
+    private readonly IOrderPlacedStore _store;
+
+    public OrderPlacedProvider(IOrderPlacedStore store) => _store = store;
+
+    public void Record(OrderPlaced placed) => _store.Append(placed);
 }

@@ -1,5 +1,7 @@
 namespace Ordering.Api.Tests;
 
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Ordering.Api.Facts;
 using Ordering.Api.Slices.PlaceOrder;
 using Ordering.Api.Unroled;
@@ -23,7 +25,10 @@ public sealed class PlaceOrderHandlerTests
 {
     private const string Gbp = "GBP";
 
-    private static PlaceOrderHandler Handler(Cart? cart, ActorIdentity? actor)
+    private static PlaceOrderHandler Handler(Cart? cart, ActorIdentity? actor) =>
+        Handler(cart, actor, new InMemoryOrderPlacedStore());
+
+    private static PlaceOrderHandler Handler(Cart? cart, ActorIdentity? actor, InMemoryOrderPlacedStore placed)
     {
         var store = new InMemoryCartStore();
         if (cart is not null)
@@ -33,7 +38,8 @@ public sealed class PlaceOrderHandlerTests
 
         return new PlaceOrderHandler(
             new CartProvider(store),
-            new ActorIdentityProvider(new StubClaimSource(actor)),
+            new ActorIdentityProvider(RequestFor(actor)),
+            new OrderPlacedProvider(placed),
             new StubMint("order-1"),
             TimeProvider.System);
     }
@@ -118,7 +124,8 @@ public sealed class PlaceOrderHandlerTests
 
         var handler = new PlaceOrderHandler(
             new CartProvider(store),
-            new ActorIdentityProvider(new StubClaimSource(new ActorIdentity("actor-1", Gbp))),
+            new ActorIdentityProvider(RequestFor(new ActorIdentity("actor-1", Gbp))),
+            new OrderPlacedProvider(new InMemoryOrderPlacedStore()),
             new StubMint("order-1"),
             TimeProvider.System);
 
@@ -151,18 +158,53 @@ public sealed class PlaceOrderHandlerTests
         Assert.Equal(nameof(ActorIdentity), ex.FactType);
     }
 
-    private sealed class StubClaimSource : IClaimSource
+    /// <summary>
+    /// R-Q10 — the write position is recorded through a provider-role type. Before the
+    /// ruling nothing in the profile wrote the event at all.
+    /// </summary>
+    [Fact]
+    public void Records_the_write_position_through_the_provider()
     {
-        private readonly ActorIdentity? _actor;
+        var placed = new InMemoryOrderPlacedStore();
+        var handler = Handler(CartWith(new CartLine("sku-1", 2, 500)), new ActorIdentity("actor-1", Gbp), placed);
 
-        public StubClaimSource(ActorIdentity? actor) => _actor = actor;
+        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
 
-        public string? Find(string claimType) => claimType switch
+        var recorded = Assert.Single(placed.Appended);
+        Assert.Equal("order-1", recorded.OrderId);
+    }
+
+    /// <summary>R-Q10 — a rejected act writes nothing.</summary>
+    [Fact]
+    public void Records_nothing_when_the_act_is_rejected()
+    {
+        var placed = new InMemoryOrderPlacedStore();
+        var handler = Handler(CartWith(), new ActorIdentity("actor-1", Gbp), placed);
+
+        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+
+        Assert.Empty(placed.Appended);
+    }
+
+    /// <summary>
+    /// R-Q16 — the provider reads the claim off the request itself now, so a test must
+    /// supply a request. The awkwardness is the point: it is what a transport reference
+    /// inside a provider costs, and it was hidden while an unroled adapter carried it.
+    /// </summary>
+    private static IHttpContextAccessor RequestFor(ActorIdentity? actor)
+    {
+        var context = new DefaultHttpContext();
+
+        if (actor is not null)
         {
-            "sub" => _actor?.ActorId,
-            "account_currency" => _actor?.AccountCurrency,
-            _ => null,
-        };
+            context.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+            {
+                new Claim("sub", actor.ActorId),
+                new Claim("account_currency", actor.AccountCurrency),
+            }));
+        }
+
+        return new HttpContextAccessor { HttpContext = context };
     }
 
     private sealed class StubMint : IOrderIdentityMint

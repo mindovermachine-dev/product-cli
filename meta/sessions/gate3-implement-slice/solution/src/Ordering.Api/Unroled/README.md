@@ -5,26 +5,44 @@ Every type in this folder is part of the `PlaceOrder` slice and **declares no
 
 This folder is a **finding**, not a layer.
 
-The profile constrains three roles and has no rule about types outside them, and
-no rule forbidding a slice from having such types. The consequence is direct:
+## What ruling R-Q10 closed
 
-* The handler `must_not` *"perform I/O directly"*. It does not.
-  `EventAppendingPlaceOrderHandler` here does the I/O, on the handler's behalf,
-  in the same call stack, and is unconstrained.
-* The provider `must_not` *"reference a transport type"*. It does not.
-  `HttpContextClaimSource` here reads `HttpContext` and hands the claim to the
-  provider through an interface, and is unconstrained.
-* The controller `must_not` *"reference a persistence type"*. It does not. It
-  calls `IPlaceOrderHandler`, which DI resolves to the appending decorator.
+It originally held three exhibits. Emil's ruling on Q-10 — *"providers can supply
+writes as well as reads. They are the adapters to the storage options"* — removed
+two of them:
 
-**Every `must_not` in the profile is satisfied as written and defeated in
-substance, by indirection alone, with no cleverness.** This is the run's first
-concrete evidence for PRD §11.4: an analyser enforcing these rules against role
-declarations would pass this solution, and the three `must_not` rules marked
-`enforcement: analyser` are checkable *literally* but not *in effect*. See Q-16
-and the Gate C enforceability table.
+* `EventAppendingPlaceOrderHandler` **is gone.** The write position now belongs to
+  `OrderPlacedProvider`, a roled type. The event the act declares it writes is
+  recorded inside the profile.
+* The `IPlaceOrderHandler` indirection **is gone with it** (D-33 withdrawn). The
+  controller depends on `PlaceOrderHandler` directly, so *"calls exactly one type
+  declaring the handler role for the same act instance"* is now true at run time
+  and not only in source text.
 
-The `does the write position have a home` question is separate and worse: the
-profile has three roles, none of which may persist the event the act declares it
-writes, and no fourth. The write position is unrealisable inside the profile.
-See Q-10.
+## What survives, and it is enough
+
+`HttpContextClaimSource` still declares no role and still holds the transport
+reference that a provider `must_not` have. DSC-0003 settles that `ActorIdentity`
+arrives as an OIDC token claim on the request; the provider is the only permitted
+supplier; the provider may not touch the only thing that carries it. The ruling
+**sharpens** this rather than closing it: if a provider is the adapter to a
+source, then an adapter to a request-borne claim must reference the request.
+
+So the general point stands undiminished:
+
+**A `must_not` about references is a rule about source text, not about programs.**
+One interface moves the forbidden reference one hop out of the analyser's reach,
+and nothing in the profile forbids a slice from containing types that declare no
+role. Closing it needs a rule that a slice's roles are **exhaustive** — every type
+participating in an act declares one — which the profile does not have.
+
+`ProfileConformanceTests.EvadesAMustNot_ByIndirection` asserts the surviving case
+and passes. See Q-06 and Q-16, both open.
+
+## The rest of this folder
+
+`InMemoryCartStore`, `InMemoryOrderPlacedStore`, `GuidOrderIdentityMint` and
+`ReadPositionUnavailableMiddleware` are unroled and unremarkable: the stores sit
+*behind* provider-role adapters on both the read and the write side, which is the
+shape R-Q10 describes. The middleware is D-31 — the third handler exit the profile
+does not admit.
