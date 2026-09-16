@@ -4,8 +4,8 @@
 prompt, and the two rulings that scope the run. No README of the binding, no conformance
 manifest, no repository, no web search.
 
-**Result: 37 clarifications against 3 of 13 frame categories settled without invention.**
-Five answered by Emil on 2026-09-16 (`rulings.md`), thirty-two open. Read
+**Result: 38 clarifications against 3 of 13 frame categories settled without invention.**
+Six answered by Emil on 2026-09-16 (`rulings.md`), thirty-two open. Read
 `gate-c-report.md` first; `gate-c-report-baseline.md` is the unrevised version from before
 any answer arrived, kept so the before/after is comparable.
 
@@ -21,9 +21,9 @@ on authoring determinations.
 | `bootstrap.md` | first act: hashes, what was read, the reading order, the one standing rule that could not be complied with |
 | `gate-a.md` | the expectation list, written with the determinations unopened; the reading of the slice; six contradictions |
 | `frame-categories.md` | the 13-category scheme — **invented**, because the bundle never defines "frame category" |
-| `questions.md` | 37 questions, verbatim, with what prompted each and the provisional reading the build proceeded under |
+| `questions.md` | 38 questions, verbatim, with what prompted each and the provisional reading the build proceeded under |
 | `rulings.md` | Emil's answers, verbatim, with what each changed and what it raised |
-| `decisions.md` | 42 points the specification does not settle, each tagged `D-nn` at its site; one withdrawn and one reversed by rulings |
+| `decisions.md` | 44 points the specification does not settle, each tagged `D-nn` at its site; one withdrawn and one reversed by rulings |
 | `gate-c-report.md` | the Gate 3 report, revised against the rulings |
 | `gate-c-report-baseline.md` | the report as first issued, with nothing answered |
 | `solution/` | the slice: `dotnet test` → 15 passing, clean under `TreatWarningsAsErrors` |
@@ -52,12 +52,17 @@ on authoring determinations.
    it is.** The same reframing disqualifies four more profile rules that condition on
    *domain state*, *persistence type*, *I/O* and *a decision* — none of which is modelled
    anywhere.
-5. **Exhaustiveness has no stated edge.** Four types still declare no role and every role
+5. **The schema left open exactly the object a rule needed to determine on.** `position`
+   is closed with `additionalProperties: false`; `boundary` was not — the only such object
+   in the file. R-Q37 rules it an oversight. Applying it is a two-part patch: closing
+   `boundary` without declaring `carrier` forbids R-GROUND's ground. `SchemaClosureTests`
+   audits the closure and asserts the coupling.
+6. **Exhaustiveness has no stated edge.** Four types still declare no role and every role
    the profile offers rejects them by its own rules — two stores, an id mint that supplies
    no fact, and middleware that calls no handler. Q-33.
 
 ## Running it
 
 ```bash
-cd solution && dotnet test        # 25 tests, .NET 8
+cd solution && dotnet test        # 29 tests, .NET 8
 ```

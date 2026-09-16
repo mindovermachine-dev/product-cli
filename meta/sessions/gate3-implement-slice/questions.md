@@ -1,11 +1,11 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Thirty-seven — twenty-nine at Gate B,
-eight more raised by rulings (Q-30 … Q-37).
+**Every question this session would ask, asked.** Thirty-eight — twenty-nine at Gate B,
+nine more raised by rulings (Q-30 … Q-38).
 
-**Five are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
-Q-16, Q-06, Q-11 (a free consequence of Q-10), and Q-36 by R-GROUND. **Thirty-two remain
-open.**
+**Six are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
+Q-16, Q-06, Q-37, Q-11 (a free consequence of Q-10), and Q-36 (by R-GROUND).
+**Thirty-two remain open.**
 
 The three rulings between them raised seven new questions and required one rule amendment,
 one schema proposal and one supersession. That is the shape of the result: **answers here
@@ -535,7 +535,7 @@ for any wrong determination, a supersession, not a cross-check nothing could per
 check reads what is modelled and reports `Undeterminable` where nothing is.
 **Site** `rulings.md` R-GROUND; `CarrierModel.cs`.
 
-### Q-37 — F13, raised by ruling R-GROUND
+### Q-37 — F13 — **ANSWERED**, see `rulings.md`
 > `determination.schema.json` closes `position` with `additionalProperties: false` and
 > leaves `boundary` open. So `carrier: transport` is already schema-valid, and nothing can
 > rely on what it says. Is `boundary` open deliberately — an extension point for
@@ -545,6 +545,25 @@ check reads what is modelled and reports `Undeterminable` where nothing is.
 > rule needs to determine on, while every other union in the file is emphatically closed.
 
 **Prompted by** checking whether the proposed `carrier` field would even validate.
-**Proceeded under** treating the open `boundary` as unmodelled ground: the reader accepts
-only the closed vocabulary and calls everything else unmodelled.
-**Site** `rulings.md` R-GROUND; `CarrierModel.ReadCarrier`.
+**Answered** *"boundary should be closed, it's an oversight"* — Emil, 2026-09-16.
+**Checked, and the premise holds**: `boundary` is the only object the schema leaves open —
+a single miss, not a pattern. (`allocation` looks open and is not: its three `oneOf`
+branches each close themselves.) **But applying it is a two-part change**: closing
+`boundary` without declaring `carrier` forbids the very ground R-GROUND requires, so the
+closure and the declaration are one patch. Migration cost is nil — the delivered store
+uses no undeclared boundary key.
+**Site** `rulings.md` R-Q37; `SchemaClosureTests.cs`.
+
+### Q-38 — F13, raised by ruling R-Q37
+> Should `carrier` be **required** for an `external` boundary, alongside `source`,
+> `read_provenance` and `tick_rate`? The `allOf` already obliges an external read to
+> declare where it comes from and how fast it ticks. Under R-GROUND a rule conditioning on
+> carriage is unrunnable without it, so leaving `carrier` optional means every external
+> position may silently produce `Undeterminable`. Making it required is a **breaking**
+> change to the delivered store — DSC-0003 fails validation until amended. That is a
+> principal's call about migration cost, not a builder's.
+
+**Prompted by** drafting the R-Q37 patch and having to choose whether `carrier` joins the
+`allOf` for `external`.
+**Proceeded under** optional. Left out of the proposed patch's `allOf` deliberately.
+**Site** `rulings.md` R-Q37.

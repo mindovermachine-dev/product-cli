@@ -21,6 +21,10 @@
     <Content Include="../../../inputs/place-order.determinations.yaml"
              Link="place-order.determinations.yaml"
              CopyToOutputDirectory="PreserveNewest" />
+    <!-- R-Q37 — the schema, for the closure audit. An arrived input, never modified. -->
+    <Content Include="../../../inputs/determination.schema.json"
+             Link="determination.schema.json"
+             CopyToOutputDirectory="PreserveNewest" />
     <!-- R-GROUND — a FIXTURE showing the carrier modelled. Not a determination. -->
     <Content Include="fixtures/dsc-0003.carrier-modelled.yaml"
              CopyToOutputDirectory="PreserveNewest" />

@@ -1,20 +1,20 @@
 # Gate C — report
 
-**Revised 2026-09-16 against four rulings (R-Q10, R-Q16, R-Q06, R-GROUND).** The Gate C figures as first
+**Revised 2026-09-16 against five rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37).** The Gate C figures as first
 issued, with no question answered, are preserved in `gate-c-report-baseline.md` so the
 before/after is comparable.
 
 Builder session. One command slice, `PlaceOrder`, under profile `rest-api-v1`, built
 from the four arrived inputs and nothing else. Builds clean under
-`TreatWarningsAsErrors` in both projects; 25 tests pass on .NET 8.
+`TreatWarningsAsErrors` in both projects; 29 tests pass on .NET 8.
 
 ---
 
 ## The headline
 
-**37 clarifications against 3 of 13 frame categories settled without invention. Five
-answered, thirty-two open — and the four rulings raised eight new questions, amended one
-rule, deleted one check outright, and require one supersession and one schema change.**
+**38 clarifications against 3 of 13 frame categories settled without invention. Six
+answered, thirty-two open — and the five rulings raised nine new questions, amended one
+rule, deleted one check outright, and require one supersession and one schema patch.**
 
 **Answers here do not close questions one for one. They move the specification.** That is
 the single most transferable finding of this run, and it was not visible until a principal
@@ -41,6 +41,11 @@ real hole, and neither made the profile enforceable:
 * **R-Q06** amended the `must_not` to turn on what the provider adapts. The slice conforms
   again. **It took a rule change, not a clarification** — no reading of the original four
   inputs could have produced a conforming slice at that point.
+* **R-Q37** closed the last hole the previous ruling exposed: `boundary` is open by
+  oversight, not by design. Checked and confirmed — it is the **only** object in the schema
+  left open, a single miss rather than a pattern. But applying it is a **two-part change**:
+  closing `boundary` without declaring `carrier` forbids the ground R-GROUND requires, so
+  the closure and the declaration are one patch. Migration cost is nil.
 * **R-GROUND** — *"We cant add decisions to ground we havent modelled… we need to build a
   proper model of what we want to determine on"* — deleted the prose-matching check this
   report had offered as the best available evidence for §11.4, and replaced it with a
@@ -293,9 +298,11 @@ A vaguer determination would have left room to dodge.
    nothing that says so. Worse: the schema closes `position` with
    `additionalProperties: false` and **leaves `boundary` open**, so `carrier: transport`
    is already schema-valid and nothing can rely on what it says. **The one object a
-   profile rule must determine on is the one object the schema does not close**, in a file
+   profile rule must determine on was the one object the schema did not close**, in a file
    whose own `$comment` insists the forbidden shapes "have no valid representation here".
-   Q-37.
+   **Answered by R-Q37 — an oversight, and closing it makes that `$comment` true without
+   exception.** What remains open is whether `carrier` should be *required* for an
+   external boundary, which is a migration call. Q-38.
 5. **F8, the boundary of exhaustiveness.** From R-Q16. Four types have no role the
    profile can give them, and every candidate role rejects them by its own rules. Q-33.
 6. **F4, the rejection rule's authority.** The profile permits rejecting only for

@@ -413,3 +413,98 @@ are not "hard to check"; they are **not yet checkable at all**, and each needs i
 modelled before the question "can Roslyn do it?" is even well-posed. That is a sharper
 statement of what this report's §11.4 table called "not mechanically checkable as written",
 and a more useful one, because it says what to do next.
+
+---
+
+## R-Q37 — Emil, 2026-09-16
+
+**Question put (Q-37).** *"`determination.schema.json` closes `position` with
+`additionalProperties: false` and leaves `boundary` open. So `carrier: transport` is
+already schema-valid, and nothing can rely on what it says. Is `boundary` open
+deliberately — an extension point for carrier-like facts nobody has modelled — or is the
+missing `additionalProperties: false` an oversight?"*
+
+**Answer, verbatim.**
+
+> boundary should be closed, it's an oversight
+
+**Ruled:** `boundary` is closed. The openness was not an extension point.
+
+### The claim checks out, and checking it was worth doing
+
+`SchemaClosureTests` walks the schema and confirms the ruling's premise: **`boundary` is
+the only object the schema leaves open.** It is a single miss, not a pattern.
+
+One near-miss worth recording, because it would otherwise look like a second hole:
+`allocation` has no `additionalProperties` at its top level, but each of its three `oneOf`
+branches carries `additionalProperties: false` over its own properties, so an unexpected
+key fails every branch and the `oneOf` fails. **Closure by branch is still closure.**
+`boundary` has no such structure.
+
+Every other object — `address`, `extent`, the axis object, `acceptance`, `closure`,
+`proxy`, `principal`, `position`, `provenance`, and the root — is closed directly.
+
+### Applying it is a two-part change, not a one-liner
+
+**Closing `boundary` alone would forbid the modelled carrier**, which is the ground
+R-GROUND requires. `SchemaClosureTests.Closing_boundary_without_declaring_carrier_would_forbid_the_modelled_ground`
+asserts exactly this: `carrier` is the *only* undeclared key in the R-GROUND fixture, so
+the closure and the declaration are coupled and must land in the same change.
+
+Stated plainly: **the open `boundary` is currently the only reason a modelled carrier can
+be written at all — and is also the only reason it cannot be relied on.** Close it without
+declaring `carrier` and the field becomes invalid; close it with the declaration and
+R-GROUND's ground becomes representable *and* trustworthy. The two rulings are one patch.
+
+**Migration cost: none.** Every boundary key in `place-order.determinations.yaml` as
+delivered is already declared — `kind`, `source`, `read_provenance`, `tick_rate`,
+`consumer`, `consumption_observable`. The store validates unchanged under the closure.
+Asserted by `Closing_boundary_does_not_invalidate_the_delivered_store`.
+
+### Proposed patch — `$defs.position.boundary`, not applied
+
+```json
+"boundary": {
+  "$comment": "DP-7. external: read here, produced by no act in scope. terminal: written here, read by no act in scope. internal: resolves within scope.",
+  "type": "object",
+  "required": ["kind"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "type": "string", "enum": ["internal", "external", "terminal"] },
+    "source": { "type": "string" },
+    "consumer": { "type": "string" },
+    "read_provenance": { "type": "string" },
+    "carrier": {
+      "type": "string",
+      "enum": ["transport", "store", "computed", "external-call"],
+      "$comment": "R-GROUND. What physically carries the fact to the act. read_provenance stays free text and says HOW the fact was established; carrier says WHAT delivers it, and is the only one of the two a profile rule may condition on."
+    },
+    "tick_rate": { "type": "string", "enum": ["static", "slow", "fast", "unknown"] },
+    "consumption_observable": { "type": "boolean" }
+  },
+  "allOf": [
+    { "if": { "properties": { "kind": { "const": "external" } } },
+      "then": { "required": ["kind", "source", "read_provenance", "tick_rate"] } },
+    { "if": { "properties": { "kind": { "const": "terminal" } } },
+      "then": { "required": ["kind", "consumer", "consumption_observable"] } }
+  ]
+}
+```
+
+**Q-38 (F13).** Left open deliberately rather than resolved:
+> Should `carrier` be **required** for an `external` boundary, alongside `source`,
+> `read_provenance` and `tick_rate`? The `allOf` already obliges an external read to
+> declare where it comes from and how fast it ticks. Under R-GROUND, a rule conditioning
+> on carriage is unrunnable without it — so leaving `carrier` optional means every
+> external position may silently produce `Undeterminable`. Making it required is a
+> breaking change to the delivered store: DSC-0003 would fail validation until amended.
+> That is a principal's call about migration cost, not a builder's.
+
+### What this closes about the schema's own argument
+
+The file's header `$comment` says the prohibitions *"are not advice: the forbidden shapes
+have no valid representation here."* That claim was true of the whole schema except one
+object — and the exception was the one object a profile rule turned out to need to
+determine on. With R-Q37 applied it becomes true without exception, and R-GROUND's
+requirement — that a rule may only condition on modelled ground — acquires a schema that
+can actually enforce "modelled".
