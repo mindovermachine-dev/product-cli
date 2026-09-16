@@ -1,20 +1,24 @@
 # Gate C — report
 
-**Revised 2026-09-16 against two rulings (R-Q10, R-Q16).** The Gate C figures as first
+**Revised 2026-09-16 against three rulings (R-Q10, R-Q16, R-Q06).** The Gate C figures as first
 issued, with no question answered, are preserved in `gate-c-report-baseline.md` so the
 before/after is comparable.
 
 Builder session. One command slice, `PlaceOrder`, under profile `rest-api-v1`, built
 from the four arrived inputs and nothing else. Builds clean under
-`TreatWarningsAsErrors`; 20 tests pass on .NET 8.
+`TreatWarningsAsErrors`; 23 tests pass on .NET 8.
 
 ---
 
 ## The headline
 
-**33 clarifications against 3 of 13 frame categories settled without invention. Two
-answered, thirty-one open — and the two answers raised four more questions than they
-closed.**
+**36 clarifications against 3 of 13 frame categories settled without invention. Four
+answered, thirty-two open — and the three rulings raised seven new questions, amended one
+rule, and require one supersession and one schema change.**
+
+**Answers here do not close questions one for one. They move the specification.** That is
+the single most transferable finding of this run, and it was not visible until a principal
+actually answered.
 
 Generously counted — allowing categories where the specification settled the substantive
 content and this session decided only how to realise it — **5 of 13**. Thirty-nine
@@ -32,14 +36,20 @@ real hole, and neither made the profile enforceable:
   answer had become a supersession.
 * **R-Q16** made roles exhaustive. It removed the last unroled hop — and in doing so
   revealed that **DSC-0003, the provider's `must_not` on transport types, and
-  exhaustiveness are jointly unsatisfiable.** The evasion was not a workaround; it was
-  what had been concealing the contradiction. Q-06 is now forced, and the slice ships a
-  visible, asserted breach of the profile.
+  exhaustiveness were jointly unsatisfiable.** The evasion was not a workaround; it was
+  what had been concealing the contradiction.
+* **R-Q06** amended the `must_not` to turn on what the provider adapts. The slice conforms
+  again. **It took a rule change, not a clarification** — no reading of the original four
+  inputs could have produced a conforming slice at that point.
 
-That is the run's headline finding about the instrument: **the specification's rules were
-consistent only while a gap let one of them be dodged.** Closing the gap did not produce a
-conforming slice; it produced a slice that cannot conform, which is strictly more
-informative and is exactly what a legibility test should surface.
+Trace one line of code through all three: `ActorIdentityProvider`'s transport reference was
+**hidden** (rule held in source text, defeated in substance) → **violated** (hop removed,
+nowhere left to hide) → **permitted** (rule amended to condition on the carrier). Three
+states, one reference, no change to what the program does at any point.
+
+**That is the run's headline finding about the instrument: the specification's rules were
+consistent only while a gap let one of them be dodged.** Building against it is what made
+that visible, and nothing short of building would have.
 
 The prompt said to expect it to run out. It ran out in ten of thirteen categories, and
 where it did not run out it was because of the three places the notation is doing real
@@ -62,7 +72,7 @@ category". See `frame-categories.md` and Q-02.
 |---|---|---|---|---|
 | **F1** Act identity & address | the address `command PlaceOrder`; which determinations reach it (DSC-0001/2/3/5, DSC-0100) | — | Q-20, Q-29 | *none* |
 | **F2** Fact shape | — | — | Q-05, Q-07 | D-04, D-05, D-06, D-07, D-08 |
-| **F3** Position & boundary | `Cart` read/internal (DSC-0001, 0005); `OrderPlaced` write/internal (DSC-0001); `ActorIdentity` read/**external** with `source`, `read_provenance`, `tick_rate` (DSC-0003) | a provider is the adapter to a storage option, either direction (R-Q10) | Q-11 ✅, **Q-06 — forced, unanswered** | ~~D-14~~, D-15 |
+| **F3** Position & boundary | `Cart` read/internal (DSC-0001, 0005); `OrderPlaced` write/internal (DSC-0001); `ActorIdentity` read/**external** with `source`, `read_provenance`, `tick_rate` (DSC-0003) — and `read_provenance` now carries a *permission*, not just a description | a provider is the adapter to a storage option, either direction (R-Q10); it may reference transport when the position it adapts is transport-borne (R-Q06) | Q-06 ✅, Q-11 ✅, Q-35 | ~~D-14~~, D-15, D-40, D-41 |
 | **F4** Invariant & rejection | DSC-0001 *empty cart*, pinned, `invariant:CartNotEmpty`; DSC-0005 *currency mismatch, rejected not converted* | "rejects only for invariants the fact vocabulary declares" — **conflicts with both**, Q-03 | Q-03, Q-04, Q-22, Q-26 | D-05, D-12, D-18, D-20a, D-20b |
 | **F5** Payload & validation | DSC-0002 *validate the payload against declared types before deciding* — but no types are declared | must_not "conditional on domain state" | Q-08, Q-09 | D-09, D-10, D-11, D-23 |
 | **F6** Authority & actor | DSC-0003 *"who may place an order is **not settled** at this address"*, residual, carried by team `platform-security` | — | Q-17 | *none* |
@@ -142,6 +152,27 @@ The profile marks **17 rules `enforcement: analyser`** (controller 6, handler 6,
 **So the `enforcement: analyser` marking is sound on 6 of 17 and overstated on 11** —
 one better than at first issue, and the improvement came from a ruling, not from a
 clarification.
+
+**R-Q06 then moved a rule between rows, downward, and that is the most instructive event
+in this table.** The provider's transport `must_not` was in row 3 — checkable by a
+namespace test, defeated by one interface. R-Q16 made it genuinely checkable. R-Q06 then
+made it *correct*, and in doing so moved it to row 2: it is now conditional on the
+boundary the provider adapts, so no analyser can check it from the assembly alone. Worse,
+the last step of the check has no machine-readable input — `read_provenance` is
+`{"type": "string"}`, so deciding that *"OIDC token claim, validated at the gateway"* means
+transport is a regex over prose.
+
+`ProviderTransportCarrierTests` runs that check for real, against the delivered
+`place-order.determinations.yaml`, and is **the first thing in this run to enforce a
+profile rule by reading the determinations rather than by asserting**. It is the evidence
+PRD §11.4 was missing, and the answer it gives is: *the rule is enforceable, and its last
+step is a regex over prose.* A `boundary.carrier` enum is proposed in `rulings.md`; with
+it, the rule is fully mechanical.
+
+**The general shape: making a rule correct made it less enforceable.** Flat prohibitions
+are checkable and wrong; conditional rules are right and need the determination store. If
+§11.4 is choosing which subset Roslyn carries, that trade is the thing to decide, not the
+individual rules.
 
 **A rule the rulings added, and it is the enforceable one.** R-Q16's exhaustiveness —
 *every type declared in the slice's source declares a role* — is checkable by reflection
@@ -234,9 +265,12 @@ A vaguer determination would have left room to dodge.
 3. **F2, fact shape.** No field of any fact is declared anywhere, which makes DSC-0002 —
    a `checked` allocation with an `operational` closure — validate this session's
    inventions against themselves. Q-07.
-4. **F8, the boundary of exhaustiveness.** New, from R-Q16. Four types have no role the
+4. **F12, the carrier of a fact.** New, from R-Q06. A profile rule now conditions on
+   whether a position is transport-borne, and the schema has no field that says so.
+   Proposed, not authored. Q-36.
+5. **F8, the boundary of exhaustiveness.** From R-Q16. Four types have no role the
    profile can give them, and every candidate role rejects them by its own rules. Q-33.
-5. **F4, the rejection rule's authority.** The profile permits rejecting only for
+6. **F4, the rejection rule's authority.** The profile permits rejecting only for
    invariants the fact vocabulary declares; it declares none; both real invariants live
    in the determination layer. Implementing the specification breaks the profile. Q-03.
 
@@ -261,29 +295,31 @@ determination. Implemented as settled; recorded as D-28.
 
 ## Weakest point
 
-**Two of thirty-three questions were answered, and the two that were answered are the two
-that changed the artefact most. The other thirty-one are still carried on provisional
-readings I chose.**
+**Four of thirty-six questions were answered, and they were the four that changed the
+artefact most. The other thirty-two are still carried on provisional readings I chose.**
 
-That is a better position than this report's first issue, and it sharpens rather than
-removes the objection. What the two rulings demonstrated is that an answer does not
-merely resolve a question — R-Q10 turned out to require a supersession, and R-Q16 turned
-out to expose a three-way contradiction. **If two answers did that, thirty-one unanswered
-questions are not thirty-one small gaps; they are thirty-one places where the artefact's
-correctness is unknown and where an answer may change the design rather than confirm it.**
+That is a far better position than this report's first issue, and it sharpens rather than
+removes the objection. Three rulings produced: one supersession (DSC-0100), one
+contradiction exposed, one rule amended, one schema change proposed, and seven new
+questions. **If three answers did that, thirty-two unanswered questions are not thirty-two
+small gaps — they are thirty-two places where the artefact's correctness is unknown and
+where an answer may move the specification rather than confirm it.** The run gives no
+basis for assuming the remaining questions are cheaper than the ones already asked; if
+anything the reverse, since the four answered were chosen for being the most load-bearing.
 
 Precisely:
 
-- **33 is still an upper bound on the clarification count**, not the count. Q-11 was
+- **36 is still an upper bound on the clarification count**, not the count. Q-11 was
   answered for free as a consequence of Q-10 and would never have needed asking; Q-25 and
   Q-27 would likely be withdrawn on hearing a line. The true figure is lower and nobody
-  knows by how much. Against that, the two answers *generated* four new questions
-  (Q-30 … Q-33), so the count is not simply shrinking as answers arrive.
-- **The slice as it now stands does not conform, and cannot.** After R-Q16,
-  `ActorIdentityProvider` breaks the provider's `must_not` in the open. That is the
-  correct implementation of the rulings and the specification, and it means **this run
-  ends with a knowingly non-conforming artefact** — which is a result, not a failure, but
-  it must not be read as a clean build.
+  knows by how much. Against that, three answers *generated* seven new questions
+  (Q-30 … Q-36), so the count grew. **Clarification count is not a burn-down.**
+- **The slice conforms only against an amended profile that does not exist yet.** R-Q06's
+  rule text is proposed in `rulings.md` and not applied to `profile-rest-api-v1.md`, and
+  DSC-0100 still needs superseding per R-Q10. Read against the profile **as delivered**,
+  this slice is in breach. Read against the profile **as ruled**, it conforms. Nothing in
+  the repository yet holds the second version, so the green build is against a
+  specification that exists only in the ruling record.
 - **Load-bearing readings remain unratified.** D-15 is now confirmed, but D-20a (a
   residual determination is implemented at all) and D-39 (four types left unroled rather
   than mis-roled) each decide something open, and a different answer changes the slice

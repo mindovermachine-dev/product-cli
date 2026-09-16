@@ -1,6 +1,6 @@
 # Decisions — every point the specification does not settle, resolved by this session
 
-Thirty-nine, of which **one is withdrawn and one reversed by rulings**. Each is marked at its site in the source with the same `D-nn` tag
+Forty-one, of which **one is withdrawn and one reversed twice by rulings**. Each is marked at its site in the source with the same `D-nn` tag
 (`grep -rn 'D-[0-9][0-9]' solution/src`), so the code and this record cannot drift.
 
 **INVENTED** = the specification is silent and this session supplied something.
@@ -27,7 +27,9 @@ that is the finding.
 | D-12a | DECIDED | Post-ruling: `Accepted` still carries the event, because the controller derives a `Location` from its `OrderId`. Whether an accepted outcome should carry events a provider has already recorded is unsettled. Q-30. | `Slices/PlaceOrder/PlaceOrderOutcome.cs` |
 | D-12 | INVENTED | `Accepted` / `Rejected` as a closed hierarchy; `Accepted` carries the event, `Rejected` carries invariant + reason. | `Slices/PlaceOrder/PlaceOrderOutcome.cs` |
 | D-13 | INVENTED | `ICartStore` and `IClaimSource` exist at all. No input names a store, stream, repository or claims source. | `Slices/PlaceOrder/Providers.cs` |
-| ~~D-14~~ | **REVERSED by R-Q16** | The transport reference was moved behind `IClaimSource` so the provider's `must_not` held in source text. Roles are exhaustive, so the unroled hop has nowhere to live: `ActorIdentityProvider` holds `IHttpContextAccessor` directly and **breaks its own `must_not`, visibly**. DSC-0003, that rule and R-Q16 are jointly unsatisfiable. | `Slices/PlaceOrder/Providers.cs` |
+| ~~D-14~~ | **REVERSED by R-Q16, then RESOLVED by R-Q06** | The reference was hidden behind `IClaimSource` (rule held in source text, defeated in substance) → R-Q16 made roles exhaustive so the hop had nowhere to live and the rule went from decorative to **violated** → R-Q06 amended the rule to turn on what the provider adapts, and the slice conforms again. Three states, one line of code. | `Slices/PlaceOrder/Providers.cs` |
+| D-40 | DECIDED | **What R-Q06's amendment cost.** The rule left the code: a checker must read the determination store, then infer "transport" from `read_provenance`, which the schema types as free text. `IsTransportBorne` matches on prose and says so. A machine-readable `boundary.carrier` is proposed in `rulings.md`. | `ProviderTransportCarrierTests.cs` |
+| D-41 | DECIDED | A provider is matched to the fact it supplies by the return type of its single public method. Nothing states the convention; two facts or a DTO breaks it. Q-34. | `ProviderTransportCarrierTests.cs` |
 | D-38 | DECIDED | An exhaustiveness rule written over "every type" catches the compiler-generated async state machine behind the middleware. An analyser implementing R-Q16 must scope to types declared in source. Found by running it. | `ProfileConformanceTests.cs` |
 | D-15 | DECIDED | The provider's "where external data is required" is a sufficiency condition, not a restriction, so `CartProvider` supplies an internal fact. Under the other reading the slice cannot read its own ground. | `Slices/PlaceOrder/Providers.cs` |
 | D-16 | INVENTED | The claim names: `sub` (OIDC convention, imported) and `account_currency` (no basis at all). | `Slices/PlaceOrder/Providers.cs` |

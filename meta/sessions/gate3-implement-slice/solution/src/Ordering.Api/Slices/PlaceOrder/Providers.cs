@@ -76,29 +76,34 @@ public sealed class CartProvider
 /// Facts.cs D-07 and Q-05. A different reader gets different claim names here and the
 /// slice silently reads nothing.
 ///
-/// ═══ D-14 — REVERSED BY RULING R-Q16. THIS TYPE KNOWINGLY VIOLATES THE PROFILE. ═══
+/// ═══ D-14 — REVERSED TWICE. NOW CONFORMING, UNDER AN AMENDED RULE. ═══
 ///
-/// It references <c>IHttpContextAccessor</c>. A provider <c>must_not</c> "reference a
-/// transport type". The violation is deliberate, visible, and the only way to obey the
-/// ruling.
+/// This type references <c>IHttpContextAccessor</c>. Its history is the whole argument:
 ///
-/// Before R-Q16 this read through an <c>IClaimSource</c> interface that an unroled type
-/// fed from <c>HttpContext</c> — the rule satisfied in source text while the transport
-/// read happened one hop away. R-Q16 settles that "we need the role for the act. We cant
-/// have an act without an actor and role is part of that", so every type participating in
-/// the act declares a role and the unroled hop has nowhere to live. The reference comes
-/// home to the roled type, where an analyser would see it.
+///   Gate C   the reference sat behind an `IClaimSource` interface fed by an unroled
+///            adapter. The provider's must_not "references a transport type" held in
+///            source text while the transport read happened one hop away — satisfied as
+///            written, defeated in substance.
+///   R-Q16    roles are exhaustive, so the unroled hop had nowhere to live. The reference
+///            came home and the rule went from decorative to VIOLATED. Three rules —
+///            DSC-0003, the must_not, and exhaustiveness — were jointly unsatisfiable.
+///   R-Q06    the must_not is amended: a provider adapting a TRANSPORT-BORNE source may
+///            reference a transport type; a provider adapting a store may not. The
+///            reference below is now conforming, and the rule still bites on CartProvider
+///            and on every provider that adapts a store.
 ///
-/// THREE RULES ARE NOW JOINTLY UNSATISFIABLE, and no implementation escapes it:
-///   1. DSC-0003          — ActorIdentity arrives as an OIDC token claim on the request.
-///   2. profile/provider  — must_not "references a transport type".
-///   3. ruling R-Q16      — every type participating in the act declares a role.
-/// Any two can hold. All three cannot. The evasion was what hid that, and closing the
-/// evasion is what made it undeniable — which is the ruling working as intended.
+/// SETTLED by DSC-0003, and this is what carries the permission: `read_provenance` is
+/// "OIDC token claim, validated at the gateway". The fact is on the request, so adapting
+/// it means touching the request. Nothing here re-validates the token; the gateway did.
 ///
-/// This session implements (1) and (3) and breaks (2), because (2) is the only one of
-/// the three that is a rule about source text rather than about what the act does.
-/// Q-06 is now forced and is the next thing that needs a ruling.
+/// D-40 — WHAT THE AMENDMENT COSTS, and it is not in this file. The rule is no longer a
+/// flat prohibition an analyser can check by looking at this type's references. It is
+/// conditional on what the provider adapts, which lives in the determination, not the
+/// code — so a checker must read the determination store. And having read it, it must
+/// decide that "OIDC token claim, validated at the gateway" means transport, from prose:
+/// `read_provenance` is a free-text string and the schema has no carrier field. See
+/// ProviderTransportCarrierTests, which does exactly this and says plainly which line
+/// should not exist. A machine-readable `boundary.carrier` is proposed in rulings.md.
 /// </remarks>
 [Slice("PlaceOrder", SliceRole.Provider)]
 public sealed class ActorIdentityProvider

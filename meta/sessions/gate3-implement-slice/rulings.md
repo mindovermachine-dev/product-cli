@@ -197,3 +197,110 @@ because every available role rejects them.
 catches the compiler-generated async state machine behind the middleware's `InvokeAsync`.
 An analyser implementing R-Q16 must scope to types declared in source, not types in the
 assembly. Found by running it, not by reading it.
+
+---
+
+## R-Q06 — Emil, 2026-09-16
+
+**Question put (Q-06).** *"DSC-0003 settles that `ActorIdentity`'s `read_provenance` is an
+'OIDC token claim, validated at the gateway'. The only carrier of that claim is the HTTP
+request. The profile makes the provider the role that supplies read-position facts and
+says a provider `must_not` 'reference a transport type'. The one permitted supplier of
+this fact may not touch the only thing that carries it. How is the claim meant to reach
+the provider?"*
+
+**Answer, verbatim.**
+
+> Amend the provider must_not
+
+**Ruled:** option 1 of the three put forward. A provider adapting a transport-borne source
+may reference a transport type; a provider adapting a store may not. The line is drawn by
+**what is adapted**, consistent with R-Q10's "adapters to the storage options".
+
+### Proposed rule text, not authored
+
+```yaml
+  - name: provider
+    required: false
+    enforcement: analyser
+    must:
+      - "declares [Slice(<instance>, \"provider\")]"
+      - "is reached only from a handler role for the same act instance"
+      - "every fact it supplies is declared in a read position on the act"
+      - "every fact it records is declared in a write position on the act"   # R-Q10
+    must_not:
+      - "contains a decision"
+      - "references a transport type, unless the position it adapts declares a
+         transport-borne carrier"                                            # R-Q06
+```
+
+### The slice conforms again
+
+`ActorIdentityProvider` keeps its `IHttpContextAccessor` and is no longer in breach.
+DSC-0003 carries the permission. The rule still bites: `Cart`'s boundary is plain
+`internal`, `CartProvider` gets no permission and takes none.
+
+**So the three-way contradiction is resolved, and it took a rule change rather than a
+clarification.** Worth holding onto: no reading of the original four inputs could have
+produced a conforming slice here. The specification was not under-specified at this point
+— it was inconsistent, and only building against it made that visible.
+
+### What the amendment costs — D-40, and it is the run's sharpest §11.4 result
+
+**The rule left the code.** Before the amendment it was a flat prohibition: run a
+namespace test over a type's references, done — checkable, and defeated by one interface.
+After the amendment it is conditional on what the provider adapts, and that is not in the
+assembly at all. It is in the determination that declares the read position's `boundary`.
+
+So a checker must now:
+
+1. read the determination store and find the read position for the fact this provider
+   supplies — which needs a stated convention for matching a provider to its fact (**Q-34**;
+   this session used the return type of the provider's single public method, D-41); and
+2. decide from that position's `boundary` whether the carrier is transport.
+
+**Step 2 has no machine-readable answer.** `determination.schema.json` gives
+`read_provenance` as `{"type": "string"}` — free text. DSC-0003 says *"OIDC token claim,
+validated at the gateway"*, and the only way to get "transport" out of that is to match on
+prose. `ProviderTransportCarrierTests.IsTransportBorne` does exactly that and says so; it
+is the method that should not exist.
+
+`ProviderTransportCarrierTests` is nonetheless the first thing in this run to demonstrate
+a profile rule being enforced *by reading the determinations*, against the real
+`place-order.determinations.yaml`, rather than asserted. That is the evidence PRD §11.4
+was missing, and it says: **the rule is enforceable, and the last step of the enforcement
+is a regex over prose.**
+
+### Proposed: a machine-readable carrier
+
+Add to `$defs.position.boundary` — a change to the schema, hence proposed and not applied:
+
+```json
+"carrier": {
+  "type": "string",
+  "enum": ["transport", "store", "computed", "external-call"],
+  "$comment": "What physically carries the fact to the act. read_provenance stays free
+               text and says HOW it was established; carrier says WHAT delivers it, and
+               is what a profile rule may condition on."
+}
+```
+
+`read_provenance` and `carrier` answer different questions and should not be merged:
+*"OIDC token claim, validated at the gateway"* is provenance; `transport` is carriage.
+A rule that conditions on carriage currently has to infer it from a sentence about
+provenance.
+
+### Two gaps the amendment leaves
+
+**Q-35 (F9).** The amended `must_not` is stated over "the position it adapts", and
+`positions` distinguishes read from write. A provider that *records* to a transport sink —
+posting to a webhook, say — adapts a write position, and the rule as proposed says nothing
+about it. `OrderPlacedProvider` adapts a store, so this slice does not exercise it, but
+the asymmetry is real: R-Q10 gave providers a write direction and R-Q06's amendment only
+covers the read one.
+
+**Q-36 (F12).** With the carrier enum added, the rule becomes conditional on a field the
+*determination author* controls. An author who writes `carrier: transport` grants their
+own provider the permission. Is that intended — the determination is the authority, so it
+decides — or does it need a check that the carrier matches the fact's actual source, which
+nothing can establish?

@@ -1,12 +1,14 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Thirty-three — twenty-nine at Gate B,
-four more raised by rulings (Q-30 … Q-33).
+**Every question this session would ask, asked.** Thirty-six — twenty-nine at Gate B,
+seven more raised by rulings (Q-30 … Q-36).
 
-**Two are answered.** Q-10 and Q-16 were ruled on by Emil on 2026-09-16; both answers are
-recorded verbatim in `rulings.md`. Q-10 answers Q-11 as a consequence. Q-16 does **not**
-answer Q-06 — it forces it, by removing the indirection that was concealing a three-way
-contradiction. **Thirty-one remain open, one of them now unavoidable.** Each is recorded
+**Four are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
+Q-16, Q-06, and Q-11 as a free consequence of Q-10. **Thirty-two remain open.**
+
+The three rulings between them raised seven new questions and required one rule amendment,
+one schema proposal and one supersession. That is the shape of the result: **answers here
+do not close questions one for one — they move the specification.** Each is recorded
 verbatim as it would be put to Emil, with what prompted it and its frame category
 (`frame-categories.md` — that scheme is itself invented; see Q-02).
 
@@ -231,7 +233,7 @@ comment naming the residual.
 
 ## F3 + F8 — Position, boundary, role decomposition
 
-### Q-06
+### Q-06 — **ANSWERED**, see `rulings.md`
 > `DSC-0003` settles that `ActorIdentity`'s `read_provenance` is an "OIDC token claim,
 > validated at the gateway". The only carrier of that claim is the HTTP request. The
 > profile makes the provider the role that supplies read-position facts and says a
@@ -244,9 +246,13 @@ comment naming the residual.
 exhaustiveness ruling are jointly unsatisfiable; any two hold, all three cannot. This
 session implements DSC-0003 and R-Q16 and breaks the `must_not`, visibly. **This is now
 the question that must be ruled on next**; three options are set out in `rulings.md`.
-**Proceeded under** an `IClaimSource` indirection, with the transport reference moved to
-an unroled type. The rule is satisfied as written and defeated in substance.
-**Site** `Providers.cs` D-14; `Unroled/Adapters.cs`.
+**Answered** *"Amend the provider must_not"* — Emil, 2026-09-16. A provider adapting a
+transport-borne source may reference a transport type; one adapting a store may not.
+**Now built as** `ActorIdentityProvider` holding `IHttpContextAccessor` directly and
+conforming, with DSC-0003's `read_provenance` carrying the permission. **The amendment
+moved the rule out of the code**: a checker must now read the determination store and then
+infer "transport" from free-text prose (D-40). Q-35 and Q-36 are its residue.
+**Site** `rulings.md` R-Q06; `ProviderTransportCarrierTests.cs`.
 
 ### Q-11 — **ANSWERED as a consequence of R-Q10**
 > `Cart` is `internal` — the `Cart` read-model slice writes it, and DSC-0001 and DSC-0005
@@ -492,3 +498,35 @@ implemented identically.
 **Prompted by** R-Q16, on trying to apply it exhaustively.
 **Proceeded under** leaving all four unroled and marking them as breaches.
 **Site** `rulings.md` R-Q16; `ProfileConformanceTests.Four_participating_types_still_have_no_role_the_profile_can_give_them`.
+
+### Q-34 — F8, raised by ruling R-Q06
+> How does a checker match a provider to the fact it supplies? The amended rule is
+> conditional on the position the provider adapts, so something must connect the type to
+> the fact. I used the return type of the provider's single public method. Nothing states
+> that convention, an analyser would need it stated, and a provider supplying two facts or
+> returning a DTO breaks it immediately.
+
+**Prompted by** implementing R-Q06's conditional rule.
+**Proceeded under** return-type matching (D-41).
+**Site** `ProviderTransportCarrierTests.FactSuppliedBy`.
+
+### Q-35 — F9, raised by ruling R-Q06
+> The amended `must_not` is stated over "the position it adapts", and R-Q10 gave providers
+> a write direction. A provider that *records* to a transport sink — posting to a webhook —
+> adapts a write position, and the amendment as proposed says nothing about it. Is the
+> permission meant to cover write positions too, or is a transport-borne write forbidden?
+
+**Prompted by** the asymmetry between R-Q10 and R-Q06.
+**Proceeded under** not exercised: `OrderPlacedProvider` adapts a store.
+**Site** `rulings.md` R-Q06.
+
+### Q-36 — F12, raised by ruling R-Q06
+> With a `boundary.carrier` enum added, the amended rule becomes conditional on a field the
+> determination author controls. An author who writes `carrier: transport` grants their own
+> provider the permission. Is that intended — the determination is the authority, so it
+> decides — or does the carrier need checking against the fact's actual source, which
+> nothing can establish?
+
+**Prompted by** proposing the carrier enum that would make R-Q06's rule machine-checkable.
+**Proceeded under** the determination is the authority; no cross-check.
+**Site** `rulings.md` R-Q06.

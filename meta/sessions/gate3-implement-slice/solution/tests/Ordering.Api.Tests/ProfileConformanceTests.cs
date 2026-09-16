@@ -139,25 +139,23 @@ public sealed class ProfileConformanceTests
     }
 
     /// <summary>
-    /// THE FINDING, AFTER TWO RULINGS: a known, visible violation of the profile.
+    /// THE FINDING, AFTER THREE RULINGS: the profile is now satisfiable, and every rule
+    /// that survived contact is one a checker can only run by reading the determinations.
     /// </summary>
     /// <remarks>
-    /// This test asserted three evasions at Gate C. R-Q10 removed two by giving the write
-    /// position to the provider role. R-Q16 — "we need the role for the act. We cant have
-    /// an act without an actor and role is part of that" — removed the third by removing
-    /// the place an unroled type could stand.
+    /// This test asserted three evasions at Gate C, then one breach after R-Q16. R-Q06
+    /// amended the provider's must_not to turn on what the provider adapts, so the breach
+    /// is gone and the slice conforms again — but the rule left the code. Whether this
+    /// type may hold its transport reference is now a question about DSC-0003, not about
+    /// this assembly. See ProviderTransportCarrierTests.
     ///
-    /// What is left is not an evasion. It is a breach, and it is asserted here so it
-    /// cannot be mistaken for an oversight: <c>ActorIdentityProvider</c> references a
-    /// transport type, which its role <c>must_not</c> do. DSC-0003 puts the fact on the
-    /// request; the profile forbids the provider from touching the request; R-Q16 forbids
-    /// anyone else from carrying it. All three cannot hold.
-    ///
-    /// **The rulings did not make the rules enforceable. They made the conflict
-    /// undeniable, which is better.** Q-06 is now forced.
+    /// What remains here is the narrow, still-mechanical part: the provider holds the
+    /// reference ITSELF rather than through an unroled hop, which is what R-Q16 bought
+    /// and what makes the R-Q06 check meaningful. Hide the reference again and the
+    /// carrier check has nothing to look at.
     /// </remarks>
     [Fact]
-    public void The_provider_references_a_transport_type_in_breach_of_its_own_rule()
+    public void The_transport_reference_is_held_by_the_roled_provider_itself()
     {
         var referenced = Assert.Single(
             Assert.Single(typeof(ActorIdentityProvider).GetConstructors()).GetParameters());
