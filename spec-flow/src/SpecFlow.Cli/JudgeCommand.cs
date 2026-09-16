@@ -46,7 +46,9 @@ internal static class JudgeCommand
             return ExitCodes.CouldNotRun;
         }
 
-        var act = await ActUnderJudgementAsync(options, run.ActRef).ConfigureAwait(false);
+        var act = await ActGround.ReadAsync(options, run.ActRef).ConfigureAwait(false) is { } ground
+            ? new Judging.ActUnderJudgement(ground.Name, ground.Settles)
+            : null;
         var (judge, client) = arrangement.Value;
         try
         {
@@ -68,46 +70,6 @@ internal static class JudgeCommand
         }
 
         return ExitCodes.Conformant;
-    }
-
-    /// <summary>
-    /// What the act settles, read back through the Rust binary.
-    /// </summary>
-    /// <remarks>
-    /// Proxied rather than parsed here. It is also what makes the question
-    /// answerable — asked without it, two different judges each replied that
-    /// no determination could be warranted, which was the right answer to an
-    /// unanswerable question. A read that fails leaves the judge with less
-    /// context rather than stopping the run, and the record says which.
-    /// </remarks>
-    private static async Task<Judging.ActUnderJudgement?> ActUnderJudgementAsync(
-        Options options, string actRef)
-    {
-        try
-        {
-            var read = await new SpecCli(options.SpecBinary, options.Root)
-                .ReadJsonAsync(["acts", "--id", actRef])
-                .ConfigureAwait(false);
-
-            if (read.ValueKind is not System.Text.Json.JsonValueKind.Array)
-            {
-                return null;
-            }
-            foreach (var act in read.EnumerateArray())
-            {
-                var name = act.TryGetProperty("name", out var n) ? n.GetString() : null;
-                var settles = act.TryGetProperty("settles", out var s) ? s.GetString() : null;
-                if (name is not null && settles is not null)
-                {
-                    return new Judging.ActUnderJudgement(name, settles);
-                }
-            }
-        }
-        catch (Exception e) when (e is InvalidOperationException or System.Text.Json.JsonException)
-        {
-            Console.Error.WriteLine($"the act could not be read; judging without it: {e.Message}");
-        }
-        return null;
     }
 
     /// <summary>The cause worth printing, out of however many wrapped it.</summary>

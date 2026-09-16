@@ -1,0 +1,56 @@
+{
+  "form": "eval.run-record.v1",
+  "id": "01M2N2VEPJK7DX4VAJTQ8W1XVS",
+  "tool": "spec-flow",
+  "subject": "addr-probe-qwen3-coder-30b-a3b-instruct-1",
+  "task": "act/settle-a-basket",
+  "ran_at": "2026-09-16T12:25:21.366633+00:00",
+  "model": "qwen3-coder-30b-a3b-instruct",
+  "endpoint_host": "api.scaleway.ai",
+  "duration_ms": 2615,
+  "proposed": [
+    "det/basket-rounding-is-half-even"
+  ],
+  "kept": [
+    "det/basket-rounding-is-half-even"
+  ],
+  "reply": "None of the provided information directly relates to building the slice `addr-probe-qwen3-coder-30b-a3b-instruct-1` agai\u2026",
+  "metrics": [
+    {
+      "name": "Draft coherence",
+      "value": "True",
+      "reason": "claimed none (\"no determinations\") and drafted none",
+      "rating": "Good",
+      "diagnostics": []
+    },
+    {
+      "name": "Reviewer amendment",
+      "value": "0",
+      "reason": "nothing drafted, nothing filed",
+      "rating": "Good",
+      "diagnostics": []
+    },
+    {
+      "name": "Determination shape",
+      "value": "True",
+      "reason": "0 address(es), all shaped `det/\u2026`",
+      "rating": "Good",
+      "diagnostics": []
+    }
+  ],
+  "address": {
+    "digest": "sha256:72ed098cde8d094dee9c02ac9e9f151925a1673452d12be4a0debc21f855e4df",
+    "shown": {
+      "ground": "What the customer owes when the basket closes.",
+      "task": "act/settle-a-basket"
+    }
+  },
+  "arrangement": {
+    "digest": "sha256:24956d752a8c6934007c37bf63de8984167a2fc752f7b00cb15fac4b436dc084",
+    "shown": {
+      "endpoint_host": "api.scaleway.ai",
+      "instructions": "",
+      "model": "qwen3-coder-30b-a3b-instruct"
+    }
+  }
+}

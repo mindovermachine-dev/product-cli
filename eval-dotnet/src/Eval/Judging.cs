@@ -51,8 +51,8 @@ public static class Judging
     /// could be warranted, which is the correct answer to a question nobody
     /// had given them the means to settle.
     /// </remarks>
-    public static JudgementContext ContextOf(RunRecord run, ActUnderJudgement? act = null) =>
-        JudgementContext.Pin(
+    public static Pinned ContextOf(RunRecord run, ActUnderJudgement? act = null) =>
+        Pinned.Pin(
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["run"] = run.RecordId,
@@ -61,8 +61,8 @@ public static class Judging
                 ["act_name"] = act?.Name ?? "(not shown)",
                 ["act_settles"] = act?.Settles ?? "(not shown)",
                 ["builder_model"] = run.Model ?? "(none)",
-                ["proposed"] = string.Join(",", run.Drafted),
-                ["kept"] = string.Join(",", run.Reviewed),
+                ["proposed"] = string.Join(",", run.Proposed),
+                ["kept"] = string.Join(",", run.Kept),
             });
 
     /// <summary>What the specification settles, as the store reports it.</summary>
@@ -77,7 +77,7 @@ public static class Judging
     /// a description of the work. That is the reviewer's question, and the one
     /// a second reader could disagree with usefully.
     /// </remarks>
-    public static string Question(JudgementContext context)
+    public static string Question(Pinned context)
     {
         var shown = string.Join("\n", context.Shown.Select(p => $"  {p.Key}: {p.Value}"));
         return $$"""
@@ -124,7 +124,7 @@ public static class Judging
             DateTimeOffset.UtcNow,
             judge,
             context,
-            Read(response.Text ?? string.Empty, run.Drafted.Count));
+            Read(response.Text ?? string.Empty, run.Proposed.Count));
     }
 
     /// <summary>Turn the judge's reply into verdicts.</summary>

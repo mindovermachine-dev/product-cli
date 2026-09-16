@@ -25,6 +25,20 @@ namespace Eval;
 /// answer could not be read.
 /// </para>
 /// <para>
+/// <b>Address and arrangement are what make runs comparable.</b> The address is
+/// where a run happened — the task instance together with the ground the caller
+/// declared — so two runs at the same address were asked the same question. The
+/// arrangement is what answered. Kept apart so they vary independently: same
+/// address and same arrangement isolates run-to-run variance, while same
+/// address and a changed arrangement is drift in the arrangement rather than in
+/// the world.
+/// </para>
+/// <para>
+/// Both are optional. A caller that declares no coordinates can still record
+/// what it did; its runs simply cannot be read against each other, and the
+/// absence of the field is how a reader learns that rather than guessing.
+/// </para>
+/// <para>
 /// The shape is the format document's, so one store can hold runs from tools
 /// that know nothing about each other — including tools in another runtime.
 /// </para>
@@ -39,10 +53,12 @@ public sealed record RunRecord(
     [property: JsonPropertyName("model")] string? Model,
     [property: JsonPropertyName("endpoint_host")] string? EndpointHost,
     [property: JsonPropertyName("duration_ms")] long DurationMs,
-    [property: JsonPropertyName("proposed")] IReadOnlyList<string> Drafted,
-    [property: JsonPropertyName("kept")] IReadOnlyList<string> Reviewed,
+    [property: JsonPropertyName("proposed")] IReadOnlyList<string> Proposed,
+    [property: JsonPropertyName("kept")] IReadOnlyList<string> Kept,
     [property: JsonPropertyName("reply")] string? Reply,
-    [property: JsonPropertyName("metrics")] IReadOnlyList<RunMetric> Metrics)
+    [property: JsonPropertyName("metrics")] IReadOnlyList<RunMetric> Metrics,
+    [property: JsonPropertyName("address")] Pinned? Address = null,
+    [property: JsonPropertyName("arrangement")] Pinned? Arrangement = null)
 {
     /// <summary>The form this file is written in.</summary>
     public const string FormV1 = "eval.run-record.v1";

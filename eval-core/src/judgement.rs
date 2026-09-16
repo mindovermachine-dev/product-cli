@@ -5,13 +5,17 @@ use std::collections::BTreeMap;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::digest;
+use crate::pinned::Pinned;
 use crate::run::Metric;
 
 /// The form a judgment is written in.
 pub const JUDGEMENT_FORM: &str = "eval.judgement.v1";
 
 /// A model's assessment of one run, on one occasion, over a pinned context.
+///
+/// The context is a [`Pinned`]: the same construction the run's own address and
+/// arrangement use, so what a judge saw is checkable the same way as where the
+/// run happened.
 ///
 /// Asking a model to assess a run is itself an act: it happens at a time, by a
 /// named model, over a particular context, and it is not reproducible. A
@@ -29,7 +33,7 @@ pub struct Judgement {
     pub judges: String,
     pub judged_at: DateTime<Utc>,
     pub judge: Judge,
-    pub context: JudgementContext,
+    pub context: Pinned,
     pub verdicts: Vec<Metric>,
     /// Always true, and carried rather than implied.
     ///
@@ -51,7 +55,7 @@ impl Judgement {
             judges: judges.into(),
             judged_at: Utc::now(),
             judge,
-            context: JudgementContext::pin(shown),
+            context: Pinned::new(shown),
             verdicts,
             ratifies_nothing: true,
         }
@@ -84,33 +88,6 @@ impl Judge {
     pub fn new(model: impl Into<String>, endpoint_host: Option<String>) -> Self {
         let model = model.into();
         Self { identity: format!("model:{model}"), model, endpoint_host }
-    }
-}
-
-/// Exactly what the judge was shown, and a digest that pins it.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct JudgementContext {
-    pub digest: String,
-    /// What the digest covers, kept so a reader can check it.
-    pub shown: BTreeMap<String, String>,
-}
-
-impl JudgementContext {
-    /// Pin a context by digesting what it shows.
-    pub fn pin(shown: BTreeMap<String, String>) -> Self {
-        Self { digest: digest::pin(&shown), shown }
-    }
-
-    /// Whether the digest still matches what this context says it showed.
-    pub fn holds(&self) -> bool {
-        digest::holds(&self.shown, &self.digest)
-    }
-
-    /// The digest's first bytes, enough to tell two contexts apart on disk.
-    pub fn short(&self) -> String {
-        let body = self.digest.strip_prefix("sha256:").unwrap_or(&self.digest);
-        body.chars().take(12).collect()
     }
 }
 

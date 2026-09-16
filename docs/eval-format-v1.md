@@ -86,6 +86,8 @@ context and lands beside the first.
 | `kept` | what a person kept of it |
 | `reply` | the model's reply, whole |
 | `metrics` | deterministic observations (§5) |
+| `address` | **where the run happened** — the coordinates it is comparable at (§8). Optional |
+| `arrangement` | **what answered** — the worker and how it was reached (§8). Optional |
 
 **`proposed` and `kept` are the pair worth having.** The distance between them
 is a human judgment on model output, collected on every run, supplied by no
@@ -205,7 +207,53 @@ name.
 **A key never climbs out of its root.** `..` and empty segments are refused
 rather than normalised.
 
-## 8. What this format does not do
+## 8. Comparing runs: address and arrangement
+
+A single run cannot be graded where the acceptance predicate is open. What can
+be read is **behaviour**: whether the same question asked twice was answered the
+same way, and whether two questions declared different were answered
+identically.
+
+That requires coordinates, so a run may declare two pinned sets (§7):
+
+- **`address`** — where it happened. The task instance together with the ground
+  the caller declared. Two runs at the same address were asked the same
+  question; runs at different addresses are not comparable.
+- **`arrangement`** — what answered. The worker version, the endpoint, whatever
+  else was arranged.
+
+They are separate so they can vary independently:
+
+| Held fixed | Varied | What the difference reads as |
+|---|---|---|
+| address, arrangement | — | run-to-run variance |
+| address | arrangement | drift in the arrangement, not in the world |
+| — | address | nothing; unlike things are not compared |
+
+**Both are optional, and their absence is information.** A caller that declares
+no address can still record what it did; its runs simply stand alone, and a
+reader learns that from the missing field rather than by guessing.
+
+**The grain is the caller's to choose and is recorded rather than assumed.**
+What counts as "the same question" is a judgement nobody else can make. Leaving
+it implicit is how comparison quietly compares unlike things — and an address
+too fine gives every run its own coordinates, which looks like success and
+compares nothing.
+
+Two readings follow, and **neither is a verdict on any single run**:
+
+- **Drift.** An arrangement agreeing with itself more than with another means
+  behaviour moved when the worker did. It is drift in the arrangement unless an
+  independent measure of the world moved the same way in the same window, and
+  no store can tell you that.
+- **Collapse.** Two addresses whose runs are indistinguishable mean the caller
+  declared two questions and the worker answered one. Either the declaration is
+  decorative or the difference never reached the worker.
+
+A shift at a fixed address says the ground moved or something undeclared was
+resolved. It never says the one act was wrong.
+
+## 9. What this format does not do
 
 - **It does not gate.** No conformance classes, no exit codes, no CI verdict.
 - **It does not decide.** A judgment is evidence a person may read before

@@ -35,7 +35,7 @@ public sealed record Judgement(
     [property: JsonPropertyName("judges")] string JudgesRecord,
     [property: JsonPropertyName("judged_at")] DateTimeOffset JudgedAt,
     [property: JsonPropertyName("judge")] Judge Judge,
-    [property: JsonPropertyName("context")] JudgementContext Context,
+    [property: JsonPropertyName("context")] Pinned Context,
     [property: JsonPropertyName("verdicts")] IReadOnlyList<RunMetric> Verdicts)
 {
     /// <summary>The form this file is written in.</summary>
@@ -86,15 +86,21 @@ public sealed record Judge(
 }
 
 /// <summary>
-/// Exactly what the judge was shown, and a digest that pins it.
+/// A set of declared facts, with a digest that fixes them.
 /// </summary>
 /// <remarks>
-/// The digest is over the inputs as given, so a verdict can be tied to the
-/// state that produced it. Re-observe the run, recompute, and a mismatch says
-/// the verdict was about something else — the move the policy's
-/// <c>basis_binds</c> makes, for the same reason.
+/// <para>
+/// One construction, three uses: the coordinates a run happened at, the
+/// arrangement that answered, and the context a judge was shown. Each is a
+/// claim about what was declared, kept beside the digest so a reader can check
+/// it rather than take it.
+/// </para>
+/// <para>
+/// Nothing here decides whether a declaration was <i>adequate</i>. That is a
+/// normative ruling with a named owner, and no digest substitutes for one.
+/// </para>
 /// </remarks>
-public sealed record JudgementContext(
+public sealed record Pinned(
     [property: JsonPropertyName("digest")] string Digest,
     [property: JsonPropertyName("shown")] IReadOnlyDictionary<string, string> Shown)
 {
@@ -114,7 +120,7 @@ public sealed record JudgementContext(
     /// rather than to either of them, so a change made on one side and not the
     /// other fails on both.
     /// </remarks>
-    public static JudgementContext Pin(IReadOnlyDictionary<string, string> shown)
+    public static Pinned Pin(IReadOnlyDictionary<string, string> shown)
     {
         var ordered = new SortedDictionary<string, string>(
             shown.ToDictionary(p => p.Key, p => p.Value), StringComparer.Ordinal);
@@ -126,7 +132,7 @@ public sealed record JudgementContext(
 
         var canonical = $"{Prefix}\n{string.Join('\n', entries)}";
         var digest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
-        return new JudgementContext($"sha256:{digest}", ordered);
+        return new Pinned($"sha256:{digest}", ordered);
     }
 
     /// <summary>
@@ -143,8 +149,18 @@ public sealed record JudgementContext(
              .Normalize(NormalizationForm.FormC)
              .Trim(' ', '\t', '\n', '\v', '\f');
 
+    /// <summary>Pin from pairs, for a caller that has them to hand.</summary>
+    public static Pinned Of(params (string Key, string Value)[] pairs) =>
+        Pin(pairs.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal));
+
+    /// <summary>The digest's first bytes, enough to tell two apart on sight.</summary>
+    public string Short() =>
+        Digest.StartsWith("sha256:", StringComparison.Ordinal) && Digest.Length >= 19
+            ? Digest[7..19]
+            : Digest;
+
     /// <summary>
-    /// Whether the digest still matches what this context says it showed.
+    /// Whether the digest still matches what this says it covered.
     /// </summary>
     /// <remarks>
     /// A record that carries its own check is a record a reader can disbelieve

@@ -71,7 +71,7 @@ public class ContextDigestFixtureTests
 
         Assert.Equal(
             testCase.GetProperty("digest").GetString(),
-            JudgementContext.Pin(shown).Digest);
+            Pinned.Pin(shown).Digest);
     }
 
     /// <summary>Both runtimes agree the store is shared, not merely similar.</summary>
@@ -80,6 +80,6 @@ public class ContextDigestFixtureTests
     {
         Assert.Equal("eval.judgement.v1", Judgement.FormV1);
         Assert.Equal("eval.run-record.v1", RunRecord.FormV1);
-        Assert.Equal("eval.judgement-context.v1", JudgementContext.Prefix);
+        Assert.Equal("eval.judgement-context.v1", Pinned.Prefix);
     }
 }

@@ -47,10 +47,18 @@ public static class RunObservation
     /// <summary>
     /// Evaluate a finished run and file it.
     /// </summary>
+    /// <param name="address">
+    /// Where the run happened. Supply it and the run becomes comparable to
+    /// others at the same coordinates; leave it out and it stands alone, which
+    /// the absence of the field tells a reader plainly.
+    /// </param>
+    /// <param name="arrangement">What answered, kept apart from the address.</param>
     /// <returns>Where the record landed, or null when nothing was written.</returns>
     public static async Task<string?> ObserveAsync(
         EvalStore store,
         ObservedRun run,
+        Pinned? address = null,
+        Pinned? arrangement = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -76,7 +84,9 @@ public static class RunObservation
                 run.Proposed,
                 run.Kept,
                 run.Reply,
-                Flatten(result));
+                Flatten(result),
+                address,
+                arrangement);
 
             return store.WriteRun(record);
         }

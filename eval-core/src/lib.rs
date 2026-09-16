@@ -14,18 +14,27 @@
 //! Where records are kept is [`Backend`]'s to say and [`Blobs`]' to do. The
 //! key layout lives in [`store`] and nowhere else, so moving a tool from disk
 //! to object storage is an edit to configuration rather than to a call site.
+//!
+//! [`behaviour`] reads runs against each other at a fixed address. It produces
+//! no verdict on any single run — a shift at fixed coordinates says the ground
+//! moved or something undeclared was resolved, never that the one act was
+//! wrong.
 
 #![deny(clippy::unwrap_used)]
 
 pub mod backend;
+pub mod behaviour;
 pub mod blobs;
 pub mod digest;
 pub mod judgement;
+pub mod pinned;
 pub mod run;
 pub mod store;
 
 pub use backend::Backend;
+pub use behaviour::Reading;
 pub use blobs::{Blobs, DiskBlobs};
-pub use judgement::{Judge, Judgement, JudgementContext};
+pub use judgement::{Judge, Judgement};
+pub use pinned::Pinned;
 pub use run::{Metric, RunRecord};
 pub use store::EvalStore;

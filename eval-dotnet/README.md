@@ -113,6 +113,43 @@ question. That disagreement is the whole return on the pattern.
 before deciding. It decides nothing, it gates nothing, and there is no
 principal field for a machine to fill.
 
+## Comparing runs
+
+A single run cannot be graded where the predicate is open. What *can* be read is
+behaviour across runs — but only if runs carry coordinates, which is why a run
+may declare two pinned sets:
+
+```csharp
+await RunObservation.ObserveAsync(store, run,
+    address:     Pinned.Of(("task", ticket.Id), ("ground", whatTheSpecSettles)),
+    arrangement: Pinned.Of(("model", modelId), ("endpoint_host", host)));
+```
+
+```csharp
+foreach (var reading in Behaviour.Read(store.ReadRuns()))
+{
+    // reading.Agreement          — the same worker, asked twice
+    // reading.AcrossArrangements — a different worker, same question
+    // reading.Drift              — the gap between them
+}
+
+Behaviour.Collapsed(store.ReadRuns());  // two questions, one answer
+```
+
+| Held fixed | Varied | Reads as |
+|---|---|---|
+| address, arrangement | — | run-to-run variance |
+| address | arrangement | drift in the arrangement, not the world |
+
+**Keep the worker out of the address.** It is the thing you want to vary. And
+keep the address coarse enough to repeat: an address containing a per-attempt
+label gives every run its own coordinates, compares nothing, and looks like it
+is working.
+
+**Neither reading is a verdict on any single run.** A shift at fixed
+coordinates says the ground moved or something undeclared got resolved — not
+that one act was wrong.
+
 ## Using it
 
 ```csharp

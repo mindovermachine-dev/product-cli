@@ -3,6 +3,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::pinned::Pinned;
+
 /// The form a run record is written in.
 pub const RUN_FORM: &str = "eval.run-record.v1";
 
@@ -52,6 +54,25 @@ pub struct RunRecord {
     /// Deterministic observations. Arithmetic, reproducible, never a verdict.
     #[serde(default)]
     pub metrics: Vec<Metric>,
+    /// **Where this run happened** — the coordinates behaviour is compared at.
+    ///
+    /// The task instance together with the ground the caller declared. Two runs
+    /// at the same address were asked the same question; runs at different
+    /// addresses are not comparable, and saying so is the point.
+    ///
+    /// Optional, because a caller that declares no coordinates can still record
+    /// what it did. Its runs simply cannot be read against each other, and the
+    /// absence of the field is how a reader learns that rather than guessing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub address: Option<Pinned>,
+    /// **What answered** — the worker version, and whatever else was arranged.
+    ///
+    /// Kept apart from the address so the two can vary independently. Same
+    /// address and same arrangement isolates run-to-run variance; same address
+    /// and a changed arrangement is drift in the arrangement rather than in the
+    /// world.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arrangement: Option<Pinned>,
 }
 
 impl RunRecord {
@@ -76,7 +97,35 @@ impl RunRecord {
             kept: Vec::new(),
             reply: None,
             metrics: Vec::new(),
+            address: None,
+            arrangement: None,
         }
+    }
+
+    /// Declare where this run happened.
+    ///
+    /// The grain is the caller's to choose and is recorded rather than assumed:
+    /// what counts as "the same question" is a judgement nobody else can make,
+    /// and leaving it implicit is how comparison quietly compares unlike things.
+    pub fn at(mut self, coordinates: Pinned) -> Self {
+        self.address = Some(coordinates);
+        self
+    }
+
+    /// Declare what answered.
+    pub fn arranged_as(mut self, arrangement: Pinned) -> Self {
+        self.arrangement = Some(arrangement);
+        self
+    }
+
+    /// The address's digest, when one was declared.
+    pub fn address_digest(&self) -> Option<&str> {
+        self.address.as_ref().map(|p| p.digest.as_str())
+    }
+
+    /// The arrangement's digest, when one was declared.
+    pub fn arrangement_digest(&self) -> Option<&str> {
+        self.arrangement.as_ref().map(|p| p.digest.as_str())
     }
 
     /// The host of an endpoint, or nothing when it is not a URL.

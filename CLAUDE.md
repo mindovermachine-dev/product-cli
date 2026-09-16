@@ -400,6 +400,17 @@ not fit).
   measurement's standing.
 - **`proposed` vs `kept`** is the pair worth having: a human judgment on model
   output, on every run, supplied by no model and costing nothing.
+- **`address` + `arrangement`** make runs comparable (format §8, from
+  `docs/checking-the-worker-open-predicate.md` §4.4). The address is *where* a
+  run happened — task instance plus declared ground; the arrangement is *what
+  answered*. Kept apart so they vary independently: fixed address + fixed
+  arrangement is run-to-run variance, fixed address + changed arrangement is
+  drift in the arrangement. `behaviour::read` / `Behaviour.Read` compute both,
+  plus `collapsed` (two declared-distinct addresses answered identically).
+  **Neither is a verdict on any single run.** Keep the worker out of the
+  address, and keep the address coarse enough to repeat — spec-flow pins
+  `(task, ground)` and deliberately not the slice, since two attempts at one act
+  are the same question asked twice.
 - **Nothing gates.** Not signed, no principal, no gate reads either store.
 - **Backends are configuration** (`EVAL_STORE`: a path, or
   `azure:<account>/<container>[/<prefix>]`). The layout is key-shaped so disk

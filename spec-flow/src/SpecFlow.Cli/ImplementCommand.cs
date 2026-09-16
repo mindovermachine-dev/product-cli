@@ -44,9 +44,12 @@ internal static class ImplementCommand
 
         if (built is not null)
         {
+            var ground = await ActGround.ReadAsync(options, actRef).ConfigureAwait(false);
             var journalled = await RunObservation.ObserveAsync(
                 EvalStoreOf(options),
-                Observed(request, built, outcome, started.Elapsed)).ConfigureAwait(false);
+                Observed(request, built, outcome, started.Elapsed),
+                Address(actRef, ground),
+                Arrangement(options)).ConfigureAwait(false);
             if (journalled is not null)
             {
                 Console.WriteLine($"observed: {journalled}");
@@ -80,6 +83,41 @@ internal static class ImplementCommand
 
     /// <summary>Which tool these runs came from, so one store can hold several.</summary>
     internal const string Tool = "spec-flow";
+
+    /// <summary>
+    /// Where a build happened: the act, and the ground it declares.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Deliberately <i>not</i> the slice. Two attempts at one act are the same
+    /// question asked twice, and naming them `settle-totals-v2` and `-v3` does
+    /// not make them different ones. Including the slice would give every run
+    /// its own address and nothing would ever be comparable — which is the
+    /// failure mode worth avoiding, because it looks like success.
+    /// </para>
+    /// <para>
+    /// The ground is in the address, so editing what an act settles moves the
+    /// coordinates and stops older runs being read against newer ones. That is
+    /// correct: after such an edit they were not asked the same question.
+    /// </para>
+    /// </remarks>
+    private static Pinned Address(string actRef, ActGround.Ground? ground) => Pinned.Of(
+        ("task", actRef),
+        ("ground", ground?.Settles ?? "(unread)"));
+
+    /// <summary>
+    /// What answered: the worker, and where it was reached.
+    /// </summary>
+    /// <remarks>
+    /// Separate from the address so the two vary independently. A model bump at
+    /// a fixed address is the reading worth having, and it is only visible if
+    /// the worker is not part of the coordinates.
+    /// </remarks>
+    private static Pinned Arrangement(Options options) => Pinned.Of(
+        ("model", Environment.GetEnvironmentVariable("SPECFLOW_MODEL") ?? "(none)"),
+        ("endpoint_host",
+            RunRecord.HostOf(Environment.GetEnvironmentVariable("SPECFLOW_MODEL_ENDPOINT")) ?? "(none)"),
+        ("instructions", options.Get("instructions") ?? ""));
 
     /// <summary>
     /// The store runs are observed into, as configuration names it.
