@@ -10,6 +10,9 @@ internal sealed record Options(string Verb, IReadOnlyDictionary<string, string> 
         closure are not here; they are `spec accept` and `spec close`, and they
         name a principal.
 
+        Usually reached as `spec import` and `spec build`, which launch this
+        binary. Running it directly is the same act by a longer name.
+
           import     --root <path> [--source <path>]
                      Re-scan a C# codebase into .spec/inventory.json.
 

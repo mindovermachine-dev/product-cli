@@ -130,19 +130,38 @@ write that can be skipped will be skipped.
 
 ## Running it
 
+Put the host beside the `spec` binary and one command name covers the flow:
+
 ```bash
 cargo build -p spec-cli                       # the Rust half
-dotnet test spec-flow/SpecFlow.slnx           # the .NET half (drives the real binary)
+dotnet publish spec-flow/src/SpecFlow.Cli -c Release -o target/debug
 
-dotnet run --project spec-flow/src/SpecFlow.Cli -- \
-  --slice checkout-totals --act act/settle-basket --root . --spec target/debug/spec
+spec import                                   # → specflow import
+spec build --slice checkout-totals --act act/settle-basket
 ```
 
-Always exits **3** — work completed, closure pending. Then, as yourself:
+`spec build` always exits **3** — work completed, closure pending. Then, as
+yourself:
 
 ```bash
 spec close <id> --principal you@example.com --nothing-arose
 spec check                                     # 0 only once every record is closed
+```
+
+`spec import` and `spec build` are the only two verbs that leave the Rust
+binary. Each launches `specflow`, which is found beside `spec`, or at
+`SPECFLOW_BIN`, or on PATH — and which is handed the launching binary as its
+`--spec` so the chain cannot resolve a different one. **Launching is not
+linking:** the host still contains no code that writes a closure, `spec build`
+reaches it as `specflow implement`, and the launcher refuses to forward a verb
+that names a principal. The boundary is where it was; only the front door moved.
+
+The host also stands alone, which is what the .NET tests drive:
+
+```bash
+dotnet test spec-flow/SpecFlow.slnx           # drives the real `spec` binary
+dotnet run --project spec-flow/src/SpecFlow.Cli -- implement \
+  --slice checkout-totals --act act/settle-basket --root . --spec target/debug/spec
 ```
 
 To wire a model, set `SPECFLOW_MODEL_ENDPOINT` (any OpenAI-compatible endpoint

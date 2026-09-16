@@ -7,12 +7,14 @@
 
 pub mod gate;
 pub mod git;
+pub mod host;
 pub mod policy;
 pub mod ratify;
 pub mod record;
 pub mod trust;
 
 pub use gate::{check, map, CheckArgs, MapArgs};
+pub use host::{build, import, BuildArgs, ImportArgs};
 pub use policy::{set as policy_set, show as policy_show, PolicySetArgs, PolicyShowArgs};
 pub use ratify::{accept, candidates, reject, AcceptArgs, CandidatesArgs, RejectArgs};
 pub use record::{close, implement, records, CloseArgs, ImplementArgs, RecordsArgs};

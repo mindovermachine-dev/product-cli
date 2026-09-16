@@ -15,6 +15,15 @@ impl Report {
         Self { code, text: text.into(), json: None }
     }
 
+    /// A report that prints nothing, carrying only an exit code.
+    ///
+    /// What a launched process already wrote to the inherited streams is the
+    /// output. Re-rendering it here would mean deciding what it meant, and a
+    /// launcher that interprets its child is no longer a launcher.
+    pub fn silent(code: i32) -> Self {
+        Self { code, text: String::new(), json: None }
+    }
+
     /// Attach a machine-readable body, used when `--json` was asked for.
     pub fn with_json(mut self, json: Option<Value>) -> Self {
         self.json = json;

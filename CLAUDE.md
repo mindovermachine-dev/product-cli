@@ -434,7 +434,16 @@ split across two runtimes at the flow's own accountability boundary:
   meet for the first time. Asserted in `spec-cli/tests/boundaries.rs` along
   with the other separations the flow rests on.
 - **Rust verbs:** `candidates` · `accept` · `reject` · `map` · `implement` ·
-  `close` · `check` · `policy show|set`. The importer never names an act: candidates carry
+  `close` · `check` · `policy show|set`, plus two that only *launch* the .NET
+  host — `import` → `specflow import`, and `build` → `specflow implement`
+  (named `build` because `spec implement` is already the record-opening
+  primitive the host calls back into, so the chain `spec build` → `specflow
+  implement` → `spec implement` names something different at every hop).
+  `spec-cli/src/verbs/host.rs` finds the host beside the binary, at
+  `SPECFLOW_BIN`, or on PATH; pins it to the launching binary via `--spec`; and
+  refuses to forward `accept`/`reject`/`close`/`policy`. **Launching is not
+  linking** — one command name, still two executables, and the host still
+  contains no code that writes a closure. The importer never names an act: candidates carry
   observed transport fields and the unfilled slots `name` / `settles`, and a
   principal fills them. `model` deliberately does not read candidates — an
   accrual vocabulary authored by walking a transport-shaped list inherits the
