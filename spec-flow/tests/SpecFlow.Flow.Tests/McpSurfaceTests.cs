@@ -218,6 +218,74 @@ public class GovernedToolTests
     }
 
     /// <summary>
+    /// The builder cannot open a second record for the slice it is building.
+    /// </summary>
+    /// <remarks>
+    /// The workflow opens the record before the builder runs. A builder handed
+    /// `spec_implement` calls it, opens a duplicate, and leaves an orphan that
+    /// fails S001 until a person closes a record they never asked for. Observed
+    /// against a live model, which is the only configuration that reaches it.
+    /// </remarks>
+    [Fact]
+    public async Task The_builder_cannot_open_a_second_record()
+    {
+        using var repo = new SpecRepo();
+        var tools = await GovernedTools.ConnectAsync(
+            new SpecFlowOptions(repo.Root, repo.Executable), SpecMcpBinary());
+
+        Assert.NotEmpty(tools);
+        Assert.DoesNotContain(tools, t => t.Name is "spec_implement");
+    }
+
+    /// <summary>
+    /// Exactly these tools reach the builder, and adding one is a visible edit.
+    /// </summary>
+    /// <remarks>
+    /// Named rather than counted, in the shape `tools::WITHHELD` already takes
+    /// on the Rust side: a tool added to the server without a decision about
+    /// this caller fails here, by name, instead of arriving unnoticed at a
+    /// model. Every member is a read — the one write the server offers is
+    /// <see cref="GovernedTools.AlreadyPerformed"/>.
+    /// </remarks>
+    [Fact]
+    public async Task Exactly_the_reads_reach_the_builder()
+    {
+        using var repo = new SpecRepo();
+        var tools = await GovernedTools.ConnectAsync(
+            new SpecFlowOptions(repo.Root, repo.Executable), SpecMcpBinary());
+
+        Assert.Equal(
+            ["spec_candidates", "spec_check", "spec_map", "spec_policy_show", "spec_records"],
+            tools.Select(t => t.Name).OrderBy(n => n, StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// The server is found beside this assembly, which is where one installer
+    /// puts it.
+    /// </summary>
+    [Fact]
+    public void The_server_is_looked_for_beside_this_assembly()
+    {
+        var beside = Path.Combine(AppContext.BaseDirectory, GovernedTools.ServerName);
+        File.WriteAllText(beside, "not a real server, but it is a file");
+        try
+        {
+            Assert.Equal(beside, GovernedTools.Locate(supplied: null));
+        }
+        finally
+        {
+            File.Delete(beside);
+        }
+    }
+
+    /// <summary>An explicit path wins over anything found by looking.</summary>
+    [Fact]
+    public void An_explicit_server_path_wins()
+    {
+        Assert.Equal("/somewhere/spec-mcp", GovernedTools.Locate("/somewhere/spec-mcp"));
+    }
+
+    /// <summary>
     /// The Rust MCP server, required rather than optional.
     /// </summary>
     /// <remarks>
