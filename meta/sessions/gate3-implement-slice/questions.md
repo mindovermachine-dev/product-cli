@@ -1,13 +1,14 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Forty-seven — twenty-nine at Gate B,
-eighteen more raised by rulings (Q-30 … Q-45, plus Q-12b).
+**Every question this session would ask, asked.** Forty-nine — twenty-nine at Gate B,
+twenty more raised by rulings (Q-30 … Q-47, plus Q-12b).
 
-**Eleven and a half are answered**, all on 2026-09-16, all recorded verbatim in
+**Thirteen and a half are answered**, all on 2026-09-16, all recorded verbatim in
 `rulings.md`: Q-10, Q-16, Q-06, Q-37, Q-38, Q-39, Q-12, Q-40, plus Q-11 (a free consequence
-of Q-10), Q-36 (by R-GROUND) and Q-35 (a free consequence of Q-39). **Q-41 is answered as
-to purpose and open as to modelling** — R-Q41 settles what the relay is *for* without
-settling whether it is an act in the vocabulary. **Thirty-five remain open.**
+of Q-10), Q-36 (by R-GROUND) and Q-35 (a free consequence of Q-39). plus Q-45 and Q-44 (the
+latter a free consequence of R-Q45). **Q-41 is answered as to purpose and open as to
+modelling** — R-Q41 settles what the relay is *for* without settling whether it is an act
+in the vocabulary. **Thirty-five and a half remain open.**
 
 **The open count has gone up, not down.** Nine rulings have closed eleven questions and
 raised sixteen. That is the clearest single measurement this run produced about what
@@ -693,7 +694,7 @@ of it.
 **Proceeded under** the `Location` header is emitted as ruled; the collision is reported.
 **Site** `PlaceOrderController.cs`; `rulings.md` R-Q12.
 
-### Q-44 — F9, raised by ruling R-Q41
+### Q-44 — F9 — **ANSWERED as a consequence of R-Q45**
 > R-Q40 requires an outbox for this slice's write, whose boundary is `internal`. R-Q41
 > frames the relay as assurance for **external** delivery. Both can hold — an outbox for
 > every write, assurance requirements only where we cross out — but the scoping is not
@@ -703,10 +704,13 @@ of it.
 **Prompted by** finding that `PlaceOrder` has no external delivery at all: `OrderPlaced` is
 `internal`, and this context's external delivery is `OrderConfirmed` → fulfilment, one act
 downstream.
-**Proceeded under** outbox for this write regardless, per R-Q40.
-**Site** `DeliveryAssuranceTests.This_slice_has_no_external_delivery_at_all`.
+**Answered** by R-Q45: `delivery_assurance` is everywhere, not only at terminal
+boundaries, because every write hands a fact to a later act and every handover can fail.
+So the internal write has a requirement of its own and the outbox is not belt-and-braces —
+which is the grounds this question asked for.
+**Site** `rulings.md` R-Q45; `ProfileDischargeTests.No_write_position_anywhere_in_the_store_declares_a_required_assurance`.
 
-### Q-45 — F12 / F13, raised by ruling R-Q41
+### Q-45 — F12 / F13 — **ANSWERED**, see `rulings.md`
 > R-Q40 put the transport and its case handling in the **profile**, because they are "pr
 > technology". R-Q41 puts *how sure we need to be* in the **determination layer**, because
 > it is a statement about risk. That split looks right and is stated nowhere: **the
@@ -719,5 +723,39 @@ downstream.
 
 **Prompted by** drafting both the `outbound:` profile section (R-Q40) and the
 `delivery_assurance` field (R-Q41) and noticing nothing ties them together.
-**Proceeded under** both proposed independently, with the gap named.
-**Site** `rulings.md` R-Q40, R-Q41.
+**Answered** *"the profile must declare which assurance level it discharges and the levels
+here matter… its a common failure level, we think we only need it in event systems… But we
+dont do it in HTTP systems because we often assume that the external HTTP call is important
+to the current one we are serving. Even though that might not be the case."* — Emil,
+2026-09-16. The split is confirmed and the link required: `discharges >= required`.
+**It answers Q-44** — `delivery_assurance` is everywhere, not only terminal, so this
+slice's internal write has a requirement and R-Q40's outbox is not belt-and-braces.
+**It names a failure mode this profile is an instance of**: "the caller is waiting" is not
+an assurance mechanism. `rest-api-v1` as built discharges `Enqueued` — R-Q40 moved it one
+step off `Unassured`, not four.
+**And it breaks DSC-0100's travel** (see below).
+**Site** `rulings.md` R-Q45; `ProfileDischargeModel.cs`; `ProfileDischargeTests.cs`.
+
+### Q-46 — F9, raised by ruling R-Q45
+> *"Everywhere"* is doing work and its edge is not stated. Does `delivery_assurance` apply
+> to **read** positions as well as writes? A read can fail to arrive too — DSC-0003's
+> `ActorIdentity` is an OIDC claim that may simply not be there, which this slice handles by
+> throwing (D-19). That is an assurance question wearing a different hat.
+
+**Prompted by** applying "everywhere" and having to choose an edge for it.
+**Proceeded under** writes only, because "reaching the external system" is a delivery
+phrase.
+**Site** `DeterminationStore.ReadRequiredAssuranceForEveryWrite`.
+
+### Q-47 — F8 / F1, raised by ruling R-Q45
+> If several profiles exist per act type, differentiated by discharged assurance, **how is
+> the profile selected for a given act?** Today one determination pins one profile to all
+> command slices by an arbitrary anchor. Selection by requirement needs either a
+> determination per act naming its profile, or a resolution rule picking the profile whose
+> discharge meets the act's need — and a tie-break if two qualify. None of that exists, and
+> it is the mechanism R-Q45 presupposes.
+
+**Prompted by** *"we might have different profile implementations that support the given
+need"* — which requires a selection mechanism that is nowhere defined.
+**Proceeded under** one profile, as delivered.
+**Site** `rulings.md` R-Q45.

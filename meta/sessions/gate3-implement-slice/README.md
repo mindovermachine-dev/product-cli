@@ -4,9 +4,10 @@
 prompt, and the two rulings that scope the run. No README of the binding, no conformance
 manifest, no repository, no web search.
 
-**Result: 47 clarifications against 3 of 13 frame categories settled without invention.**
-Eleven and a half answered by Emil on 2026-09-16 (`rulings.md`), thirty-five open — **the
-open count went up**: ten rulings closed eleven and a half questions and raised eighteen. Read
+**Result: 49 clarifications against 3 of 13 frame categories settled without invention.**
+Thirteen and a half answered by Emil on 2026-09-16 (`rulings.md`), thirty-five and a half
+open — **the open count went up**: eleven rulings closed thirteen and a half questions and
+raised twenty. Read
 `gate-c-report.md` first; `gate-c-report-baseline.md` is the unrevised version from before
 any answer arrived, kept so the before/after is comparable.
 
@@ -22,9 +23,9 @@ on authoring determinations.
 | `bootstrap.md` | first act: hashes, what was read, the reading order, the one standing rule that could not be complied with |
 | `gate-a.md` | the expectation list, written with the determinations unopened; the reading of the slice; six contradictions |
 | `frame-categories.md` | the 13-category scheme — **invented**, because the bundle never defines "frame category" |
-| `questions.md` | 47 questions, verbatim, with what prompted each and the provisional reading the build proceeded under |
+| `questions.md` | 49 questions, verbatim, with what prompted each and the provisional reading the build proceeded under |
 | `rulings.md` | Emil's answers, verbatim, with what each changed and what it raised |
-| `decisions.md` | 51 points the specification does not settle, each tagged `D-nn` at its site; one withdrawn and one reversed by rulings |
+| `decisions.md` | 53 points the specification does not settle, each tagged `D-nn` at its site; one withdrawn and one reversed by rulings |
 | `gate-c-report.md` | the Gate 3 report, revised against the rulings |
 | `gate-c-report-baseline.md` | the report as first issued, with nothing answered |
 | `solution/` | the slice: `dotnet test` → 15 passing, clean under `TreatWarningsAsErrors` |
@@ -78,5 +79,5 @@ on authoring determinations.
 ## Running it
 
 ```bash
-cd solution && dotnet test        # 49 tests, .NET 8
+cd solution && dotnet test        # 58 tests, .NET 8
 ```

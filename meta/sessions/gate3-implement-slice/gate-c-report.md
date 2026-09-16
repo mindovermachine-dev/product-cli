@@ -1,13 +1,13 @@
 # Gate C — report
 
-**Revised 2026-09-16 against ten rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37, R-Q38,
-R-Q39, R-Q12, R-Q40, R-Q41).** The Gate C figures as first
+**Revised 2026-09-16 against eleven rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37, R-Q38,
+R-Q39, R-Q12, R-Q40, R-Q41, R-Q45).** The Gate C figures as first
 issued, with no question answered, are preserved in `gate-c-report-baseline.md` so the
 before/after is comparable.
 
 Builder session. One command slice, `PlaceOrder`, under profile `rest-api-v1`, built
 from the four arrived inputs and nothing else. Builds clean under
-`TreatWarningsAsErrors` in both projects; 49 tests pass on .NET 8.
+`TreatWarningsAsErrors` in both projects; 58 tests pass on .NET 8.
 
 ---
 
@@ -36,11 +36,11 @@ Q-43 asks whether a `known_divergence` should be *reachable* rather than prose r
 
 ## The headline
 
-**47 clarifications against 3 of 13 frame categories settled without invention. Eleven and
-a half answered, thirty-five open.**
+**49 clarifications against 3 of 13 frame categories settled without invention. Thirteen
+and a half answered, thirty-five and a half open.**
 
-**The open count went up again.** Ten rulings closed eleven and a half questions and raised
-eighteen. One ruling — R-Q41 — answered a question's *purpose* while leaving its
+**The open count went up again.** Eleven rulings closed thirteen and a half questions and
+raised twenty. One ruling — R-Q41 — answered a question's *purpose* while leaving its
 *modelling* untouched, which is a third outcome neither "answered" nor "open" describes,
 and the count has to carry it as a half. That
 is the clearest number this run produced, and it is the one to carry: on a specification
@@ -82,6 +82,14 @@ real hole, and neither made the profile enforceable:
 * **R-Q06** amended the `must_not` to turn on what the provider adapts. The slice conforms
   again. **It took a rule change, not a clarification** — no reading of the original four
   inputs could have produced a conforming slice at that point.
+* **R-Q45** required the profile to declare what it discharges, making the join checkable
+  (`discharges >= required`) — and named a failure mode **this profile is an instance of**:
+  *"we dont do it in HTTP systems because we often assume that the external HTTP call is
+  important to the current one we are serving."* **"The caller is waiting" is not an
+  assurance mechanism.** `rest-api-v1` as built discharges `Enqueued`; R-Q40 moved it one
+  step off `Unassured`, not four. It also **breaks DSC-0100's `extent`**: if profiles are
+  selected by the assurance an act needs, then "every command slice ever written collects
+  it" is false.
 * **R-Q41** made the outbox relay a matter of **delivery assurance** rather than plumbing —
   *"how sure do we need to be of this payload reaching the external system"* — and the
   answer splits cleanly against what the schema holds. **The ceiling is already modelled**:

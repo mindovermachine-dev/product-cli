@@ -1005,3 +1005,139 @@ relay built today conforms to nothing, so it remains deliberately unbuilt and
 
 **Q-41 is therefore answered as to purpose and open as to modelling**, and recorded that
 way rather than closed.
+
+---
+
+## R-Q45 — Emil, 2026-09-16
+
+**Question put (Q-45).** *"The requirement is a determination, the mechanism is a profile,
+and the profile must be able to show it discharges the requirement. Nothing currently
+connects the two… Confirming the split, and then requiring the link, is what would make
+R-Q41's answer enforceable rather than merely written down."*
+
+**Answer, verbatim.**
+
+> the profile must declare which assurance level it discharges and the levels here matter -
+> we have delivery_assurance every where and then we might have different profile
+> implementations that support the given need. and that assurance. And its a common failure
+> level, we think we only need it in event systems where we need to ensure that the event
+> is delivered. But we dont do it in HTTP systems because we often assume that the external
+> HTTP call is important to the current one we are serving. Even though that might not be
+> the case
+
+**Ruled:** the split is confirmed and the link is required. Three consequences, and the
+third is about the profile this run was built against.
+
+### 1. The join is checkable
+
+The determination states `delivery_assurance`; the profile declares what it discharges;
+conformance is `discharges >= required`. `AssuranceDischargeRule` implements it, and it
+decides where both halves are present and reports `UndeterminableUnattributed` where either
+is missing.
+
+There is a second failure the join catches and it is the dangerous one: a profile that
+**overclaims** — declares `confirmed`, implements a synchronous call — breaches whatever the
+act requires, because it reads as assured and is not. That is checked before the
+requirement is even consulted.
+
+### 2. `delivery_assurance` is everywhere, which answers Q-44
+
+Not only at terminal boundaries. Every write hands a fact to a later act and every such
+handover can fail, so this slice's `internal` write has a requirement too. **R-Q40's outbox
+is therefore not belt-and-braces for `OrderPlaced`** — Q-44 asked on what grounds an
+internal write needs one, and this is the grounds.
+
+The store as delivered declares a requirement on **none** of its three write positions —
+one internal, two terminal.
+
+### 3. The named failure mode, and this profile is an instance of it
+
+> *"we think we only need it in event systems where we need to ensure that the event is
+> delivered. But we dont do it in HTTP systems because we often assume that the external
+> HTTP call is important to the current one we are serving. Even though that might not be
+> the case"*
+
+**"The caller is waiting" is not an assurance mechanism.** A synchronous outbound call
+inside the request being served discharges *nothing*: a crash between the call and the
+commit loses it as completely as a dropped event, and the premise that the call matters to
+the request being served is frequently false — it is an assumption inherited from the
+shape of the stack, not a decision anyone took.
+
+Modelled as `AssuranceMechanism.SynchronousCallInRequest → Unassured` and asserted.
+
+**And `rest-api-v1` is exactly the kind of profile that inherits the assumption.** It is an
+HTTP profile; it declares no assurance level; and without R-Q40 its mechanism would have
+been precisely this one. Computing what it actually discharges as built:
+
+| | |
+|---|---|
+| Declared in the profile | **nothing** — the profile has no such field, which is what R-Q45 adds |
+| Mechanism as built | outbox (R-Q40), relay deliberately unbuilt (Q-41) |
+| **Actually discharges** | **`Enqueued`** — one step off zero, not four |
+
+So R-Q40 is what moved this profile off `Unassured`, and it moved it exactly one level. A
+consumer needing `Dispatched` or `Confirmed` is not served by `rest-api-v1` as it stands,
+and until R-Q45's declaration exists nothing says so.
+
+### 4. And it breaks DSC-0100's travel
+
+This is the consequence worth carrying furthest.
+
+> *"we might have different profile implementations that support the given need"*
+
+If a profile is chosen by the assurance an act requires, then **profile selection varies per
+act** — and `DSC-0100` declares the opposite:
+
+```yaml
+  extent:
+    axes:
+      slice-type:
+        state: travels-to
+        region: all-command-slices
+        reason: >-
+          A pattern-level determination. Every command slice ever written in
+          this context collects it.
+```
+
+Under R-Q45, **every command slice does not collect `rest-api-v1`**. Each collects the
+profile whose discharged assurance meets its need. A pattern-level determination cannot
+pin a profile whose applicability is per-act, so DSC-0100's `slice-type` extent is wrong —
+not stale, wrong at the point the ruling lands.
+
+This is the **second** thing R-Q10 and R-Q45 between them require of DSC-0100: R-Q10 needs
+its `statement` superseded (the "where external data is required" clause), and R-Q45 needs
+its `extent` superseded. One supersession can carry both, and it should.
+
+Note also what this does to the CG-R-53 anchor problem the profile already concedes.
+DSC-0100 anchors on `PlaceOrder` "arbitrarily" and travels. If travel is now conditional on
+a per-act requirement, the arbitrary anchor stops being a cosmetic defect and starts
+selecting which act's needs the pinned profile happens to match.
+
+**Q-46 (F9).** *"Everywhere"* is doing work and its edge is not stated:
+> Does `delivery_assurance` apply to **read** positions as well as writes? A read can fail
+> to arrive too — DSC-0003's `ActorIdentity` is an OIDC claim that may simply not be there,
+> which this slice handles by throwing (D-19). That is an assurance question wearing a
+> different hat. This session applied the field to writes only, because "reaching the
+> external system" is a delivery phrase.
+
+**Q-47 (F8/F1).**
+> If several profiles exist per act type, differentiated by discharged assurance, **how is
+> the profile selected for a given act?** Today one determination pins one profile to all
+> command slices by an arbitrary anchor. Selection by requirement needs either a
+> determination per act naming its profile, or a resolution rule that picks the profile
+> whose discharge meets the act's need — and if two qualify, a tie-break. None of that
+> exists, and it is the mechanism R-Q45 presupposes.
+
+### Proposed profile field — not authored
+
+```yaml
+profile: rest-api-v1
+act_type: command
+stack: "C# / ASP.NET Core"
+discharges:
+  # R-Q45. The assurance level this profile's mechanism actually reaches. A profile may
+  # not be selected for an act whose delivery_assurance exceeds it. Declaring more than
+  # the mechanism delivers is a defect in the profile, not in the slices built to it.
+  delivery_assurance: enqueued
+  mechanism: outbox            # relay unbuilt; dispatched and confirmed are not reachable
+```

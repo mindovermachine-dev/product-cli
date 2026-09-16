@@ -290,6 +290,26 @@ public static class DeterminationStore
             .ToList();
     }
 
+    /// <summary>
+    /// R-Q45 — "we have delivery_assurance every where". Every write position, not only
+    /// the terminal ones. Returns one entry per write, null where none is declared.
+    /// </summary>
+    public static IReadOnlyList<DeliveryAssurance?> ReadRequiredAssuranceForEveryWrite(string path)
+    {
+        var records = new Deserializer()
+            .Deserialize<List<Dictionary<string, object>>>(File.ReadAllText(path));
+
+        return records
+            .Select(r => r.GetValueOrDefault("positions"))
+            .OfType<List<object>>()
+            .SelectMany(positions => positions.OfType<Dictionary<object, object>>())
+            .Where(entry => entry.GetValueOrDefault("role") as string == "write")
+            .Select(entry => entry.GetValueOrDefault("boundary") as Dictionary<object, object>
+                             ?? new Dictionary<object, object>())
+            .Select(ReadRequiredAssurance)
+            .ToList();
+    }
+
     private static bool? ReadObservable(Dictionary<object, object> boundary) =>
         boundary.GetValueOrDefault("consumption_observable") switch
         {
