@@ -508,3 +508,124 @@ object — and the exception was the one object a profile rule turned out to nee
 determine on. With R-Q37 applied it becomes true without exception, and R-GROUND's
 requirement — that a rule may only condition on modelled ground — acquires a schema that
 can actually enforce "modelled".
+
+---
+
+## R-Q38 — Emil, 2026-09-16
+
+**Question put (Q-38).** *"Should `carrier` be **required** for an `external` boundary? …
+Making it required is a breaking change to the delivered store: DSC-0003 would fail
+validation until amended. That is a principal's call about migration cost, not a
+builder's."*
+
+**Answer, verbatim.**
+
+> if we dont supply carrier that needs to an explicit decision made by a human. Because
+> its vital for the systems design
+
+**Ruled:** `carrier` is required. Not supplying one is permitted — as a **stated,
+attributed decision carried by a named human**, never as an omission.
+
+### The question was framed wrongly and the ruling says so
+
+Q-38 offered required-or-optional and treated the validation break as a **cost**. It is
+the **mechanism**. A determination that fails validation for want of a carrier is the
+system asking a human a question it cannot answer itself — which, given the ruling's
+reason, is precisely what should happen. DSC-0003 failing until amended is not migration
+debt; it is the one place the carriage of an identity fact gets a decision.
+
+This session recorded Q-38 as a migration call and would have defaulted to optional. That
+default would have let every external position drift into silent `Undeterminable` — the
+same failure mode as the deleted regex, one level up. **Filed as a misread: the builder
+priced the break instead of reading what the break is for.**
+
+### It splits the third verdict in two
+
+R-GROUND gave the checker `Undeterminable`. R-Q38 says that value conflates two states
+demanding different actions:
+
+| | Means | Remedy |
+|---|---|---|
+| `UndeterminableUnattributed` | the field is absent; **nobody decided** | amend the determination — and under R-Q37's closed schema this is a validation failure, so it cannot pass silently |
+| `UndeterminableCarried` | a **named principal** stated that no carrier is supplied, and why | none. A filed risk with an owner. |
+
+The checker learns nothing more about the carrier in the second case. It learns **whose
+problem it is**, and that is the difference between a report that shrugs and a report
+someone can act on.
+
+### The schema already has this device, twice, and has not named it
+
+1. `does_not_cover` requires the explicit `asserted-none` sentinel, *"because an omitted
+   uncovered set is indistinguishable from an unconsidered one"* (DP-3).
+2. `allocation.residual` requires a carrying actor kind **and** an accountable principal,
+   and `principal.kind` omits `machine` *"by design"* — *"a model identity cannot be an
+   accepting principal"* (PR-2/DP-4).
+3. R-Q38's carrier is the same device a third time.
+
+**Proposed: name it.** The schema appears to hold an unnamed invariant —
+
+> **No silent omission. Wherever a field's absence changes what a downstream consumer may
+> conclude, absence must be *stated*, and stated absence must be *attributed to a
+> non-machine principal*.**
+
+Naming it would make the next instance derivable instead of rediscovered. This is the
+third time it has been rediscovered, and this run found the third one by building against
+the schema rather than by reading it.
+
+### Proposed patch — supersedes the R-Q37 draft above
+
+```json
+"carrier": {
+  "$comment": "R-GROUND / R-Q38. What physically carries the fact to the act. read_provenance stays free text and says HOW the fact was established; carrier says WHAT delivers it, and is the only one of the two a profile rule may condition on. Absence is not a value: it is stated and attributed, per the store's standing pattern (cf. does_not_cover's asserted-none, and residual's principal).",
+  "oneOf": [
+    { "type": "string", "enum": ["transport", "store", "computed", "external-call"] },
+    {
+      "type": "object",
+      "required": ["state", "principal", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "type": "string", "const": "not-supplied" },
+        "principal": {
+          "type": "object",
+          "required": ["kind", "identifier"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "type": "string", "enum": ["human", "team", "external-party"] },
+            "identifier": { "type": "string", "minLength": 1 }
+          }
+        },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  ]
+}
+```
+
+and `carrier` joins the `external` branch of the `allOf`:
+
+```json
+{ "if":   { "properties": { "kind": { "const": "external" } } },
+  "then": { "required": ["kind", "source", "read_provenance", "tick_rate", "carrier"] } }
+```
+
+**`principal.kind` omits `machine`, deliberately and for the schema's own stated reason.**
+An agent may not decide that the carriage of a fact does not matter. A withholding that
+names no acceptable principal reads back as **unattributed**, not as a decision — the safe
+direction, asserted by
+`ProviderTransportCarrierTests.A_withholding_without_an_accountable_principal_is_not_a_decision`.
+
+### Migration, now that the break is the point
+
+Applying R-Q37 + R-GROUND + R-Q38 as one patch invalidates exactly one record in the
+delivered store: **DSC-0003**, whose `ActorIdentity` read position is `external` and
+declares no carrier. Every other position is `internal` or `terminal` and is untouched.
+So the total migration is one determination, and amending it is the human decision the
+ruling demands.
+
+**Q-39 (F3), and this one is a design question rather than a notation one.**
+> Should `carrier` be required for `internal` boundaries too? `Cart` is internal and read
+> through a provider that adapts *something* — a store, today. Under R-GROUND a rule
+> conditioning on carriage is unrunnable for internal positions for exactly the same
+> reason it was for external ones, and the amended provider rule applies to every
+> provider. The `allOf` currently singles out `external` because that is where `source`
+> and `tick_rate` matter; carriage may not follow the same line.

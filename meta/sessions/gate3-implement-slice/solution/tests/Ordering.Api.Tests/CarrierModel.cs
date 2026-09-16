@@ -26,6 +26,26 @@ using YamlDotNet.Serialization;
 // time an axis is added" (DP-1). The same holds for enforcement: collapsing
 // UNDETERMINABLE into BREACHES makes a conformance report unsound the first time a
 // carrier is modelled. A checker that cannot say "I have no ground for this" will lie.
+//
+// ─── and then R-Q38 split that third value in two ─────────────────────────────────
+//
+// Ruling R-Q38: "if we dont supply carrier that needs to be an explicit decision made by
+// a human. Because its vital for the systems design."
+//
+// So "no carrier" is not one state. It is two, and they demand different actions:
+//   * NOBODY DECIDED — the field is simply absent. Under the closed schema of R-Q37 this
+//     is a validation failure, and that failure is the MECHANISM: it is how a human gets
+//     asked. Remedy: amend the determination.
+//   * SOMEONE DECIDED NOT TO SUPPLY IT — absence stated, with a named principal carrying
+//     it. Remedy: none. It is a filed risk with an owner, and the checker's job is to
+//     report whose it is.
+//
+// The argument for splitting them is again the schema's own, and by now it has made it
+// twice: `does_not_cover` demands the `asserted-none` sentinel "because an omitted
+// uncovered set is indistinguishable from an unconsidered one" (DP-3), and a `residual`
+// allocation requires an accountable principal who "cannot be a machine" (PR-2/DP-4).
+// R-Q38 is the same device a third time. See rulings.md — the schema appears to have an
+// unnamed recurring pattern: NO SILENT OMISSION; absence is stated and attributed.
 // ═══════════════════════════════════════════════════════════════════════════════════
 
 /// <summary>
@@ -48,7 +68,7 @@ public enum Carrier
     ExternalCall,
 }
 
-/// <summary>The three answers a rule over modelled ground can give.</summary>
+/// <summary>The four answers a rule over modelled ground can give.</summary>
 public enum Verdict
 {
     /// <summary>The rule was evaluated and holds.</summary>
@@ -58,16 +78,48 @@ public enum Verdict
     Breaches,
 
     /// <summary>
-    /// The rule could not be evaluated, because the ground it determines on is not
-    /// modelled. Never collapse this into <see cref="Breaches"/>.
+    /// The rule could not be evaluated and NOBODY DECIDED THAT. The ground is simply
+    /// absent. Under R-Q37's closed schema this is a validation failure, and the failure
+    /// is how a human gets asked. Remedy: amend the determination.
     /// </summary>
-    Undeterminable,
+    UndeterminableUnattributed,
+
+    /// <summary>
+    /// The rule could not be evaluated and A NAMED PRINCIPAL DECIDED SO. The absence is
+    /// stated and carried. Remedy: none — it is a filed risk with an owner. R-Q38.
+    /// </summary>
+    UndeterminableCarried,
+}
+
+/// <summary>
+/// An explicit, attributed decision not to supply a carrier. R-Q38.
+/// </summary>
+/// <remarks>
+/// Modelled on the schema's own `allocation.residual`: a carrying principal is required
+/// and <see cref="PrincipalKind"/> excludes `machine`, because — in the schema's words —
+/// "a model identity cannot be an accepting principal". An agent may not decide that the
+/// carrier of a fact does not matter.
+/// </remarks>
+public sealed record CarrierNotSupplied(string PrincipalKind, string PrincipalIdentifier, string Reason)
+{
+    public static readonly string[] AcceptableKinds = { "human", "team", "external-party" };
+
+    public bool HasAccountablePrincipal =>
+        AcceptableKinds.Contains(PrincipalKind, StringComparer.Ordinal)
+        && !string.IsNullOrWhiteSpace(PrincipalIdentifier);
 }
 
 /// <summary>A read position as the determination store actually declares it.</summary>
-public sealed record ModelledPosition(string FactType, string Kind, Carrier? Carrier)
+public sealed record ModelledPosition(
+    string FactType,
+    string Kind,
+    Carrier? Carrier,
+    CarrierNotSupplied? CarrierWithheld = null)
 {
     public bool CarrierIsModelled => Carrier is not null;
+
+    /// <summary>R-Q38 — absence stated by a named principal, rather than absence.</summary>
+    public bool CarrierIsWithheldDeliberately => CarrierWithheld is not null;
 }
 
 /// <summary>
@@ -108,7 +160,8 @@ public static class DeterminationStore
                 positions[factType] = new ModelledPosition(
                     factType,
                     boundary.GetValueOrDefault("kind") as string ?? string.Empty,
-                    ReadCarrier(boundary));
+                    ReadCarrier(boundary),
+                    ReadWithheldCarrier(boundary));
             }
         }
 
@@ -129,6 +182,31 @@ public static class DeterminationStore
             "external-call" => Carrier.ExternalCall,
             _ => null,
         };
+
+    /// <summary>
+    /// R-Q38 — the object form of `carrier`: a stated, attributed decision not to supply
+    /// one. Read, never inferred, and never accepted without a principal.
+    /// </summary>
+    private static CarrierNotSupplied? ReadWithheldCarrier(Dictionary<object, object> boundary)
+    {
+        if (boundary.GetValueOrDefault("carrier") is not Dictionary<object, object> stated
+            || stated.GetValueOrDefault("state") as string != "not-supplied")
+        {
+            return null;
+        }
+
+        var principal = stated.GetValueOrDefault("principal") as Dictionary<object, object>
+                        ?? new Dictionary<object, object>();
+
+        var withheld = new CarrierNotSupplied(
+            principal.GetValueOrDefault("kind") as string ?? string.Empty,
+            principal.GetValueOrDefault("identifier") as string ?? string.Empty,
+            stated.GetValueOrDefault("reason") as string ?? string.Empty);
+
+        // No principal, no attribution — so it is not a decision, it is an omission
+        // wearing one's clothes. The schema's own rule: the principal cannot be a machine.
+        return withheld.HasAccountablePrincipal ? withheld : null;
+    }
 }
 
 /// <summary>
@@ -145,11 +223,21 @@ public static class ProviderTransportRule
         }
 
         // The rule turns on the carrier of the position adapted. No position, no ground.
-        if (adapts is null || !adapts.CarrierIsModelled)
+        if (adapts is null)
         {
-            return Verdict.Undeterminable;
+            return Verdict.UndeterminableUnattributed;
         }
 
-        return adapts.Carrier == Carrier.Transport ? Verdict.Conforms : Verdict.Breaches;
+        if (adapts.CarrierIsModelled)
+        {
+            return adapts.Carrier == Carrier.Transport ? Verdict.Conforms : Verdict.Breaches;
+        }
+
+        // R-Q38 — still no ground, but now it matters enormously WHY. An absence someone
+        // signed for is a filed risk with an owner; an absence nobody signed for is a
+        // question that has not been asked.
+        return adapts.CarrierIsWithheldDeliberately
+            ? Verdict.UndeterminableCarried
+            : Verdict.UndeterminableUnattributed;
     }
 }

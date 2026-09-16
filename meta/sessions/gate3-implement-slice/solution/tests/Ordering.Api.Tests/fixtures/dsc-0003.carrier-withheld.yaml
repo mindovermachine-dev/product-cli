@@ -1,0 +1,59 @@
+# FIXTURE — NOT A DETERMINATION, NOT PART OF ANY STORE.
+#
+# R-Q38: "if we dont supply carrier that needs to an explicit decision made by a human.
+# Because its vital for the systems design."
+#
+# So this is the OTHER lawful shape: the carrier is not supplied, and a named human
+# principal says so and carries it. Compare `dsc-0003.carrier-modelled.yaml`, which
+# supplies one.
+#
+# The form mirrors the schema's own `allocation.residual`: a principal is required and
+# its `kind` excludes `machine`, because — the schema's words — "a model identity cannot
+# be an accepting principal". An agent may not decide that the carrier of a fact does not
+# matter. A reader that finds no principal here treats the absence as unattributed, not
+# as a decision.
+#
+# `made_by` says what this file is. It is not in inputs/ and nothing loads it but the
+# test demonstrating the proposal.
+
+- id: DSC-0003
+  address:
+    act_type: command
+    act_instance: PlaceOrder
+  statement: >-
+    Who may place an order is not settled at this address.
+  extent:
+    axes:
+      slice-type:
+        state: bound-here
+      context:
+        state: silent
+      sector:
+        state: silent
+  allocation:
+    class: residual
+    carried_by: human
+    principal:
+      kind: team
+      identifier: "platform-security"
+  positions:
+    - fact_type: ActorIdentity
+      role: read
+      boundary:
+        kind: external
+        source: "identity provider, outside the modelled scope"
+        read_provenance: "OIDC token claim, validated at the gateway"
+        carrier:
+          state: not-supplied
+          principal:
+            kind: human
+            identifier: "emil"
+          reason: >-
+            The identity provider is being replaced in Q4 and the carriage may change
+            from a request claim to a sidecar lookup. Fixing a carrier now would pin a
+            profile rule to an arrangement we intend to end.
+        tick_rate: fast
+  provenance:
+    made_at: build-time
+    made_by: "gate3-fixture-not-a-determination"
+    recorded: "2026-08-14T10:07:00Z"

@@ -1,11 +1,16 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Thirty-eight — twenty-nine at Gate B,
-nine more raised by rulings (Q-30 … Q-38).
+**Every question this session would ask, asked.** Thirty-nine — twenty-nine at Gate B,
+ten more raised by rulings (Q-30 … Q-39).
 
-**Six are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
-Q-16, Q-06, Q-37, Q-11 (a free consequence of Q-10), and Q-36 (by R-GROUND).
+**Seven are answered**, all on 2026-09-16, all recorded verbatim in `rulings.md`: Q-10,
+Q-16, Q-06, Q-37, Q-38, Q-11 (a free consequence of Q-10), and Q-36 (by R-GROUND).
 **Thirty-two remain open.**
+
+**One was asked badly.** Q-38 offered a required-or-optional choice and priced the
+validation break as a migration cost. R-Q38's answer is that the break is the *mechanism* —
+it is how a human gets asked about something vital to the system's design. Recorded as a
+misread rather than quietly corrected, because a question's framing is part of the datum.
 
 The three rulings between them raised seven new questions and required one rule amendment,
 one schema proposal and one supersession. That is the shape of the result: **answers here
@@ -554,7 +559,7 @@ closure and the declaration are one patch. Migration cost is nil — the deliver
 uses no undeclared boundary key.
 **Site** `rulings.md` R-Q37; `SchemaClosureTests.cs`.
 
-### Q-38 — F13, raised by ruling R-Q37
+### Q-38 — F13 — **ANSWERED**, see `rulings.md`
 > Should `carrier` be **required** for an `external` boundary, alongside `source`,
 > `read_provenance` and `tick_rate`? The `allOf` already obliges an external read to
 > declare where it comes from and how fast it ticks. Under R-GROUND a rule conditioning on
@@ -565,5 +570,27 @@ uses no undeclared boundary key.
 
 **Prompted by** drafting the R-Q37 patch and having to choose whether `carrier` joins the
 `allOf` for `external`.
-**Proceeded under** optional. Left out of the proposed patch's `allOf` deliberately.
-**Site** `rulings.md` R-Q37.
+**Answered** *"if we dont supply carrier that needs to an explicit decision made by a
+human. Because its vital for the systems design."* — Emil, 2026-09-16. Required; absence
+permitted only as a **stated, attributed** decision carried by a named non-machine
+principal.
+**The question was framed wrongly** and this session would have defaulted to optional,
+which would have let every external position drift into silent `Undeterminable` — the same
+failure mode as the deleted regex, one level up.
+**It splits the third verdict**: `UndeterminableUnattributed` (nobody decided; amend the
+determination) against `UndeterminableCarried` (a named principal decided; a filed risk
+with an owner).
+**Site** `rulings.md` R-Q38; `CarrierModel.cs`; `fixtures/dsc-0003.carrier-withheld.yaml`.
+
+### Q-39 — F3, raised by ruling R-Q38
+> Should `carrier` be required for `internal` boundaries too? `Cart` is internal and read
+> through a provider that adapts *something* — a store, today. Under R-GROUND a rule
+> conditioning on carriage is unrunnable for internal positions for exactly the same reason
+> it was for external ones, and the amended provider rule applies to every provider. The
+> `allOf` singles out `external` because that is where `source` and `tick_rate` matter;
+> carriage may not follow the same line.
+
+**Prompted by** drafting the R-Q38 patch and having to choose which `allOf` branch
+`carrier` joins.
+**Proceeded under** `external` only, following the existing branch.
+**Site** `rulings.md` R-Q38.

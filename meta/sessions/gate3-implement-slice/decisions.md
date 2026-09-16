@@ -1,6 +1,6 @@
 # Decisions — every point the specification does not settle, resolved by this session
 
-Forty-four, of which **one is withdrawn, one reversed twice, and one deleted outright by a ruling**. Each is marked at its site in the source with the same `D-nn` tag
+Forty-six, of which **one is withdrawn, one reversed twice, one deleted outright, and one superseded by a later ruling**. Each is marked at its site in the source with the same `D-nn` tag
 (`grep -rn 'D-[0-9][0-9]' solution/src`), so the code and this record cannot drift.
 
 **INVENTED** = the specification is silent and this session supplied something.
@@ -31,7 +31,9 @@ that is the finding.
 | ~~D-40~~ | **DELETED by R-GROUND** | The prose-matching `IsTransportBorne` is gone. "We cant add decisions to ground we havent modelled." Replaced by a closed `Carrier` vocabulary and a reader that never infers. | `CarrierModel.cs` |
 | D-42 | DECIDED | **`Undeterminable` is kept distinct from `Breaches`.** Collapsing them would report this slice as non-conforming, which is false — nothing here is known to be wrong, it is unknown. The schema makes the identical argument for `silent` (DP-1) and for `asserted-none` (DP-3). A checker without the third value lies in whichever direction its author defaulted. | `CarrierModel.cs` |
 | D-43 | DECIDED | A carrier value outside the closed vocabulary is treated as **unmodelled**, not guessed at. An unrecognised string is not a licence to infer. | `CarrierModel.ReadCarrier` |
-| D-44 | DECIDED | `carrier` is proposed as **optional**, not added to the `allOf` that makes `source`/`read_provenance`/`tick_rate` required for an `external` boundary. Required would be a breaking change to the delivered store — DSC-0003 would fail until amended — and that is a migration call for a principal. Q-38. | `rulings.md` R-Q37 |
+| ~~D-44~~ | **SUPERSEDED by R-Q38** | `carrier` was proposed **optional**, pricing the validation break as migration cost. The ruling is that the break is the *mechanism*: `carrier` is required, and absence is permitted only as a stated decision attributed to a named human. The optional default would have let every external position drift into silent `Undeterminable`. | `rulings.md` R-Q38 |
+| D-46 | DECIDED | The verdict is **four-valued**, not three. `UndeterminableUnattributed` (nobody decided) is kept distinct from `UndeterminableCarried` (a named principal decided, and why). Same argument as D-42, one level down: the checker learns nothing more about the carrier, it learns whose problem it is. | `CarrierModel.cs` |
+| D-47 | DECIDED | A withholding naming no acceptable principal reads back as **unattributed**, not as a decision — the safe direction. `machine` is excluded, per the schema's own "a model identity cannot be an accepting principal". | `CarrierModel.ReadWithheldCarrier` |
 | D-45 | DECIDED | `Boundary_is_currently_open_which_R_Q37_rules_an_oversight` is a **pinned defect test**: it asserts the state the ruling calls wrong, so applying the fix registers as a change rather than passing silently. Delete it when R-Q37 lands. | `SchemaClosureTests.cs` |
 | D-41 | DECIDED | A provider is matched to the fact it supplies by the return type of its single public method. Nothing states the convention; two facts or a DTO breaks it. Q-34. | `ProviderTransportCarrierTests.cs` |
 | D-38 | DECIDED | An exhaustiveness rule written over "every type" catches the compiler-generated async state machine behind the middleware. An analyser implementing R-Q16 must scope to types declared in source. Found by running it. | `ProfileConformanceTests.cs` |

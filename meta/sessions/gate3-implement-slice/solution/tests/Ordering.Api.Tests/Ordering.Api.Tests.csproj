@@ -28,6 +28,9 @@
     <!-- R-GROUND — a FIXTURE showing the carrier modelled. Not a determination. -->
     <Content Include="fixtures/dsc-0003.carrier-modelled.yaml"
              CopyToOutputDirectory="PreserveNewest" />
+    <!-- R-Q38 — a FIXTURE showing the carrier withheld by a named principal. -->
+    <Content Include="fixtures/dsc-0003.carrier-withheld.yaml"
+             CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

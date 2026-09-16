@@ -41,6 +41,9 @@ public sealed class ProviderTransportCarrierTests
     private static readonly string CarrierModelled =
         Path.Combine(AppContext.BaseDirectory, "fixtures", "dsc-0003.carrier-modelled.yaml");
 
+    private static readonly string CarrierWithheld =
+        Path.Combine(AppContext.BaseDirectory, "fixtures", "dsc-0003.carrier-withheld.yaml");
+
     /// <summary>
     /// THE FINDING. On the store as delivered, the rule cannot be evaluated for the one
     /// provider it matters for.
@@ -56,7 +59,67 @@ public sealed class ProviderTransportCarrierTests
             ReferencesTransport(typeof(ActorIdentityProvider)),
             positions["ActorIdentity"]);
 
-        Assert.Equal(Verdict.Undeterminable, verdict);
+        Assert.Equal(Verdict.UndeterminableUnattributed, verdict);
+    }
+
+    /// <summary>
+    /// R-Q38 — the same absence, decided and signed for, is a different verdict. Not
+    /// because the checker learned anything about the carrier, but because it learned
+    /// whose problem it is.
+    /// </summary>
+    [Fact]
+    public void A_withheld_carrier_is_carried_not_unattributed()
+    {
+        var positions = DeterminationStore.ReadPositionsFor(CarrierWithheld, "PlaceOrder");
+        var position = positions["ActorIdentity"];
+
+        Assert.False(position.CarrierIsModelled);
+        Assert.True(position.CarrierIsWithheldDeliberately);
+
+        var verdict = ProviderTransportRule.Evaluate(
+            ReferencesTransport(typeof(ActorIdentityProvider)),
+            position);
+
+        Assert.Equal(Verdict.UndeterminableCarried, verdict);
+    }
+
+    /// <summary>
+    /// And the decision names who carries it, so the report can say so. A conformance
+    /// report that ends "undeterminable" is a shrug; one that ends "undeterminable, and
+    /// emil decided that on 2026-08-14, because the identity provider is being replaced"
+    /// is a position someone can act on.
+    /// </summary>
+    [Fact]
+    public void The_withheld_carrier_names_an_accountable_human_principal()
+    {
+        var withheld = DeterminationStore
+            .ReadPositionsFor(CarrierWithheld, "PlaceOrder")["ActorIdentity"]
+            .CarrierWithheld;
+
+        Assert.NotNull(withheld);
+        Assert.Equal("human", withheld.PrincipalKind);
+        Assert.Equal("emil", withheld.PrincipalIdentifier);
+        Assert.NotEmpty(withheld.Reason);
+        Assert.True(withheld.HasAccountablePrincipal);
+    }
+
+    /// <summary>
+    /// R-Q38's hard edge, taken from the schema's own: "a model identity cannot be an
+    /// accepting principal". A machine may not decide the carrier does not matter, and a
+    /// withholding without an acceptable principal is not a decision at all — it reads
+    /// back as UNATTRIBUTED, which is the safe direction.
+    /// </summary>
+    [Theory]
+    [InlineData("machine", "gate3-builder")]
+    [InlineData("human", "")]
+    [InlineData("", "emil")]
+    public void A_withholding_without_an_accountable_principal_is_not_a_decision(
+        string kind,
+        string identifier)
+    {
+        var withheld = new CarrierNotSupplied(kind, identifier, "because");
+
+        Assert.False(withheld.HasAccountablePrincipal);
     }
 
     /// <summary>

@@ -1,20 +1,30 @@
 # Gate C — report
 
-**Revised 2026-09-16 against five rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37).** The Gate C figures as first
+**Revised 2026-09-16 against six rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37, R-Q38).** The Gate C figures as first
 issued, with no question answered, are preserved in `gate-c-report-baseline.md` so the
 before/after is comparable.
 
 Builder session. One command slice, `PlaceOrder`, under profile `rest-api-v1`, built
 from the four arrived inputs and nothing else. Builds clean under
-`TreatWarningsAsErrors` in both projects; 29 tests pass on .NET 8.
+`TreatWarningsAsErrors` in both projects; 34 tests pass on .NET 8.
 
 ---
 
 ## The headline
 
-**38 clarifications against 3 of 13 frame categories settled without invention. Six
-answered, thirty-two open — and the five rulings raised nine new questions, amended one
-rule, deleted one check outright, and require one supersession and one schema patch.**
+**39 clarifications against 3 of 13 frame categories settled without invention. Seven
+answered, thirty-two open — and the six rulings raised ten new questions, amended one
+rule, deleted one check, superseded one of this session's own proposals, and require one
+determination supersession and one schema patch.**
+
+**One question was asked badly, and that is worth as much as the ones asked well.** Q-38
+offered "required or optional?" and priced the validation break as a migration cost.
+R-Q38's answer — *"if we dont supply carrier that needs to an explicit decision made by a
+human. Because its vital for the systems design"* — is that the break **is** the mechanism:
+a determination failing validation for want of a carrier is the system asking a human a
+question it cannot answer itself. This session would have defaulted to optional and let
+every external position drift into silent `Undeterminable`. Recorded as a misread, not
+quietly corrected.
 
 **Answers here do not close questions one for one. They move the specification.** That is
 the single most transferable finding of this run, and it was not visible until a principal
@@ -41,6 +51,13 @@ real hole, and neither made the profile enforceable:
 * **R-Q06** amended the `must_not` to turn on what the provider adapts. The slice conforms
   again. **It took a rule change, not a clarification** — no reading of the original four
   inputs could have produced a conforming slice at that point.
+* **R-Q38** made `carrier` required, with absence permitted only as a **stated decision
+  attributed to a named non-machine principal** — and in doing so split R-GROUND's third
+  verdict in two. `UndeterminableUnattributed` (nobody decided; amend the determination)
+  is now distinct from `UndeterminableCarried` (a named principal decided, and said why).
+  The checker learns nothing more about the carrier in the second case; it learns **whose
+  problem it is**, which is the difference between a report that shrugs and one someone
+  can act on.
 * **R-Q37** closed the last hole the previous ruling exposed: `boundary` is open by
   oversight, not by design. Checked and confirmed — it is the **only** object in the schema
   left open, a single miss rather than a pattern. But applying it is a **two-part change**:
