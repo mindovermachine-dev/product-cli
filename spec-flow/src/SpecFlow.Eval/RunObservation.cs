@@ -13,6 +13,9 @@ namespace SpecFlow.Eval;
 /// </remarks>
 public static class RunObservation
 {
+    /// <summary>Which tool these runs came from, so one store can hold several.</summary>
+    public const string Tool = "spec-flow";
+
     /// <summary>What was configured for the run, as the journal keeps it.</summary>
     /// <param name="Model">The model asked, or null when none was.</param>
     /// <param name="Endpoint">The endpoint URL; only its host is kept.</param>
@@ -33,7 +36,7 @@ public static class RunObservation
     /// </summary>
     /// <returns>Where the record landed, or null when nothing was written.</returns>
     public static async Task<string?> ObserveAsync(
-        string root,
+        EvalStore store,
         ImplementRequest request,
         SliceBuilt built,
         ImplementOutcome outcome,
@@ -54,6 +57,7 @@ public static class RunObservation
             var record = new RunRecord(
                 RunRecord.FormV1,
                 outcome.RecordId,
+                Tool,
                 built.Slice,
                 request.ActRef,
                 DateTimeOffset.UtcNow,
@@ -62,13 +66,13 @@ public static class RunObservation
                 (long)duration.TotalMilliseconds,
                 built.DraftDeterminations,
                 outcome.ReviewedDeterminations,
-                built.Notes.Length,
                 built.Notes,
                 Flatten(result));
 
-            return RunJournal.Write(root, record);
+            return store.WriteRun(record);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException
+                                       or InvalidOperationException or ArgumentException)
         {
             Debug.WriteLine($"the run journal was not written: {e.Message}");
             return null;

@@ -1,0 +1,28 @@
+[package]
+name = "eval-core"
+version = "0.6.0"
+edition = "2021"
+authors = ["PiCloud Contributors"]
+license = "Apache-2.0"
+description = "Observation of model runs, kept apart from the judgments made about them."
+repository = "https://github.com/mindovermachine-dev/product-cli"
+homepage = "https://github.com/mindovermachine-dev/product-cli"
+readme = "../README.md"
+
+[lints]
+workspace = true
+
+# Out of the cargo-dist release set: a library, with no binary to ship.
+[package.metadata.dist]
+dist = false
+
+[dependencies]
+ledger-core  = { path = "../ledger-core", version = "0.6.0" }
+product-core = { path = "../product-core", version = "0.6.0" }
+chrono     = { version = "0.4", features = ["serde"] }
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+ledger-core = { path = "../ledger-core", version = "0.6.0" }

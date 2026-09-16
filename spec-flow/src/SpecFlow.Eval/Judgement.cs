@@ -39,7 +39,7 @@ public sealed record Judgement(
     [property: JsonPropertyName("verdicts")] IReadOnlyList<RunMetric> Verdicts)
 {
     /// <summary>The form this file is written in.</summary>
-    public const string FormV1 = "spec.judgement.v1";
+    public const string FormV1 = "eval.judgement.v1";
 
     /// <summary>
     /// Always true, and carried rather than implied.
@@ -99,27 +99,48 @@ public sealed record JudgementContext(
     [property: JsonPropertyName("shown")] IReadOnlyDictionary<string, string> Shown)
 {
     /// <summary>The digest's prefix, distinguishing it from the store's others.</summary>
-    public const string Prefix = "spec.judgement-context.v1";
+    public const string Prefix = "eval.judgement-context.v1";
 
     /// <summary>The separator between a key and its value in the canonical form.</summary>
     private const char Separator = (char)0x1f;
 
-    /// <summary>Pin a context by digesting what it shows.</summary>
+    /// <summary>
+    /// Pin a context by digesting what it shows.
+    /// </summary>
+    /// <remarks>
+    /// The canonical form is stated normatively in `docs/eval-format-v1.md` §6
+    /// and implemented twice — here and in `eval-core`. Both are held to
+    /// `eval-core/tests/fixtures/context-digest.json`, so a change made on one
+    /// side and not the other fails on both.
+    /// </remarks>
     public static JudgementContext Pin(IReadOnlyDictionary<string, string> shown)
     {
         var ordered = new SortedDictionary<string, string>(
             shown.ToDictionary(p => p.Key, p => p.Value), StringComparer.Ordinal);
 
-        var canonical = new StringBuilder(Prefix);
-        foreach (var (key, value) in ordered)
-        {
-            canonical.Append('\n').Append(key).Append(Separator).Append(value);
-        }
+        var entries = ordered
+            .Select(p => (p.Key, Value: Normalise(p.Value)))
+            .Where(p => p.Value.Length > 0)
+            .Select(p => $"{p.Key}{Separator}{p.Value}");
 
-        var digest = Convert.ToHexStringLower(
-            SHA256.HashData(Encoding.UTF8.GetBytes(canonical.ToString())));
+        var canonical = $"{Prefix}\n{string.Join('\n', entries)}";
+        var digest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
         return new JudgementContext($"sha256:{digest}", ordered);
     }
+
+    /// <summary>
+    /// A value as the canonical form takes it: newlines folded, NFC, trimmed.
+    /// </summary>
+    /// <remarks>
+    /// A key whose value normalises to nothing is dropped by the caller, so
+    /// absent and present-but-empty cannot pin differently — a distinction no
+    /// reader could act on is not one worth hashing.
+    /// </remarks>
+    public static string Normalise(string value) =>
+        value.Replace("\r\n", "\n", StringComparison.Ordinal)
+             .Replace('\r', '\n')
+             .Normalize(NormalizationForm.FormC)
+             .Trim(' ', '\t', '\n', '\v', '\f');
 
     /// <summary>
     /// Whether the digest still matches what this context says it showed.

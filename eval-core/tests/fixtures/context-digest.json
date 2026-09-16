@@ -1,0 +1,61 @@
+{
+  "_": "Cross-runtime fixture for docs/eval-format-v1.md §6. Both the Rust and the .NET implementation are held to these digests; a change here is a format change. Regenerate with: UPDATE_FIXTURES=1 cargo test -p eval-core --test fixture",
+  "cases": [
+    {
+      "digest": "sha256:78886a7fb45787b072bdcb934b6ce3d67bf20009a57d674cef59c7e6795948e2",
+      "name": "two keys",
+      "shown": {
+        "act_ref": "act/settle-a-basket",
+        "proposed": "det/a,det/b"
+      }
+    },
+    {
+      "digest": "sha256:10e72f784b019794f096b10eac64bcae934fb4e8e02c8d5ff5b80b3bb2a0ea47",
+      "name": "nothing shown",
+      "shown": {}
+    },
+    {
+      "digest": "sha256:3307a2fe7eb14a13f33bbfdbc902fb8619bece868aff3495724db51896b25efa",
+      "name": "an empty value is omitted, not hashed",
+      "shown": {
+        "a": "1",
+        "blank": "   "
+      }
+    },
+    {
+      "digest": "sha256:1c9511caff355364d60b8486b58d1895f1735b823f09709f7443a28a24113bcc",
+      "name": "line endings fold to newline",
+      "shown": {
+        "reply": "one\r\ntwo\rthree"
+      }
+    },
+    {
+      "digest": "sha256:f3354d3a09d07e30b6b3df594ebfb5aef197f29d875df825f97c1f04ff8d36cd",
+      "name": "values are NFC composed",
+      "shown": {
+        "name": "café"
+      }
+    },
+    {
+      "digest": "sha256:553dc244f1805cb254f533328e2b1f0265f77725267231d358d767796c34777f",
+      "name": "values are trimmed of ascii whitespace",
+      "shown": {
+        "a": "  padded  "
+      }
+    },
+    {
+      "digest": "sha256:62af067c3165ce63d039cb168afe5fa0c822a529a903745765ac7e724362e9ba",
+      "name": "a realistic judging context",
+      "shown": {
+        "act_name": "Settle a basket",
+        "act_ref": "act/settle-a-basket",
+        "act_settles": "What the customer owes when the basket closes.",
+        "builder_model": "qwen3-coder-30b-a3b-instruct",
+        "kept": "det/basket-rounding-is-half-even",
+        "proposed": "det/basket-rounding-is-half-even,det/item-totals-scope-includes-tax",
+        "run": "01M2MMTY7CY42T4BFJ5QDHAEW7",
+        "subject": "item-totals-v3"
+      }
+    }
+  ]
+}

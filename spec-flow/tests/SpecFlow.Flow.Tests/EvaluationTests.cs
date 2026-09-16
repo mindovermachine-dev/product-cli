@@ -122,23 +122,67 @@ public class EvaluationTests
     {
         using var repo = new SpecRepo();
         var record = new RunRecord(
-            RunRecord.FormV1, "01ABC", "slice", "act/a", DateTimeOffset.UtcNow,
-            "qwen3.6-35b-a3b", "api.scaleway.ai", 1234, ["det/a"], [], 42, "built it", []);
+            RunRecord.FormV1, "01ABC", "spec-flow", "slice", "act/a", DateTimeOffset.UtcNow,
+            "qwen3.6-35b-a3b", "api.scaleway.ai", 1234, ["det/a"], [], "built it", []);
 
-        var path = RunJournal.Write(repo.Root, record);
+        var store = new EvalStore(new DiskBlobs(repo.Root));
+        var path = store.WriteRun(record);
 
         Assert.True(File.Exists(path));
         Assert.Contains("01ABC", Path.GetFileName(path), StringComparison.Ordinal);
-        var read = RunJournal.Read(repo.Root);
-        Assert.Collection(read, only => Assert.Equal("qwen3.6-35b-a3b", only.Model));
+        Assert.Collection(store.ReadRuns(), only => Assert.Equal("qwen3.6-35b-a3b", only.Model));
     }
 
-    /// <summary>The journal is beside the store, never inside it.</summary>
+    /// <summary>The journal is beside the act store, never inside it.</summary>
     [Fact]
     public void The_journal_is_not_the_record_store()
     {
-        Assert.Equal(".spec/runs", RunJournal.Directory);
-        Assert.DoesNotContain("records", RunJournal.Directory, StringComparison.Ordinal);
+        Assert.Equal("runs/01ABC.json", EvalStore.RunKey("01ABC"));
+        Assert.DoesNotContain("records", EvalStore.Runs, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The keys are the same whatever holds them, which is what makes a swap a swap.
+    /// </summary>
+    [Fact]
+    public void The_layout_does_not_depend_on_the_backend()
+    {
+        Assert.Equal("runs/01ABC.json", EvalStore.RunKey("01ABC"));
+        Assert.Equal("judgements/01ABC", EvalStore.JudgementsPrefix("01ABC"));
+    }
+
+    /// <summary>A path configures disk; the azure spelling configures azure.</summary>
+    [Fact]
+    public void The_backend_is_named_by_configuration()
+    {
+        Assert.IsType<Backend.Disk>(Backend.Parse(".spec"));
+        var azure = Assert.IsType<Backend.Azure>(Backend.Parse("azure:evalstore/runs/spec-flow"));
+        Assert.Equal("evalstore", azure.Account);
+        Assert.Equal("spec-flow", azure.Prefix);
+    }
+
+    /// <summary>A tool told to write to Azure must not quietly write to disk.</summary>
+    [Fact]
+    public void Azure_says_it_is_not_built_rather_than_falling_back()
+    {
+        var refusal = Assert.Throws<InvalidOperationException>(
+            () => Backend.Parse("azure:evalstore/runs").Open());
+        Assert.Contains("not built", refusal.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_half_written_azure_spelling_is_refused_rather_than_guessed_at()
+    {
+        Assert.Throws<ArgumentException>(() => Backend.Parse("azure:evalstore"));
+    }
+
+    /// <summary>A store that can be talked into writing elsewhere is not a store.</summary>
+    [Fact]
+    public void A_key_cannot_climb_out_of_the_root()
+    {
+        using var repo = new SpecRepo();
+        var blobs = new DiskBlobs(repo.Root);
+        Assert.Throws<ArgumentException>(() => blobs.Put("../escaped.json", "{}"));
     }
 }
 
@@ -146,9 +190,9 @@ public class EvaluationTests
 public class JudgementTests
 {
     private static RunRecord Run(params string[] drafted) => new(
-        RunRecord.FormV1, "01ABC", "settle-totals", "act/settle-a-basket",
+        RunRecord.FormV1, "01ABC", "spec-flow", "settle-totals", "act/settle-a-basket",
         DateTimeOffset.UnixEpoch, "builder-model", "api.scaleway.ai", 100,
-        drafted, [], 500, "built it", []);
+        drafted, [], "built it", []);
 
     [Fact]
     public void A_context_pins_what_the_judge_was_shown()
@@ -157,8 +201,9 @@ public class JudgementTests
 
         Assert.StartsWith("sha256:", context.Digest, StringComparison.Ordinal);
         Assert.True(context.Holds());
-        Assert.Equal("det/a", context.Shown["drafted"]);
+        Assert.Equal("det/a", context.Shown["proposed"]);
         Assert.Equal("(not shown)", context.Shown["act_settles"]);
+        Assert.Equal("01ABC", context.Shown["run"]);
     }
 
     /// <summary>A verdict is about a state, and says which one.</summary>
@@ -262,15 +307,16 @@ public class JudgementTests
     public void Two_judges_of_one_run_are_both_kept()
     {
         using var repo = new SpecRepo();
+        var store = new EvalStore(new DiskBlobs(repo.Root));
         var context = Judging.ContextOf(Run("det/a"));
         foreach (var model in new[] { "glm-5.2", "qwen3.6-35b-a3b" })
         {
-            JudgementStore.Write(repo.Root, new Judgement(
+            store.WriteJudgement(new Judgement(
                 Judgement.FormV1, "01ABC", DateTimeOffset.UtcNow,
                 new Judge(model, "api.scaleway.ai"), context, []));
         }
 
-        var kept = JudgementStore.Read(repo.Root, "01ABC");
+        var kept = store.ReadJudgements("01ABC");
         Assert.Equal(2, kept.Count);
         Assert.Contains(kept, j => j.Judge.Model is "glm-5.2");
         Assert.Contains(kept, j => j.Judge.Model is "qwen3.6-35b-a3b");
@@ -285,16 +331,15 @@ public class JudgementTests
             Judgement.FormV1, "01ABC", DateTimeOffset.UtcNow,
             new Judge("glm-5.2", "api.scaleway.ai"), Judging.ContextOf(Run("det/a")), []);
 
-        Assert.Equal(
-            JudgementStore.Write(repo.Root, judgement),
-            JudgementStore.Write(repo.Root, judgement));
-        Assert.Single(JudgementStore.Read(repo.Root, "01ABC"));
+        var store = new EvalStore(new DiskBlobs(repo.Root));
+        Assert.Equal(store.WriteJudgement(judgement), store.WriteJudgement(judgement));
+        Assert.Single(store.ReadJudgements("01ABC"));
     }
 
     /// <summary>Judgments are kept apart from the run they judge.</summary>
     [Fact]
     public void The_judgement_store_is_not_the_run_journal()
     {
-        Assert.NotEqual(RunJournal.Directory, JudgementStore.Directory);
+        Assert.NotEqual(EvalStore.Runs, EvalStore.Judgements);
     }
 }

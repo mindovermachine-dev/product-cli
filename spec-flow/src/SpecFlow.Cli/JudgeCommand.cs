@@ -24,11 +24,12 @@ internal static class JudgeCommand
             return ExitCodes.CouldNotRun;
         }
 
-        var run = RunJournal.Read(options.Root).FirstOrDefault(r => r.RecordId == recordId);
+        var store = ImplementCommand.EvalStoreOf(options);
+        var run = store.ReadRuns().FirstOrDefault(r => r.RecordId == recordId);
         if (run is null)
         {
             Console.Error.WriteLine(
-                $"no run record for `{recordId}` in {RunJournal.Directory}/ — "
+                $"no run record for `{recordId}` in {EvalStore.Runs}/ — "
               + "a run is judged after it is observed, and only a model-backed build is observed");
             return ExitCodes.CouldNotRun;
         }
@@ -52,7 +53,7 @@ internal static class JudgeCommand
             using (client)
             {
                 var judgement = await Judging.JudgeAsync(run, judge, client, act).ConfigureAwait(false);
-                var path = JudgementStore.Write(options.Root, judgement);
+                var path = store.WriteJudgement(judgement);
                 Report(judgement, path);
             }
         }

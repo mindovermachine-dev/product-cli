@@ -45,7 +45,7 @@ internal static class ImplementCommand
         if (built is not null)
         {
             var journalled = await RunObservation.ObserveAsync(
-                options.Root,
+                EvalStoreOf(options),
                 request,
                 built,
                 outcome,
@@ -59,6 +59,17 @@ internal static class ImplementCommand
 
         return ExitCodes.PendingClosure;
     }
+
+    /// <summary>
+    /// The store runs are observed into, as configuration names it.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to `.spec/` beside the act store, which is where a repo with no
+    /// opinion wants it. `EVAL_STORE` moves it, including to a backend this
+    /// build does not have — which refuses rather than silently writing to disk.
+    /// </remarks>
+    internal static EvalStore EvalStoreOf(Options options) =>
+        new(Backend.FromEnvironment(Path.Combine(options.Root, ".spec")).Open());
 
     /// <summary>
     /// How the slice gets built. With no model endpoint configured the run

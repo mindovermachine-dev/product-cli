@@ -55,15 +55,14 @@ public static class Judging
         JudgementContext.Pin(
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["record"] = run.RecordId,
-                ["slice"] = run.Slice,
-                ["act_ref"] = run.ActRef,
+                ["run"] = run.RecordId,
+                ["subject"] = run.Slice,
+                ["task"] = run.ActRef,
                 ["act_name"] = act?.Name ?? "(not shown)",
                 ["act_settles"] = act?.Settles ?? "(not shown)",
                 ["builder_model"] = run.Model ?? "(none)",
-                ["drafted"] = string.Join(",", run.Drafted),
-                ["reviewed"] = string.Join(",", run.Reviewed),
-                ["reply_chars"] = run.ReplyChars.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ["proposed"] = string.Join(",", run.Drafted),
+                ["kept"] = string.Join(",", run.Reviewed),
             });
 
     /// <summary>What the specification settles, as the store reports it.</summary>

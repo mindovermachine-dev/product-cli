@@ -20,29 +20,32 @@ namespace SpecFlow.Eval;
 /// the reason for keeping one.
 /// </para>
 /// <para>
-/// The reply is kept whole. A run that drafted nothing is the interesting
-/// case, and the only way to tell a model that answered `[]` from one the
-/// parser could not read is to have what it said — a count of characters
-/// establishes that something was said and nothing else.
+/// The reply is kept whole. A run that proposed nothing is the interesting
+/// case, and a length cannot tell a model that answered `[]` from one whose
+/// answer could not be read.
+/// </para>
+/// <para>
+/// The shape is `docs/eval-format-v1.md`'s, shared with `eval-core` so one
+/// store can hold runs from tools in either runtime.
 /// </para>
 /// </remarks>
 public sealed record RunRecord(
     [property: JsonPropertyName("form")] string Form,
-    [property: JsonPropertyName("record")] string RecordId,
-    [property: JsonPropertyName("slice")] string Slice,
-    [property: JsonPropertyName("act_ref")] string ActRef,
+    [property: JsonPropertyName("id")] string RecordId,
+    [property: JsonPropertyName("tool")] string Tool,
+    [property: JsonPropertyName("subject")] string Slice,
+    [property: JsonPropertyName("task")] string ActRef,
     [property: JsonPropertyName("ran_at")] DateTimeOffset RanAt,
     [property: JsonPropertyName("model")] string? Model,
     [property: JsonPropertyName("endpoint_host")] string? EndpointHost,
     [property: JsonPropertyName("duration_ms")] long DurationMs,
-    [property: JsonPropertyName("drafted")] IReadOnlyList<string> Drafted,
-    [property: JsonPropertyName("reviewed")] IReadOnlyList<string> Reviewed,
-    [property: JsonPropertyName("reply_chars")] int ReplyChars,
+    [property: JsonPropertyName("proposed")] IReadOnlyList<string> Drafted,
+    [property: JsonPropertyName("kept")] IReadOnlyList<string> Reviewed,
     [property: JsonPropertyName("reply")] string? Reply,
     [property: JsonPropertyName("metrics")] IReadOnlyList<RunMetric> Metrics)
 {
     /// <summary>The form this file is written in.</summary>
-    public const string FormV1 = "spec.run-record.v1";
+    public const string FormV1 = "eval.run-record.v1";
 
     private static readonly JsonSerializerOptions Options = new()
     {

@@ -375,6 +375,34 @@ Agent-facing context lives in three places, all **derived from
 UPDATE_SKILL=1 cargo test -p product-cli --test agent_context
 ```
 
+## Evaluation store (`eval-core`, `docs/eval-format-v1.md`)
+
+A small **format-first** crate, shared by any tool in this workspace that runs
+a model. [`docs/eval-format-v1.md`](docs/eval-format-v1.md) is normative; the
+code follows it, and `spec-flow/src/SpecFlow.Eval/` implements the same format
+in .NET.
+
+- **Two records, separate on purpose.** `eval.run-record.v1` says what a model
+  did (tool, task, subject, arrangement, `proposed`/`kept`, the reply whole,
+  deterministic metrics). `eval.judgement.v1` says what another model made of
+  it. **The model that executes is never the model that judges, and never
+  judges at the same time** — merging them lets an opinion borrow a
+  measurement's standing.
+- **`proposed` vs `kept`** is the pair worth having: a human judgment on model
+  output, on every run, supplied by no model and costing nothing.
+- **Nothing gates.** Not signed, no principal, no gate reads either store.
+- **Backends are configuration** (`EVAL_STORE`: a path, or
+  `azure:<account>/<container>[/<prefix>]`). The layout is key-shaped so disk
+  and object storage address identically; `Blobs`/`IBlobs` is the whole seam,
+  three methods. A backend named but not built **refuses rather than falling
+  back** — Azure is declared and not yet implemented.
+- **The digest law is stated once** (§6) and implemented twice, held together
+  by `eval-core/tests/fixtures/context-digest.json`, which both suites assert
+  against. Regenerate with `UPDATE_FIXTURES=1 cargo test -p eval-core --test
+  fixture`; a changed digest is a format change, not a test to update.
+- Rides `ledger_core::canon` + `domain_hash` under its own prefix — one hashing
+  law in this workspace, never a second scheme.
+
 ## Specification flow (`.spec/`, the `spec` binary + `spec-flow/`)
 
 A fourth stack, and the first in this repo that is **not all Rust**. It

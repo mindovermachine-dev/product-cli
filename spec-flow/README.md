@@ -200,6 +200,14 @@ See *Judging a run* below.
 human judgment: a person looked at a draft and said what they would actually
 file. It costs nothing, it is collected on every run, and no model supplies it.
 
+Both files follow [`docs/eval-format-v1.md`](../docs/eval-format-v1.md), shared
+with the `eval-core` crate so one store can hold runs from tools in either
+runtime. Where that store lives is configuration — `EVAL_STORE` takes a path,
+or `azure:<account>/<container>[/<prefix>]`; unset, it is `.spec/` beside the
+act store. The keys do not change with the backend, which is what makes moving
+one a swap rather than a migration. A backend named but not built refuses
+rather than falling back to disk.
+
 The endpoint is kept as a host and the key is not kept at all, so a journal is
 safe to share. It is **gitignored by default** all the same: a run record keeps
 the model's reply verbatim, which is a description of your codebase, and that is
