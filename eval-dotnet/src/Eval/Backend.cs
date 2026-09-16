@@ -1,11 +1,11 @@
-namespace SpecFlow.Eval;
+namespace Eval;
 
 /// <summary>Where a tool's evaluation store lives, chosen by configuration.</summary>
 /// <remarks>
-/// The spelling is `eval-core`'s, so both runtimes read the same
-/// <c>EVAL_STORE</c> value and a repo moves its tools together or not at all.
-/// Moving from disk to object storage is an edit to configuration, never to a
-/// call site.
+/// The spelling is the format document's, so every tool reading
+/// <c>EVAL_STORE</c> resolves it the same way and a repo moves its tools
+/// together or not at all. Going from disk to object storage is an edit to
+/// configuration, never to a call site.
 /// </remarks>
 public abstract record Backend
 {

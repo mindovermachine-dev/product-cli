@@ -3,6 +3,12 @@
 **Normative.** This document is what an outside implementation imports. The
 code follows it, not the other way round.
 
+Two implementations follow it here: [`eval-core/`](../eval-core) in Rust and
+[`eval-dotnet/`](../eval-dotnet) in .NET. The .NET one is standalone and is
+meant to be lifted into other codebases — its
+[README](../eval-dotnet/README.md) is the pattern writeup, where this file is
+the wire format.
+
 Two files, and the separation between them is the whole point.
 
 - `runs/<id>.json` — **what a model did.** Written at the time, by whatever ran

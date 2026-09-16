@@ -1,7 +1,7 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.AI.Evaluation;
 
-namespace SpecFlow.Eval;
+namespace Eval;
 
 /// <summary>
 /// The deterministic evaluators the flow runs over its own builds.
@@ -28,8 +28,8 @@ public static class Evaluators
         new DeterminationShapeEvaluator());
 
     /// <summary>Find the flow's own context among what was handed over.</summary>
-    internal static FlowRunContext? FlowContext(IEnumerable<EvaluationContext>? context) =>
-        context?.OfType<FlowRunContext>().FirstOrDefault();
+    internal static RunContext? FlowContext(IEnumerable<EvaluationContext>? context) =>
+        context?.OfType<RunContext>().FirstOrDefault();
 
     /// <summary>A metric nothing can fail, carrying a rating and a reason.</summary>
     /// <remarks>
@@ -144,7 +144,7 @@ public sealed class AmendmentEvaluator : IEvaluator
     }
 
     /// <summary>Jaccard distance between what was drafted and what was kept.</summary>
-    public static NumericMetric Measure(FlowRunContext flow)
+    public static NumericMetric Measure(RunContext flow)
     {
         var drafted = flow.Drafted.ToHashSet(StringComparer.Ordinal);
         var reviewed = flow.Reviewed.ToHashSet(StringComparer.Ordinal);
@@ -200,7 +200,7 @@ public sealed class DeterminationShapeEvaluator : IEvaluator
     }
 
     /// <summary>Judge the shape of every drafted address.</summary>
-    public static BooleanMetric Inspect(FlowRunContext flow)
+    public static BooleanMetric Inspect(RunContext flow)
     {
         var malformed = flow.Drafted.Where(a => !IsWellFormed(a)).ToList();
         var echoes = flow.Drafted

@@ -377,10 +377,20 @@ UPDATE_SKILL=1 cargo test -p product-cli --test agent_context
 
 ## Evaluation store (`eval-core`, `docs/eval-format-v1.md`)
 
-A small **format-first** crate, shared by any tool in this workspace that runs
-a model. [`docs/eval-format-v1.md`](docs/eval-format-v1.md) is normative; the
-code follows it, and `spec-flow/src/SpecFlow.Eval/` implements the same format
-in .NET.
+A small **format-first** crate, shared by any tool that runs a model.
+[`docs/eval-format-v1.md`](docs/eval-format-v1.md) is normative; the code
+follows it. Two implementations: `eval-core/` (Rust) and `eval-dotnet/` (.NET,
+namespace `Eval`).
+
+**`eval-dotnet/` is deliberately standalone** — its own solution, its own
+`Directory.Build.props`, one NuGet package, and no reference to anything else
+in this repo. It is meant to be lifted into another codebase as a worked
+example of the pattern, so `spec-flow` is a *consumer* of it and not its owner:
+`ObservedRun` names nothing spec-flow-shaped, and `SpecFlow.Cli` does the
+mapping. Keep it that way — a dependency added from `Eval` back into this repo
+is what would stop it being liftable. Its README is the pattern writeup
+(including where `Microsoft.Extensions.AI.Evaluation.Reporting` does and does
+not fit).
 
 - **Two records, separate on purpose.** `eval.run-record.v1` says what a model
   did (tool, task, subject, arrangement, `proposed`/`kept`, the reply whole,
@@ -396,8 +406,10 @@ in .NET.
   and object storage address identically; `Blobs`/`IBlobs` is the whole seam,
   three methods. A backend named but not built **refuses rather than falling
   back** — Azure is declared and not yet implemented.
+- **`cargo t` does not cover `eval-dotnet/`** — run `dotnet test
+  eval-dotnet/Eval.slnx` beside `dotnet test spec-flow/SpecFlow.slnx`.
 - **The digest law is stated once** (§6) and implemented twice, held together
-  by `eval-core/tests/fixtures/context-digest.json`, which both suites assert
+  by `docs/eval-format-v1/context-digest.json`, which both suites assert
   against. Regenerate with `UPDATE_FIXTURES=1 cargo test -p eval-core --test
   fixture`; a changed digest is a format change, not a test to update.
 - Rides `ledger_core::canon` + `domain_hash` under its own prefix — one hashing

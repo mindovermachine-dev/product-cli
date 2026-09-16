@@ -1,9 +1,9 @@
-namespace SpecFlow.Eval;
+namespace Eval;
 
 /// <summary>Somewhere keyed bodies can be put, got and listed.</summary>
 /// <remarks>
 /// <para>
-/// Three methods, matching `eval-core`'s <c>Blobs</c> trait. Everything that
+/// Three methods, and the whole seam. Everything that
 /// knows the format sits above this line, so a second backend implements
 /// addressing rather than reimplementing records — and a store swapped by
 /// configuration cannot quietly disagree with the one it replaced.

@@ -1,7 +1,7 @@
 using System.ClientModel;
 using Microsoft.Extensions.AI;
 using OpenAI;
-using SpecFlow.Eval;
+using Eval;
 using SpecFlow.Flow;
 
 namespace SpecFlow.Cli;

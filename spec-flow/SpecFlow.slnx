@@ -1,7 +1,7 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="../eval-dotnet/src/Eval/Eval.csproj" />
     <Project Path="src/SpecFlow.Cli/SpecFlow.Cli.csproj" />
-    <Project Path="src/SpecFlow.Eval/SpecFlow.Eval.csproj" />
     <Project Path="src/SpecFlow.Flow/SpecFlow.Flow.csproj" />
     <Project Path="src/SpecFlow.Import/SpecFlow.Import.csproj" />
     <Project Path="src/SpecFlow.Mcp/SpecFlow.Mcp.csproj" />

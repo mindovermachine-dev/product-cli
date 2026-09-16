@@ -1,7 +1,7 @@
 using System.Text.Json;
-using SpecFlow.Eval;
+using Eval;
 
-namespace SpecFlow.Flow.Tests;
+namespace Eval.Tests;
 
 /// <summary>
 /// The digests this runtime shares with `eval-core`.
@@ -34,14 +34,14 @@ public class ContextDigestFixtureTests
         for (var probe = new DirectoryInfo(AppContext.BaseDirectory); probe is not null; probe = probe.Parent)
         {
             var candidate = Path.Combine(
-                probe.FullName, "eval-core", "tests", "fixtures", "context-digest.json");
+                probe.FullName, "docs", "eval-format-v1", "context-digest.json");
             if (File.Exists(candidate))
             {
                 return JsonDocument.Parse(File.ReadAllText(candidate));
             }
         }
         throw new InvalidOperationException(
-            "could not find eval-core/tests/fixtures/context-digest.json");
+            "could not find docs/eval-format-v1/context-digest.json");
     }
 
     public static TheoryData<string> CaseNames()

@@ -1,5 +1,5 @@
 {
-  "_": "Cross-runtime fixture for docs/eval-format-v1.md §6. Both the Rust and the .NET implementation are held to these digests; a change here is a format change. Regenerate with: UPDATE_FIXTURES=1 cargo test -p eval-core --test fixture",
+  "_": "Cross-runtime fixture for docs/eval-format-v1.md §6. Both the Rust and the .NET implementation are held to these digests; a change here is a format change. It belongs to the format, not to either implementation. Regenerate with: UPDATE_FIXTURES=1 cargo test -p eval-core --test fixture",
   "cases": [
     {
       "digest": "sha256:78886a7fb45787b072bdcb934b6ce3d67bf20009a57d674cef59c7e6795948e2",

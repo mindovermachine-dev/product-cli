@@ -104,6 +104,14 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Evaluation store (.NET)
+        # eval-dotnet/ is standalone by design — its own solution, meant to be
+        # lifted into another codebase. `cargo t` cannot reach it and
+        # spec-flow's solution does not include it, so it is run on its own or
+        # not at all. It also holds the .NET half of the shared digest fixture,
+        # which is what stops the two runtimes drifting from the format doc.
+        run: dotnet test eval-dotnet/Eval.slnx --configuration Release
+
       - name: Specification-flow agent host
         # SPEC_MCP_BIN is the Rust MCP server the .NET agent consumes as tools;
         # the governed-tool tests require it rather than skipping without it.

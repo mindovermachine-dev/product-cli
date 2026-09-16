@@ -9,12 +9,21 @@
 //! and read a changed digest as a format change rather than a test to update.
 
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
+/// The fixture belongs to the format, not to either implementation.
+///
+/// It sits beside `docs/eval-format-v1.md` so neither runtime owns it and
+/// lifting one of them does not leave the other's test reaching into a
+/// directory it no longer has.
 fn fixture_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/context-digest.json")
+    let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_default();
+    workspace.join("docs/eval-format-v1/context-digest.json")
 }
 
 fn load() -> Value {

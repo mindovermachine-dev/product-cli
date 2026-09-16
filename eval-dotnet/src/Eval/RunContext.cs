@@ -1,6 +1,6 @@
 using Microsoft.Extensions.AI.Evaluation;
 
-namespace SpecFlow.Eval;
+namespace Eval;
 
 /// <summary>
 /// What the flow observed about a run, handed to evaluators that need more
@@ -11,7 +11,7 @@ namespace SpecFlow.Eval;
 /// to guess: a person looked at a draft and said what they would file. Carrying
 /// it here is what makes the useful metric a measurement rather than an opinion.
 /// </remarks>
-public sealed class FlowRunContext(
+public sealed class RunContext(
     string slice,
     IReadOnlyList<string> drafted,
     IReadOnlyList<string> reviewed)

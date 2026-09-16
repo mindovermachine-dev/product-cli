@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SpecFlow.Eval;
+namespace Eval;
 
 /// <summary>
 /// One observed run of the build leg, kept so behaviour can be read over time.
@@ -25,8 +25,8 @@ namespace SpecFlow.Eval;
 /// answer could not be read.
 /// </para>
 /// <para>
-/// The shape is `docs/eval-format-v1.md`'s, shared with `eval-core` so one
-/// store can hold runs from tools in either runtime.
+/// The shape is the format document's, so one store can hold runs from tools
+/// that know nothing about each other — including tools in another runtime.
 /// </para>
 /// </remarks>
 public sealed record RunRecord(

@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace SpecFlow.Eval;
+namespace Eval;
 
 /// <summary>
 /// A model's assessment of one run, on one occasion, over a pinned context.
@@ -108,10 +108,11 @@ public sealed record JudgementContext(
     /// Pin a context by digesting what it shows.
     /// </summary>
     /// <remarks>
-    /// The canonical form is stated normatively in `docs/eval-format-v1.md` §6
-    /// and implemented twice — here and in `eval-core`. Both are held to
-    /// `eval-core/tests/fixtures/context-digest.json`, so a change made on one
-    /// side and not the other fails on both.
+    /// The canonical form is stated normatively in §6 of the format document,
+    /// and this is one of two implementations of it. Both assert against
+    /// `docs/eval-format-v1/context-digest.json`, which belongs to the format
+    /// rather than to either of them, so a change made on one side and not the
+    /// other fails on both.
     /// </remarks>
     public static JudgementContext Pin(IReadOnlyDictionary<string, string> shown)
     {

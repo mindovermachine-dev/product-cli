@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 
-namespace SpecFlow.Eval;
+namespace Eval;
 
 /// <summary>Asking a model what it makes of a run, and filing what it said.</summary>
 /// <remarks>

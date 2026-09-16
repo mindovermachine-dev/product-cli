@@ -1,16 +1,16 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.AI.Evaluation;
-using SpecFlow.Eval;
+using Eval;
 
-namespace SpecFlow.Flow.Tests;
+namespace Eval.Tests;
 
 /// <summary>What the flow observes about its own runs, and what it refuses to.</summary>
 public class EvaluationTests
 {
-    private static FlowRunContext Run(string slice, string[] drafted, string[] reviewed) =>
+    private static RunContext Run(string slice, string[] drafted, string[] reviewed) =>
         new(slice, drafted, reviewed);
 
-    private static async Task<EvaluationResult> Evaluate(IEvaluator evaluator, string reply, FlowRunContext flow) =>
+    private static async Task<EvaluationResult> Evaluate(IEvaluator evaluator, string reply, RunContext flow) =>
         await evaluator.EvaluateAsync(
             [new ChatMessage(ChatRole.User, "build it")],
             new ChatResponse(new ChatMessage(ChatRole.Assistant, reply)),
@@ -120,7 +120,7 @@ public class EvaluationTests
     [Fact]
     public void A_written_record_reads_back()
     {
-        using var repo = new SpecRepo();
+        using var repo = new TempStore();
         var record = new RunRecord(
             RunRecord.FormV1, "01ABC", "spec-flow", "slice", "act/a", DateTimeOffset.UtcNow,
             "qwen3.6-35b-a3b", "api.scaleway.ai", 1234, ["det/a"], [], "built it", []);
@@ -180,7 +180,7 @@ public class EvaluationTests
     [Fact]
     public void A_key_cannot_climb_out_of_the_root()
     {
-        using var repo = new SpecRepo();
+        using var repo = new TempStore();
         var blobs = new DiskBlobs(repo.Root);
         Assert.Throws<ArgumentException>(() => blobs.Put("../escaped.json", "{}"));
     }
@@ -306,7 +306,7 @@ public class JudgementTests
     [Fact]
     public void Two_judges_of_one_run_are_both_kept()
     {
-        using var repo = new SpecRepo();
+        using var repo = new TempStore();
         var store = new EvalStore(new DiskBlobs(repo.Root));
         var context = Judging.ContextOf(Run("det/a"));
         foreach (var model in new[] { "glm-5.2", "qwen3.6-35b-a3b" })
@@ -326,7 +326,7 @@ public class JudgementTests
     [Fact]
     public void The_same_judge_over_the_same_context_files_once()
     {
-        using var repo = new SpecRepo();
+        using var repo = new TempStore();
         var judgement = new Judgement(
             Judgement.FormV1, "01ABC", DateTimeOffset.UtcNow,
             new Judge("glm-5.2", "api.scaleway.ai"), Judging.ContextOf(Run("det/a")), []);

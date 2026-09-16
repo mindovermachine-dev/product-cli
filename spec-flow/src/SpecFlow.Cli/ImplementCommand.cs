@@ -2,7 +2,7 @@ using System.ClientModel;
 using Microsoft.Agents.AI;
 using OpenAI;
 using OpenAI.Chat;
-using SpecFlow.Eval;
+using Eval;
 using SpecFlow.Flow;
 using SpecFlow.Mcp;
 
@@ -46,11 +46,7 @@ internal static class ImplementCommand
         {
             var journalled = await RunObservation.ObserveAsync(
                 EvalStoreOf(options),
-                request,
-                built,
-                outcome,
-                RunObservation.Arrangement.FromEnvironment(),
-                started.Elapsed).ConfigureAwait(false);
+                Observed(request, built, outcome, started.Elapsed)).ConfigureAwait(false);
             if (journalled is not null)
             {
                 Console.WriteLine($"observed: {journalled}");
@@ -59,6 +55,31 @@ internal static class ImplementCommand
 
         return ExitCodes.PendingClosure;
     }
+
+    /// <summary>
+    /// This flow's shapes, mapped onto the pattern's vocabulary.
+    /// </summary>
+    /// <remarks>
+    /// The mapping lives here rather than in the library: `Eval` names nothing
+    /// from this flow, which is what lets the same store hold runs from tools
+    /// that know nothing about each other.
+    /// </remarks>
+    private static ObservedRun Observed(
+        ImplementRequest request, SliceBuilt built, ImplementOutcome outcome, TimeSpan elapsed)
+        => new(
+            outcome.RecordId,
+            Tool,
+            request.ActRef,
+            built.Slice,
+            Environment.GetEnvironmentVariable("SPECFLOW_MODEL"),
+            Environment.GetEnvironmentVariable("SPECFLOW_MODEL_ENDPOINT"),
+            elapsed,
+            built.DraftDeterminations,
+            outcome.ReviewedDeterminations,
+            built.Notes);
+
+    /// <summary>Which tool these runs came from, so one store can hold several.</summary>
+    internal const string Tool = "spec-flow";
 
     /// <summary>
     /// The store runs are observed into, as configuration names it.

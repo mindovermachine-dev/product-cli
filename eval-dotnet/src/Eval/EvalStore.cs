@@ -1,12 +1,12 @@
 using System.Text.Json;
 
-namespace SpecFlow.Eval;
+namespace Eval;
 
 /// <summary>Where runs are kept, beside but never among what judged them.</summary>
 /// <remarks>
-/// The key layout is `eval-core`'s, spelled once here so both runtimes address
-/// the same store. Disk and object storage see the same keys; only
-/// <see cref="IBlobs"/> differs between them.
+/// The key layout is the format document's, spelled once here. Disk and object
+/// storage see the same keys; only <see cref="IBlobs"/> differs between them,
+/// which is what makes moving between them a swap rather than a migration.
 /// </remarks>
 public sealed class EvalStore(IBlobs blobs)
 {
