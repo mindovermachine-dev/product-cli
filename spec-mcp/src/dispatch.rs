@@ -22,6 +22,7 @@ pub fn dispatch(name: &str, args: &Value, root: &Path) -> Option<Result<Value, S
         )));
     }
     match name {
+        "spec_acts" => Some(acts(args, root)),
         "spec_candidates" => Some(candidates(args, root)),
         "spec_map" => Some(joined(root)),
         "spec_check" => Some(check(root)),
@@ -30,6 +31,34 @@ pub fn dispatch(name: &str, args: &Value, root: &Path) -> Option<Result<Value, S
         "spec_implement" => Some(implement(args, root)),
         _ => None,
     }
+}
+
+/// The ground a build rests on, as the principal who ratified it declared it.
+///
+/// Offered because the check found it missing: a slice was built against an act
+/// the worker had no channel to read, so the ground was declared and
+/// unreachable at the same time.
+fn acts(args: &Value, root: &Path) -> Result<Value, String> {
+    let wanted = args.get("id").and_then(Value::as_str);
+    let found: Vec<Value> = spec_core::ratify::load_acts(root)
+        .map_err(|e| format!("{e}"))?
+        .into_iter()
+        .filter(|a| wanted.is_none_or(|id| a.id == id))
+        .map(|a| json!({
+            "act": a.id,
+            "name": a.name,
+            "settles": a.settles,
+            "realised_at": a.realised_at,
+            "ratified_by": a.ratified_by.as_str(),
+        }))
+        .collect();
+
+    if found.is_empty() {
+        if let Some(id) = wanted {
+            return Err(format!("no ratified act `{id}`"));
+        }
+    }
+    Ok(json!({ "acts": found }))
 }
 
 fn candidates(args: &Value, root: &Path) -> Result<Value, String> {

@@ -15,9 +15,22 @@ namespace Eval;
 /// describes what happened, which is a summary and not a prediction — and a
 /// summary cannot be contradicted by the run it summarises.
 /// </para>
+/// <para>
+/// Only <c>Decision</c> is the worker's. Ground, tolerance and assurance each
+/// have their own owner, and a worker filling any of them in is that owner's
+/// decision escaping into the thing it was supposed to constrain.
+/// </para>
 /// </remarks>
 /// <param name="Decision">The decision being resolved, in the worker's own words.</param>
-/// <param name="Ground">The ground it says it needs. Named elements, not prose.</param>
+/// <param name="Ground">
+/// The ground the act rests on: the addresses whose value can change how it
+/// resolves. <b>The ground author's, never the worker's.</b> A worker asked to
+/// name its own ground answers from introspection, and a worker's account of
+/// itself is not the arrangement's record. It is also the reading that quietly
+/// fails: the worker answers in whatever vocabulary it likes, the observed
+/// reads are in another, and the comparison finds a difference that was only
+/// ever a difference in naming.
+/// </param>
 /// <param name="Tolerance">
 /// The declared bound on outcome-relevant variation. The arrangement's, not the
 /// worker's — a worker setting its own tolerance is deciding how wrong it is

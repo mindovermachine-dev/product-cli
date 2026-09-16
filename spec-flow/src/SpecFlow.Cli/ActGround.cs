@@ -20,8 +20,18 @@ namespace SpecFlow.Cli;
 /// </remarks>
 internal static class ActGround
 {
-    /// <summary>An act's name and what it settles.</summary>
-    internal sealed record Ground(string Name, string Settles);
+    /// <summary>An act's name, what it settles, and the ground it rests on.</summary>
+    /// <param name="Addresses">
+    /// The act's own address plus the entry points it is realised at — the
+    /// addresses whose value can change how a build of it resolves.
+    ///
+    /// <b>This is the ground author's declaration, and the author is the
+    /// principal who ratified the act.</b> Not the worker's: a worker naming its
+    /// own ground is answering from introspection. Not the tool surface's
+    /// either — offering a toolbox is not declaring that all of it is
+    /// outcome-relevant.
+    /// </param>
+    internal sealed record Ground(string Name, string Settles, IReadOnlyList<string> Addresses);
 
     /// <summary>
     /// Read the ground for an act, or null when it could not be read.
@@ -47,10 +57,21 @@ internal static class ActGround
             {
                 var name = act.TryGetProperty("name", out var n) ? n.GetString() : null;
                 var settles = act.TryGetProperty("settles", out var s) ? s.GetString() : null;
-                if (name is not null && settles is not null)
+                if (name is null || settles is null)
                 {
-                    return new Ground(name, settles);
+                    continue;
                 }
+
+                var addresses = new List<string> { actRef };
+                if (act.TryGetProperty("realised_at", out var at)
+                    && at.ValueKind is System.Text.Json.JsonValueKind.Array)
+                {
+                    addresses.AddRange(at.EnumerateArray()
+                        .Select(e => e.GetString())
+                        .OfType<string>()
+                        .Where(v => v.Length > 0));
+                }
+                return new Ground(name, settles, addresses);
             }
         }
         catch (Exception e) when (e is InvalidOperationException or System.Text.Json.JsonException)

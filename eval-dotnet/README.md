@@ -159,12 +159,12 @@ it, so that what it did can contradict what it said.
 ```csharp
 // A separate turn, before the work. Asked afterwards it is a summary,
 // and a summary cannot be contradicted by the run it summarises.
+// The worker is asked for the decision and nothing else.
 var declared = new Declaration(
-    Decision: "resolve the basket total against what the act settles",
-    Ground:   ["spec_check", "spec_records"]);
+    Decision: workersOwnWords,
+    Ground:   groundAuthorsAddresses);   // NOT the worker's
 
-// Tolerance and assurance are the arrangement's, never the worker's.
-declared = declared.BoundedBy(tolerance, assurance);
+declared = declared.BoundedBy(tolerance, assurance);  // the arrangement's
 
 foreach (var finding in Escape.Check(run))
 {
@@ -173,12 +173,22 @@ foreach (var finding in Escape.Check(run))
 }
 ```
 
-`GroundRead` is **observed, not asked for** — the tools actually invoked, not
-the worker's account of what it consulted. The two disagreeing is the finding.
+**Only `Decision` is the worker's.** Ground belongs to a ground author,
+tolerance to the arrangement, assurance to whoever bears the outcome. A worker
+asked to name its own ground answers from introspection — and in whatever
+vocabulary it likes, so the comparison reports differences that were only ever
+differences in naming. That mistake is easy to make and produces findings that
+look real.
 
-This is the check that earns its keep. On a live run one model declared it
-needed the act's text and never read it: `declared-but-unread`, caught
-mechanically, on work that otherwise looked fine.
+`GroundRead` is **observed, and it is the address, not the tool** — a tool used
+at an address reads the ground there. A call carrying no address reads no
+ground: listing everything is not reading the thing the act rests on.
+
+This is the check that earns its keep. Two models, given a channel to read the
+act they were building against, both called it without naming the act — so both
+runs show the act's declared ground as never read. Neither model's output looked
+wrong; the gap was only visible because what was declared and what was reached
+for were written down separately.
 
 **Findings, not a gate.** Whether an escape is tolerable is a judgement, and a
 judgement needs an owner; nothing here decides for them.

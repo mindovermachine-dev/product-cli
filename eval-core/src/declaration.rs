@@ -8,6 +8,10 @@
 //! Made before the act or not at all. A declaration written afterwards
 //! describes what happened, which is a summary and not a prediction — and a
 //! summary cannot be contradicted by the run it summarises.
+//!
+//! Only `decision` is the worker's. Ground, tolerance and assurance each have
+//! their own owner, and a worker filling any of them in is that owner's
+//! decision escaping into the thing it was supposed to constrain.
 
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +21,15 @@ use serde::{Deserialize, Serialize};
 pub struct Declaration {
     /// The decision being resolved, in the worker's own words.
     pub decision: String,
-    /// The ground it says it needs. Named elements, not prose.
+    /// The ground the act rests on: the addresses whose value can change how it
+    /// resolves.
+    ///
+    /// **The ground author's, never the worker's.** A worker asked to name its
+    /// own ground answers from introspection, and a worker's account of itself
+    /// is not the arrangement's record. It is also the reading that quietly
+    /// fails: the worker answers in whatever vocabulary it likes, the observed
+    /// reads are in another, and the comparison finds a difference that was
+    /// only ever a difference in naming.
     #[serde(default)]
     pub ground: Vec<String>,
     /// The declared bound on outcome-relevant variation.
@@ -36,7 +48,11 @@ pub struct Declaration {
 }
 
 impl Declaration {
-    /// A declaration of what is being resolved, over named ground.
+    /// A declaration of what is being resolved, over the ground it rests on.
+    ///
+    /// The two arguments come from two different owners: the decision is the
+    /// worker's, the ground is the ground author's. They meet here and nowhere
+    /// earlier.
     pub fn new(decision: impl Into<String>, ground: Vec<String>) -> Self {
         Self { decision: decision.into(), ground, tolerance: None, assurance: None }
     }

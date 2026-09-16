@@ -50,7 +50,8 @@ internal static class ImplementCommand
                 Observed(request, built, outcome, started.Elapsed),
                 Address(actRef, ground),
                 Arrangement(options),
-                Bounds(ground)).ConfigureAwait(false);
+                Bounds(ground),
+                ground?.Addresses ?? []).ConfigureAwait(false);
             if (journalled is not null)
             {
                 Console.WriteLine($"observed: {journalled}");

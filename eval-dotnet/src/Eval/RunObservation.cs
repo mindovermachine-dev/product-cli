@@ -56,6 +56,12 @@ public static class RunObservation
     /// the absence of the field tells a reader plainly.
     /// </param>
     /// <param name="arrangement">What answered, kept apart from the address.</param>
+    /// <param name="ground">
+    /// The ground author's declaration: the addresses whose value can change how
+    /// the act resolves. Supplied here, never read off the worker — a worker
+    /// naming its own ground answers from introspection, in whatever vocabulary
+    /// it likes.
+    /// </param>
     /// <param name="bounds">
     /// The tolerance and assurance the <i>arrangement</i> fixed. Supplied here
     /// rather than read off the worker's declaration: a worker stating its own
@@ -68,6 +74,7 @@ public static class RunObservation
         Pinned? address = null,
         Pinned? arrangement = null,
         (string Tolerance, string Assurance)? bounds = null,
+        IReadOnlyList<string>? ground = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -96,7 +103,7 @@ public static class RunObservation
                 Flatten(result),
                 address,
                 arrangement,
-                Bounded(run.Declared, bounds),
+                Bounded(run.Declared, bounds, ground),
                 run.GroundRead,
                 run.Attributions);
 
@@ -119,13 +126,19 @@ public static class RunObservation
     /// check exists to look for.
     /// </remarks>
     private static Declaration? Bounded(
-        Declaration? declared, (string Tolerance, string Assurance)? bounds)
-        => (declared, bounds) switch
+        Declaration? declared,
+        (string Tolerance, string Assurance)? bounds,
+        IReadOnlyList<string>? ground)
+    {
+        if (declared is not { } worker)
         {
-            (null, _) => null,
-            ({ } d, null) => d,
-            ({ } d, var (tolerance, assurance)) => d.BoundedBy(tolerance, assurance),
-        };
+            return null;
+        }
+        var whole = ground is { Count: > 0 } ? worker with { Ground = ground } : worker;
+        return bounds is var (tolerance, assurance) && bounds is not null
+            ? whole.BoundedBy(tolerance, assurance)
+            : whole;
+    }
 
     /// <summary>Flatten an evaluation result into what the store keeps.</summary>
     public static IReadOnlyList<RunMetric> Flatten(EvaluationResult result) =>

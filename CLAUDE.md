@@ -419,10 +419,13 @@ not fit).
   back** — Azure is declared and not yet implemented.
 - **`declared` / `ground_read` / `attributions`** are the escape checks (format
   §9, from the same document's §4.1–4.3). A worker declares *before* acting —
-  in spec-flow a separate agent turn — and `ground_read` is **observed** from
-  the tool calls rather than asked for, so the worker's account and the
-  arrangement's fact can disagree. Tolerance and assurance are supplied by the
-  *caller*, never read off the worker. `escape::check` / `Escape.Check` raise
+  in spec-flow a separate agent turn — and is asked for the **decision only**.
+  Ground is the *ground author's* (for a build: the ratified act's own address
+  plus its `realised_at`), tolerance the arrangement's, assurance the
+  outcome-bearer's. A worker naming its own ground answers from introspection,
+  in its own vocabulary, and the comparison then reports naming differences as
+  findings. `ground_read` is **observed, and is the address not the tool** —
+  a call with no address reads no ground. `escape::check` / `Escape.Check` raise
   `undeclared`, `incomplete-declaration`, `declared-but-unread`,
   `read-but-undeclared`, `unattributed-claim`. The fast-axis finding is **not**
   computed — no tick rate is carried — and the docs say so rather than implying

@@ -267,16 +267,27 @@ is not.
 ```json
 "declared": {
   "decision": "resolve the basket total against what the act settles",
-  "ground": ["spec_check", "spec_records"],
+  "ground": ["act/settle-a-basket", "Shop.Api.BasketController.Settle#HttpPost"],
   "tolerance": "what `Settle a basket` settles: …",
   "assurance": "drafted for review; no verdict is accepted from this run"
 }
 ```
 
-`decision` and `ground` are the **worker's**. `tolerance` and `assurance` are
-the **arrangement's**, and must not be taken from the worker: one setting its
-own tolerance decides how wrong it may be, and one declaring its own assurance
-prices a consequence it does not carry.
+**Only `decision` is the worker's.** Each of the others has its own owner, and
+a worker filling one in is that owner's decision escaping into the thing it was
+supposed to constrain:
+
+| Field | Owner | Why not the worker |
+|---|---|---|
+| `decision` | the worker | — |
+| `ground` | the ground author | a worker naming its own ground answers from introspection |
+| `tolerance` | the arrangement | it would be deciding how wrong it may be |
+| `assurance` | whoever bears the outcome | it would be pricing a consequence it does not carry |
+
+**Ground is an address, and the same addresses the ground author uses.** Asking
+a worker to name its ground fails twice over: it answers from introspection,
+and it answers in whatever vocabulary it likes — so the comparison against what
+it actually read reports differences that were only ever differences in naming.
 
 The declaration is made before the act or not at all. Written afterwards it is
 a summary, and a summary cannot be contradicted by the run it summarises.
@@ -291,9 +302,15 @@ a summary, and a summary cannot be contradicted by the run it summarises.
 | `read-but-undeclared` | ground was consulted that the declaration does not name |
 | `unattributed-claim` | a claim rests on nothing the worker declared |
 
-**`ground_read` is observed, not asked for.** What a worker says it consulted is
-its own introspection; which tools it called is a fact about the arrangement.
-The two disagreeing is the finding.
+**`ground_read` is observed, not asked for — and it is the address, not the
+tool.** A tool used at an address reads the ground at that address, so the
+address is what is recorded. A call carrying no address reads no ground and
+records none: listing everything is not reading the thing this act rests on, and
+the run then shows the declared ground as unread, which is what happened.
+
+That distinction is not pedantry. Two models given a channel to read the act
+they were building against both called it without naming the act — and both
+runs correctly show the act's ground as never read.
 
 **Only two of the three ground findings are computed.** The third — a
 fast-ticking ground axis with no read at act time — needs a tick rate per

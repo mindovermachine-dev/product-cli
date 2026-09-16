@@ -255,7 +255,7 @@ public class GovernedToolTests
             new SpecFlowOptions(repo.Root, repo.Executable), SpecMcpBinary());
 
         Assert.Equal(
-            ["spec_candidates", "spec_check", "spec_map", "spec_policy_show", "spec_records"],
+            ["spec_acts", "spec_candidates", "spec_check", "spec_map", "spec_policy_show", "spec_records"],
             tools.Select(t => t.Name).OrderBy(n => n, StringComparer.Ordinal));
     }
 

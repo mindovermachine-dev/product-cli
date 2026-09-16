@@ -29,6 +29,22 @@ pub fn build() -> Vec<ToolDef> {
             }),
         ),
         read(
+            "spec_acts",
+            "Read a ratified act: what a principal called it, what it settles, and \
+             the entry points it is realised at. This is the ground a build rests \
+             on — a slice built without reading it was resolved on something else.",
+            json!({
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "One act's address, e.g. `act/settle-a-basket`. \
+                                        Omit for every ratified act."
+                    }
+                }
+            }),
+        ),
+        read(
             "spec_map",
             "Join ratified acts to entry points and report the disagreements: \
              merge, split, unmapped entry point, unmapped act. A work list, not verdicts.",

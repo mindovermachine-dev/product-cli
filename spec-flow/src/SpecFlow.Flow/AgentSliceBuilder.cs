@@ -59,20 +59,28 @@ public sealed class AgentSliceBuilder(AIAgent agent, string? extraInstructions =
             [.. GroundRead(declaring).Concat(GroundRead(response)).Distinct(StringComparer.Ordinal)]);
     }
 
-    /// <summary>What the worker is asked before it is allowed to act.</summary>
+    /// <summary>
+    /// What the worker is asked before it is allowed to act.
+    /// </summary>
+    /// <remarks>
+    /// It is asked for the decision and nothing else. A worker asked to name its
+    /// own ground answers from introspection — and answers in whatever
+    /// vocabulary it likes, so the comparison against what it actually read
+    /// finds differences that were only ever differences in naming. The ground
+    /// is what the tools were used at, and that is observed rather than asked
+    /// for.
+    /// </remarks>
     private string DeclarationPrompt(ActRecordOpened opened) => $$"""
-        Before you do anything: say what you are about to resolve, and what you
-        need to know in order to resolve it.
-
-        Name the ground as addresses, not prose — the tools you will consult, the
-        parts of the specification you will read. Naming ground you do not use,
-        or using ground you did not name, are both findings against this run, so
-        say what you actually mean to do.
+        Before you do anything: say in one sentence what you are about to
+        resolve.
 
         You are about to build the slice `{{opened.Slice}}` against `{{opened.ActRef}}`.
 
+        Do not list the tools you will use or the things you will read. What you
+        consult is observed as you work; it is not yours to describe.
+
         Reply with one line of JSON and nothing else:
-        {"decision": "<one sentence>", "ground": ["<address>", "..."]}
+        {"decision": "<one sentence>"}
         """;
 
     /// <summary>
@@ -100,11 +108,11 @@ public sealed class AgentSliceBuilder(AIAgent agent, string? extraInstructions =
                 {
                     continue;
                 }
-                var ground = root.TryGetProperty("ground", out var g)
-                    && g.ValueKind is JsonValueKind.Array
-                    ? g.EnumerateArray().Select(e => e.GetString() ?? "").Where(v => v.Length > 0).ToList()
-                    : [];
-                return new Declaration(decision.GetString() ?? "", ground);
+                // Ground is not read from the reply even if the worker offered
+                // some: it is the ground author's to declare, and accepting the
+                // worker's version would let that decision escape into the
+                // thing it is supposed to constrain.
+                return new Declaration(decision.GetString() ?? "", []);
             }
             catch (JsonException)
             {
@@ -115,21 +123,42 @@ public sealed class AgentSliceBuilder(AIAgent agent, string? extraInstructions =
     }
 
     /// <summary>
-    /// The tools the worker actually invoked.
+    /// The ground the worker actually read: the addresses its tools were used at.
     /// </summary>
     /// <remarks>
-    /// This is the ground it read, observed rather than asked for. A worker's
-    /// account of what it consulted is its own introspection; the call is a
-    /// fact about the arrangement, and the two disagreeing is the finding.
+    /// <para>
+    /// A tool used at an address reads the ground at that address — so the
+    /// address is what is recorded, not the tool's name. `spec_acts` called for
+    /// `act/settle-a-basket` read `act/settle-a-basket`, and that is a name the
+    /// ground author also uses, which is what makes the comparison mean
+    /// anything.
+    /// </para>
+    /// <para>
+    /// A call carrying no address reads no ground, and records none. Listing
+    /// every act is not reading the act this build rests on: it touches the
+    /// channel without naming what in it mattered, and the run then shows the
+    /// declared ground as unread — which is what happened.
+    /// </para>
+    /// <para>
+    /// Observed, never asked for. A worker's account of what it consulted is its
+    /// own introspection; the call is a fact about the arrangement.
+    /// </para>
     /// </remarks>
     public static IReadOnlyList<string> GroundRead(AgentResponse response) =>
     [
         .. response.Messages
             .SelectMany(m => m.Contents)
             .OfType<FunctionCallContent>()
-            .Select(c => c.Name)
+            .SelectMany(AddressesOf)
             .Distinct(StringComparer.Ordinal),
     ];
+
+    /// <summary>The addresses one call was made at. None, where it named none.</summary>
+    private static IEnumerable<string> AddressesOf(FunctionCallContent call) =>
+        (call.Arguments ?? new Dictionary<string, object?>())
+            .Values
+            .OfType<string>()
+            .Where(v => !string.IsNullOrWhiteSpace(v));
 
     private string Prompt(ActRecordOpened opened) => $"""
         Build the slice `{opened.Slice}` against the specification act `{opened.ActRef}`.
