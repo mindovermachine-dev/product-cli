@@ -26,6 +26,7 @@ on authoring determinations.
 | `questions.md` | 49 questions, verbatim, with what prompted each and the provisional reading the build proceeded under |
 | `rulings.md` | Emil's answers, verbatim, with what each changed and what it raised |
 | `decisions.md` | 53 points the specification does not settle, each tagged `D-nn` at its site; one withdrawn and one reversed by rulings |
+| `triage.md` | how to get to the bottom of the questions: what is actually left, why the count has not fallen, and four class-level moves that collapse most of it |
 | `gate-c-report.md` | the Gate 3 report, revised against the rulings |
 | `gate-c-report-baseline.md` | the report as first issued, with nothing answered |
 | `solution/` | the slice: `dotnet test` → 15 passing, clean under `TreatWarningsAsErrors` |

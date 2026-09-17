@@ -40,7 +40,16 @@ Q-43 asks whether a `known_divergence` should be *reachable* rather than prose r
 and a half answered, thirty-five and a half open.**
 
 **The open count went up again.** Eleven rulings closed thirteen and a half questions and
-raised twenty. One ruling — R-Q41 — answered a question's *purpose* while leaving its
+raised twenty.
+
+**But the raw count overstates the problem, and `triage.md` takes it apart.** Of the 35.5
+open, roughly **ten are genuine specification gaps**; the rest are decisions any competent
+team would make in any notation, or questions about the scheme rather than this slice.
+Two whole categories — **fact shape** and **invariant & rejection** — have had no ruling at
+all, and the largest single gap in the run sits in one of them: no field of any fact is
+declared anywhere, which is why `DSC-0002` validates this session's inventions against
+themselves. All eleven rulings landed on one chain (carriage → egress → assurance), so the
+open set is unexplored breadth rather than hard residue. One ruling — R-Q41 — answered a question's *purpose* while leaving its
 *modelling* untouched, which is a third outcome neither "answered" nor "open" describes,
 and the count has to carry it as a half. That
 is the clearest number this run produced, and it is the one to carry: on a specification
