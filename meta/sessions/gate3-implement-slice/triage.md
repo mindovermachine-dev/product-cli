@@ -1,5 +1,11 @@
 # Getting to the bottom of the questions
 
+> **Ruled on, 2026-09-15 (CG-R-134 … CG-R-137).** Both method observations accepted and
+> generalised; the three-way partition adopted as the reportable figure and the raw count
+> retired as a headline; Q-02 answered and the *"3 of 13"* figure voided; the four moves
+> ordered, with **move 1 owned by Emil**. See `rulings.md`. This file is left as written —
+> it is the proposal that was ruled on.
+
 **Asked by Emil, 2026-09-17.** This is an analysis of the question set as it stands, not
 new build work. Counts are read off `questions.md` and `rulings.md`.
 

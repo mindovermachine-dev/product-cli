@@ -1,4 +1,14 @@
-# Frame categories used by this run
+# This session's working scheme for grouping questions
+
+> **NOT A FRAME.** Per **CG-R-136**, these thirteen categories are retained as this
+> session's **working scheme**, labelled invented-after-build, and are **not presented as a
+> frame**. Any count taken over them as a denominator is void — see the ruling and the note
+> at the foot of this file.
+
+**Q-02 is answered, and the omission was the principal's.** CG-R-136: *"The Gate 3 prompt
+says per frame category in three places and defines it nowhere… This is CG-R-63 in its
+seventh instance, and the instance count is now the finding: a measurement whose
+denominator is defined after the measurement is not a measurement."*
 
 **The bundle does not define "frame category."** Gate B requires every question to be
 recorded with "which frame category it concerns"; Gate C requires the four-column table
@@ -8,7 +18,7 @@ and appears in none of the four arrived inputs. Gate C further asks for the cate
 notation experiment" — a list this session has not been given and, under the
 prohibitions, may not seek.
 
-So **the category scheme below is invented by this session**, after the build, by
+So **the category scheme below is invented by this session**, after the build, after the build, by
 clustering the questions that actually arose. It is not a reading of the specification.
 Any agreement with the independent list is a finding about convergence; any disagreement
 may be a disagreement about categories or merely about vocabulary, and this run cannot
@@ -32,3 +42,19 @@ tell those apart. Q-02.
 
 Thirteen. F13 is not a category of the domain; it is where questions about the scheme
 land, and it turned out to be the second-largest bucket.
+
+
+---
+
+## What CG-R-136 voids, and what it defers
+
+- **Void:** the *"3 of 13 frame categories settled without invention"* figure, and its
+  *"5 of 13 generously counted"* variant. Over a denominator invented after the
+  measurement, and **not partially salvaged**. Struck from the README and both reports.
+- **Deferred, not repaired:** the Gate C comparison against the notation experiment's
+  independently enumerated category list. Inventing a frame now to compare against would
+  make a disagreement between the two lists indistinguishable from a disagreement about
+  vocabulary. It waits on that list's ratification, which waits on the reconciliation,
+  which is held.
+- **Retained:** the thirteen below, as a working scheme for grouping questions in
+  `questions.md` and `triage.md`. They group; they do not measure.

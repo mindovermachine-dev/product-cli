@@ -4,10 +4,12 @@
 prompt, and the two rulings that scope the run. No README of the binding, no conformance
 manifest, no repository, no web search.
 
-**Result: 49 clarifications against 3 of 13 frame categories settled without invention.**
-Thirteen and a half answered by Emil on 2026-09-16 (`rulings.md`), thirty-five and a half
-open — **the open count went up**: eleven rulings closed thirteen and a half questions and
-raised twenty. Read
+**Result: ~10 genuine specification gaps, ~14 ordinary design decisions any competent team
+would make in any notation, ~11 about the scheme rather than this slice** — with nine of the
+ten gaps inside moves 1 and 3 (`triage.md`). That partition is the reportable figure and the
+raw clarification count is not a headline, per CG-R-135; it overstates the problem.
+
+Thirteen and a half questions answered by Emil, 2026-09-16 … 09-17 (`rulings.md`). Read
 `gate-c-report.md` first; `gate-c-report-baseline.md` is the unrevised version from before
 any answer arrived, kept so the before/after is comparable.
 
@@ -19,10 +21,12 @@ on authoring determinations.
 | File | What it is |
 |---|---|
 | `prompt.md` | the session prompt, verbatim |
+| `rulings-cg-r-134-137.md` | CG-R-134 … CG-R-137 verbatim — the answering method, the retired count, Q-02, and the four moves |
 | `inputs/` | the four arrived inputs, verbatim, hashed in `bootstrap.md` before use |
 | `bootstrap.md` | first act: hashes, what was read, the reading order, the one standing rule that could not be complied with |
 | `gate-a.md` | the expectation list, written with the determinations unopened; the reading of the slice; six contradictions |
-| `frame-categories.md` | the 13-category scheme — **invented**, because the bundle never defines "frame category" |
+| `frame-categories.md` | this session's **working scheme** for grouping questions — invented after the build, **not a frame**; CG-R-136 voids any count taken over it |
+| `allocation-readings.md` | Q-04 / move 2 — the two readings of `allocation.class` and what each does to the slice, as CG-R-137 requires before the instance is ruled |
 | `questions.md` | 49 questions, verbatim, with what prompted each and the provisional reading the build proceeded under |
 | `rulings.md` | Emil's answers, verbatim, with what each changed and what it raised |
 | `decisions.md` | 53 points the specification does not settle, each tagged `D-nn` at its site; one withdrawn and one reversed by rulings |

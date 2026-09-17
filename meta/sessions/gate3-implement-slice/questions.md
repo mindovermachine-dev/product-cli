@@ -1,7 +1,13 @@
 # Questions — Gate B
 
-**Every question this session would ask, asked.** Forty-nine — twenty-nine at Gate B,
-twenty more raised by rulings (Q-30 … Q-47, plus Q-12b).
+**Every question this session would ask, asked.**
+
+**The raw count is not a headline** (CG-R-135). The reportable figure is the partition of
+what remains: **~10 genuine specification gaps, ~14 ordinary design decisions any competent
+team would make in any notation, ~11 about the scheme rather than this slice** — and *nine
+of the ten gaps fall inside moves 1 and 3* (`triage.md`). Counts below are bookkeeping.
+
+Twenty-nine asked at Gate B, twenty more raised by rulings (Q-30 … Q-47, plus Q-12b).
 
 **Thirteen and a half are answered**, all on 2026-09-16, all recorded verbatim in
 `rulings.md`: Q-10, Q-16, Q-06, Q-37, Q-38, Q-39, Q-12, Q-40, plus Q-11 (a free consequence
@@ -52,7 +58,7 @@ Format: **question** (verbatim) · **prompted by** · **category** · **proceede
 that is not restated in the bundle has not been applied.
 **Site** `bootstrap.md`.
 
-### Q-02
+### Q-02 — **ANSWERED by CG-R-136**
 > What is a **frame category**? The term carries both the Gate B instrumentation and the
 > Gate C table, and it is defined in neither `prompt.md` nor any of the four inputs. I
 > have had to invent the scheme I am reporting against, which means my Gate C table is
@@ -61,9 +67,13 @@ that is not restated in the bundle has not been applied.
 
 **Prompted by** `prompt.md` Gate B ("which frame category it concerns") and Gate C ("per
 frame category").
-**Proceeded under** an invented 13-category scheme derived after the build from the
-questions that actually arose.
-**Site** `frame-categories.md`.
+**Answered by CG-R-136** — *"boundary… The Gate 3 prompt says per frame category in three
+places and defines it nowhere"*; the omission is the principal's, and it is CG-R-63's
+seventh instance. **The "3 of 13 settled" figure is void**, not partially salvaged. The
+comparison against the notation experiment's list is **deferred**. The thirteen categories
+are **retained as this session's working scheme**, labelled invented-after-build, and are
+not presented as a frame.
+**Site** `frame-categories.md`; `rulings.md` CG-R-136.
 
 ### Q-08
 > `DSC-0002`'s predicate is about **the command payload**, but its `ranges_over` is

@@ -4,6 +4,12 @@
 Kept verbatim so the before/after is comparable: this is what the run reported with all
 29 questions open, and nothing in it has been edited in the light of the answers.
 
+**Two figures in it are void and are left standing deliberately.** CG-R-136 voids the
+*"3 of 13 frame categories settled"* headline and its *"5 of 13"* variant, over a
+denominator invented after the measurement. They are not corrected here, because this file
+is the historical record of what was reported — correcting it would destroy the evidence
+that the defect was shipped. The live figures are in `gate-c-report.md`.
+
 ---
 
 

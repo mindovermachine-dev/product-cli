@@ -1141,3 +1141,80 @@ discharges:
   delivery_assurance: enqueued
   mechanism: outbox            # relay unbuilt; dispatched and confirmed are not reachable
 ```
+
+---
+
+## CG-R-134 … CG-R-137 — Emil, 2026-09-15 (received 2026-09-17)
+
+Four rulings on the *answering method*, in response to `triage.md`. Filed verbatim at
+`inputs/../rulings-cg-r-134-137.md`; what follows is what each changes here.
+
+### CG-R-134 — answer the class, not the instance; breadth before depth
+
+> *"a question is answered at the level of the rule that generates it. Where an instance
+> answer would leave the family intact, the family is what gets ruled."*
+> *"One question from each untouched category before going deep again."*
+
+Both observations from `triage.md` accepted and generalised past this session. No change
+to the artefact; it governs the next pass and is recorded so the next session inherits it.
+
+One line in the ruling is worth carrying into the Gate C report as a method finding:
+
+> *"The self-diagnosis is what makes this rulable. A session that reported eleven rulings
+> without noticing they were one chain would have produced the same artefact and no
+> finding."*
+
+### CG-R-135 — the raw count is retired as a headline
+
+> *"the raw count does not appear as a headline anywhere."*
+
+Applied. The partition — **~10 specification gaps, ~14 ordinary design, ~11 about the
+scheme** — is the reportable figure, and *nine of the ten gaps fall inside moves 1 and 3*
+is the actionable statement. The raw count survives only inside `questions.md` as
+bookkeeping.
+
+The ruling's reason is recorded because it corrects a bias in this session's own
+reporting: **both reframings of the count run the same way — the raw count overstates the
+problem, and reporting it misrepresents the run in the direction of a worse result than
+was found.** This session led with 29, then 49, on each revision.
+
+### CG-R-136 — Q-02 answered, and a figure of this session's is void
+
+> *"The Gate 3 prompt says per frame category in three places and defines it nowhere."*
+> *"This is CG-R-63 in its seventh instance… a measurement whose denominator is defined
+> after the measurement is not a measurement."*
+
+**Q-02 is answered: the omission is the principal's, not a gap in the reading.** Three
+consequences, all applied:
+
+1. **The "3 of 13 settled" figure is VOID** — over a denominator invented after the
+   measurement, and *"not partially salvaged"*. Struck from `README.md`,
+   `gate-c-report.md` and `gate-c-report-baseline.md`. The "5 of 13 generously counted"
+   figure goes with it, for the same reason.
+2. **The Gate C comparison against the notation experiment's category list is DEFERRED,
+   not repaired.** Inventing a frame now to compare against would make a disagreement
+   between the lists indistinguishable from a disagreement about vocabulary. It waits on
+   the notation list's ratification, which waits on the reconciliation, which is held.
+3. **The thirteen categories are retained as this session's working scheme**, labelled
+   invented-after-build, and **are not presented as a frame.**
+
+### CG-R-137 — the four moves, ordered
+
+| | Move | Owner |
+|---|---|---|
+| 1 | Declare the fact type space | **Emil.** *"The fact vocabulary is the domain model, I authored `ordering.eventmodel.yaml`, and the fields belong with it. I will produce it."* |
+| — | The nine one-liners | this session, after move 1, before move 3 |
+| 2 | `allocation.class` — principle ruled below; instance awaits the two readings | principle: Emil. Readings: **this session — see `allocation-readings.md`** |
+| 3 | Individuation, carrying the DSC-0100 supersession | supersession is Emil's, *"lands with the profile repair"* |
+| 4 | R-GROUND across the whole profile | *"correctly named as a modelling exercise rather than a ruling"* |
+
+**The principle ruled, verbatim:**
+
+> **`allocation.class` describes how a determination is held, not whether it has been acted
+> on.** `residual` means nothing in the specification settles it and a named actor carries
+> it — recording it as residual does not discharge it. `pinned` means it is settled;
+> `checked` means a predicate settles acceptability.
+
+The instance — whether DSC-0005's currency rejection belongs in the slice — is **not
+ruled**, and is not to be ruled from a summary. The two readings and what each does to the
+slice are in `allocation-readings.md`. Q-04 remains open.
