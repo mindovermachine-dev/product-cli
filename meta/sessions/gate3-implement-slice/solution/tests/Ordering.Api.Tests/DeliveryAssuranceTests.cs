@@ -111,8 +111,13 @@ public sealed class DeliveryAssuranceTests
         // And the outbox this slice writes to is therefore feeding internal consumers.
         var outbox = new Ordering.Api.Unroled.InMemoryOutbox();
         outbox.Enqueue(new Ordering.Api.Facts.OrderPlaced(
-            "order-1", "cart-1", "actor-1", "GBP",
-            Array.Empty<Ordering.Api.Facts.CartLine>(), 0, DateTimeOffset.UnixEpoch));
+            new Ordering.Api.Facts.OrderId(Guid.Empty),
+            new Ordering.Api.Facts.CartId(Guid.Empty),
+            new Ordering.Api.Facts.BuyerId("buyer-1"),
+            Array.Empty<Ordering.Api.Facts.OrderLine>(),
+            new Ordering.Api.Facts.CurrencyCode("GBP"),
+            new Ordering.Api.Facts.Money(0m, new Ordering.Api.Facts.CurrencyCode("GBP")),
+            new Ordering.Api.Facts.Instant(DateTimeOffset.UnixEpoch)));
 
         Assert.Equal(OutboxState.Pending, Assert.Single(outbox.Entries).State);
     }

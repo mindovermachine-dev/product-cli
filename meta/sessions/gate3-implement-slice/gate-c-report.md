@@ -1,13 +1,14 @@
 # Gate C — report
 
 **Revised 2026-09-16 against eleven rulings (R-Q10, R-Q16, R-Q06, R-GROUND, R-Q37, R-Q38,
-R-Q39, R-Q12, R-Q40, R-Q41, R-Q45).** The Gate C figures as first
+R-Q39, R-Q12, R-Q40, R-Q41, R-Q45) and the CG-R-134 … CG-R-141 series, and rebuilt
+against move 1's declared fact type space.** The Gate C figures as first
 issued, with no question answered, are preserved in `gate-c-report-baseline.md` so the
 before/after is comparable.
 
 Builder session. One command slice, `PlaceOrder`, under profile `rest-api-v1`, built
 from the four arrived inputs and nothing else. Builds clean under
-`TreatWarningsAsErrors` in both projects; 58 tests pass on .NET 8.
+`TreatWarningsAsErrors` in both projects; 61 tests pass on .NET 8.
 
 ---
 
@@ -36,9 +37,15 @@ Q-43 asks whether a `known_divergence` should be *reachable* rather than prose r
 
 ## The headline
 
-**~10 genuine specification gaps. ~14 ordinary design decisions any competent team would
-make in any notation. ~11 questions about the scheme rather than this slice. Nine of the
-ten gaps fall inside moves 1 and 3.**
+**~5 genuine specification gaps. ~14 ordinary design decisions any competent team would
+make in any notation. ~11 questions about the scheme rather than this slice.**
+
+**Move 1 halved the specification gaps in a single input**, which is the strongest evidence
+this run produced for the class-over-instance discipline of CG-R-134. Declaring the fact
+type space closed Q-03, Q-05, Q-07, Q-09, Q-22 and Q-26 at once, retired seven invented
+fields, and **made the profile's one unsatisfiable rule satisfiable** — *"rejects only for
+invariants the fact vocabulary declares"* had been vacuous for the entire build because the
+vocabulary declared no shape for an invariant to be stated over.
 
 That partition is the reportable figure, per **CG-R-135**, and the raw clarification count
 does not appear as a headline here or anywhere. It has now been reframed twice and both
@@ -54,8 +61,8 @@ and its "5 of 13 generously counted" variant goes with it. The categories are re
 working scheme for grouping questions and are not a frame. **The comparison against the
 notation experiment's independently enumerated list is deferred, not repaired.**
 
-**The open count went up.** Eleven rulings closed thirteen and a half questions and raised
-twenty — which is bookkeeping, not the finding, and is recorded here rather than led with.
+**The open count went up until move 1, then fell.** Bookkeeping, not the finding, and
+recorded here rather than led with.
 
 `triage.md` takes the remainder apart. Two whole categories — **fact shape** and **invariant & rejection** — have had no ruling at
 all, and the largest single gap in the run sits in one of them: no field of any fact is
@@ -369,6 +376,14 @@ evidence that either is wrong.
 
 ## What the determinations settled, and what they did not
 
+**The finding that outlasted the build.** A residual whose statement reads as an answer
+**will be implemented as one.** DSC-0005 said *"an order … is rejected rather than
+converted"* under an allocation saying nothing in the specification settles it, and this
+session built it — at a cost of five inventions and two tests, one of which it flagged
+contested as it wrote it. CG-R-138: *"The record produced exactly the failure its class
+exists to prevent, on real work, which is better evidence than any argument I could have
+made for the class."*
+
 **Settled, and it held up in code — then became the problem.** DSC-0003 is the best record in the file. It settles
 that `ActorIdentity` is external, names its source, states its `read_provenance` as an
 already-gateway-validated OIDC claim, and marks `tick_rate: fast` — which together
@@ -462,12 +477,22 @@ Precisely:
   the procedure.
 - **I led with the raw count twice**, at 29 and again at 49, and both times it overstated
   the result. CG-R-135 retired it. The bias ran one way — toward reporting the run as
-  worse than it was — and I did not catch it on my own.
+  worse than it was. **CG-R-141 rules it the mirror of CG-R-133**: expectation lists
+  under-report defects in the artefact, count headlines over-report how badly the run went.
+  The direction is the conservative one and it still distorts. I did not catch it on my own.
 - **I took eleven rulings down one chain without noticing it was one chain** until I was
   asked how to get to the bottom. CG-R-134 notes what that would have cost: *"A session
   that reported eleven rulings without noticing they were one chain would have produced
-  the same artefact and no finding."* The self-diagnosis is what made it rulable, and it
-  was prompted rather than volunteered.
+  the same artefact and no finding."* The self-diagnosis is what made it rulable, and
+  **CG-R-141 rules that it was prompted rather than volunteered, which makes it weaker
+  evidence of self-correction than a volunteered one.** Marked as such, because recording
+  which is which is what keeps the distinction usable.
+- **The contested flag was there and I could not act on it.** `D-07 — INVENTED AND
+  CONTESTED` was written into the source at the moment `ActorIdentity.AccountCurrency` was
+  invented. The signal was correct, it was in the right place, and there was no rule to
+  read it against until CG-R-139 supplied one. **A session that flags its own doubts and
+  proceeds anyway has done half of what is needed**, and the missing half was not mine to
+  supply.
 
 Two further limits, both already conceded by CG-R-128 and neither repaired here: the
 builder is a Claude instance and the specification was authored by Emil, so §11.2

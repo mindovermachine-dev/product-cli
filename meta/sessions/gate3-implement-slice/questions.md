@@ -3,11 +3,14 @@
 **Every question this session would ask, asked.**
 
 **The raw count is not a headline** (CG-R-135). The reportable figure is the partition of
-what remains: **~10 genuine specification gaps, ~14 ordinary design decisions any competent
-team would make in any notation, ~11 about the scheme rather than this slice** — and *nine
-of the ten gaps fall inside moves 1 and 3* (`triage.md`). Counts below are bookkeeping.
+what remains: **~5 genuine specification gaps, ~14 ordinary design decisions any competent team would
+make in any notation, ~11 about the scheme rather than this slice.**
 
-Twenty-nine asked at Gate B, twenty more raised by rulings (Q-30 … Q-47, plus Q-12b).
+**Move 1 halved the gaps in one input.** It closed Q-03, Q-05, Q-07, Q-09, Q-22 and Q-26 —
+six of the ten — and CG-R-138 closed Q-04. The remainder are Q-12b, Q-42, Q-46, Q-47 and
+the new Q-48. Counts below are bookkeeping.
+
+Twenty-nine asked at Gate B, twenty-one more raised by rulings (Q-30 … Q-48, plus Q-12b).
 
 **Thirteen and a half are answered**, all on 2026-09-16, all recorded verbatim in
 `rulings.md`: Q-10, Q-16, Q-06, Q-37, Q-38, Q-39, Q-12, Q-40, plus Q-11 (a free consequence
@@ -134,7 +137,7 @@ records that DSC-0001 stops at `fulfilment`.
 
 ## F2 — Fact shape
 
-### Q-07
+### Q-07 — **ANSWERED by move 1**
 > No field of `Cart`, `ActorIdentity` or `OrderPlaced` is declared anywhere in the four
 > inputs. The fact vocabulary gives an `id`, a `kind` and two prose notes. Yet `DSC-0002`
 > requires that "for every field of the command payload, a domain type is declared and
@@ -149,7 +152,7 @@ records that DSC-0001 stops at `fulfilment`.
 inventions — which makes the check self-referential.
 **Site** `Facts.cs` D-04; `PlaceOrderCommand.cs`.
 
-### Q-05
+### Q-05 — **MOOT under CG-R-138**
 > `DSC-0005` rejects an order "against a cart whose currency differs from **the
 > customer's account currency**". Nothing in the fact vocabulary carries an account
 > currency; there is no Account fact; and DSC-0005's own `positions` declares only
@@ -167,7 +170,7 @@ declares.
 
 ## F4 — Invariant & rejection
 
-### Q-03
+### Q-03 — **ANSWERED by move 1, and this is the one that mattered.** *"Rejects only for invariants the fact vocabulary declares"* was unsatisfiable by vacuity for the whole build. The vocabulary now declares `Cart.Lines` (0…50), `Quantity` (1…99, never clamped) and `CurrencyCode` (ISO 4217), so an invariant has a shape to be stated over and `CartNotEmpty` is a predicate over a declared field. **The profile's one unsatisfiable rule is satisfiable.**
 > The profile says the handler must "reject **only for invariants the fact vocabulary
 > declares**". `ordering.eventmodel.yaml` declares no invariant, no predicate, no
 > constraint, and no field over which one could be stated. Read strictly the handler may
@@ -183,7 +186,7 @@ declares.
 the handler violates the profile rule as written.
 **Site** `PlaceOrderHandler.cs` remarks; this is the run's most important conflict.
 
-### Q-04
+### Q-04 — **ANSWERED by CG-R-138: Reading B.** The rejection comes out; D-07, D-16, D-18 and D-20 retire with it. And the record was **malformed, not merely misclassified**
 > `DSC-0005` is `allocation.class: residual`, carried by human principal `emil`. Its
 > statement is nonetheless a definite behavioural rule. Does `residual` describe how a
 > determination is **discharged** — no pin, no check, a human carries the risk that it
@@ -195,7 +198,7 @@ the handler violates the profile rule as written.
 rejection is implemented and unverified.
 **Site** `PlaceOrderHandler.cs` D-20(a).
 
-### Q-22
+### Q-22 — **ANSWERED by move 1**
 > The profile names `Accepted` and `Rejected` four times and defines neither. Does
 > `Accepted` carry the emitted events? Does `Rejected` carry a cited invariant, a code, a
 > message? Is the pair closed? The read-enforced rule "a rejection reason corresponds to
@@ -207,7 +210,7 @@ rejection is implemented and unverified.
 Reason)`.
 **Site** `PlaceOrderOutcome.cs` D-12.
 
-### Q-26
+### Q-26 — **MOOT under CG-R-138**
 > `DSC-0001` supplies an invariant name through `settled_by: "invariant:CartNotEmpty"`.
 > `DSC-0005` supplies none. If a rejection must cite the invariant it corresponds to,
 > where does the citation for DSC-0005 come from? I coined `CurrencyMatchesAccount`, which
@@ -221,7 +224,7 @@ Reason)`.
 
 ## F5 — Payload & validation
 
-### Q-09
+### Q-09 — **ANSWERED by move 1**
 > Where does `DSC-0002`'s payload validation live? The handler may reject "only for
 > invariants the fact vocabulary declares" and a payload type fault is not one, so it
 > cannot be the handler. The controller `must_not` contain "a conditional on domain
@@ -769,3 +772,57 @@ phrase.
 need"* — which requires a selection mechanism that is nowhere defined.
 **Proceeded under** one profile, as delivered.
 **Site** `rulings.md` R-Q45.
+
+---
+
+## Closed by move 1 and CG-R-138 — the detail
+
+**Q-07 — ANSWERED by move 1.** `inputs/ordering.fact-type-space.md` declares the fields of
+every fact, with types and required markings. This was the run's largest gap and the reason
+`DSC-0002` validated this session's inventions against themselves. Seven invented fields
+retire: D-04, D-05, D-06, D-07, D-08, D-09, D-11.
+
+**Q-03 — ANSWERED by move 1, and it is the one that mattered.** The profile's
+*"rejects only for invariants the fact vocabulary declares"* was **unsatisfiable by
+vacuity** for the whole build: the vocabulary declared ids, kinds and two prose notes, so
+no invariant could be stated over anything and `Rejected` was dead. The declaration supplies
+`Cart.Lines` with a 0…50 cap, `Quantity` bounded 1…99 and never clamped, and `CurrencyCode`
+as ISO 4217. `CartNotEmpty` is a predicate over a declared field. **The rule is satisfiable
+and the handler satisfies it.**
+
+**Q-09 — ANSWERED by move 1.** DSC-0002 is dischargeable for the first time in this run.
+`CartId: { base: uuid }` is a declared domain type; the payload check is no longer
+self-referential. The analyser still does not exist, so per CG-R-127 the rule stays
+read-enforced — but it is now a rule that *could* be run.
+
+**Q-05, Q-26 — MOOT under CG-R-138.** DSC-0005 is withdrawn. §6 of the declaration strikes
+`ActorIdentity.AccountCurrency` by name: *"Authored during the build to comply with
+DSC-0005, which is withdrawn under CG-R-138. The ground goes with the determination."*
+
+**Q-22 — ANSWERED by move 1.** With invariants stateable over declared fields, a `Rejected`
+citing one follows from the declaration rather than from this session's construction.
+
+**Q-04 — ANSWERED by CG-R-138: Reading B.** And the record was **malformed, not merely
+misclassified**: a residual's allocation says nothing in the specification settles the
+matter, DSC-0005's statement settled it, and *"neither reading rescues that"*. The
+demonstrated consequence is the finding — a residual whose statement reads as an answer was
+implemented as one, at a cost of five inventions and two tests.
+
+---
+
+### Q-48 — F3 / F12, raised by applying move 1
+> The fact type space declares `ActorIdentity` as `{ BuyerId, DisplayName?, IsAnonymous }`.
+> DSC-0003 declares its `read_provenance` as an "OIDC token claim" and **names no claim for
+> any field**. So obeying DSC-0003 still requires authoring ground it does not declare — the
+> claim mapping — which by CG-R-139's own ground test means DSC-0003 is not settled for the
+> fields beyond `BuyerId`. `sub` → `BuyerId` is an imported OIDC convention; `name` →
+> `DisplayName` likewise; **`IsAnonymous` has no claim at all** and is inferred from whether a
+> subject is present.
+
+**Prompted by** rebuilding `ActorIdentityProvider` against the declared shape.
+**Proceeded under** `sub`, `name`, and `IsAnonymous: false` where a subject exists — marked
+D-57.
+**The point is not the gap but the probe.** Move 1 closed the field gap and CG-R-139's test
+immediately surfaced the same defect one level down, at the mapping. The ground test is not
+a one-off catch; it keeps finding the boundary of what is declared.
+**Site** `Slices/PlaceOrder/Providers.cs` D-57.

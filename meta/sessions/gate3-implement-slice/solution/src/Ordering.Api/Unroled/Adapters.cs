@@ -11,9 +11,9 @@ using Ordering.Api.Slices.PlaceOrder;
 /// </summary>
 public sealed class InMemoryCartStore : ICartStore
 {
-    private readonly ConcurrentDictionary<string, Cart> _carts = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<CartId, Cart> _carts = new();
 
-    public Cart? Find(string cartId) => _carts.TryGetValue(cartId, out var cart) ? cart : null;
+    public Cart? Find(CartId cartId) => _carts.TryGetValue(cartId, out var cart) ? cart : null;
 
     public void Put(Cart cart) => _carts[cart.CartId] = cart;
 }
@@ -50,7 +50,9 @@ public sealed class InMemoryOutbox : IOutbox
 /// </summary>
 public sealed class GuidOrderIdentityMint : IOrderIdentityMint
 {
-    public string Next() => Guid.NewGuid().ToString("N");
+    /// <summary>D-30 narrows: `OrderId: { base: uuid }` is declared, so the shape is no
+    /// longer this session's choice — only the generator is.</summary>
+    public OrderId Next() => new(Guid.NewGuid());
 }
 
 /// <summary>

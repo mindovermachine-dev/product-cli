@@ -13,7 +13,7 @@ using Ordering.Api.Profile;
 /// </remarks>
 public interface ICartStore
 {
-    Cart? Find(string cartId);
+    Cart? Find(CartId cartId);
 }
 
 /// <summary>
@@ -80,7 +80,7 @@ public sealed class CartProvider
 
     public CartProvider(ICartStore store) => _store = store;
 
-    public Cart? Supply(string cartId) => _store.Find(cartId);
+    public Cart? Supply(CartId cartId) => _store.Find(cartId);
 }
 
 /// <summary>
@@ -95,12 +95,20 @@ public sealed class CartProvider
 /// gateway, so nothing here validates a token. <c>tick_rate: fast</c> is why this reads
 /// per act rather than caching.
 ///
-/// D-16 — INVENTED. The claim TYPES are not settled. DSC-0003 says "OIDC token claim"
-/// and names no claim. <c>sub</c> for the actor is the OIDC-conventional choice, which
-/// is a convention this session imported and the specification did not supply.
-/// <c>account_currency</c> is an outright invention with no OIDC basis at all — see
-/// Facts.cs D-07 and Q-05. A different reader gets different claim names here and the
-/// slice silently reads nothing.
+/// D-16 RETIRES IN PART. The invented <c>account_currency</c> claim is GONE with DSC-0005
+/// (CG-R-138) and with the field the fact type space §6 strikes by name.
+///
+/// D-57 — WHAT SURVIVES, AND CG-R-139'S GROUND TEST FIRES ON IT. The fact type space
+/// declares `ActorIdentity` as `{ BuyerId, DisplayName?, IsAnonymous }`. DSC-0003 declares
+/// the read_provenance as an "OIDC token claim" and **names no claim for any field**. So
+/// obeying DSC-0003 still requires authoring ground it does not declare — the claim
+/// mapping — which by CG-R-139 means DSC-0003 is not settled for the fields beyond the
+/// one this slice needs. <c>sub</c> → <c>BuyerId</c> is the OIDC convention and still an
+/// import; <c>name</c> → <c>DisplayName</c> likewise; <c>IsAnonymous</c> has no claim at
+/// all and is derived from whether the subject is present, which is inference.
+///
+/// Move 1 closed the FIELD gap and the ground test immediately surfaced the same defect
+/// one level down, at the mapping. Q-48.
 ///
 /// ═══ D-14 — REVERSED TWICE. NOW CONFORMING, UNDER AN AMENDED RULE. ═══
 ///
@@ -143,15 +151,17 @@ public sealed class ActorIdentityProvider
         // DSC-0003: the token was validated at the gateway, so nothing here re-validates.
         var principal = _requests.HttpContext?.User;
 
-        var actorId = principal?.FindFirst("sub")?.Value;
-        var accountCurrency = principal?.FindFirst("account_currency")?.Value;
+        var subject = principal?.FindFirst("sub")?.Value;
 
-        if (string.IsNullOrWhiteSpace(actorId) || string.IsNullOrWhiteSpace(accountCurrency))
+        if (string.IsNullOrWhiteSpace(subject))
         {
             return null;
         }
 
-        return new ActorIdentity(actorId, accountCurrency);
+        return new ActorIdentity(
+            new BuyerId(subject),
+            principal?.FindFirst("name")?.Value,
+            IsAnonymous: false);   // D-57 — inferred, not declared. Q-48.
     }
 }
 

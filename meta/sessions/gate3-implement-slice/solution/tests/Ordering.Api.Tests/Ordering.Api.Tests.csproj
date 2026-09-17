@@ -21,6 +21,10 @@
     <Content Include="../../../inputs/place-order.determinations.yaml"
              Link="place-order.determinations.yaml"
              CopyToOutputDirectory="PreserveNewest" />
+    <!-- Move 1 — the declared fact type space, for the CG-R-139 ground test. -->
+    <Content Include="../../../inputs/ordering.fact-type-space.md"
+             Link="ordering.fact-type-space.md"
+             CopyToOutputDirectory="PreserveNewest" />
     <!-- R-Q37 — the schema, for the closure audit. An arrived input, never modified. -->
     <Content Include="../../../inputs/determination.schema.json"
              Link="determination.schema.json"

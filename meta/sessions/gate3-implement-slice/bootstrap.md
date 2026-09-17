@@ -19,6 +19,17 @@
 | `prompt.md` (the session prompt) | `21c4f8402293957d622050fb587ce50504cf28def0c4849af7e4a7e5a24b42da` |
 | `gate3-bundle.zip` (as delivered) | `1f57593fb84c93fa03d9504e3e65e3f3367571dffa1d64f3b1a140cfe3cb65e7` |
 
+**A fifth input arrived 2026-09-17**, after the build, as move 1 under CG-R-137. It is
+supplied as an *input*, not a ruling, and it is `[PROPOSED]`:
+
+| File | sha256 |
+|---|---|
+| `inputs/ordering.fact-type-space.md` | `0a5e867b4d1b5ddbc8ff3f39809e1f7ca86b2275c477d38413d7040f903e26cf` |
+
+It declares the fields of every fact in `ordering.eventmodel.yaml` — the gap this run
+recorded as its largest (Q-07), and the reason `DSC-0002` had been validating this
+session's inventions against themselves.
+
 The four input files under `inputs/` are byte-identical copies of the bundle's
 `gate3-bundle/inputs/`; `prompt.md` is a byte-identical copy of
 `gate3-bundle/session-gate3-implement-slice.md`. Hashes above are of the copies

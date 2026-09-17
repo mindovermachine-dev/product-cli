@@ -107,7 +107,7 @@ public sealed class PlaceOrderController : ControllerBase
         return outcome switch
         {
             PlaceOrderOutcome.Accepted accepted => Created(
-                $"/orders/{accepted.Event.OrderId}",
+                $"/orders/{accepted.Event.OrderId.Value}",
                 accepted.Event),
 
             PlaceOrderOutcome.Rejected rejected => UnprocessableEntity(new ProblemDetails

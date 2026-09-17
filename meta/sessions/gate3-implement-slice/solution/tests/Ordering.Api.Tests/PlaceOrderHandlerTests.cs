@@ -23,7 +23,17 @@ using Xunit;
 /// </remarks>
 public sealed class PlaceOrderHandlerTests
 {
-    private const string Gbp = "GBP";
+    // CG-R-138 rules Reading B: DSC-0005 is withdrawn, so
+    // `Rejects_a_currency_mismatch_rather_than_converting` and
+    // `Reports_CartNotEmpty_first_when_both_rejections_apply` are DELETED. There is one
+    // rejection now and no precedence to decide. D-18, D-20 retire with them.
+
+    private static readonly CurrencyCode Gbp = new("GBP");
+    private static readonly CartId TheCart = new(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+    private static readonly OrderId TheOrder = new(Guid.Parse("22222222-2222-2222-2222-222222222222"));
+
+    private static ActorIdentity Actor(string buyerId) =>
+        new(new BuyerId(buyerId), DisplayName: null, IsAnonymous: false);
 
     private static PlaceOrderHandler Handler(Cart? cart, ActorIdentity? actor) =>
         Handler(cart, actor, new InMemoryOutbox());
@@ -40,60 +50,47 @@ public sealed class PlaceOrderHandlerTests
             new CartProvider(store),
             new ActorIdentityProvider(RequestFor(actor)),
             new OrderPlacedProvider(outbox),
-            new StubMint("order-1"),
+            new StubMint(TheOrder),
             TimeProvider.System);
     }
 
     private static Cart CartWith(params CartLine[] lines) =>
-        new("cart-1", Gbp, lines);
+        new(TheCart, new BuyerId("buyer-1"), lines, Gbp);
+
+    private static CartLine Line(int quantity, decimal unitPrice) =>
+        new(new CartLineId("line-1"), new CatalogItemId(7), new Quantity(quantity), new Money(unitPrice, Gbp));
+
+    private static PlaceOrderCommand Command() => new() { CartId = TheCart.Value };
 
     /// <summary>DSC-0001 — "An order may not be placed against an empty cart."</summary>
     [Fact]
     public void Rejects_an_empty_cart_citing_CartNotEmpty()
     {
-        var outcome = Handler(CartWith(), new ActorIdentity("actor-1", Gbp))
-            .Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        var outcome = Handler(CartWith(), Actor("actor-1"))
+            .Handle(Command());
 
         var rejected = Assert.IsType<PlaceOrderOutcome.Rejected>(outcome);
         Assert.Equal("CartNotEmpty", rejected.Invariant);
     }
 
-    /// <summary>
-    /// DSC-0005 — "…rejected rather than converted." The test asserts the rejection and
-    /// that no converted amount appears; "rather than converted" is otherwise
-    /// unobservable from the outcome. D-20.
-    /// </summary>
-    [Fact]
-    public void Rejects_a_currency_mismatch_rather_than_converting()
-    {
-        var outcome = Handler(CartWith(new CartLine("sku-1", 2, 500)), new ActorIdentity("actor-1", "EUR"))
-            .Handle(new PlaceOrderCommand { CartId = "cart-1" });
 
-        var rejected = Assert.IsType<PlaceOrderOutcome.Rejected>(outcome);
-        Assert.Equal("CurrencyMatchesAccount", rejected.Invariant);
-    }
-
-    /// <summary>D-18 — the decided precedence between two applicable rejections.</summary>
-    [Fact]
-    public void Reports_CartNotEmpty_first_when_both_rejections_apply()
-    {
-        var outcome = Handler(new Cart("cart-1", "EUR", Array.Empty<CartLine>()), new ActorIdentity("actor-1", Gbp))
-            .Handle(new PlaceOrderCommand { CartId = "cart-1" });
-
-        Assert.Equal("CartNotEmpty", Assert.IsType<PlaceOrderOutcome.Rejected>(outcome).Invariant);
-    }
 
     /// <summary>The write position: <c>OrderPlaced</c> and nothing else.</summary>
     [Fact]
     public void Emits_OrderPlaced_when_the_cart_is_placeable()
     {
-        var outcome = Handler(CartWith(new CartLine("sku-1", 2, 500)), new ActorIdentity("actor-1", Gbp))
-            .Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        var outcome = Handler(CartWith(Line(2, 500m)), Actor("actor-1"))
+            .Handle(Command());
 
         var accepted = Assert.IsType<PlaceOrderOutcome.Accepted>(outcome);
-        Assert.Equal("order-1", accepted.Event.OrderId);
-        Assert.Equal("actor-1", accepted.Event.ActorId);
-        Assert.Equal(1000, accepted.Event.TotalMinorUnits);
+        Assert.Equal(TheOrder, accepted.Event.OrderId);
+        Assert.Equal(new BuyerId("actor-1"), accepted.Event.BuyerId);
+        Assert.Equal(new Money(1000m, Gbp), accepted.Event.Total);
+
+        // OrderLine is "a snapshot of the cart line at placement" and does not carry
+        // CartLineId — §2 of the declaration, and §7 open item 2 records the consequence.
+        var line = Assert.Single(accepted.Event.Lines);
+        Assert.Equal(new CatalogItemId(7), line.CatalogItemId);
     }
 
     /// <summary>
@@ -104,8 +101,8 @@ public sealed class PlaceOrderHandlerTests
     [Fact]
     public void Does_not_decide_who_may_place_an_order()
     {
-        var outcome = Handler(CartWith(new CartLine("sku-1", 1, 100)), new ActorIdentity("some-stranger", Gbp))
-            .Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        var outcome = Handler(CartWith(Line(1, 100m)), Actor("some-stranger"))
+            .Handle(Command());
 
         Assert.IsType<PlaceOrderOutcome.Accepted>(outcome);
     }
@@ -120,27 +117,27 @@ public sealed class PlaceOrderHandlerTests
     public void Leaves_the_cart_standing_after_the_order_is_placed()
     {
         var store = new InMemoryCartStore();
-        store.Put(CartWith(new CartLine("sku-1", 1, 100)));
+        store.Put(CartWith(Line(1, 100m)));
 
         var handler = new PlaceOrderHandler(
             new CartProvider(store),
-            new ActorIdentityProvider(RequestFor(new ActorIdentity("actor-1", Gbp))),
+            new ActorIdentityProvider(RequestFor(Actor("actor-1"))),
             new OrderPlacedProvider(new InMemoryOutbox()),
-            new StubMint("order-1"),
+            new StubMint(TheOrder),
             TimeProvider.System);
 
-        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        handler.Handle(Command());
 
-        Assert.NotNull(store.Find("cart-1"));
-        Assert.False(store.Find("cart-1")!.IsEmpty);
+        Assert.NotNull(store.Find(TheCart));
+        Assert.False(store.Find(TheCart)!.IsEmpty);
     }
 
     /// <summary>Q-23 — no idempotency is specified and none is implemented.</summary>
     [Fact]
     public void Places_a_second_order_from_the_same_cart()
     {
-        var handler = Handler(CartWith(new CartLine("sku-1", 1, 100)), new ActorIdentity("actor-1", Gbp));
-        var command = new PlaceOrderCommand { CartId = "cart-1" };
+        var handler = Handler(CartWith(Line(1, 100m)), Actor("actor-1"));
+        var command = Command();
 
         Assert.IsType<PlaceOrderOutcome.Accepted>(handler.Handle(command));
         Assert.IsType<PlaceOrderOutcome.Accepted>(handler.Handle(command));
@@ -150,10 +147,10 @@ public sealed class PlaceOrderHandlerTests
     [Fact]
     public void Throws_when_a_read_position_cannot_be_supplied()
     {
-        var handler = Handler(CartWith(new CartLine("sku-1", 1, 100)), actor: null);
+        var handler = Handler(CartWith(Line(1, 100m)), actor: null);
 
         var ex = Assert.Throws<ReadPositionUnavailableException>(
-            () => handler.Handle(new PlaceOrderCommand { CartId = "cart-1" }));
+            () => handler.Handle(Command()));
 
         Assert.Equal(nameof(ActorIdentity), ex.FactType);
     }
@@ -166,12 +163,12 @@ public sealed class PlaceOrderHandlerTests
     public void Records_the_write_position_through_the_provider()
     {
         var outbox = new InMemoryOutbox();
-        var handler = Handler(CartWith(new CartLine("sku-1", 2, 500)), new ActorIdentity("actor-1", Gbp), outbox);
+        var handler = Handler(CartWith(Line(2, 500m)), Actor("actor-1"), outbox);
 
-        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        handler.Handle(Command());
 
         var recorded = Assert.Single(outbox.Entries);
-        Assert.Equal("order-1", recorded.Event.OrderId);
+        Assert.Equal(TheOrder, recorded.Event.OrderId);
     }
 
     /// <summary>R-Q10 — a rejected act writes nothing.</summary>
@@ -179,9 +176,9 @@ public sealed class PlaceOrderHandlerTests
     public void Records_nothing_when_the_act_is_rejected()
     {
         var outbox = new InMemoryOutbox();
-        var handler = Handler(CartWith(), new ActorIdentity("actor-1", Gbp), outbox);
+        var handler = Handler(CartWith(), Actor("actor-1"), outbox);
 
-        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        handler.Handle(Command());
 
         Assert.Empty(outbox.Entries);
     }
@@ -195,9 +192,9 @@ public sealed class PlaceOrderHandlerTests
     public void The_write_lands_in_the_outbox_pending_publication()
     {
         var outbox = new InMemoryOutbox();
-        var handler = Handler(CartWith(new CartLine("sku-1", 1, 100)), new ActorIdentity("actor-1", Gbp), outbox);
+        var handler = Handler(CartWith(Line(1, 100m)), Actor("actor-1"), outbox);
 
-        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        handler.Handle(Command());
 
         Assert.Equal(OutboxState.Pending, Assert.Single(outbox.Entries).State);
     }
@@ -213,10 +210,10 @@ public sealed class PlaceOrderHandlerTests
     public void Nothing_in_this_slice_dispatches_the_outbox()
     {
         var outbox = new InMemoryOutbox();
-        var handler = Handler(CartWith(new CartLine("sku-1", 1, 100)), new ActorIdentity("actor-1", Gbp), outbox);
+        var handler = Handler(CartWith(Line(1, 100m)), Actor("actor-1"), outbox);
 
-        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
-        handler.Handle(new PlaceOrderCommand { CartId = "cart-1" });
+        handler.Handle(Command());
+        handler.Handle(Command());
 
         Assert.All(outbox.Entries, e => Assert.Equal(OutboxState.Pending, e.State));
     }
@@ -234,8 +231,7 @@ public sealed class PlaceOrderHandlerTests
         {
             context.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
             {
-                new Claim("sub", actor.ActorId),
-                new Claim("account_currency", actor.AccountCurrency),
+                new Claim("sub", actor.BuyerId.Value),
             }));
         }
 
@@ -244,10 +240,10 @@ public sealed class PlaceOrderHandlerTests
 
     private sealed class StubMint : IOrderIdentityMint
     {
-        private readonly string _id;
+        private readonly OrderId _id;
 
-        public StubMint(string id) => _id = id;
+        public StubMint(OrderId id) => _id = id;
 
-        public string Next() => _id;
+        public OrderId Next() => _id;
     }
 }

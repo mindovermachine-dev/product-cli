@@ -4,10 +4,14 @@
 prompt, and the two rulings that scope the run. No README of the binding, no conformance
 manifest, no repository, no web search.
 
-**Result: ~10 genuine specification gaps, ~14 ordinary design decisions any competent team
-would make in any notation, ~11 about the scheme rather than this slice** — with nine of the
-ten gaps inside moves 1 and 3 (`triage.md`). That partition is the reportable figure and the
-raw clarification count is not a headline, per CG-R-135; it overstates the problem.
+**Result: ~5 genuine specification gaps, ~14 ordinary design decisions any competent team
+would make in any notation, ~11 about the scheme rather than this slice.** That partition is
+the reportable figure and the raw clarification count is not a headline, per CG-R-135; it
+overstates the problem.
+
+**Move 1 — the declared fact type space — halved the specification gaps in one input**,
+closing six questions, retiring seven invented fields, and making the profile's one
+unsatisfiable rule satisfiable.
 
 Thirteen and a half questions answered by Emil, 2026-09-16 … 09-17 (`rulings.md`). Read
 `gate-c-report.md` first; `gate-c-report-baseline.md` is the unrevised version from before
@@ -21,8 +25,9 @@ on authoring determinations.
 | File | What it is |
 |---|---|
 | `prompt.md` | the session prompt, verbatim |
+| `rulings-cg-r-138-141.md` | CG-R-138 … CG-R-141 verbatim — Reading B, the two general tests, the baseline, the reporting bias |
 | `rulings-cg-r-134-137.md` | CG-R-134 … CG-R-137 verbatim — the answering method, the retired count, Q-02, and the four moves |
-| `inputs/` | the four arrived inputs, verbatim, hashed in `bootstrap.md` before use |
+| `inputs/` | the four arrived inputs plus `ordering.fact-type-space.md` (move 1), verbatim, hashed in `bootstrap.md` before use |
 | `bootstrap.md` | first act: hashes, what was read, the reading order, the one standing rule that could not be complied with |
 | `gate-a.md` | the expectation list, written with the determinations unopened; the reading of the slice; six contradictions |
 | `frame-categories.md` | this session's **working scheme** for grouping questions — invented after the build, **not a frame**; CG-R-136 voids any count taken over it |
@@ -36,6 +41,14 @@ on authoring determinations.
 | `solution/` | the slice: `dotnet test` → 15 passing, clean under `TreatWarningsAsErrors` |
 
 ## The findings
+
+0. **A residual whose statement reads as an answer will be implemented as one.** DSC-0005
+   asserted a behaviour under an allocation saying nothing settles it; this session built
+   it, at a cost of five inventions and two tests. CG-R-138 withdraws it and rules the
+   record malformed. CG-R-139 extracts the mechanical test — *if obeying a determination
+   requires authoring ground it does not declare, the determination is not settled* — which
+   `FactShapeConformanceTests` now runs over the whole assembly, and which flagged the same
+   defect one level down the moment move 1 closed the first one (Q-48).
 
 1. ~~**The write position has no realisation in the profile.**~~ **Answered by R-Q10** —
    the provider role carries the write path. Cost: `DSC-0100` must be superseded, because
@@ -84,5 +97,5 @@ on authoring determinations.
 ## Running it
 
 ```bash
-cd solution && dotnet test        # 58 tests, .NET 8
+cd solution && dotnet test        # 61 tests, .NET 8
 ```

@@ -1218,3 +1218,122 @@ consequences, all applied:
 The instance — whether DSC-0005's currency rejection belongs in the slice — is **not
 ruled**, and is not to be ruled from a summary. The two readings and what each does to the
 slice are in `allocation-readings.md`. Q-04 remains open.
+
+---
+
+## CG-R-138 … CG-R-141, and move 1 — Emil, 2026-09-15 (received 2026-09-17)
+
+Filed verbatim at `rulings-cg-r-138-141.md`. The fact type space arrived with them as an
+**input**, not a ruling: `inputs/ordering.fact-type-space.md`, `[PROPOSED]`, sha256
+`0a5e867b…03e26cf`.
+
+### CG-R-138 — Reading B, and DSC-0005 was malformed
+
+> *"The rejection comes out; D-07, D-16, D-18, D-20 and the two tests retire with it;
+> `CartNotEmpty` remains as the act's only rejection."*
+
+Applied in full. The handler has one rejection. `ActorIdentity.AccountCurrency` is gone,
+the `account_currency` claim is gone, the coined invariant name is gone, the precedence
+decision is gone, and both tests are deleted.
+
+**The ruling goes further than the reading this session offered, and the extra distance is
+the finding.** The choice was *"not between two readings of a well-formed record"*:
+
+> *"A residual's allocation says nothing in the specification settles the matter.
+> DSC-0005's statement settles it. The record contradicts itself, and neither reading
+> rescues that."*
+
+And:
+
+> *"A residual whose statement reads as an answer will be implemented as one: it was, at a
+> cost of five inventions and two tests. The record produced exactly the failure its class
+> exists to prevent, on real work, which is better evidence than any argument I could have
+> made for the class."*
+
+Both consequences this session drew from the record are ruled **decisive independent of the
+principle** — the act-time authoring one and the authored-ground one.
+
+### CG-R-139 — two general tests, and one of them is now mechanised
+
+**Test 1, read-enforced:** *a residual's statement names what is unsettled, never what the
+answer would be.* No schema can tell an assertion from a description. Recorded; nothing to
+build.
+
+**Test 2, the ground test:**
+
+> *"If obeying a determination requires authoring ground the determination does not
+> declare, the determination is not settled."*
+
+Called *"mechanical enough to be useful"*, and it is. **`FactShapeConformanceTests` runs
+it** over the whole assembly against the declared fact type space: every constructor
+parameter of every implemented fact, compared with the declaration, and anything the code
+requires that the declaration does not supply is flagged as authored ground.
+
+It currently flags **nothing**. Before move 1 it would have flagged
+`ActorIdentity.AccountCurrency`, which the test proves by keeping the pre-move-1 shape as
+its negative case — so the passing result is not vacuous.
+
+The ruling's observation about the signal is exact: *"the invention was flagged contested
+at the time — the signal was there and there was no rule to read it against."* D-07 said
+`INVENTED AND CONTESTED` in the source at the moment it was written.
+
+### CG-R-140 — the baseline stands uncorrected
+
+Ratified as judged. *"Supersession-never-rewrites applied to a report rather than to a
+claim."* No change.
+
+### CG-R-141 — the reporting bias, and its direction
+
+Ruled as the mirror of CG-R-133: expectation lists **under**-report defects in the
+artefact; count headlines **over**-report how badly the run went. *"The reporting bias is
+the conservative one… It still distorts, and the partition exists to correct it."*
+
+And the qualification this session made about itself is ruled to matter:
+
+> *"A self-diagnosis that required prompting is weaker evidence of self-correction than a
+> volunteered one, and recording which is which is what keeps the distinction usable."*
+
+Carried into the weakest point, with which is which marked.
+
+---
+
+## Move 1 landed — what the fact type space closed
+
+**Six questions, and it halved the specification gaps in one input.**
+
+| | |
+|---|---|
+| **Q-07** | *no field of any fact is declared anywhere* — the run's largest gap. Closed. |
+| **Q-05** | where DSC-0005's account currency lives — moot; the determination is withdrawn and §6 strikes the field by name |
+| **Q-03** | *"rejects only for invariants the fact vocabulary declares"* — **the profile's one unsatisfiable rule is now satisfiable.** The vocabulary declares `Cart.Lines` with a 0…50 cap, `Quantity` bounded 1…99 and never clamped, `CurrencyCode` as ISO 4217. `CartNotEmpty` is a predicate over a declared field. |
+| **Q-26** | the invariant name DSC-0005 never supplied — moot |
+| **Q-22** | the `Accepted`/`Rejected` shape — follows from an invariant now being stateable |
+| **Q-09** | **DSC-0002 is dischargeable for the first time in the run.** It had been validating this session's inventions against themselves; `CartId: { base: uuid }` is now a declared type to validate against. |
+
+**Seven invented fields retired:** D-04, D-05, D-06, D-07, D-08, D-09, D-11 — and D-16 in
+part, D-18 and D-20 entirely.
+
+**The gap DSC-0005 was hiding is now visible instead of papered over.** §7 open item 1:
+`CurrencyCode` appears on `Cart`, on every `CartLine.UnitPrice` and on `OrderPlaced`, and
+no determination says what happens when they disagree. `Cart.Total` sums in the cart's
+currency and is wrong if they differ. Nothing rejects, nothing converts, and the question
+stands with no proposed answer attached — which is the ruling's own description of
+DSC-0005 done properly.
+
+### And the ground test fired again, one level down — Q-48
+
+**Q-48 (F3/F12).**
+> The fact type space declares `ActorIdentity` as `{ BuyerId, DisplayName?, IsAnonymous }`.
+> DSC-0003 declares its `read_provenance` as an "OIDC token claim" and **names no claim for
+> any field**. So obeying DSC-0003 still requires authoring ground it does not declare —
+> the claim mapping — which by CG-R-139's own test means DSC-0003 is not settled for the
+> fields beyond `BuyerId`. `sub` → `BuyerId` is an imported convention; `name` →
+> `DisplayName` likewise; **`IsAnonymous` has no claim at all** and is inferred from whether
+> a subject is present.
+
+*Proceeded under:* `sub`, `name`, and `IsAnonymous: false` where a subject exists — all
+marked D-57.
+
+**Move 1 closed the field gap and the same test surfaced the same defect at the mapping.**
+That is the more useful result than the closure: the ground test is not a one-off catch,
+it is a probe that keeps finding the boundary of what is declared.

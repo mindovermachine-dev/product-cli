@@ -18,7 +18,7 @@ using Ordering.Api.Profile;
 /// </summary>
 public interface IOrderIdentityMint
 {
-    string Next();
+    OrderId Next();
 }
 
 /// <summary>
@@ -34,38 +34,35 @@ public interface IOrderIdentityMint
 ///   must_not "references a transport type"                                         — holds.
 ///   must_not "performs I/O directly"                                               — holds; providers supply, decorator writes.
 ///
-/// Q-03 IS LIVE IN THIS FILE AND IS THE MOST IMPORTANT CONFLICT IN THE RUN.
-/// The profile permits rejection "only for invariants the FACT VOCABULARY declares".
-/// `ordering.eventmodel.yaml` declares ids, kinds and two prose notes. It declares no
-/// invariant, no predicate, no constraint, and no field one could be stated over. Read
-/// strictly, this handler may never reject, `Rejected` is dead, and the controller's
-/// Accepted-or-Rejected mapping is half unreachable.
-/// Both rejections below come from the DETERMINATION layer, not the fact vocabulary:
-/// DSC-0001 (pinned, `settled_by: "invariant:CartNotEmpty"`) and DSC-0005. Implementing
-/// them violates the profile rule as written. Not implementing them ignores a pinned
-/// determination addressed to this exact act.
-/// This session implements them and reports the violation, on the reading that the rule
-/// means "invariants declared over the fact vocabulary" and that "fact vocabulary" is
-/// loose for the specification as a whole. That reading is not in the text. Q-03.
+/// Q-03 IS ANSWERED BY MOVE 1, AND THIS FILE IS WHERE IT SHOWS.
+/// The profile permits rejection "only for invariants the fact vocabulary declares". For
+/// the whole of this run that rule was UNSATISFIABLE BY VACUITY: the vocabulary declared
+/// ids, kinds and two prose notes, so no invariant could be stated over anything and
+/// `Rejected` was dead. `ordering.fact-type-space.md` declares fields and constraints —
+/// `Cart.Lines` with a 0…50 cap, `Quantity` bounded 1…99 and never clamped,
+/// `CurrencyCode` as ISO 4217 — so an invariant now has a shape to be stated over.
+/// `CartNotEmpty` is a predicate over `Cart.Lines`, which is declared. The rule is
+/// satisfiable and this handler satisfies it.
 ///
-/// D-18 — DECIDED: rejection ORDER. DSC-0001 is checked before DSC-0005. Nothing
-/// settles precedence between two rejections that can both apply to one cart, and the
-/// caller sees only the first. A cart that is both empty and mis-currencied reports
-/// CartNotEmpty. Reversing it is equally supported by the specification.
+/// ═══ DSC-0005 IS WITHDRAWN. CG-R-138 RULES READING B. ═══
+/// The currency rejection that stood here is GONE, and with it D-07 (the invented
+/// `ActorIdentity.AccountCurrency`), D-16 (the invented `account_currency` claim), D-18
+/// (the invented precedence between two rejections), D-20(a) and D-20(b), and two tests.
+/// **Five inventions and two tests, from one determination.**
 ///
-/// SETTLED by DSC-0003 — AUTHORITY IS DELIBERATELY ABSENT BELOW.
-/// "Who may place an order is not settled at this address", allocation `residual`,
-/// carried_by `human`, principal team `platform-security`. So there is no authorisation
-/// check in this handler, and its absence is a reading of the specification rather than
-/// an oversight. The residual is live and someone carries it. Q-17.
+/// The ruling is that the record was MALFORMED, not merely misclassified: a residual's
+/// allocation says nothing in the specification settles the matter, and DSC-0005's
+/// statement settled it. CG-R-139 extracts the general test this session had no rule to
+/// read its own signal against:
 ///
-/// D-37 — DECIDED, AND CAUGHT LATE. The entry point is SYNCHRONOUS. Nothing in any
-/// input settles whether a handler is sync or async, whether a CancellationToken is
-/// propagated, or what an async decision would mean for "performs I/O directly". The
-/// Gate A expectation list predicted this one (item 7) and this session then decided it
-/// and failed to mark it; the omission was found while writing the Gate C report, not
-/// by any check. That failure mode — a predicted invention resolved silently — is
-/// exactly what the instrumentation exists to prevent, and it happened once here.
+///     "If obeying a determination requires authoring ground the determination does not
+///      declare, the determination is not settled."
+///
+/// This handler had to invent an account currency to obey DSC-0005, and flagged the
+/// invention contested at the time. `FactShapeConformanceTests` now runs that test
+/// mechanically over this assembly.
+///
+/// D-18 RETIRES WITH IT. With one rejection there is no precedence to decide.
 ///
 /// NOT SETTLED ANYWHERE, AND NOT DONE (see decisions.md):
 ///   * the cart is not emptied. `PlaceOrder` writes `OrderPlaced` and nothing else; the
@@ -73,6 +70,9 @@ public interface IOrderIdentityMint
 ///     cart standing. This session believes that is wrong and implements it as
 ///     specified. Q-15.
 ///   * no idempotency and no concurrency control. Two calls place two orders. Q-23.
+///   * nothing rejects or converts a currency mismatch between the cart, its lines and the
+///     order. §7 open item 1 of the fact type space names it as a genuine gap, now
+///     visible; DSC-0005 is withdrawn and no determination replaces it. See Cart.Total.
 /// </remarks>
 [Slice("PlaceOrder", SliceRole.Handler)]
 public sealed class PlaceOrderHandler
@@ -102,7 +102,7 @@ public sealed class PlaceOrderHandler
     {
         // Read positions, both through provider-role types (Providers.cs).
         var actor = _actors.Supply();
-        var cart = _carts.Supply(command.CartId);
+        var cart = _carts.Supply(new CartId(command.CartId));
 
         // D-19 — DECIDED. A read position that cannot be supplied is not a domain
         // rejection: no determination declares it and the profile forbids rejecting for
@@ -128,41 +128,23 @@ public sealed class PlaceOrderHandler
                 "An order may not be placed against an empty cart.");
         }
 
-        // DSC-0005 — act-time, residual, carried by human principal "emil".
-        // "An order placed against a cart whose currency differs from the customer's
-        //  account currency is rejected rather than converted."
+        // The write position: OrderPlaced, and nothing else. Every field below is a
+        // declared field of the declared fact; nothing here is this session's.
         //
-        // D-20 — DECIDED, TWICE OVER.
-        //  (a) That a `residual` determination is IMPLEMENTED at all. Its allocation
-        //      says a human carries it, with no pin and no check. This session reads
-        //      allocation as how a determination is discharged, not whether it holds,
-        //      so the statement is behaviour and it is realised here — unverified.
-        //      The opposite reading (residual means nothing is built) is available and
-        //      would leave this branch out entirely. Q-04.
-        //  (b) The invariant NAME. DSC-0001 supplies one via `settled_by`; DSC-0005
-        //      supplies none, and `Rejected` must cite something. "CurrencyMatchesAccount"
-        //      is this session's coinage and appears in no input.
-        //
-        // The comparison itself reads a fact DSC-0005 declares no position for; see
-        // Facts.cs D-07 and Q-05. String equality, ordinal: case and ISO-4217 validity
-        // are unsettled.
-        if (!string.Equals(cart.Currency, actor.AccountCurrency, StringComparison.Ordinal))
-        {
-            return new PlaceOrderOutcome.Rejected(
-                "CurrencyMatchesAccount",
-                "An order placed against a cart whose currency differs from the "
-                + "customer's account currency is rejected rather than converted.");
-        }
-
-        // The write position: OrderPlaced, and nothing else.
+        // OrderLine is "a snapshot of the cart line at placement" and "does not carry
+        // CartLineId" — so the projection drops the line id deliberately, per §2, and
+        // §7 open item 2 records that an order therefore cannot be traced to its cart
+        // lines.
         var placed = new OrderPlaced(
             OrderId: _mint.Next(),
             CartId: cart.CartId,
-            ActorId: actor.ActorId,
+            BuyerId: actor.BuyerId,
+            Lines: cart.Lines
+                .Select(line => new OrderLine(line.CatalogItemId, line.Quantity, line.UnitPrice))
+                .ToArray(),
             Currency: cart.Currency,
-            Lines: cart.Lines,
-            TotalMinorUnits: cart.TotalMinorUnits,
-            OccurredAt: _clock.GetUtcNow());
+            Total: cart.Total,
+            OccurredAt: new Instant(_clock.GetUtcNow()));
 
         // R-Q10 — the write position, recorded through the provider that adapts the store.
         // Q-30: the write happens inside the decision act, before Accepted is returned.

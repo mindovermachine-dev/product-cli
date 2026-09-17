@@ -1,6 +1,6 @@
 # Decisions — every point the specification does not settle, resolved by this session
 
-Fifty-three, of which **one is withdrawn, one reversed twice, one deleted outright, one superseded, one retired, and one settled by a later ruling**. Each is marked at its site in the source with the same `D-nn` tag
+Fifty-nine, of which **ten are now withdrawn, reversed, deleted, superseded, retired or settled by later rulings — seven of them by move 1 alone**. Each is marked at its site in the source with the same `D-nn` tag
 (`grep -rn 'D-[0-9][0-9]' solution/src`), so the code and this record cannot drift.
 
 **INVENTED** = the specification is silent and this session supplied something.
@@ -16,14 +16,14 @@ that is the finding.
 | D-01 | INVENTED | The `[Slice]` attribute type itself — namespace, argument types, `AttributeUsage`. Three profile `must` rules are stated in terms of it and it is supplied nowhere. | `Profile/SliceAttribute.cs` |
 | D-02 | DECIDED | The role argument is a closed enum, not the bare string the profile's rule text shows. More checkable; possibly a divergence from a literal reading. | `Profile/SliceAttribute.cs` |
 | D-03 | INVENTED | The act instance is an unvalidated string; nothing ties it to the act vocabulary at compile time. | `Profile/SliceAttribute.cs` |
-| D-04 | INVENTED | **Every field of every fact.** `Cart`, `CartLine`, `ActorIdentity`, `OrderPlaced` — every name, type, unit and nullability. The fact vocabulary declares a type space, not types. | `Facts/Facts.cs` |
-| D-05 | INVENTED | "Empty" means "no lines". A cart of zero-quantity lines is not empty under this reading. DSC-0001 pins the invariant by name and cannot define it, because `Cart` has no declared structure. | `Facts/Facts.cs` |
-| D-06 | INVENTED | Money as minor units in a `long`. `decimal`, a Money type, or per-line currency are equally supported. | `Facts/Facts.cs` |
-| D-07 | INVENTED | `ActorIdentity.AccountCurrency`. DSC-0005 compares against "the customer's account currency"; no fact carries one and DSC-0005 declares no position for it. Contested — see Q-05. | `Facts/Facts.cs` |
-| D-08 | INVENTED | `OrderPlaced` carries an `OrderId` and an `OccurredAt`. Nothing says an order has either. | `Facts/Facts.cs` |
-| D-09 | INVENTED | The `PlaceOrderCommand` shape: one field, `CartId`. `ActorIdentity` is deliberately not a payload field because DSC-0003 routes it elsewhere. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
+| ~~D-04~~ | **RETIRED by move 1** | **Every field of every fact.** `Cart`, `CartLine`, `ActorIdentity`, `OrderPlaced` — every name, type, unit and nullability. The fact vocabulary declares a type space, not types. | `Facts/Facts.cs` |
+| ~~D-05~~ | **RETIRED by move 1** | "Empty" means "no lines". A cart of zero-quantity lines is not empty under this reading. DSC-0001 pins the invariant by name and cannot define it, because `Cart` has no declared structure. | `Facts/Facts.cs` |
+| ~~D-06~~ | **RETIRED by move 1** | Money as minor units in a `long`. `decimal`, a Money type, or per-line currency are equally supported. | `Facts/Facts.cs` |
+| ~~D-07~~ | **RETIRED by CG-R-138 + §6** | `ActorIdentity.AccountCurrency`. DSC-0005 compares against "the customer's account currency"; no fact carries one and DSC-0005 declares no position for it. Contested — see Q-05. | `Facts/Facts.cs` |
+| ~~D-08~~ | **RETIRED by move 1** | `OrderPlaced` carries an `OrderId` and an `OccurredAt`. Nothing says an order has either. | `Facts/Facts.cs` |
+| ~~D-09~~ | **RETIRED by move 1** | The `PlaceOrderCommand` shape: one field, `CartId`. `ActorIdentity` is deliberately not a payload field because DSC-0003 routes it elsewhere. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
 | D-10 | DECIDED | The command doubles as the HTTP request body; no separate transport DTO. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
-| D-11 | DECIDED | DSC-0002's `does_not_cover: cross-field-consistency` is vacuous with one field; nothing is done about it. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
+| ~~D-11~~ | **RETIRED by move 1** | DSC-0002's `does_not_cover: cross-field-consistency` is vacuous with one field; nothing is done about it. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
 | D-12a | DECIDED | Post-ruling: `Accepted` still carries the event, because the controller derives a `Location` from its `OrderId`. Whether an accepted outcome should carry events a provider has already recorded is unsettled. Q-30. | `Slices/PlaceOrder/PlaceOrderOutcome.cs` |
 | D-12 | INVENTED | `Accepted` / `Rejected` as a closed hierarchy; `Accepted` carries the event, `Rejected` carries invariant + reason. | `Slices/PlaceOrder/PlaceOrderOutcome.cs` |
 | D-13 | INVENTED | `ICartStore` and `IClaimSource` exist at all. No input names a store, stream, repository or claims source. | `Slices/PlaceOrder/Providers.cs` |
@@ -40,13 +40,13 @@ that is the finding.
 | D-41 | DECIDED | A provider is matched to the fact it supplies by the return type of its single public method. Nothing states the convention; two facts or a DTO breaks it. Q-34. | `ProviderTransportCarrierTests.cs` |
 | D-38 | DECIDED | An exhaustiveness rule written over "every type" catches the compiler-generated async state machine behind the middleware. An analyser implementing R-Q16 must scope to types declared in source. Found by running it. | `ProfileConformanceTests.cs` |
 | D-15 | DECIDED | The provider's "where external data is required" is a sufficiency condition, not a restriction, so `CartProvider` supplies an internal fact. Under the other reading the slice cannot read its own ground. | `Slices/PlaceOrder/Providers.cs` |
-| D-16 | INVENTED | The claim names: `sub` (OIDC convention, imported) and `account_currency` (no basis at all). | `Slices/PlaceOrder/Providers.cs` |
+| D-16 | **PART RETIRED** | The claim names: `sub` (OIDC convention, imported) and `account_currency` (no basis at all). | `Slices/PlaceOrder/Providers.cs` |
 | D-39 | DECIDED | Stores, mint and middleware are left unroled after R-Q16, because every role the profile offers rejects them: a mint supplies no fact in a read position; middleware calling no handler cannot be a controller. Marked as breaches rather than mis-roled. Q-33. | `Unroled/` |
 | D-17 | INVENTED | `IOrderIdentityMint` as an injected abstraction, so the decision stays deterministic. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
-| D-18 | DECIDED | Rejection precedence: DSC-0001 before DSC-0005. A cart both empty and mis-currencied reports `CartNotEmpty`. Reversing it is equally supported. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
+| ~~D-18~~ | **RETIRED by CG-R-138** — one rejection, no precedence | Rejection precedence: DSC-0001 before DSC-0005. A cart both empty and mis-currencied reports `CartNotEmpty`. Reversing it is equally supported. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
 | D-19 | INVENTED | An unsuppliable read position throws rather than rejecting — a third handler exit the profile does not admit. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
-| D-20a | DECIDED | A `residual` determination is **implemented**, on the reading that allocation describes discharge and not existence. If residual means "build nothing", this is behaviour the specification did not ask for. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
-| D-20b | INVENTED | The invariant name `CurrencyMatchesAccount`. DSC-0005 supplies none and `Rejected` must cite something. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
+| ~~D-20a~~ | **OVERRULED by CG-R-138: Reading B** | A `residual` determination is **implemented**, on the reading that allocation describes discharge and not existence. If residual means "build nothing", this is behaviour the specification did not ask for. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
+| ~~D-20b~~ | **RETIRED by CG-R-138** | The invariant name `CurrencyMatchesAccount`. DSC-0005 supplies none and `Rejected` must cite something. | `Slices/PlaceOrder/PlaceOrderHandler.cs` |
 | ~~D-21~~ | **SETTLED by R-Q12** | Accepted → 201 + `Location`, Rejected → 422 — exactly what was invented, which proves nothing about legibility: 200/400 or 202/409 would have conformed equally well. The two paths that are neither Accepted nor Rejected (400 payload, 401/404 read position) remain invented. Q-12b, Q-43. | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-22 | DECIDED | All rejections map to one status; the invariant travels in the body. Branching per invariant would be "a conditional on domain state". | `Slices/PlaceOrder/PlaceOrderController.cs` |
 | D-23 | DECIDED | DSC-0002's payload check lives in the controller, so the 400 path is a transport result **not** derived from Accepted-or-Rejected. That rule gives. | `Slices/PlaceOrder/PlaceOrderController.cs` |
@@ -79,3 +79,9 @@ that is the finding.
 | R-1 | The Gate A expectation list was written after reading the act vocabulary, the profile and the schema, and before opening `place-order.determinations.yaml`. The strictest reading of the gate would have written it before opening anything. This makes the list better informed than the strictest reading allows. | `bootstrap.md` |
 | R-2 | The greenfield solution lives inside the session directory, so no host-repository convention leaks into a slice whose point is to be built from the specification alone. | `bootstrap.md` |
 | R-3 | The gates say *Hold*; no principal was present to ratify. This session proceeded past Gate A and Gate B unratified, recording a provisional reading for each open question, because holding would have produced no artefact to report on. **Every question in `questions.md` is open.** | `questions.md` |
+
+| D-55 | DECIDED | `Quantity`'s 1…99 bound is enforced at construction and **never clamped**, per the declaration's own "rejected rather than adjusted". | `Facts/Facts.cs` |
+| D-56 | DECIDED | `Cart.Total` sums in the **cart's** currency. §7 open item 1 says no determination settles what happens when `Cart`, `CartLine.UnitPrice` and `OrderPlaced` currencies disagree; DSC-0005 is withdrawn, so nothing rejects and nothing converts. Arithmetic, not a decision — **and wrong if they differ.** The gap is now visible where an invented field used to hide it. | `Facts/Facts.cs` |
+| D-57 | INVENTED | The OIDC claim mapping: `sub` → `BuyerId`, `name` → `DisplayName`, `IsAnonymous` inferred from the presence of a subject. **CG-R-139's ground test fires here** — DSC-0003 names no claim for any field, so it is not settled beyond `BuyerId`. Q-48. | `Slices/PlaceOrder/Providers.cs` |
+| D-58 | DECIDED | No `Quantity` or line-cap check in `PlaceOrderCommand`, and that is not an omission: neither is a `PlaceOrder` payload field. Both belong to `AddToCart` and to `Cart`'s construction. | `Slices/PlaceOrder/PlaceOrderCommand.cs` |
+| D-59 | DECIDED | The ground test compares **constructor parameters**, not properties. A computed member is derived from declared fields and is not ground; a positional parameter is a field the type requires someone to supply. Deriving is allowed, requiring is not. | `FactShapeConformanceTests.cs` |
