@@ -1,6 +1,6 @@
 [package]
 name = "product-mcp"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["PiCloud Contributors"]
 license = "Apache-2.0"
@@ -17,10 +17,10 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
-product-core = { path = "../product-core", version = "0.6.0" }
+product-core = { path = "../product-core", version = "0.7.0" }
 # The `.ddd/` governance store, for What write-time interception. Pure
 # library (no clap/LSP/MCP); product-core stays ddd-free for downstream.
-ddd-core     = { path = "../ddd-core", version = "0.6.0" }
+ddd-core     = { path = "../ddd-core", version = "0.7.0" }
 serde      = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"

@@ -1,6 +1,6 @@
 [package]
 name = "ddd-mcp"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 authors = ["PiCloud Contributors"]
 license = "Apache-2.0"
@@ -20,10 +20,10 @@ dist = false
 workspace = true
 
 [dependencies]
-ddd-core     = { path = "../ddd-core", version = "0.6.0" }
-ddd-lsp      = { path = "../ddd-lsp", version = "0.6.0" }
-product-core = { path = "../product-core", version = "0.6.0" }
-product-mcp  = { path = "../product-mcp", version = "0.6.0" }
+ddd-core     = { path = "../ddd-core", version = "0.7.0" }
+ddd-lsp      = { path = "../ddd-lsp", version = "0.7.0" }
+product-core = { path = "../product-core", version = "0.7.0" }
+product-mcp  = { path = "../product-mcp", version = "0.7.0" }
 chrono       = "0.4"
 serde        = { version = "1", features = ["derive"] }
 serde_json   = "1"
