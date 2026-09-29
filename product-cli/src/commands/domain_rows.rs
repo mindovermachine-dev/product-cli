@@ -37,6 +37,9 @@ fn structure_rows(g: &DomainGraph, filter: Option<NodeKind>) -> Vec<(String, Str
     for n in &g.production_datasets {
         push(NodeKind::ProductionDataset, &n.id, format!("{} ⊨ {}", n.source, n.shape));
     }
+    for n in &g.open_questions {
+        push(NodeKind::OpenQuestion, &n.id, format!("[{}] {}", n.status, n.statement));
+    }
     out
 }
 

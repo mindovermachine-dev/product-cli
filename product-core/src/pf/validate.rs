@@ -90,13 +90,19 @@ pub fn validate_graph(graph: &DomainGraph) -> Vec<Violation> {
         check_unreifiable(u, graph, &mut v);
     }
     super::validate_product::check_all(graph, &mut v);
+    super::question::check_all(graph, &mut v);
+    graph_rules(graph, &mut v);
+    v
+}
+
+/// The cross-reference rules run over the whole graph (SPARQL + UI coverage).
+fn graph_rules(graph: &DomainGraph, v: &mut Vec<Violation>) {
     v.extend(super::rules_data::data_cross_refs(graph));
     v.extend(run_rules(&ui_projection(graph), what_rules()));
     v.extend(run_rules(&ui_projection(graph), super::rules_ui::ui_rules()));
     v.extend(super::rules_ui::check_state_coverage(graph));
     v.extend(super::rules_ui::check_content_refs(graph));
     v.extend(super::rules_ui::check_content_coverage(graph));
-    v
 }
 
 /// The Turtle projection used for graph rules, augmented with the closed-core
@@ -157,6 +163,9 @@ fn check_local_shape(graph: &DomainGraph, id: &str, v: &mut Vec<Violation>) {
         }
         Some(NodeKind::Product | NodeKind::Journey | NodeKind::QualityDemand) => {
             super::validate_product::check_local(graph, id, v);
+        }
+        Some(NodeKind::OpenQuestion) => {
+            if let Some(q) = graph.open_questions.iter().find(|n| n.id == id) { super::question::check_open_question(q, graph, v); }
         }
         // Event/Command cross-references are graph rules (below); ValueObject,
         // WireframeStep have no blocking shape.

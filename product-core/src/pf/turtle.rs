@@ -43,6 +43,7 @@ pub fn to_turtle(graph: &DomainGraph, product: &str) -> String {
     graph.products.iter().for_each(|p| product_ttl::emit_product(&mut out, p));
     graph.journeys.iter().for_each(|j| product_ttl::emit_journey(&mut out, j));
     graph.quality_demands.iter().for_each(|q| product_ttl::emit_quality_demand(&mut out, q));
+    graph.open_questions.iter().for_each(|q| super::question_turtle::emit_open_question(&mut out, q));
     out
 }
 

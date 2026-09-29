@@ -190,6 +190,7 @@ fn handle_tools_call(request: &JsonRpcRequest, registry: &ToolRegistry) -> JsonR
 
 fn dispatch_tool(name: &str, args: &Value, repo_root: &Path) -> Result<Value, String> {
     dispatch_what(name, args, repo_root)
+        .or_else(|| dispatch_question(name, args, repo_root))
         .or_else(|| dispatch_scope(name, args, repo_root))
         .or_else(|| dispatch_codegen(name, args, repo_root))
         .or_else(|| dispatch_delivery(name, args, repo_root))
@@ -210,6 +211,20 @@ fn dispatch_codegen(name: &str, args: &Value, repo_root: &Path) -> Option<Result
         "product_codegen_manifest" | "product_reify_manifest" => rf::handle_manifest(args, repo_root),
         "product_codegen_check" | "product_reify_check" => rf::handle_check(args, repo_root),
         "product_codegen_emit" | "product_reify_emit" => rf::handle_emit(args, repo_root),
+        _ => return None,
+    })
+}
+
+/// Open questions — authored What nodes, reachable in every workflow phase.
+fn dispatch_question(name: &str, args: &Value, repo_root: &Path) -> Option<Result<Value, String>> {
+    use super::question_handlers as q;
+    Some(match name {
+        "product_question_new" => q::handle_new(args, repo_root),
+        "product_question_list" => q::handle_list(args, repo_root),
+        "product_question_show" => q::handle_show(args, repo_root),
+        "product_question_answer" => q::handle_answer(args, repo_root),
+        "product_question_rm" => q::handle_rm(args, repo_root),
+        "product_question_export" => q::handle_export(args, repo_root),
         _ => return None,
     })
 }

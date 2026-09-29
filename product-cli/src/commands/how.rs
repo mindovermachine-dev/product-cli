@@ -143,6 +143,13 @@ fn save(contract: &HowContract, file: &Option<PathBuf>, product: Option<&str>) -
 fn add(element: String, id: String, fields: super::how_fields::HowFields, file: Option<PathBuf>, product: Option<String>) -> BoxResult {
     use product_core::pf::how_edit as edit;
     let mut c = load_or_init(&file, product.as_deref())?;
+    let (answers, answer_text) = match element.as_str() {
+        "decision" => (fields.answers.clone(), fields.decision.clone().unwrap_or_default()),
+        "principle" => (fields.answers.clone(), fields.statement.clone().unwrap_or_default()),
+        "pattern" => (fields.answers.clone(), fields.shape.clone().unwrap_or_default()),
+        _ => (vec![], String::new()),
+    };
+    super::question::check_answers(product.clone(), &answers)?;
     match element.as_str() {
         "decision" => edit::add_decision(&mut c, fields.decision(&id))?,
         "principle" => edit::add_principle(&mut c, fields.principle(&id))?,
@@ -156,7 +163,7 @@ fn add(element: String, id: String, fields: super::how_fields::HowFields, file: 
     }
     save(&c, &file, product.as_deref())?;
     println!("Added {element} '{id}'");
-    Ok(())
+    super::question::answer_from_how(product, &answers, &id, &answer_text)
 }
 
 fn set(target: String, id: String, fields: super::how_fields::HowFields, file: Option<PathBuf>, product: Option<String>) -> BoxResult {

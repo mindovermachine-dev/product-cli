@@ -56,6 +56,7 @@ pub fn from_turtle(turtle: &str) -> Result<DomainGraph> {
     parse_products(&store, &mut g)?;
     parse_journeys(&store, &mut g)?;
     parse_quality_demands(&store, &mut g)?;
+    super::question_turtle::parse_open_questions(&store, &mut g)?;
     super::seed_ui::parse_ui(&store, &mut g)?;
     super::seed_data::parse_data(&store, &mut g)?;
     super::seed_canon::canonicalize(&mut g);

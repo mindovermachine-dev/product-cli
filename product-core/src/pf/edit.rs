@@ -94,6 +94,7 @@ pub fn remove(session: &mut DomainSession, id: &str) -> OpResult {
     g.products.retain(|n| n.id != id);
     g.journeys.retain(|n| n.id != id);
     g.quality_demands.retain(|n| n.id != id);
+    g.open_questions.retain(|n| n.id != id);
     if g.node_count() < before {
         session.tool_calls += 1;
         ok(id)
@@ -147,6 +148,7 @@ fn insert(g: &mut DomainGraph, kind: NodeKind, id: &str, fields: &Map<String, Va
         NodeKind::Product => g.products.push(build(id, fields)?),
         NodeKind::Journey => g.journeys.push(build(id, fields)?),
         NodeKind::QualityDemand => g.quality_demands.push(build(id, fields)?),
+        NodeKind::OpenQuestion => g.open_questions.push(build(id, fields)?),
     }
     Ok(())
 }
@@ -184,6 +186,7 @@ fn patch(g: &mut DomainGraph, kind: NodeKind, id: &str, fields: &Map<String, Val
         NodeKind::Product => patch_at(&mut g.products, id, fields),
         NodeKind::Journey => patch_at(&mut g.journeys, id, fields),
         NodeKind::QualityDemand => patch_at(&mut g.quality_demands, id, fields),
+        NodeKind::OpenQuestion => patch_at(&mut g.open_questions, id, fields),
     }
 }
 
@@ -227,7 +230,7 @@ trait HasId {
 macro_rules! has_id {
     ($($t:ty),+ $(,)?) => { $(impl HasId for $t { fn node_id(&self) -> &str { &self.id } })+ };
 }
-has_id!(BoundedContext, Entity, ValueObject, Relation, Invariant, ContextMapping, Command, Event, ReadModel, WireframeStep, Flow, Aio, ContextOfUse, ApplicationRoot, WcagCriterion, Attestation, ContentStore, DesignSystem, Cio, Token, ReificationRule, ReferenceSet, DataShape, ProductionDataset, System, Trigger, UnreifiableRule, Product, Journey, QualityDemand);
+has_id!(BoundedContext, Entity, ValueObject, Relation, Invariant, ContextMapping, Command, Event, ReadModel, WireframeStep, Flow, Aio, ContextOfUse, ApplicationRoot, WcagCriterion, Attestation, ContentStore, DesignSystem, Cio, Token, ReificationRule, ReferenceSet, DataShape, ProductionDataset, System, Trigger, UnreifiableRule, Product, Journey, QualityDemand, OpenQuestion);
 
 #[cfg(test)]
 #[path = "edit_tests.rs"]

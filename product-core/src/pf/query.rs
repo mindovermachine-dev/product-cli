@@ -77,11 +77,22 @@ pub fn node_value(graph: &DomainGraph, id: &str) -> Option<Value> {
     find!(graph.products);
     find!(graph.journeys);
     find!(graph.quality_demands);
+    find!(graph.open_questions);
     None
 }
 
 /// Describe a node's links in and out (the `about` form).
 pub fn describe(graph: &DomainGraph, id: &str) -> Result<Value> {
+    let mut v = describe_links(graph, id)?;
+    let open: Vec<Value> = super::question::concerning(graph, id).into_iter()
+        .map(super::question_gate::summary).collect();
+    if let (false, Value::Object(m)) = (open.is_empty(), &mut v) {
+        m.insert("openQuestions".into(), Value::Array(open));
+    }
+    Ok(v)
+}
+
+fn describe_links(graph: &DomainGraph, id: &str) -> Result<Value> {
     match graph.kind_of(id) {
         Some(NodeKind::Entity) => Ok(json!({
             "id": id, "kind": "Entity",

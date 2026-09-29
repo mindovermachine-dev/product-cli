@@ -1799,3 +1799,144 @@ fn scope_add_rejects_a_derived_kind_in_authors() {
         .assert_stderr_contains("DERIVED");
     assert!(!h.exists(".product/authoring-scopes/bad.yaml"), "invalid scope not saved");
 }
+
+// --- Open questions: node kind (#54), CLI/MCP surface (#55), gates (#56) ----
+
+/// Parse the stdio replies into `id → result` (a tool's text content decoded).
+fn replies(stdout: &str) -> std::collections::HashMap<i64, serde_json::Value> {
+    stdout.lines()
+        .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+        .filter_map(|v| {
+            let id = v["id"].as_i64()?;
+            let text = v["result"]["content"][0]["text"].as_str();
+            let body = match text {
+                Some(t) => serde_json::from_str(t).unwrap_or(serde_json::Value::Null),
+                None => v.get("result").or_else(|| v.get("error")).cloned().unwrap_or_default(),
+            };
+            Some((id, body))
+        })
+        .collect()
+}
+
+/// A bare repo seeded with the bookstore demo What graph.
+fn bookstore() -> Harness {
+    let h = Harness::new_bare();
+    h.run(&["init", "--yes", "--name", "bookstore", "--demo"]).assert_exit(0);
+    h
+}
+
+fn call(id: i64, name: &str, args: serde_json::Value) -> String {
+    serde_json::json!({"jsonrpc": "2.0", "id": id, "method": "tools/call",
+        "params": {"name": name, "arguments": args}}).to_string()
+}
+
+#[test]
+fn tc_open_question_node_kind_round_trips_and_validates() {
+    let h = bookstore();
+    h.run(&["domain", "new", "open-question", "q-001", "--statement", "Keep this event?",
+        "--concerns", "OrderPlaced,PlaceOrder", "--context", "Catalog", "--blocking", "how"]).assert_exit(0);
+    // A concern that does not resolve is refused.
+    h.run(&["domain", "new", "open-question", "q-002", "--statement", "?", "--concerns", "Ghost"]).assert_exit(1);
+    // Settling without a resolution is refused.
+    h.run(&["domain", "edit", "q-001", "--question-status", "answered"]).assert_exit(1);
+    let export = h.run(&["domain", "export"]);
+    export.assert_exit(0);
+    assert!(export.stdout.contains("pf:OpenQuestion") && export.stdout.contains("pf:concerns d:OrderPlaced"),
+        "export:\n{}", export.stdout);
+    // `domain show` on a concerned node lists the open question.
+    let show = h.run(&["domain", "show", "OrderPlaced"]);
+    show.assert_exit(0);
+    assert!(show.stdout.contains("openQuestions") && show.stdout.contains("q-001"), "show:\n{}", show.stdout);
+    // Removing a concerned node reports the open question as dangling.
+    let rm = h.run(&["domain", "rm", "OrderSummary"]);
+    rm.assert_exit(0);
+    let rm = h.run(&["domain", "rm", "OrderPlaced"]);
+    assert!(rm.stderr.contains("q-001"), "stderr:\n{}", rm.stderr);
+}
+
+#[test]
+fn tc_question_cli_raise_list_answer_export() {
+    let h = bookstore();
+    h.run(&["question", "new", "--statement", "Which status set is the domain status?",
+        "--concerns", "Order", "--context", "Catalog", "--blocking", "how", "--root", "."])
+        .assert_exit(0).assert_stdout_contains("Raised q-001");
+    let list = h.run(&["question", "list", "--status", "open", "--derived", "--format", "json"]);
+    list.assert_exit(0);
+    let v: serde_json::Value = serde_json::from_str(&list.stdout).expect("json");
+    let rows = v["questions"].as_array().expect("rows");
+    assert!(rows.iter().any(|r| r["source"] == "authored" && r["id"] == "q-001"), "{v}");
+    h.run(&["question", "show", "q-001"]).assert_exit(0).assert_stdout_contains("\"Order\"");
+    h.run(&["question", "answer", "q-001", "--status", "deferred"]).assert_exit(1);
+    h.run(&["question", "answer", "q-001", "--status", "deferred", "--resolution", "after the pilot"]).assert_exit(0);
+    let md = h.run(&["question", "export", "--format", "md"]);
+    md.assert_exit(0);
+    assert!(md.stdout.contains("## Catalog") && md.stdout.contains("### deferred"), "md:\n{}", md.stdout);
+    h.run(&["question", "rm", "q-001"]).assert_exit(0);
+    h.run(&["question", "list"]).assert_exit(0).assert_stdout_contains("(no questions)");
+}
+
+#[test]
+fn tc_how_decision_answers_an_open_question() {
+    let h = bookstore();
+    h.run(&["question", "new", "--statement", "Event-sourced or CRUD?", "--concerns", "Order"]).assert_exit(0);
+    h.run(&["how", "add", "decision", "dec-ghost", "--decision", "x", "--rationale", "y", "--answers", "q-404"])
+        .assert_exit(1);
+    h.run(&["how", "add", "decision", "dec-persist", "--decision", "Event-source orders",
+        "--rationale", "audit trail", "--answers", "q-001"]).assert_exit(0);
+    let show = h.run(&["question", "show", "q-001"]);
+    show.assert_exit(0);
+    let v: serde_json::Value = serde_json::from_str(&show.stdout).expect("json");
+    assert_eq!(v["question"]["status"], "answered");
+    assert_eq!(v["question"]["resolved_by"][0], "dec-persist");
+}
+
+#[test]
+fn tc_workflow_open_questions_gate_advance_and_finalize() {
+    let h = Harness::new_bare();
+    h.run(&["init", "--yes", "--name", "bookstore", "--demo"]).assert_exit(0);
+    h.run(&["session", "start", "--no-launch", "bookstore"]).assert_exit(0);
+    let id = h.run(&["session", "list"]).stdout.split_whitespace().next().unwrap().to_string();
+    let serve = |reqs: Vec<String>| {
+        let out = h.run_with_stdin(&["mcp", "--workflow", "--session", &id, "--repo", ".", "--write"],
+            &(reqs.join("\n") + "\n"));
+        out.assert_exit(0);
+        replies(&out.stdout)
+    };
+    let r = serve(vec![
+        r#"{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}"#.to_string(),
+        call(2, "product_question_new", serde_json::json!({"statement": "Which command?", "concerns": ["PlaceOrder"], "blocking": "what"})),
+        call(3, "product_workflow_advance", serde_json::json!({})),
+        call(4, "product_workflow_status", serde_json::json!({})),
+    ]);
+    let names: Vec<&str> = r[&1]["tools"].as_array().expect("tools").iter().filter_map(|t| t["name"].as_str()).collect();
+    assert!(names.contains(&"product_question_new") && names.contains(&"product_question_list"), "{names:?}");
+    assert_eq!(r[&2]["ok"], true, "{}", r[&2]);
+    assert_eq!(r[&3]["ok"], false, "advance must be refused: {}", r[&3]);
+    assert_eq!(r[&3]["blockingQuestions"][0]["id"], "q-001");
+    assert_eq!(r[&4]["questions"]["blockingThisPhase"], 1);
+
+    let r = serve(vec![
+        call(1, "product_question_answer", serde_json::json!({"id": "q-001", "resolution": "PlaceOrder stays"})),
+        call(2, "product_workflow_advance", serde_json::json!({})),
+        call(3, "product_question_new", serde_json::json!({"statement": "Pilot sign-off?", "concerns": ["Order"], "blocking": "finalize"})),
+        call(4, "product_question_new", serde_json::json!({"statement": "Rename Book?", "concerns": ["Book"]})),
+        call(5, "product_session_finalize", serde_json::json!({})),
+    ]);
+    assert_eq!(r[&1]["ok"], true, "{}", r[&1]);
+    let now: Vec<&str> = r[&2]["nowAvailable"].as_array().expect("advanced").iter().filter_map(|t| t.as_str()).collect();
+    assert!(now.contains(&"product_question_new"), "questions stay reachable in How: {now:?}");
+    assert_eq!(r[&3]["ok"], true, "raising in How works: {}", r[&3]);
+    assert_eq!(r[&5]["ok"], false, "finalize refused: {}", r[&5]);
+    assert_eq!(r[&5]["blockingQuestions"][0]["id"], "q-002");
+
+    let r = serve(vec![
+        call(1, "product_question_answer", serde_json::json!({"id": "q-002", "resolution": "signed"})),
+        call(2, "product_session_finalize", serde_json::json!({})),
+    ]);
+    assert_eq!(r[&2]["ok"], true, "{}", r[&2]);
+    assert_eq!(r[&2]["questions"]["warnings"][0]["id"], "q-003", "non-blocking open question warned");
+    let report = &r[&2]["questions"]["report"];
+    assert_eq!(report["raised"].as_array().map(Vec::len), Some(3), "{report}");
+    assert_eq!(report["answered"].as_array().map(Vec::len), Some(2), "{report}");
+    assert_eq!(report["stillOpen"][0]["id"], "q-003");
+}

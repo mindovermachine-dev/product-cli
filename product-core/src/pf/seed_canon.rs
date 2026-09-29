@@ -35,6 +35,11 @@ fn canon_boundary(g: &mut DomainGraph) {
         j.crosses_via.sort();
     });
     g.quality_demands.sort_by(|a, b| a.id.cmp(&b.id));
+    g.open_questions.sort_by(|a, b| a.id.cmp(&b.id));
+    g.open_questions.iter_mut().for_each(|q| {
+        q.concerns.sort();
+        q.resolved_by.sort();
+    });
 }
 
 /// §3.1 structure — contexts, entities, value objects, relations, invariants,

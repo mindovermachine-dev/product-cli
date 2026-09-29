@@ -58,6 +58,9 @@ pub struct HowFields {
     pub cross_cutting: Vec<String>,
     #[arg(long = "depends-on", value_delimiter = ',')]
     pub depends_on: Vec<String>,
+    /// Open questions (`q-*`) this decision/principle/pattern answers
+    #[arg(long, value_delimiter = ',')]
+    pub answers: Vec<String>,
 }
 
 impl HowFields {
@@ -70,6 +73,7 @@ impl HowFields {
             does_not_apply_when: self.does_not_apply_when.clone(),
             licenses: self.licenses.clone(),
             enforced_by: self.enforced_by.clone(),
+            answers: self.answers.clone(),
         }
     }
 
@@ -80,6 +84,7 @@ impl HowFields {
             licensed_by: self.licensed_by.clone(),
             realized_by: self.realized_by.clone(),
             enforced_by: self.enforced_by.clone(),
+            answers: self.answers.clone(),
         }
     }
 
@@ -90,6 +95,7 @@ impl HowFields {
             realizes: self.realizes.clone(),
             applied_by: self.applied_by.clone(),
             enforced_by: self.enforced_by.clone(),
+            answers: self.answers.clone(),
         }
     }
 
