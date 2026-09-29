@@ -97,7 +97,7 @@ pub fn handle_domain_list(args: &Value, repo_root: &Path) -> Result<Value, Strin
         .filter(|(_, k)| filter.is_none_or(|f| f == *k))
         .map(|(id, kind)| {
             let label = query::node_value(&session.graph, &id)
-                .and_then(|v| v.get("label").and_then(|l| l.as_str()).map(str::to_string))
+                .and_then(|v| ["label", "statement"].iter().find_map(|k| v.get(*k).and_then(|l| l.as_str()).map(str::to_string)))
                 .unwrap_or_default();
             json!({ "id": id, "kind": kind.cli_name(), "label": label })
         })

@@ -16,6 +16,7 @@ use serde_json::{json, Value};
 
 use super::registry::ToolRegistry;
 use super::tools::ToolDef;
+use super::workflow_questions as questions;
 use super::{JsonRpcRequest, JsonRpcResponse};
 
 /// The per-session context resolved by the transport for each call.
@@ -93,7 +94,7 @@ pub fn phase_of(name: &str) -> Phase {
 /// read-only tool from an earlier phase (so earlier work stays inspectable).
 pub fn is_visible(tool: &ToolDef, current: Phase) -> bool {
     let home = phase_of(&tool.name);
-    home == current || (home < current && !tool.requires_write)
+    home == current || (home < current && !tool.requires_write) || questions::is_phase_free(&tool.name)
 }
 
 /// The session-control tool definitions, advertised in every phase.
@@ -101,19 +102,19 @@ fn control_tools() -> Vec<ToolDef> {
     vec![
         ToolDef {
             name: "product_workflow_status".into(),
-            description: "Show the current workflow phase, how far the session may advance, the tools available now, and the journey so far.".into(),
+            description: "Show the current workflow phase, how far the session may advance, the tools available now, open-question counts, and the journey so far.".into(),
             requires_write: false,
             input_schema: json!({"type": "object", "properties": {}}),
         },
         ToolDef {
             name: "product_workflow_advance".into(),
-            description: "Advance the session to the next phase (What→How→Build), or jump to a named phase via `to`. Returns the tools now available.".into(),
+            description: "Advance the session to the next phase (What→How→Build), or jump to a named phase via `to`. Refused while an open question blocks a phase being left. Returns the tools now available.".into(),
             requires_write: true,
             input_schema: json!({"type": "object", "properties": {"to": {"type": "string", "description": "what | how | build"}}}),
         },
         ToolDef {
             name: "product_session_finalize".into(),
-            description: "Validate the What graph and, if conformant, stamp provenance and close the session. Writes have already landed in the canonical `.product` graph.".into(),
+            description: "Validate the What graph and, if conformant and no open question blocks `finalize`, stamp provenance and close the session. Reports questions raised / answered / still open. Writes have already landed in the canonical `.product` graph.".into(),
             requires_write: true,
             input_schema: json!({"type": "object", "properties": {}}),
         },
@@ -176,7 +177,7 @@ fn tools_list(registry: &ToolRegistry, request: &JsonRpcRequest, ctx: &WorkflowC
 fn tools_call(registry: &ToolRegistry, request: &JsonRpcRequest, ctx: &WorkflowCtx) -> Outgoing {
     let id = request.id.clone();
     let name = request.params.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let args = request.params.get("arguments").cloned().unwrap_or(json!({}));
+    let mut args = request.params.get("arguments").cloned().unwrap_or(json!({}));
 
     if CONTROL_TOOLS.contains(&name.as_str()) {
         return control_call(registry, &name, &args, ctx, id);
@@ -198,6 +199,7 @@ fn tools_call(registry: &ToolRegistry, request: &JsonRpcRequest, ctx: &WorkflowC
         return Outgoing::resp(JsonRpcResponse::error(id, -32603, &msg));
     }
 
+    questions::stamp_session(&name, &mut args, &session.id);
     let result = registry.call_tool_at(&name, &args, &ctx.canonical);
     if name == "product_build_run" {
         if let Ok(ref v) = result {
@@ -246,6 +248,7 @@ fn status(registry: &ToolRegistry, ctx: &WorkflowCtx) -> Result<Value, String> {
     if let Value::Object(ref mut m) = out {
         m.insert("availableTools".into(), json!(available));
         m.insert("hint".into(), json!(phase_hint(session.phase)));
+        m.insert("questions".into(), questions::status_counts(&session, ctx));
     }
     Ok(out)
 }
@@ -270,6 +273,9 @@ fn advance(registry: &ToolRegistry, args: &Value, ctx: &WorkflowCtx, id: Option<
         },
         None => None,
     };
+    if let Some(refusal) = questions::advance_refusal(&session, to, ctx) {
+        return Outgoing::resp(call_response(id, Ok(refusal)));
+    }
     let from = session.phase;
     let target = match session.advance(to, now()) {
         Ok(p) => p,
@@ -302,6 +308,10 @@ fn finalize(ctx: &WorkflowCtx) -> Result<Value, String> {
     if !fin.ok {
         return Ok(json!({ "ok": false, "violations": fin.violations }));
     }
+    let questions = match questions::finalize_questions(&session, ctx) {
+        Ok(q) => q,
+        Err(refusal) => return Ok(refusal),
+    };
 
     // Stamp the validated .ttl + provenance (the completion artifact).
     let mut written = vec![];
@@ -320,80 +330,9 @@ fn finalize(ctx: &WorkflowCtx) -> Result<Value, String> {
 
     session.finalized = true;
     session.save(&ctx.session_root).map_err(|e| format!("{e}"))?;
-    Ok(json!({ "ok": true, "product": product, "written": written }))
+    Ok(json!({ "ok": true, "product": product, "written": written, "questions": questions }))
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn tool(name: &str, write: bool) -> ToolDef {
-        ToolDef { name: name.into(), description: String::new(), requires_write: write, input_schema: json!({}) }
-    }
-
-    #[test]
-    fn phase_of_maps_families() {
-        assert_eq!(phase_of("product_product_new"), Phase::What);
-        assert_eq!(phase_of("product_domain_new"), Phase::What);
-        assert_eq!(phase_of("product_decider_validate"), Phase::What);
-        assert_eq!(phase_of("product_scope_add"), Phase::What);
-        assert_eq!(phase_of("product_what_declare"), Phase::What);
-        assert_eq!(phase_of("product_scope_enforce"), Phase::What);
-        assert_eq!(phase_of("product_how_show"), Phase::How);
-        assert_eq!(phase_of("product_how_add"), Phase::How);
-        assert_eq!(phase_of("product_blueprint_init"), Phase::How);
-        assert_eq!(phase_of("product_design_system_bind"), Phase::How);
-        assert_eq!(phase_of("product_design_system_show"), Phase::How);
-        assert_eq!(phase_of("product_cell_dispatch"), Phase::How);
-        assert_eq!(phase_of("product_work_unit_init"), Phase::How);
-        assert_eq!(phase_of("product_work_unit_show"), Phase::How);
-        assert_eq!(phase_of("product_feature_new"), Phase::Build);
-        assert_eq!(phase_of("product_build_run"), Phase::Build);
-        // Codegen is realisation — home phase Build (reads stay visible later).
-        assert_eq!(phase_of("product_codegen_manifest"), Phase::Build);
-        assert_eq!(phase_of("product_codegen_emit"), Phase::Build);
-        // Back-compat: the pre-v1.9.1 `product_reify_*` names still gate to Build.
-        assert_eq!(phase_of("product_reify_emit"), Phase::Build);
-    }
-
-    #[test]
-    fn codegen_tools_are_registered_with_the_right_write_gating() {
-        let tools = crate::tools::build_tool_list();
-        let find = |n: &str| tools.iter().find(|t| t.name == n).unwrap_or_else(|| panic!("{n} missing"));
-        assert!(!find("product_codegen_backends").requires_write);
-        assert!(!find("product_codegen_manifest").requires_write);
-        assert!(!find("product_codegen_check").requires_write);
-        assert!(find("product_codegen_emit").requires_write, "emit writes the repo");
-    }
-
-    #[test]
-    fn write_tools_lock_to_their_home_phase() {
-        let new = tool("product_domain_new", true);
-        let show = tool("product_domain_show", false);
-        // In What, both What tools are visible.
-        assert!(is_visible(&new, Phase::What));
-        assert!(is_visible(&show, Phase::What));
-        // In How, the What read stays but the What write is locked.
-        assert!(is_visible(&show, Phase::How));
-        assert!(!is_visible(&new, Phase::How));
-    }
-
-    #[test]
-    fn how_authoring_writes_live_only_in_how() {
-        let add = tool("product_how_add", true);
-        // Hidden while still authoring the What…
-        assert!(!is_visible(&add, Phase::What));
-        // …live in How…
-        assert!(is_visible(&add, Phase::How));
-        // …and frozen once the architecture is set and Build begins.
-        assert!(!is_visible(&add, Phase::Build));
-    }
-
-    #[test]
-    fn later_phase_tools_hidden_earlier() {
-        let build = tool("product_build_run", true);
-        assert!(!is_visible(&build, Phase::What));
-        assert!(!is_visible(&build, Phase::How));
-        assert!(is_visible(&build, Phase::Build));
-    }
-}
+#[path = "workflow_tests.rs"]
+mod tests;

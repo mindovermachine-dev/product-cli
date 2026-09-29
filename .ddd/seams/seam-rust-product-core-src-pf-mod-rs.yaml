@@ -1,0 +1,32 @@
+format: 2
+id: seam/rust/product-core-src-pf-mod-rs
+boundary: contract surface of product-core/src/pf/mod.rs
+verdict_knowledge: 'Downstream consumers of product-core learn the open-question slice is public: the node model, the shape plus raise/answer/list operations, the phase-gate readings, and its Turtle form — pure functions over DomainGraph, no I/O beyond the session.'
+contract_location: product-core/src/pf/mod.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: model_question
+  file: product-core/src/pf/mod.rs
+  before: sha256:8928a1649eb08420984b79c302d6080c7a59fd8db94608aab24891e57a225c86
+  after: sha256:9a5ee756de43cbd64569571dc9870bfeb64082d87e5c3b40649936d57be47273
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:15f4d38117d1549864b16fb1ecb17185d63c1157095044c3b5ed6a7d79a10c82
+- symbol: question
+  file: product-core/src/pf/mod.rs
+  before: sha256:8928a1649eb08420984b79c302d6080c7a59fd8db94608aab24891e57a225c86
+  after: sha256:9a5ee756de43cbd64569571dc9870bfeb64082d87e5c3b40649936d57be47273
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:262b69eeefb1edc9d211baef3277f0530e0ee90b9611f71864f2dbf1ab74f297
+- symbol: question_gate
+  file: product-core/src/pf/mod.rs
+  before: sha256:8928a1649eb08420984b79c302d6080c7a59fd8db94608aab24891e57a225c86
+  after: sha256:9a5ee756de43cbd64569571dc9870bfeb64082d87e5c3b40649936d57be47273
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:a120287b65a3af90a4b3a8dd7df50e3d265189d87c8e0753693c3bb37897e719
+- symbol: question_turtle
+  file: product-core/src/pf/mod.rs
+  before: sha256:8928a1649eb08420984b79c302d6080c7a59fd8db94608aab24891e57a225c86
+  after: sha256:9a5ee756de43cbd64569571dc9870bfeb64082d87e5c3b40649936d57be47273
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:5aea607a205224b7dbbfc77a292028b4fbe7b255380efb4a35606dd303bfa52e

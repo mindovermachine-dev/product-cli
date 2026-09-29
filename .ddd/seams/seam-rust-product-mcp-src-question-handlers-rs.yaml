@@ -1,0 +1,56 @@
+format: 2
+id: seam/rust/product-mcp-src-question-handlers-rs
+boundary: contract surface of product-mcp/src/question_handlers.rs
+verdict_knowledge: 'MCP clients learn product_question_* mirrors the CLI verb family over the same What graph, shape-checked in-loop like product_domain_new; a How add naming a non-question in `answers` is refused before the How contract is touched.'
+contract_location: product-mcp/src/question_handlers.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: check_answers
+  file: product-mcp/src/question_handlers.rs
+  before: absent
+  after: sha256:cf9847892709a5754dc1feb4d194819d11371bc0547aebebab6f921b876cd115
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:f9617192e9dafeaab03882df5813668e72872178d1f60aafd27014a4d37fc778
+- symbol: handle_answer
+  file: product-mcp/src/question_handlers.rs
+  before: absent
+  after: sha256:cf9847892709a5754dc1feb4d194819d11371bc0547aebebab6f921b876cd115
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:2af86b88516f94739b99b2ed8d20cf9ca4d017aa4a0d045cdbf23fea78ddbfd3
+- symbol: handle_export
+  file: product-mcp/src/question_handlers.rs
+  before: absent
+  after: sha256:cf9847892709a5754dc1feb4d194819d11371bc0547aebebab6f921b876cd115
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:39fbf14f4041ab27e349e4f122fb17f0a95d52d118bb6e85c487927fb4a8e772
+- symbol: handle_list
+  file: product-mcp/src/question_handlers.rs
+  before: absent
+  after: sha256:cf9847892709a5754dc1feb4d194819d11371bc0547aebebab6f921b876cd115
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:155d9a22f12d8139c509df4893b3d38a544818e631637b4f7d317b9e097992fb
+- symbol: handle_new
+  file: product-mcp/src/question_handlers.rs
+  before: absent
+  after: sha256:cf9847892709a5754dc1feb4d194819d11371bc0547aebebab6f921b876cd115
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:c86c6022dc59f681a74943a7a633869c354fc67a49dddefee084b8ee84b0a3fd
+- symbol: handle_rm
+  file: product-mcp/src/question_handlers.rs
+  before: absent
+  after: sha256:cf9847892709a5754dc1feb4d194819d11371bc0547aebebab6f921b876cd115
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:a02f610bc2e9226bb38fdadd416383f67be383b470e9ae2e6cbcf9d32bdb83c8
+- symbol: handle_show
+  file: product-mcp/src/question_handlers.rs
+  before: absent
+  after: sha256:cf9847892709a5754dc1feb4d194819d11371bc0547aebebab6f921b876cd115
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:bbe15977511434113f7760b59b36b7b03c51864181a78be398df1697c699dd47
+- symbol: link_how_answers
+  file: product-mcp/src/question_handlers.rs
+  before: absent
+  after: sha256:cf9847892709a5754dc1feb4d194819d11371bc0547aebebab6f921b876cd115
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:5bdad4c0d7b5564ca43c8352ca18952008a207fbb4a3b197ab41121317fa3ac5

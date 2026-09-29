@@ -1,0 +1,26 @@
+format: 2
+id: seam/rust/product-core-src-pf-ids-rs
+boundary: contract surface of product-core/src/pf/ids.rs
+verdict_knowledge: 'Consumers of NodeKind learn open-question is a What node kind (pf:OpenQuestion) — the vocabulary grew by one, so any exhaustive match over kinds must now decide what a question means to it.'
+contract_location: product-core/src/pf/ids.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: ALL_KINDS
+  file: product-core/src/pf/ids.rs
+  before: sha256:f2fe62ba93c1fc3d9868496bda0e64684ecad4b1ced1e64fed90bae70ce90af1
+  after: sha256:c1483d68489bd20f463e89b757dd316e528ae6d9f123b04cb698d3f67d4f2874
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:b0a9054c4c20e43752b425a120a6cb70d14a43115450e8fe18482e353451ca72
+- symbol: OpenQuestion
+  file: product-core/src/pf/ids.rs
+  before: sha256:f2fe62ba93c1fc3d9868496bda0e64684ecad4b1ced1e64fed90bae70ce90af1
+  after: sha256:c1483d68489bd20f463e89b757dd316e528ae6d9f123b04cb698d3f67d4f2874
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:8b92ecedf93e03defd8f1854943b3ec7a8e9ead445f0a9460e60cea8a1495fd0
+- symbol: all
+  file: product-core/src/pf/ids.rs
+  before: sha256:f2fe62ba93c1fc3d9868496bda0e64684ecad4b1ced1e64fed90bae70ce90af1
+  after: sha256:c1483d68489bd20f463e89b757dd316e528ae6d9f123b04cb698d3f67d4f2874
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:32cfec77391c6a22e07379d3590ecc6cd9be08a87d367690f6442c5cfc744d5b

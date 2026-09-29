@@ -198,6 +198,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: ProjectorCommands,
     },
+    /// Open questions — raise, list, answer, and export what the graph cannot yet decide
+    Question {
+        #[command(subcommand)]
+        command: QuestionCommands,
+    },
     /// Ground registry (G-track) — generate an instance from the versioned template
     Registry {
         #[command(subcommand)]

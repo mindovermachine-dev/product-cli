@@ -6,6 +6,7 @@ use super::ids::NodeKind;
 
 pub use super::model_data::*;
 pub use super::model_product::*;
+pub use super::model_question::*;
 pub use super::model_ui::*;
 
 /// A named attribute of an entity (e.g. `email: string`).
@@ -190,6 +191,8 @@ pub struct DomainGraph {
     pub journeys: Vec<Journey>,
     #[serde(default)]
     pub quality_demands: Vec<QualityDemand>,
+    #[serde(default)]
+    pub open_questions: Vec<OpenQuestion>,
 }
 
 impl DomainGraph {
@@ -242,6 +245,7 @@ impl DomainGraph {
             ("Product", self.products.len()),
             ("Journey", self.journeys.len()),
             ("QualityDemand", self.quality_demands.len()),
+            ("OpenQuestion", self.open_questions.len()),
         ]
     }
 
@@ -283,6 +287,7 @@ impl DomainGraph {
         self.products.iter().for_each(|n| out.push((n.id.clone(), NodeKind::Product)));
         self.journeys.iter().for_each(|n| out.push((n.id.clone(), NodeKind::Journey)));
         self.quality_demands.iter().for_each(|n| out.push((n.id.clone(), NodeKind::QualityDemand)));
+        self.open_questions.iter().for_each(|n| out.push((n.id.clone(), NodeKind::OpenQuestion)));
         out
     }
 }

@@ -1,0 +1,56 @@
+format: 2
+id: seam/rust/product-cli-src-commands-question-rs
+boundary: contract surface of product-cli/src/commands/question.rs
+verdict_knowledge: 'CLI users learn an open question is a What node they raise, list, show, answer, remove and export as a verb family of its own; answering off `open` without a resolution is refused, not defaulted, and `list --derived` shows recomputed gaps beside authored questions, each marked by source so an opinion of the tool is never read as one a person raised.'
+contract_location: product-cli/src/commands/question.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: QuestionCommands
+  file: product-cli/src/commands/question.rs
+  before: absent
+  after: sha256:d462f14cd522da158ea3ad7c25e326a4e2a76fe0db42bac8d6e571741a9e4645
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:68837dfd12555107362933b26f205cfd6fcfc49f5b6a7c3d2d560668d87023f7
+- symbol: Target
+  file: product-cli/src/commands/question.rs
+  before: absent
+  after: sha256:d462f14cd522da158ea3ad7c25e326a4e2a76fe0db42bac8d6e571741a9e4645
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:4c39548e12bc49772aa7581c87ae6bc50c14fa5b6efd3e123c82e4ca0b2c305a
+- symbol: Answer
+  file: product-cli/src/commands/question.rs
+  before: absent
+  after: sha256:d462f14cd522da158ea3ad7c25e326a4e2a76fe0db42bac8d6e571741a9e4645
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:f408ab2835f30adef2e388a022aa74a0e48ddd871740e89e4f1fe4f5053272d1
+- symbol: Export
+  file: product-cli/src/commands/question.rs
+  before: absent
+  after: sha256:d462f14cd522da158ea3ad7c25e326a4e2a76fe0db42bac8d6e571741a9e4645
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:edecab5ce409cb9808202e694f97a50cc34bd34d2ddff29ef8e24a6c80d64b34
+- symbol: List
+  file: product-cli/src/commands/question.rs
+  before: absent
+  after: sha256:d462f14cd522da158ea3ad7c25e326a4e2a76fe0db42bac8d6e571741a9e4645
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:fb44ce968b8a5a811c4ffbe353309130754211f670bffea4d6137b2e2ecd8c23
+- symbol: New
+  file: product-cli/src/commands/question.rs
+  before: absent
+  after: sha256:d462f14cd522da158ea3ad7c25e326a4e2a76fe0db42bac8d6e571741a9e4645
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:712ee880029bba689b53667685af9739eea38363dc0bec552d11221772308ceb
+- symbol: Rm
+  file: product-cli/src/commands/question.rs
+  before: absent
+  after: sha256:d462f14cd522da158ea3ad7c25e326a4e2a76fe0db42bac8d6e571741a9e4645
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:f4b290888840c0caf2e1aeae794cd7426acf7f6a905cf3b4c3e3d070a3a2425b
+- symbol: Show
+  file: product-cli/src/commands/question.rs
+  before: absent
+  after: sha256:d462f14cd522da158ea3ad7c25e326a4e2a76fe0db42bac8d6e571741a9e4645
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:b2f91f0f77c74324fe8922f6e5a28e7800275088c844ba5d7c435440e40f932c

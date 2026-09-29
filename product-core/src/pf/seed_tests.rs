@@ -119,6 +119,15 @@ fn max_boundary(g: &mut DomainGraph) {
         bound: "p99 ≤ 200ms".into(), scopes: "sys".into(),
         measured_by: Some("telemetry:checkout".into()), constrains: None,
     });
+    g.open_questions.push(OpenQuestion {
+        id: "q-001".into(), statement: "Re-point the trigger?".into(),
+        concerns: vec!["cmd".into(), "trig".into()], context: Some("ctx".into()),
+        raised_by: Some("facilitator".into()), raised_at: Some("2026-01-01T00:00:00Z".into()),
+        status: "answered".into(), blocking: "how".into(),
+        resolution: Some("yes — \"cmd\" is right".into()), resolved_by: vec!["dec-1".into(), "ev".into()],
+        answered_at: Some("2026-01-02T00:00:00Z".into()),
+        raised_in_session: Some("s1".into()), answered_in_session: Some("s2".into()),
+    });
 }
 
 fn max_structure(g: &mut DomainGraph) {

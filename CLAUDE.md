@@ -169,6 +169,18 @@ Use the `product` CLI (or MCP tools) to author and verify a What/How graph under
   unreifiable seam §4.5, **journey conformance §3.0.1** — every crossing a
   Translation — and, when a How contract is present, that an architectural
   quality demand's `constrains` binds a real How element §3.6).
+- **Open questions** — what the graph *cannot yet decide* is an authored node:
+  `kind=open-question` (ids `q-*`, `pf:OpenQuestion`) with `statement`,
+  `concerns` (≥ 1 node, must resolve while open), `status`
+  (`open|answered|deferred|wont-fix` — a `resolution` is required once not open),
+  `blocking` (`what|how|build|finalize`, or empty), `resolved_by` (What nodes or
+  How decisions). `product question new|list|show|answer|rm|export` (all take
+  `--root`/`--product`) and the `product_question_*` MCP tools manage them;
+  `list --derived` / `include_derived` merges in the recomputed `pf::questions`
+  gaps (each row carries `source: authored|derived`), and `from_derived`
+  promotes one. `product how add decision|principle|pattern --answers q-…`
+  (MCP: `answers`) marks the questions answered with the element in
+  `resolved_by`. `domain show` lists a node's open questions.
 - **Make behaviour executable** — `product decider derive <aggregate>` derives a
   Decider's signature from the event model; `product decider validate <id>` runs
   the §3.3 drift rules + the state/Decider justification detectors;
@@ -638,7 +650,15 @@ shows only the current phase's family, and out-of-phase calls are rejected:
   `product_target_*`, `product_build_run`.
 
 Read-only tools from an earlier phase stay callable; writes lock to their home
-phase (`phase_of` in `workflow.rs` is the single source of truth). Three control
+phase (`phase_of` in `workflow.rs` is the single source of truth). The
+`product_question_*` family is **phase-free** (visible in every phase —
+`workflow_questions::is_phase_free`), and the transport stamps `session_id` on
+question + `product_how_add` calls. Open questions gate the controls:
+`product_workflow_advance` is refused (`ok: false`, `blockingQuestions`) while an
+open question blocks a phase being left; `product_session_finalize` is refused by
+an open `blocking: finalize` question, warns about the other open ones, and
+reports questions raised / answered / still open; `product_workflow_status`
+shows the counts. Three control
 tools are visible in every phase: `product_workflow_status`,
 `product_workflow_advance`, and `product_session_finalize` — which validates the
 What and, if conformant, stamps provenance and closes the session. Writes land

@@ -73,10 +73,13 @@ pub enum NodeKind {
     /// §3.6 — a quality demand: a checkable non-functional requirement (a runtime
     /// bound or an architectural constraint) located on the element it scopes.
     QualityDemand,
+    /// An authored open question: something the graph cannot yet decide,
+    /// recorded next to the nodes it concerns and carried into How/Build.
+    OpenQuestion,
 }
 
 /// Every node kind, in declaration order (for `list`/iteration).
-pub const ALL_KINDS: [NodeKind; 30] = [
+pub const ALL_KINDS: [NodeKind; 31] = [
     NodeKind::BoundedContext,
     NodeKind::Entity,
     NodeKind::ValueObject,
@@ -107,6 +110,7 @@ pub const ALL_KINDS: [NodeKind; 30] = [
     NodeKind::Product,
     NodeKind::Journey,
     NodeKind::QualityDemand,
+    NodeKind::OpenQuestion,
 ];
 
 /// Built-in WCAG 2.2 criteria seed: (id, level, verification-type, name). An
@@ -156,7 +160,7 @@ impl NodeKind {
     /// kind is added in one place. A `match self` over `NodeKind` is
     /// compiler-checked exhaustive, so a kind added here that any consumer
     /// forgets to handle is a compile error, not a silent gap.
-    pub fn all() -> [NodeKind; 30] {
+    pub fn all() -> [NodeKind; 31] {
         [
             Self::BoundedContext,
             Self::Entity,
@@ -188,6 +192,7 @@ impl NodeKind {
             Self::Product,
             Self::Journey,
             Self::QualityDemand,
+            Self::OpenQuestion,
         ]
     }
 
@@ -224,6 +229,7 @@ impl NodeKind {
             Self::Product => "Product",
             Self::Journey => "Journey",
             Self::QualityDemand => "QualityDemand",
+            Self::OpenQuestion => "OpenQuestion",
         }
     }
 
@@ -260,6 +266,7 @@ impl NodeKind {
             Self::Product => "product",
             Self::Journey => "journey",
             Self::QualityDemand => "quality-demand",
+            Self::OpenQuestion => "open-question",
         }
     }
 

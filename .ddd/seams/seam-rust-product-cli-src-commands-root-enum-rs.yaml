@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/product-cli-src-commands-root-enum-rs
 boundary: contract surface of product-cli/src/commands/root_enum.rs
-verdict_knowledge: 'CLI users learn product registry is where ground-registry instances are minted from the versioned template — a G-track surface that reads and writes no .product graph in any repository, and therefore takes no --product argument and belongs to no session phase.'
+verdict_knowledge: CLI users learn product registry is where ground-registry instances are minted from the versioned template — a G-track surface that reads and writes no .product graph in any repository, and therefore takes no --product argument and belongs to no session phase.
 contract_location: product-cli/src/commands/root_enum.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,9 @@ bindings:
   after: sha256:e9bdd37f3d13329814aee927c1163934cfe7ac1ab5550f86efac7b2c85acf57e
   base_revision: 61222d2d386993ad671643dc46692202a2a4f1e7
   hash: sha256:a375b19f6f7bf47323d32d659d62fcc44abf2ccc886d06db4efb99e0d2638220
+- symbol: Question
+  file: product-cli/src/commands/root_enum.rs
+  before: sha256:e9bdd37f3d13329814aee927c1163934cfe7ac1ab5550f86efac7b2c85acf57e
+  after: sha256:3e0dc9905abf0c001745278a855afb97072bda96b7d7f4eddc800df9bc43b9e9
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:bad65585d279729d7698ce6b6182c2a650147d298cc497d7d5dbd6fccf0d0236

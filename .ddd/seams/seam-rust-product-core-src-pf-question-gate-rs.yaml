@@ -1,0 +1,80 @@
+format: 2
+id: seam/rust/product-core-src-pf-question-gate-rs
+boundary: contract surface of product-core/src/pf/question_gate.rs
+verdict_knowledge: 'Callers learn which open questions stand in the way of a gate: leaving a phase is blocked by questions naming that phase (every phase left, on a jump), finalize only by questions naming finalize — the others are warnings, never refusals. The verdict is computed from the graph; no caller decides it.'
+contract_location: product-core/src/pf/question_gate.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: advance_blockers
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:2827d6e7580288314a6c26f7f5efd32ec81f15ec9b2fed4cf6b8067b36a85b45
+- symbol: answer_from_how
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:a9cc019defbf454900dbb966523b3fd58a4fac4ec1d201f1a68c530426ce7f14
+- symbol: blockers
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:194a1464cde82599420c889cc7f6ef5fa309d741f5dfab1478fa605a0a90cda9
+- symbol: finalize_check
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:797d75ea83041e76921045f23ace5fa033c34f6ef8d5bca327df796343f33e43
+- symbol: gate_of
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:77c44515d089a514192f18292a3034c702842e7db33c86de559c9eb6acf845f3
+- symbol: session_report
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:35df065813d5773f07bf6135de87955a56b578a2c71e148fac2f8ba4fc794826
+- symbol: status_counts
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:28591f58583eef95b68b98c747ffe7a4c146a1e279df6d04e18983901e1a128a
+- symbol: summary
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:f3968b1a3d24e0080aecf9dbc7ac5c0bb34708517bcfda942752f714db4f33f8
+- symbol: to_markdown
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:0ebc4afd7eefafa6baad7b3b0bcc2bd5b6e77e12f8f4e3fc3fcb2a82c39d6aab
+- symbol: FinalizeCheck
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:31c0aa4d56af6af56aa63e4e87ed44ba65746247e11b3b03447cd93708f1add0
+- symbol: blocking
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:c36545fcae29a0cf6b62f0aeb9e684446ed20f7740be639b595c2732f1e7cc8b
+- symbol: warnings
+  file: product-core/src/pf/question_gate.rs
+  before: absent
+  after: sha256:ae1329c4e1c83d57c2095b9840e5ff891a25ff3cd6067384ade6da97bfb7a096
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:d0f10b2f9c4766c1ea0f97645e9b1a76553ccbde6518b8ad635ba110e37fc60c

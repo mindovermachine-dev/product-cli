@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/product-core-src-pf-model-rs
+boundary: contract surface of product-core/src/pf/model.rs
+verdict_knowledge: 'Consumers of DomainGraph learn it carries open_questions beside the node kinds it describes — a question travels with the spec, in the same TTL, diffable in git, rather than in a document outside the graph.'
+contract_location: product-core/src/pf/model.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: open_questions
+  file: product-core/src/pf/model.rs
+  before: sha256:028d4f320ae934fc15b4dd0cb1b7146869c58f8fba198193ea41ed7eefa1c775
+  after: sha256:49d503e179d842b019bf8d75f29460d5e28ddd132d9f999f937c7504e702e182
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:7507118b25024e5b8547b27a0956aa541588c80921a80cb1a10f897f62409ee7

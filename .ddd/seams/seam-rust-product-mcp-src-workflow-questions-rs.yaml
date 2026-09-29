@@ -1,0 +1,38 @@
+format: 2
+id: seam/rust/product-mcp-src-workflow-questions-rs
+boundary: contract surface of product-mcp/src/workflow_questions.rs
+verdict_knowledge: 'Session agents learn questions are reachable in every phase, that advance is refused while an open question blocks a phase being left, and that finalize is refused only by finalize blockers and otherwise reports what was raised, answered and left open — the reviewer reads the questions in one place before approving.'
+contract_location: product-mcp/src/workflow_questions.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: advance_refusal
+  file: product-mcp/src/workflow_questions.rs
+  before: absent
+  after: sha256:62653784d69c8a6548139356440e9cc1332ef4d4c8c657564afb62d3f0102fe4
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:6c51c388cd9b646b70510248bf5f3f76cb89fec9e217c4f1d8c3f5f06922ab7f
+- symbol: finalize_questions
+  file: product-mcp/src/workflow_questions.rs
+  before: absent
+  after: sha256:62653784d69c8a6548139356440e9cc1332ef4d4c8c657564afb62d3f0102fe4
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:a06a73af554fa95fd94f03c9889c65c22d222b44ca883d63560554e4b725abf7
+- symbol: is_phase_free
+  file: product-mcp/src/workflow_questions.rs
+  before: absent
+  after: sha256:62653784d69c8a6548139356440e9cc1332ef4d4c8c657564afb62d3f0102fe4
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:b214bbf8b72a869844f0270681e5a4c9ae984c18e2f8a8552528416315d29ed8
+- symbol: stamp_session
+  file: product-mcp/src/workflow_questions.rs
+  before: absent
+  after: sha256:62653784d69c8a6548139356440e9cc1332ef4d4c8c657564afb62d3f0102fe4
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:d0e4cde91a9fa9abdf7e4d7b81922843b073ffa4864e411c1f187d9bd7b67ef0
+- symbol: status_counts
+  file: product-mcp/src/workflow_questions.rs
+  before: absent
+  after: sha256:62653784d69c8a6548139356440e9cc1332ef4d4c8c657564afb62d3f0102fe4
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:63f0e55af4579cb8140055fe12cafcdcf3690ecac72e7e54aa8e4921780f5f14

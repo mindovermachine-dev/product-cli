@@ -2,8 +2,8 @@
 //!
 //! A second flattened `clap` group beside [`super::domain_fields::NodeFields`],
 //! split out to keep each under the 400-line gate. Carries the flags for the
-//! `product`, `journey`, and `quality-demand` kinds (and a system's
-//! `references-domain`); merged into the same JSON field map `pf::edit` consumes.
+//! `product`, `journey`, `quality-demand` and `open-question` kinds (and a
+//! system's `references-domain`); merged into the same JSON field map `pf::edit` consumes.
 
 use clap::Args;
 use serde_json::{json, Map, Value};
@@ -50,6 +50,21 @@ pub struct V16Fields {
     /// §3.6 an architectural constraint's How-side contract it binds
     #[arg(long = "constrains")]
     constrains: Option<String>,
+    /// Open question: the node ids it concerns (comma-separated)
+    #[arg(long = "concerns", value_delimiter = ',')]
+    concerns: Option<Vec<String>>,
+    /// Open question: the gate it blocks (what|how|build|finalize, or false)
+    #[arg(long = "blocking")]
+    blocking: Option<String>,
+    /// Open question: open | answered | deferred | wont-fix
+    #[arg(long = "question-status")]
+    question_status: Option<String>,
+    /// Open question: the answer (required once no longer open)
+    #[arg(long = "resolution")]
+    resolution: Option<String>,
+    /// Open question: ids of what answered it (comma-separated)
+    #[arg(long = "resolved-by", value_delimiter = ',')]
+    resolved_by: Option<Vec<String>>,
 }
 
 impl V16Fields {
@@ -69,5 +84,10 @@ impl V16Fields {
         if let Some(v) = &self.scopes { put("scopes", json!(v)); }
         if let Some(v) = &self.measured_by { put("measured_by", json!(v)); }
         if let Some(v) = &self.constrains { put("constrains", json!(v)); }
+        if let Some(v) = &self.concerns { put("concerns", json!(v)); }
+        if let Some(v) = &self.blocking { put("blocking", json!(v)); }
+        if let Some(v) = &self.question_status { put("status", json!(v)); }
+        if let Some(v) = &self.resolution { put("resolution", json!(v)); }
+        if let Some(v) = &self.resolved_by { put("resolved_by", json!(v)); }
     }
 }

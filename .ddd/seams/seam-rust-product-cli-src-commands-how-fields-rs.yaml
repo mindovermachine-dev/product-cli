@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/product-cli-src-commands-how-fields-rs
+boundary: contract surface of product-cli/src/commands/how_fields.rs
+verdict_knowledge: 'CLI users learn a How decision, principle or pattern can name the open questions it answers (--answers q-…); authoring it settles each one with the element in resolved_by, and a name that is not an open question refuses before the How is written.'
+contract_location: product-cli/src/commands/how_fields.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: answers
+  file: product-cli/src/commands/how_fields.rs
+  before: sha256:9ffe665d7d9b4362c1bf6a0b6abb8eeeb4dcc6783bd3694bce5c51ae1e5e0749
+  after: sha256:00ed17bcac1dcdf5b1150d87013407befc56f946758d267b6f11422c969be237
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:f0e0782017a70a71583c1bb723c3e26899e0bf77633565dbaf3d55240a17d91e

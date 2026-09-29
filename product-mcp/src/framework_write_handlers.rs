@@ -73,6 +73,8 @@ pub fn handle_how_add(args: &Value, repo_root: &Path) -> Result<Value, String> {
     let id = req_str(args, "id")?;
     let base = pbase(args, repo_root);
     let mut c = load_how(&base)?;
+    // Open questions this element answers: checked before the How is touched.
+    let answers = crate::question_handlers::check_answers(args, repo_root)?;
     let added = match element.as_str() {
         "decision" => {
             let d: TopDecision = from_args(args)?;
@@ -110,7 +112,28 @@ pub fn handle_how_add(args: &Value, repo_root: &Path) -> Result<Value, String> {
             ))
         }
     };
-    finish(&base, &c, &id, added)
+    let out = finish(&base, &c, &id, added)?;
+    with_answers(out, &element, args, repo_root, &answers, &id)
+}
+
+/// Mark the open questions a decision/principle/pattern answers, reporting each.
+/// Other elements carry no `answers`; the resolution quotes the element's text.
+fn with_answers(mut out: Value, element: &str, args: &Value, repo_root: &Path, answers: &[String], id: &str) -> Result<Value, String> {
+    let key = match element {
+        "decision" => "decision",
+        "principle" => "statement",
+        "pattern" => "shape",
+        _ => return Ok(out),
+    };
+    if answers.is_empty() {
+        return Ok(out);
+    }
+    let text = args.get(key).and_then(Value::as_str).unwrap_or_default();
+    let answered = crate::question_handlers::link_how_answers(args, repo_root, answers, id, text)?;
+    if let Value::Object(ref mut m) = out {
+        m.insert("answered".into(), answered);
+    }
+    Ok(out)
 }
 
 /// Set a singleton contract (the application or infrastructure contract).

@@ -24,6 +24,10 @@ pub struct TopDecision {
     pub licenses: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub enforced_by: Vec<String>,
+    /// Open questions (`q-*` in the What graph) this element answers; authoring
+    /// it marks each one answered, with this element in its `resolved_by`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub answers: Vec<String>,
 }
 
 /// §4.1 — a rule a top decision licenses, stated checkably.
@@ -37,6 +41,10 @@ pub struct Principle {
     pub realized_by: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub enforced_by: Vec<String>,
+    /// Open questions (`q-*` in the What graph) this element answers; authoring
+    /// it marks each one answered, with this element in its `resolved_by`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub answers: Vec<String>,
 }
 
 /// §4.1 — a concrete shape that realises principles; what a work unit emits.
@@ -50,6 +58,10 @@ pub struct Pattern {
     pub applied_by: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub enforced_by: Vec<String>,
+    /// Open questions (`q-*` in the What graph) this element answers; authoring
+    /// it marks each one answered, with this element in its `resolved_by`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub answers: Vec<String>,
 }
 
 /// §4.2 — one checkable statement of the application contract.

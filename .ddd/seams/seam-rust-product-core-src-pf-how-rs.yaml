@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/product-core-src-pf-how-rs
+boundary: contract surface of product-core/src/pf/how.rs
+verdict_knowledge: 'Readers of the How learn a decision, principle or pattern may carry `answers`: the open questions it settled. The link is recorded on both sides — here, and as resolved_by on the question — so the trail question → decision → realised code survives either artifact being read alone.'
+contract_location: product-core/src/pf/how.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: answers
+  file: product-core/src/pf/how.rs
+  before: sha256:8b48f682278d16a048020e31658e6eab1e04f931195da37dc58345dfe908da10
+  after: sha256:cf65768ca397bd67f48a64cdd5496d5e5c8d910cf5ac7ada587b6d9ac7f28ada
+  base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
+  hash: sha256:bb2506fe1d6c4e77e256022303dc1366cf7bb327768866418868b0eafb93b1a7
