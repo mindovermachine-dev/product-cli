@@ -31,10 +31,14 @@ produce a SARIF file and which rule-id namespace it carries. Basis:
 `DDD-detect-01` (both toolchains emit SARIF; one structured format beats
 two console parsers).
 
-### 4. LSP-protocol-only seam — `dec/ddd/lsp-as-seam`
+### 4. Native language graph, behind an LSP-shaped host — `dec/ddd/lsp-as-seam`
 
-The LSP protocol is the seam to language intelligence; the core never
-touches Roslyn or Bicep APIs. Basis: `DDD-arch-02`. Corollary:
+Each language is reached through its own semantic graph (Roslyn for C#),
+held in a per-language host the core talks to over LSP plus `ddd/*`
+extensions; the core itself links no compiler API. Re-decided 2026-09-29
+(awaiting acceptance): as filed 2026-08-02 it read "the core never touches
+Roslyn or Bicep APIs", on basis `DDD-arch-02`, which the re-decision drops.
+Plan: `docs/ddd-roslyn-host-plan.md`. Corollary:
 `dec/ddd/interceptor-not-extension` — seam detection is an edit-flow
 interceptor consuming LSP events, not an LSP server extension.
 

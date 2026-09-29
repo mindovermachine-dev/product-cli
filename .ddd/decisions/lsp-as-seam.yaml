@@ -1,19 +1,59 @@
-format: 2
+format: 7
 id: dec/ddd/lsp-as-seam
-title: The LSP protocol is the seam to language intelligence
+title: Each language is reached through its native semantic graph, behind an LSP-shaped host
 rationale: >
-  The core consumes normalized LSP events and never touches Roslyn or Bicep
-  APIs directly. This bounds the blast radius of prerelease language-server
-  churn to version pins and keeps the core language-free (one adapter + policy
-  table per new language, by design).
+  ddd reads and writes code through the language's own semantic graph —
+  Roslyn's workspace and semantic model for C#, rust-analyzer's for Rust,
+  the Bicep compiler's for Bicep — never through a reconstruction of it.
+  Each graph lives in a per-language host process that the core reaches
+  over LSP: the standard methods, plus `ddd/*` extension methods where the
+  standard vocabulary cannot carry a fact the policy table reads or a
+  symbol-level write. The core stays language-free — one host and one
+  policy table per language, and nothing in the core links a compiler API.
+
+
+  An off-the-shelf language server is an acceptable host only while the
+  standard protocol carries every fact its policy table classifies on.
+  Where it does not, the language gets its own host over the native API,
+  not a text-slicing workaround in the adapter. The host reports facts and
+  performs edits; it never decides what is contract surface — that stays
+  the core's, per `dec/ddd/interceptor-not-extension`.
 principal: Emil (Context&)
 based_on:
-  - claim: DDD-arch-02
-    status: projected
-    changed: 2026-08-02
-date: 2026-08-02
+  - type: mandate
+    statement: >-
+      The principal's ruling of 2026-09-29 on what this decision was filed
+      to mean: work through the native language graph of each language.
+      The 2026-08-02 wording forbade direct Roslyn access, which read the
+      protocol seam as the goal rather than the means to it.
+  - type: constraint
+    statement: >-
+      Standard LSP carries a symbol's name, kind and range but not its
+      visibility, attributes or structured signature, and it edits only by
+      text range. A C# adapter confined to it must reconstruct those facts
+      by slicing declaration text (ddd-lsp/src/adapter/csharp_facts.rs) and
+      cannot insert a member into a type by symbol, so both the facts the
+      policy table classifies on and the symbol-level write path need the
+      semantic model the protocol does not expose.
+date: 2026-09-29
 notes: >
-  Pin backfilled at M5 from git, not from the present: the decision was filed
-  in 136aa55 (2026-08-02) and DDD-arch-02 has not been touched since, so
-  the status and changed values above are the claim's state at decision time,
-  recovered rather than assumed. Not a re-decision.
+  Re-decision of wording and basis, 2026-09-29, not an edit. As filed
+  2026-08-02 the entry read "The LSP protocol is the seam to language
+  intelligence" with the rationale that the core "never touches Roslyn or
+  Bicep APIs directly", on the basis DDD-arch-02 (projected@2026-08-02).
+  The protocol seam survives, now between the core and a per-language host;
+  what changes is that a host may, and for C# will, work through the
+  compiler's own graph.
+
+
+  DDD-arch-02 is dropped as ground and not kept as a tripwire: whether LSP
+  suffices without compiler access for a given language now decides only
+  which host that language gets, and either answer is inside this decision.
+  The principal narrowed it to Bicep the same day (2026-09-29), which moves
+  the pin dec/ddd/rust-host-is-real holds on it; that basis loss is left
+  reporting for the principal to settle. dec/ddd/interceptor-not-extension is unaffected: no
+  third-party server is extended or forked, and interception stays in the
+  core's apply path. Format 2 -> 7 per docs/ddd-format-migrations.md. The
+  ledger record dec:hafeok.ddd/01KZTGGMEACBFMTC1RJJ8T90GS takes a new
+  version re-pinning ddd-content at this entry. Wording accepted by the
+  principal 2026-09-29; the ledger acceptance is theirs to sign.

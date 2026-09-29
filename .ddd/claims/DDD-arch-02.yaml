@@ -1,14 +1,14 @@
 format: 2
 id: DDD-arch-02
 statement: >
-  The LSP protocol carries enough information (symbols, visibility,
-  signatures, diagnostics) to classify contract-surface edits for C# and
-  Bicep without direct Roslyn or Bicep API access.
+  For Bicep, the LSP protocol carries enough information (symbols,
+  visibility, signatures, diagnostics) to classify contract-surface edits
+  without direct Bicep compiler API access.
 status: projected
 falsifier: >
-  A contract-surface edit class that is invisible in LSP symbol/diagnostic
-  events and requires compiler-API access to detect.
+  A Bicep contract-surface edit class that is invisible in LSP
+  symbol/diagnostic events and requires compiler-API access to detect.
 owner: none
-changed: 2026-08-02
+changed: 2026-09-29
 revalidate_by: 2027-02-07
 depends_on: []
