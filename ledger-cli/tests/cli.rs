@@ -87,7 +87,7 @@ fn the_surface_is_the_format_the_verbs_the_graph_and_merge() {
     let text = stdout(&out);
     for present in [
         "init", "verify", "accept", "add", "allocate", "revoke", "show", "status", "supersede",
-        "diff", "merge",
+        "diff", "merge", "export",
     ] {
         assert!(text.contains(&format!("  {present}")), "{present} is missing: {text}");
     }

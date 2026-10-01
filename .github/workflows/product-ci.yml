@@ -130,7 +130,9 @@ jobs:
         # L0 of docs/decision-ledger-prd.md: the decision record must be
         # readable, unallocated decisions and stale acceptances must not
         # reach main. Exit 1 = findings, exit 2 = the gate could not run.
-        run: cargo run -q -p ledger-cli --bin ledger -- verify
+        # --export: the committed docs/decisions/<ns>.nt the analyzers'
+        # generator reads must be byte-identical to the log's export.
+        run: cargo run -q -p ledger-cli --bin ledger -- verify --export
 
       - name: DDD governance gate
         # Schema + ontology validation of the .ddd graph (M8: runs in CI

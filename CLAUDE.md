@@ -308,7 +308,13 @@ store (`.decisions/`), separate ontology.
   [--today YYYY-MM-DD] [--no-blame]`. Fails for a schema fault plus classes
   `L001`–`L010` and **nothing else**; adding an eleventh is a format-spec
   change (`L010` itself shipped that way, as spec v1.1).
-  Exit `0` conformant, `1` findings, `2` could not run. Runs in CI.
+  Exit `0` conformant, `1` findings, `2` could not run. Runs in CI with
+  `--export`, which adds a third stage: every committed
+  `docs/decisions/<ns>.nt` must equal `ledger export --format ntriples
+  --namespace <ns>` byte for byte (sorted, RDF 1.2 canonical N-Triples, the
+  same triples as the index, `ledger:set` kept as the set IRI). Any ledger
+  act changes the export: rerun `ledger export --format ntriples` (no
+  `--namespace` writes every namespace) and commit the result.
   Allocated-awaiting-acceptance is *status*, not a failure.
 - **Acceptance is the principal's, never an agent's.** Do not create
   `acceptances:` entries under any framing, including fixtures — fixture
