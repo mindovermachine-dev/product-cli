@@ -2,15 +2,28 @@
 
 Draft 1, 2 October 2026. Scope: the open-source `decision` CLI (decision-cli). The Context& service layer (DSSE/Sigstore, step-ca, eIDAS, hosted ledger, fan-out) is out of scope and referenced only where the open design must leave a seam for it.
 
+**Amended 2026-10-01** by the principal's rulings on `docs/audit-2026-10.md` §9 — see §0.
+
+## 0. Amendments (2026-10-01)
+
+Ruled on the audit of the implementation (`ledger-core` / `ledger-cli`, binary `ledger`, store `.decisions/`). Each is folded into the sections below; this list is the index.
+
+1. **Entities are not one file each (audit C1).** The unit of a file is the *act*: a change-set (`.decisions/log/<ulid>.yml`) holding the decisions, versions, acceptances and revocations one act filed. Versions are content-addressed (`sha256:` over the canonical form); acceptances and revocations gain a content hash for signing (§4, §7) alongside their ULID ids. The file layout is not changed.
+2. **The key rules are file-gate classes (audit C2).** The file gate is the format's import surface — every rule an outside implementation must reproduce, including cross-entry rules over the whole log (as `L005` and `L008` already are). Key syntax, key immutability and key uniqueness among live decisions are all file-gate classes; uniqueness additionally has a graph-stage SPARQL cross-check. Nothing a generated type name depends on is graph-only.
+3. **Revocation is its own signed entity; acceptances are immutable.** A `ledger:Revocation` names the acceptance it revokes (`ledger:revokes`), carries its reason and attribution, and is signed. Revoking requires the role. No triple is ever added to an acceptance node after it is created, so the acceptance's signature covers its fixed content and stays valid when it is revoked.
+4. **The signed payload is a closed field list under the ledger's one canonicalisation law (audit C4).** Not RDFC-1.0 over a node. The acceptance payload is `{decision, version, actor, at, scope, expires_at}` — scope and expiry are signed, so an acceptance cannot be re-scoped under its signature — canonicalised as the format's canonical JSON (§4 of `ledger-format-v1.md`) under its own domain-separation prefix. The revocation payload is likewise closed. The export carries every payload field as a triple, so a consumer can rebuild the signed bytes from the export alone.
+5. **The export keeps `ledger:set` as an IRI** (`<urn:ledger-set:<id>>`). The analyzers' reader takes the set id from the IRI's local part, and keeps every `rdf:type` value of a node rather than the last.
+6. **`mailto:` is canonical.** An identity is a `mailto:` IRI in every form; a bare address is normalised to `mailto:` on parse.
+
 ## 1. Purpose
 
 The ledger is the source of truth for decisions. Code cites decisions through `DecisionDriven.Analyzers`; the analyzers' generator reads the ledger's export. The CLI is how people file, revise, accept and verify decisions, and how the export is produced. Its first job is to make acceptance a single, deliberate, human, signed act, because acceptance is the only operation in the model that carries responsibility, and it is currently done by hand-editing files.
 
 ## 2. Principles (carry over from ledger-format-v1)
 
-- Files are the truth; the graph is a read model. Every entity is a file whose hash is its identity; hashed content is strings only; the format refuses to restate facts.
-- File gate before graph stage: single-file checks reject bad files; cross-file properties are computed at verify time, never materialised.
-- Identities are `mailto:` IRIs. A model is never a holder.
+- Files are the truth; the graph is a read model. A file holds one act (a change-set); every hashed entity is identified by the hash of its content; hashed content is strings only; the format refuses to restate facts.
+- File gate before graph stage: the file gate is the format's import surface — single-file and cross-entry rules every implementation must reproduce, computed at verify time and never materialised; the graph stage is the reference implementation's SPARQL cross-check and is never the only home of a rule.
+- Identities are `mailto:` IRIs, canonical in every form; a bare address is normalised to `mailto:` on parse. A model is never a holder.
 - Everything the CLI does must be reproducible from the repository alone, with no service in the loop.
 
 ## 3. Users
@@ -25,14 +38,15 @@ The ledger is the source of truth for decisions. Code cites decisions through `D
 | Change | Why |
 |---|---|
 | `ledger:key` on `DecisionVersion`: `^[A-Z][A-Za-z0-9]{0,63}$`, hashed, unique per (namespace, key) among live decisions, immutable across versions of one decision, carried to the successor on supersession | Generated C# type names; stable citations across supersession |
-| `ledger:exported` on `DecisionVersion`: boolean, hashed | A decision citable from other namespaces; default false |
+| `ledger:exported` on `DecisionVersion`: hashed as the string `"true"` when set, absent (omitted from the canonical form) when false — hashed content is strings only | A decision citable from other namespaces; default false |
 | `ledger:Commit` a `prov:Activity`, keyed `urn:git:sha1:<hex>` or `urn:git:sha256:<hex>`; change-sets `prov:wasInformedBy` the commit that landed their file | Citations are blamed to commits; the citation projection needs the node |
 | `ledger:Citation` a `prov:Entity` (produced by the analyzers' report, never hashed): `ledger:ofDecision`, `ledger:citesVersion`, `ledger:symbol`, `ledger:attribute`, `ledger:exceptionScope`, `prov:wasGeneratedBy <commit>` | Read model of code → decision |
-| `ledger:signature` and `ledger:signatureScheme` on `Acceptance`; signature stored as a sidecar; acceptance hash covers content, not signature | Signed acceptances (§7) |
+| `ledger:signature` and `ledger:signatureScheme` on `Acceptance` and `Revocation`; signature stored as a sidecar; the entity's hash covers its fixed content (the closed payload, §7), never the signature | Signed acceptances and revocations (§7) |
+| `ledger:Revocation` a `prov:Entity`: `ledger:revokes <acceptance>`, `ledger:revocationReason`, `prov:wasAttributedTo`, `prov:generatedAtTime`, signed; revoking requires the role. An `Acceptance` node is immutable after creation — no revocation triple is ever written on it | A revocation that edited the acceptance would break the acceptance's signature; revoking is an act of authority, so it is attributed and signed like accepting |
 | `ledger:publicIri` on `DecisionVersion`, optional | Dereferenceable alias (`https://…/{ns}/{set}/{key}`) for the lineage; URN identity unchanged |
 | Namespace policy entity: allowed signature schemes, required key types, `allowed_signers` snapshot reference, threshold (signers required) per set or namespace | Per-namespace acceptance policy |
 
-Gates added: key syntax and immutability (file gate); key uniqueness among live decisions (graph stage, SPARQL shape); exported decisions must have an unrevoked acceptance before export (export-time check); signature verifies against policy (graph stage).
+Gates added: key syntax, key immutability, and key uniqueness among live decisions (file gate, by the `L010` amendment mechanism; uniqueness also has a graph-stage SPARQL cross-check); exported decisions must have an unrevoked acceptance before export (export-time check); signature verifies against policy (graph stage).
 
 ## 5. Commands
 
@@ -44,7 +58,7 @@ All commands run inside a repository with a `ledger/` directory. All writes are 
 | `decision new --set <set> --key <Key> --statement "…" [--exported]` | New decision with first version; unaccepted; prints the generated type name |
 | `decision revise <key> --statement "…"` | New version, `prov:wasRevisionOf` the tip; key unchanged |
 | `decision supersede <old-key> --key <NewKey?> --statement "…"` | New decision superseding the old; key carried unless `--key` given; old tip remains, unaccepted citations of it diverge |
-| `decision revoke <key> --reason "…"` | Revocation triples on the tip's acceptances (no decision-level retirement in v2; open item) |
+| `decision revoke <key> --reason "…"` | Files one signed `ledger:Revocation` per live acceptance of the tip (`ledger:revokes <acceptance>`); the acceptances themselves are never edited. Refuses non-interactive invocation and an identity without the role, exactly as `accept` does (no decision-level retirement in v2; open item) |
 | `decision review [--diff <ref>] [--pr <n>]` | Lists decisions cited in the changed code whose tip has no unrevoked acceptance: key, set, statement, citing symbols. Reads citations from the analyzers' report output or by scanning `typeof(` citations in the diff |
 | `decision accept <key>… [--scope version\|class:<ref>] [--commit]` | For each key: builds the acceptance node, canonicalises (§7), signs with SSH, writes acceptance and sidecar, re-exports. Refuses non-interactive invocation, refuses if the holder lacks `accept-decision`, refuses a software key when policy requires `-sk`, refuses an agent-reported unconfirmed key |
 | `decision verify [--export] [--signatures] [--all]` | File gate, graph stage, L-class checks against git, signature verification with `-Overify-time`, export freshness. Exit code is the CI gate |
@@ -66,8 +80,8 @@ Target: a holder accepts twenty decisions in under five minutes without opening 
 
 ## 7. Signatures (open-source scheme: SSH)
 
-- Canonical form: RDFC-1.0 of the acceptance node's triples (excluding `ledger:signature`), serialised as canonical N-Quads, UTF-8.
-- Signing: `ssh-keygen -Y sign -f <key> -n ledger-accept@<namespace>` over the canonical bytes. Sidecar file `<acceptance-id>.sig` in SSHSIG format.
+- Canonical form: the closed payload of the entity — for an acceptance `{decision, version, actor, at, scope, expires_at}`, for a revocation `{revokes, actor, at, reason}` — canonicalised by the format's canonical-JSON law (`ledger-format-v1.md` §4.2: normalised strings, absent keys omitted, keys code-point sorted, no insignificant whitespace), under a domain-separation prefix per entity (`ledger.acceptance.v1`, `ledger.revocation.v1`), UTF-8. The signature never covers a node's whole triple set: a node's triples are a read model and may gain triples; the payload is fixed at creation. Every payload field is exported as a triple, so a consumer rebuilds the signed bytes from the export alone. *(Amended 2026-10-01; was RDFC-1.0 of the acceptance node's triples.)*
+- Signing: `ssh-keygen -Y sign -f <key> -n ledger-accept@<namespace>` over the canonical bytes. Sidecar file `<acceptance-id>.sig` (or `<revocation-id>.sig`) in SSHSIG format.
 - Identity binding: `ledger/allowed_signers`, one line per principal and key: `mailto:… namespaces="ledger-accept@<ns>" valid-after=… valid-before=… <keytype> <key>`. Changes are themselves accepted decisions in the policy set.
 - Verification: `ssh-keygen -Y verify -f allowed_signers -I <principal> -n ledger-accept@<ns> -Overify-time=<prov:generatedAtTime>`.
 - Time: as written in the acceptance, backed by the landing commit's date; no timestamp authority in the open source.
@@ -77,6 +91,7 @@ Target: a holder accepts twenty decisions in under five minutes without opening 
 ## 8. Integration with the analyzers
 
 - The generator reads `docs/decisions/<ns>.nt`; when both `.nt` and interim `.md` exist for a namespace, DDGEN reports it.
+- Export shape the reader relies on: `ledger:set` is the IRI `<urn:ledger-set:<id>>`, and the reader takes the set id from its local part; a node carries several `rdf:type` values (`ledger:Decision` and `prov:Entity`, …) and the reader keeps all of them; a revocation is its own `ledger:Revocation` node with `ledger:revokes <acceptance>`, and an acceptance is accepted-and-unrevoked when no `ledger:Revocation` revokes it.
 - `ledger:key` → nested type name; `ledger:exported` → citable cross-namespace; unrevoked acceptance on tip → citable in release builds; no decision-level retirement in v2, so `[Obsolete(error: true)]` has no ledger source until a later format change.
 - The report's citation projection is emitted as `ledger:Citation` N-Triples and may be committed under `docs/decisions/<ns>.citations.nt`; `decision review` reads it when present.
 
@@ -94,7 +109,8 @@ Target: a holder accepts twenty decisions in under five minutes without opening 
 - An acceptance signed by a key not in `allowed_signers`, or outside its validity window, or with the wrong SSHSIG namespace, fails `decision verify`.
 - `decision accept` run without a TTY, or by an identity without `accept-decision`, or with a software key under a `-sk` policy, exits non-zero and writes nothing.
 - A committed export edited by hand fails `decision verify --export`.
-- Two live decisions with the same key in one namespace fail the graph stage.
+- Two live decisions with the same key in one namespace fail the file gate (and the graph-stage cross-check).
+- A revoked acceptance's signature still verifies; the revocation is a separately signed entity.
 - Supersession carries the key; the generator's output for the citing repository compiles unchanged and the report shows the diverged cited version.
 - The whole flow runs offline.
 
