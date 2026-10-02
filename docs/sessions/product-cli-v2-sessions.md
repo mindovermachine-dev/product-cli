@@ -77,7 +77,7 @@ What Session A landed, as its session reported it. Confirm each against the code
 
 Also establish, with symbols: whether `merge --resolve` can write an acceptance or revocation that neither side of the merge had.
 
-### Step 0 — carry-overs from Session A
+### Step 0 — #85: carry-overs from Session A
 One PR.
 - Non-interactive refusal on every verb that writes an authority record: `init --namespace`, `role declare`, `grant new`, `grant accept`, `unavailable`, `available`, `identity add|rotate|revoke` and `policy set`, in addition to the four that have it. Through `require_terminal` and the same PTY driver; no environment override, no flag, no predicate. The verbs that file decisions (`declare`, `add`, `allocate`, `escape`, `revise`, `supersede`) and the derived-file verbs (`identity sync`, `reindex`, `merge --install`, `merge-driver`) stay scriptable. One test holds the closed list of verbs on each side, so a new verb has to be classified. A negative test per refusing verb: piped stdin exits non-zero and leaves `.decisions/` byte-identical.
 - If `merge --resolve` can write an acceptance or revocation that neither side had, it refuses non-interactive use too. If it only chooses between existing entities, say so in the PR and leave it.
@@ -107,7 +107,7 @@ One PR.
 - [D6] Document the export-only verifier's limit in the format document: it checks signatures and key windows by `at`; it cannot check landing order, which `verify` checks in the repository.
 - Upstream list. Session A's close-out has none, so this one covers #80 as well. For the analyzers' reader contract, list every class and predicate that can appear in the export and could not before #80, and state these four points: predicates such as `ledger:id`, `ledger:hash`, `ledger:scope` and `ledger:namespace` now occur on non-decision nodes, so the reader must dispatch on `rdf:type`; `ledger:revokes` can target a grant as well as an acceptance; `ledger:revokedAt` and `ledger:revokedBy` no longer appear on acceptances; legacy revocation nodes (`urn:rev:legacy-<acc-ulid>`) carry no `ledger:id`.
 
-### Step 2 — `accept --batch <file>`
+### Step 2 — #86: `accept --batch <file>`
 - Selection file: enumerated (repository, decision, version hash) rows, pinned by a manifest digest exactly as `--set|--group --confirm` is. Signs exactly that list; refuses on drift (any version hash moved, any row missing).
 - [D9] `--as <role>` applies to the whole batch. The grant is resolved per row, shown per row in the manifest, and covered by the manifest digest. A row with no qualifying grant in that role refuses the batch.
 - One confirmation per batch, one signature per acceptance. The holder confirms the manifest digest once; the CLI then produces one sidecar per acceptance (D2). Under a `-sk` policy that is one touch per acceptance. No signature over the manifest and no signature covering more than one acceptance: either would be a format change.

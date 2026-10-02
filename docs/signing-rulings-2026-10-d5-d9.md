@@ -1,6 +1,6 @@
-# Proposed rulings D5 to D9, and Session A's twelve questions, 2 October 2026
+# Rulings D5 to D9, and Session A's twelve questions, 2 October 2026
 
-Status: proposed, for the principal. Nothing here is ruled. Numbering continues `docs/signing-rulings-2026-10.md` (D1–D4); renumber if taken.
+Status: ruled by the principal, 2 October 2026. Every recommendation on this page was adopted. On D9: `--as` is required only when more than one grant qualifies; fewest-claims is enforced in the verb only; all parts land in Session B. `docs/signing-rulings-2026-10.md` holds the ruled positions and wins where the two differ.
 
 Sources: the project bundle, and the Session A session's answers about PR #80, with file paths and symbols as it reported them. The repository itself was not read for this page.
 
@@ -247,16 +247,4 @@ Each has a default, the one built. "(a)" is always "as built". The recommendatio
 
 ## What the Session B prompt assumes
 
-The amended `product-cli-v2-sessions.md` marks the dependent bullets [D5] to [D9], [Q7] and [Q8] and tells the session to skip them unless `docs/signing-rulings-2026-10.md` records the rulings. If you rule otherwise:
-
-- D5 (a) as A: remove the `A006` bullet in step 1; add a server-side role check to the R1.5 scope instead.
-- D5 (c) as A: remove the pre-policy bullet in step 1, and rule separately what happens to existing acceptances when a namespace opts in.
-- D6 as A: remove both [D6] bullets in step 1 and the [D6] clause in step 3.
-- D6 as B: replace the landing rule in the first [D6] bullet with the commit-date bound; the landing function and the export-limit bullet stay.
-- D7 as A or C: the [D7] bullet stands as written; only the tests' allowed signers change.
-- D8 as B: remove the [D8] bullet; the policy-change bullet then signs without a time.
-- D9 as A: remove every [D9] bullet; `A006` goes back to searching for any grant that passes.
-- D9 (b) with `--as` always required: the [D9] bullet in step 1 drops "with one candidate"; nothing else changes.
-- Question 7 as built: remove the [Q7] bullet in step 0.
-- Question 8 not ruled write-once: remove the [Q8] bullet in step 1.
-- Question 9 as built: take `grant accept` out of step 0's list.
+The rulings match what the prompt assumes. No bullet marked [D5] to [D9], [Q7] or [Q8] is to be skipped.

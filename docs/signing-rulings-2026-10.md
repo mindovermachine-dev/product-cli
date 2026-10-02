@@ -57,7 +57,7 @@ The PRD's registry seam can hold all three. The decision is whether `openpgp` an
 
 ## D5 to D9 (ruled 2026-10-02)
 
-The positions, reasons and the walk through Session A's twelve questions are in `docs/signing-rulings-2026-10-d5-d9.md`. That page was written as a proposal; these notes record what was ruled.
+The positions, reasons and the walk through Session A's twelve questions are in `docs/signing-rulings-2026-10-d5-d9.md`. That page holds the positions and reasons; these notes record what was ruled, and win where the two differ.
 
 **D5. Is the role checked at verify, or only in the verb?**
 
