@@ -1,0 +1,165 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ledger: <urn:ledger:ns#> .
+@prefix lsh:    <urn:ledger:shapes#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+# SHACL shapes for the authority projection (DRAFT)
+#
+# These verify what an emitter produced, so a second implementation
+# can be checked without reading its code. The per-file gate stays
+# authoritative for what may be written. Structural shapes are
+# plain node shapes; the temporal classes (A003, A005, A006) are
+# SPARQL-based constraints and are named by their gate code.
+#
+# Amended 2026-10-02 (ruling 3): no node gains triples after it is
+# created. Revocation is its own ledger:Revocation (ledger:revokes)
+# for a Grant as for an Acceptance, and the holder ending an
+# unavailability is its own ledger:Availability (ledger:ends).
+# "Revoked" is now "some Revocation revokes it".
+#################################################################
+
+lsh:RoleShape a sh:NodeShape ;
+    sh:targetClass ledger:Role ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type prov:generatedAtTime prov:wasAttributedTo ) ;
+    sh:property [ sh:path ledger:title ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:owner ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:note ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:may ; sh:datatype xsd:string ; sh:minCount 1 ;
+        sh:in ( "accept-decision" "sign-off-pattern" "waive-invalidation" "grant-role"
+                "revoke-grant" "declare-unavailability" "rotate-genesis" ) ] .
+
+lsh:GrantShape a sh:NodeShape ;
+    sh:targetClass ledger:Grant ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type prov:generatedAtTime prov:wasAttributedTo prov:wasGeneratedBy ) ;
+    sh:property [ sh:path ledger:id ; sh:datatype xsd:string ; sh:pattern "^grant:[0-9A-HJKMNP-TV-Z]{26}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:hash ; sh:datatype xsd:string ; sh:pattern "^sha256:[0-9a-f]{64}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:role ; sh:class ledger:Role ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:scope ; sh:datatype xsd:string ;
+        sh:pattern "^(\\*|ns:[^\\s]+|set:[a-z0-9-]+|pattern:[^\\s]+)$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:holder ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:grantedBy ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:order ; sh:datatype xsd:string ; sh:pattern "^(primary|fallback-[1-9][0-9]*)$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:rank ; sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:limit ; sh:datatype xsd:string ;
+        sh:in ( "no-grants" "no-grant-revocations" "no-genesis" "no-role-edits" ) ] ;
+    sh:property [ sh:path ledger:genesis ; sh:datatype xsd:string ; sh:in ( "true" ) ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:externalRef ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:supersedesGrant ; sh:class ledger:Grant ; sh:maxCount 1 ] ;
+    # primary grants carry no limits
+    sh:sparql [ sh:message "A primary grant must not carry limits." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#order> "primary" ; <urn:ledger:ns#limit> ?l }""" ] ;
+    # genesis: self-granted, scope *, primary, carries external ref
+    sh:sparql [ sh:message "A genesis grant must be self-granted, scope *, order primary, with an external ref." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#genesis> "true" .
+            FILTER NOT EXISTS { $this <urn:ledger:ns#holder> ?h ; <urn:ledger:ns#grantedBy> ?h ;
+                                      <urn:ledger:ns#scope> "*" ; <urn:ledger:ns#order> "primary" ;
+                                      <urn:ledger:ns#externalRef> ?x } }""" ] ;
+    # external ref only on genesis
+    sh:sparql [ sh:message "externalRef is permitted on the genesis grant only." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#externalRef> ?x .
+            FILTER NOT EXISTS { $this <urn:ledger:ns#genesis> "true" } }""" ] ;
+    # rank agrees with order
+    sh:sparql [ sh:message "rank must be derived from order (primary=0, fallback-N=N)." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#order> ?o ; <urn:ledger:ns#rank> ?r .
+            BIND( IF(?o = "primary", 0, xsd:integer(STRAFTER(?o, "fallback-"))) AS ?expected )
+            FILTER (?r != ?expected) }""" ] .
+
+lsh:GrantAcceptanceShape a sh:NodeShape ;
+    sh:targetClass ledger:GrantAcceptance ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type prov:generatedAtTime prov:wasAttributedTo prov:wasGeneratedBy ) ;
+    sh:property [ sh:path ledger:id ; sh:datatype xsd:string ; sh:pattern "^gacc:[0-9A-HJKMNP-TV-Z]{26}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:grant ; sh:class ledger:Grant ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:signsHash ; sh:datatype xsd:string ; sh:pattern "^sha256:[0-9a-f]{64}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:generatedAtTime ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    # actor is the holder, and the hash is the grant's hash
+    sh:sparql [ sh:message "A grant acceptance must be by the grant's holder and sign the grant's hash." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#grant> ?g ; <http://www.w3.org/ns/prov#wasAttributedTo> ?a ; <urn:ledger:ns#signsHash> ?h .
+            FILTER NOT EXISTS { ?g <urn:ledger:ns#holder> ?a ; <urn:ledger:ns#hash> ?h } }""" ] .
+
+lsh:UnavailabilityShape a sh:NodeShape ;
+    sh:targetClass ledger:Unavailability ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type prov:generatedAtTime prov:wasAttributedTo prov:wasGeneratedBy ) ;
+    sh:property [ sh:path ledger:id ; sh:datatype xsd:string ; sh:pattern "^unav:[0-9A-HJKMNP-TV-Z]{26}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:grant ; sh:class ledger:Grant ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:from ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:until ; sh:datatype xsd:dateTime ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:basis ; sh:datatype xsd:string ; sh:in ( "self" "grantor" "fallback-of-genesis" ) ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:reason ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:sparql [ sh:message "until must be after from." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#from> ?f ; <urn:ledger:ns#until> ?u . FILTER (?u <= ?f) }""" ] ;
+    sh:sparql [ sh:message "basis self: declared by the holder." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#basis> "self" ; <urn:ledger:ns#grant> ?g ; <http://www.w3.org/ns/prov#wasAttributedTo> ?d .
+            FILTER NOT EXISTS { ?g <urn:ledger:ns#holder> ?d } }""" ] ;
+    sh:sparql [ sh:message "basis fallback-of-genesis: only against the genesis grant, only by its first fallback." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#basis> "fallback-of-genesis" ; <urn:ledger:ns#grant> ?g ; <http://www.w3.org/ns/prov#wasAttributedTo> ?d .
+            FILTER NOT EXISTS { ?g <urn:ledger:ns#genesis> "true" .
+                ?fb <urn:ledger:ns#role> ?r ; <urn:ledger:ns#scope> "*" ; <urn:ledger:ns#order> "fallback-1" ; <urn:ledger:ns#holder> ?d .
+                ?g <urn:ledger:ns#role> ?r } }""" ] .
+
+lsh:AvailabilityShape a sh:NodeShape ;
+    sh:targetClass ledger:Availability ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type prov:generatedAtTime prov:wasAttributedTo prov:wasGeneratedBy ) ;
+    sh:property [ sh:path ledger:id ; sh:datatype xsd:string ; sh:pattern "^avail:[0-9A-HJKMNP-TV-Z]{26}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:ends ; sh:class ledger:Unavailability ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:availableAt ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:generatedAtTime ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:sparql [ sh:message "Availability may be filed only by the holder of the unavailable grant." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#ends> ?u ; <http://www.w3.org/ns/prov#wasAttributedTo> ?a .
+            FILTER NOT EXISTS { ?u <urn:ledger:ns#grant> ?g . ?g <urn:ledger:ns#holder> ?a } }""" ] ;
+    sh:sparql [ sh:message "An unavailability is ended at most once." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#ends> ?u . ?other <urn:ledger:ns#ends> ?u . FILTER (?other != $this) }""" ] ;
+    sh:sparql [ sh:message "availableAt must fall after the interval's from." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#ends> ?u ; <urn:ledger:ns#availableAt> ?t . ?u <urn:ledger:ns#from> ?f . FILTER (?t <= ?f) }""" ] .
+
+lsh:RevocationShape a sh:NodeShape ;
+    sh:targetClass ledger:Revocation ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type prov:generatedAtTime prov:wasAttributedTo prov:wasGeneratedBy ) ;
+    sh:property [ sh:path ledger:id ; sh:datatype xsd:string ; sh:pattern "^rev:[0-9A-HJKMNP-TV-Z]{26}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:hash ; sh:datatype xsd:string ; sh:pattern "^sha256:[0-9a-f]{64}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:revokes ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:or ( [ sh:class ledger:Grant ] [ sh:class ledger:Acceptance ] ) ] ;
+    sh:property [ sh:path ledger:revocationReason ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:generatedAtTime ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    # The signature itself (sidecar or inline field, and when it is required)
+    # waits on the I4 ruling, #65; the hash above is what it will sign.
+    sh:sparql [ sh:message "A grant or acceptance is revoked at most once." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#revokes> ?t . ?other <urn:ledger:ns#revokes> ?t . FILTER (?other != $this) }""" ] .
+
+# --- Gate classes that live in the graph stage ---------------------------
+
+lsh:A003 a sh:NodeShape ;
+    sh:targetClass ledger:Grant ;
+    sh:sparql [ sh:message "A003: two unrevoked, unsuperseded grants share role, scope and order." ;
+        sh:select """SELECT $this WHERE {
+            $this <urn:ledger:ns#role> ?r ; <urn:ledger:ns#scope> ?s ; <urn:ledger:ns#order> ?o .
+            ?other <urn:ledger:ns#role> ?r ; <urn:ledger:ns#scope> ?s ; <urn:ledger:ns#order> ?o .
+            FILTER (?other != $this)
+            FILTER NOT EXISTS { ?x <urn:ledger:ns#revokes> $this }
+            FILTER NOT EXISTS { ?y <urn:ledger:ns#revokes> ?other }
+            FILTER NOT EXISTS { ?n <urn:ledger:ns#supersedesGrant> $this }
+            FILTER NOT EXISTS { ?m <urn:ledger:ns#supersedesGrant> ?other }
+            FILTER EXISTS { ?ga <urn:ledger:ns#grant> $this } FILTER EXISTS { ?gb <urn:ledger:ns#grant> ?other } }""" ] .
+
+lsh:A005 a sh:NodeShape ;
+    sh:targetClass ledger:Grant ;
+    sh:sparql [ sh:message "A005: more than one live genesis grant." ;
+        sh:select """SELECT $this WHERE {
+            $this <urn:ledger:ns#genesis> "true" . ?other <urn:ledger:ns#genesis> "true" . FILTER (?other != $this)
+            FILTER NOT EXISTS { ?n <urn:ledger:ns#supersedesGrant> $this }
+            FILTER NOT EXISTS { ?m <urn:ledger:ns#supersedesGrant> ?other } }""" ] .
+
+# A006 (orphaned acceptance) needs the gate policy mapping decision class -> role,
+# which is a separate amendment. Its shape is deferred until that vocabulary exists.
