@@ -104,6 +104,8 @@ transition (tracked in #76).
 
 None of these stopped a step. Each is a judgement made so the work could
 land. Each has a default (the one built) and alternatives for a ruling.
+All twelve were ruled on 2 October 2026; each ruling is recorded under its
+question (`docs/signing-rulings-2026-10.md`, "D5 to D9").
 
 1. **The selection dry run stays scriptable.** `accept --set/--group`
    without `--confirm` writes nothing and is not TTY-gated; the `--confirm`
@@ -111,6 +113,7 @@ land. Each has a default (the one built) and alternatives for a ruling.
    (a) as built;
    (b) gate the dry run too. The literal reading of "both forms", but it
    only blocks reading.
+   **Ruled 2026-10-02:** (a).
 2. **A namespace without a policy is not role-checked.** Without this,
    every existing acceptance flow in this repository (91 acceptances, no
    grants) would refuse.
@@ -118,53 +121,72 @@ land. Each has a default (the one built) and alternatives for a ruling.
    (b) refuse `accept` outright in an ungoverned namespace, forcing
    migration;
    (c) a store-level switch.
+   **Ruled 2026-10-02:** (a), refined now by D5 (c): the position rule replaces the namespace switch (lands in #70). (b) becomes an issue after Session B.
 3. **Genesis is per store, not per namespace.** It follows from scope `*`
    and `A005`. A second `init --namespace` files a policy only, as the
    genesis holder.
    (a) as built;
    (b) a genesis per namespace, with `A005` scoped by namespace.
+   **Ruled 2026-10-02:** (a).
 4. **Namespace scopes match exactly.** `ns:hafeok` does not cover
    `hafeok.ledger`.
    (a) as built, the conservative choice;
    (b) a segment-prefix hierarchy.
+   **Ruled 2026-10-02:** (a). A hierarchy, if ever wanted, is a new scope form.
 5. **Escalation guard.** Below the genesis, a grantor may grant only the
    role it acts under. Without the guard, `grant-role` could hand out
    `rotate-genesis`.
    (a) as built;
    (b) no guard;
    (c) per-role "may grant" lists, which would be a vocabulary change.
+   **Ruled 2026-10-02:** (a), compared on the grant the act names (D9).
 6. **Who changes policy.** No capability in the closed vocabulary names
    it. Built: the live, available genesis holder.
    (a) as built;
    (b) add a capability (`set-policy`), which is a vocabulary change;
    (c) reuse `grant-role` over `*`.
+   **Ruled 2026-10-02:** (a).
 7. **Fallback semantics.** A fallback acts only while no live, available
    grant of the same role and scope at a lower rank exists.
    (a) as built;
    (b) fallbacks act concurrently, with order used only for the `A003`
    uniqueness check.
+   **Ruled 2026-10-02:** (a), by covering scope within one role, per D9 (e).
 8. **Roles are write-once.** `role declare` needs `grant-role` over `*`,
    and the `no-role-edits` limit withholds declaring. Editing a role (a new
    version of a role file) is not modelled.
+   **Ruled 2026-10-02:** Write-once, held by `verify`.
 9. **Grant acceptance does not require a TTY.** #71 names only `accept`
    and `revoke`; `grant revoke` was gated too.
+   **Ruled 2026-10-02:** Gate it (Session B step 0).
 10. **The legacy revocation node.** It is emitted at
     `<urn:rev:legacy-<acc-ulid>>` with its computed hash and **no
     `ledger:id`**, so it fails `RevocationShape`'s `ledger:id minCount 1`.
     (a) as built: honest about the missing id;
     (b) synthesise an id;
     (c) relax the shape for legacy revocations.
+    **Ruled 2026-10-02:** (a).
 11. **The `no-genesis` limit withholds nothing yet.** No act rotates the
     genesis (`rotate-genesis` is unbuilt).
+    **Ruled 2026-10-02:** No ruling; an issue for `rotate-genesis`.
 12. **Merge driver for role files.** A both-sides role file is reported
     under the `divergent-floor` conflict class. The merge conflict classes
     are closed, so a new class is a ruling.
+    **Ruled 2026-10-02:** No new class.
 
 **Found in passing, out of scope.** The loader never enforces spec §3.7's
 "a lower-format file carrying `revisit_if` is a schema fault". This
-repository's own store has `revisit_if` in `format: 3` files
-(e.g. `.decisions/log/01KZX70EMPA47TBR0PFKX4M32Z.yml`). Adding the check
-would fail this repository's gate, so it needs a migration decision first.
+repository's own store has `revisit_if` in four `format: 1` change-sets,
+each holding one version (this paragraph first said `format: 3`, which was
+wrong):
+
+- `.decisions/log/01KZX70EMPA47TBR0PFKX4M32Z.yml`
+- `.decisions/log/01KZX70EQGQCB1B190TS9FZ1A2.yml`
+- `.decisions/log/01KZX70ET1GMR2012XKEP5EWDW.yml`
+- `.decisions/log/01KZX70S86QGXVCA5GW5WSY6XA.yml`
+
+Adding the check would fail this repository's gate, so it needs a
+migration decision first.
 
 ## 4. Session B TODOs deferred here
 
@@ -229,3 +251,41 @@ An injected predicate would have put a seam into the core that only tests
 use. The binary's own check would then go untested, and a seam is the shape
 an override grows from. The cost is a test-time dependency on `script(1)`,
 which `ubuntu-latest` ships.
+
+## 6. Upstream list: `hafeok/decision-driven-analyzers`
+
+For the analyzers' reader contract. Nothing has been filed upstream.
+
+**Classes that can appear in `ledger export --format ntriples` output and
+could not before #80** (`ledger-core/src/graph/authority.rs`):
+`ledger:Role`, `ledger:Grant`, `ledger:GrantAcceptance`,
+`ledger:Unavailability`, `ledger:Availability`, `ledger:Revocation`,
+`ledger:KeyBinding`, `ledger:NamespacePolicy`. The export keeps the
+records that reach the exported namespace (`restrict`,
+`ledger-core/src/graph/export.rs`), `KeyBinding` and `NamespacePolicy`
+nodes included.
+
+**Predicates new since before #80:**
+- versions (`ledger-core/src/graph/turtle.rs`): `ledger:key`, `ledger:exported`;
+- roles: `ledger:may`;
+- grants: `ledger:role`, `ledger:holder`, `ledger:grantedBy`, `ledger:order`,
+  `ledger:rank`, `ledger:limit`, `ledger:genesis`, `ledger:externalRef`,
+  `ledger:supersedesGrant`;
+- grant acceptances: `ledger:grant`, `ledger:signsHash`;
+- unavailability and availability: `ledger:from`, `ledger:until`,
+  `ledger:basis`, `ledger:reason`, `ledger:ends`, `ledger:availableAt`;
+- revocations: `ledger:revokes`;
+- key bindings: `ledger:bindingAct`, `ledger:principal`, `ledger:keyType`,
+  `ledger:publicKey`, `ledger:closes`, `ledger:selfBound`, `ledger:mandate`;
+- namespace policy: `ledger:requiresScheme`, `ledger:requiresSecurityKey`,
+  `ledger:acceptRole`, `ledger:reacceptWithinDays`, `ledger:replacesPolicy`.
+
+**Four points for the reader:**
+1. Predicates such as `ledger:id`, `ledger:hash`, `ledger:scope` and
+   `ledger:namespace` now occur on non-decision nodes, so the reader must
+   dispatch on `rdf:type`.
+2. `ledger:revokes` can target a grant as well as an acceptance.
+3. `ledger:revokedAt` and `ledger:revokedBy` no longer appear on
+   acceptances.
+4. Legacy revocation nodes (`<urn:rev:legacy-<acc-ulid>>`) carry no
+   `ledger:id`.
