@@ -9,7 +9,6 @@ mod common;
 use std::path::Path;
 use std::process::Output;
 
-use assert_cmd::Command;
 
 const TODAY: &str = "2026-08-10";
 
