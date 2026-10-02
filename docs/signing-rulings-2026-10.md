@@ -2,6 +2,8 @@
 
 For a ruling on issue I4. On the left are the five rulings recorded in `docs/decision-ledger-prd.md` §4.5 and milestone L6 (principal: Emil, 2026-08-11; no code was written for them). On the right is `docs/ledger-cli-prd.md` §4 and §7, **as amended 2026-10-01**. The last section covers `L001`, which the import story depends on.
 
+> D5 to D9 were ruled the same day; see "D5 to D9 (ruled 2026-10-02)" below.
+>
 > **All ruled 2026-10-02 on #65** (now closed): namespace policy (D1); a sidecar with the inline field retired (D2); `L011`/`L012` kept, new classes from `L013` (D3); `ssh`, then `dsse` verification, `none` for pre-v2 stores only, `webauthn` later (D4); the trust root as a governed projection; `L012` as a review trigger with an optional deadline set by policy. The ruling text is in `docs/ledger-cli-prd.md` §0, items 7–12. The comparison below is the record the rulings were made on.
 
 ## Already ruled (2026-10-01), shown for reference
@@ -52,6 +54,32 @@ Each new class is a format-spec amendment by the `L010` mechanism, and the close
 | "Formats are git's own — `gpg.format`: `openpgp` \| `ssh` \| `x509`." X.509 is "the bridge to the org product, where Entra-issued certificates make dev-side and org-side identity one mechanism". | It ships `ssh`, plus `none` (for import only). Other schemes are "verifiers registered by name". CA integration is a non-goal. |
 
 The PRD's registry seam can hold all three. The decision is whether `openpgp` and `x509` are in the open-source CLI's v2 or are seams only. The PRD's §9 non-goal ("CA integration… Seams only") puts X.509 outside the v2 scope that ruling 2 included.
+
+## D5 to D9 (ruled 2026-10-02)
+
+The positions, reasons and the walk through Session A's twelve questions are in `docs/signing-rulings-2026-10-d5-d9.md`. That page holds the positions and reasons; these notes record what was ruled, and win where the two differ.
+
+**D5. Is the role checked at verify, or only in the verb?**
+
+> **Ruled 2026-10-02: B, all three parts.** (a) `verify` evaluates the role as of the act (`A006`); (c) the position rule replaces the namespace switch — both land in #70. (b) signed grants and grant acceptances is its own issue.
+
+**D6. What orders an act against a key close or a grant revocation?**
+
+> **Ruled 2026-10-02: C**, landing order on the first-parent history and `at`. This supersedes D3's (and PRD §0 item 12's) "dated before the close": an act is before a close only if it is dated and landed before it.
+
+**D7. What authenticates a principal's first key?**
+
+> **Ruled 2026-10-02: B.** The genesis holder vouches for a principal's first key. `rotate` and `revoke` stay as landed.
+
+**D8. `at` in the policy payload.**
+
+> **Ruled 2026-10-02: A.** The policy payload gains `at`, added to #70's format list.
+
+**D9. Every act names the grant it is made under.**
+
+> **Ruled 2026-10-02: B, all parts, all in Session B.** `--as` is required only when more than one grant qualifies. Fewest-claims is enforced in the verb only. `under` in the payloads supersedes ruling 4's closed lists (PRD §0 item 4).
+
+**Session A close-out §3** (`docs/sessions/2026-10-session-a.md`): 1 (a). 2 (a) with D5 (c) now, and (b) as an issue after Session B. 3 (a). 4 (a); a hierarchy, if ever, is a new scope form. 5 (a), on the grant the act names. 6 (a). 7 (a), by covering scope within one role, per D9 (e). 8 write-once, held by `verify`. 9 gate it. 10 (a). 11 no ruling; an issue for `rotate-genesis`. 12 no new class.
 
 ## Two further differences the side-by-side surfaces
 
