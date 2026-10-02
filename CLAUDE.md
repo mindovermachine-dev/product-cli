@@ -318,6 +318,12 @@ store (`.decisions/`), separate ontology.
   act changes the export: rerun `ledger export --format ntriples` (no
   `--namespace` writes every namespace) and commit the result.
   Allocated-awaiting-acceptance is *status*, not a failure.
+- **Signing verbs refuse a non-interactive caller** (#71). `accept <dec>`,
+  `accept … --confirm` and `revoke` exit non-zero and write nothing unless
+  stdin is a terminal — no flag, no environment override. The selection dry
+  run (`accept --set|--group` without `--confirm`) writes nothing and stays
+  scriptable. Integration tests drive signing verbs under a pseudo-terminal
+  via `script(1)` (util-linux): `ledger-cli/tests/common/mod.rs` `invoke`.
 - **Acceptance is the principal's, never an agent's.** Do not create
   `acceptances:` entries under any framing, including fixtures — fixture
   acceptances use `fixture-human@example` and live only under

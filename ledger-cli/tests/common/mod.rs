@@ -1,9 +1,11 @@
 //! A temporary git repository with a ledger store, driven through the binary.
 //!
-//! Shared by the integration suites that need a real repository. Verbs that
-//! refuse a non-interactive caller (`accept`, `revoke`) run under a
-//! pseudo-terminal through [`Repo::tty`], which is how a person runs them;
-//! everything else runs with plain pipes.
+//! Shared by the integration suites that need a real repository. A signing
+//! invocation — `accept` naming a decision or carrying `--confirm`, and
+//! `revoke` — refuses a non-interactive caller (#71), so [`invoke`] runs it
+//! under a pseudo-terminal, which is how a person runs it; everything else
+//! runs with plain pipes. [`Repo::piped`] forces pipes, for the refusal
+//! tests themselves.
 
 #![allow(dead_code)]
 
@@ -51,33 +53,20 @@ impl Repo {
         self.git(&["config", "user.email", email]);
     }
 
-    /// Run the binary with plain pipes: stdin is not a terminal.
+    /// Run the binary the way a person would: signing verbs at a terminal.
     pub fn ledger(&self, args: &[&str]) -> Output {
-        let mut cmd = Command::cargo_bin("ledger").expect("binary");
-        cmd.arg("--root").arg(self.path()).args(args);
-        cmd.output().expect("run")
+        invoke(self.path(), args)
     }
 
-    /// Run the binary under a pseudo-terminal (`script(1)` from
-    /// util-linux), so stdin is a TTY exactly as it is for a person at a
-    /// shell. Output arrives merged on stdout with CRLF line ends; they are
-    /// normalised to LF. The exit status is the binary's own.
+    /// Run the binary with plain pipes whatever the verb: stdin is not a
+    /// terminal, as for an agent or a CI script.
+    pub fn piped(&self, args: &[&str]) -> Output {
+        piped(self.path(), args)
+    }
+
+    /// Run the binary under a pseudo-terminal whatever the verb.
     pub fn tty(&self, args: &[&str]) -> Output {
-        let bin = assert_cmd::cargo::cargo_bin("ledger");
-        let mut line = shell_quote(&bin.to_string_lossy());
-        line.push_str(" --root ");
-        line.push_str(&shell_quote(&self.path().to_string_lossy()));
-        for a in args {
-            line.push(' ');
-            line.push_str(&shell_quote(a));
-        }
-        let out = std::process::Command::new("script")
-            .args(["-qefc", &line, "/dev/null"])
-            .stdin(std::process::Stdio::null())
-            .output()
-            .expect("script(1) from util-linux is required to drive a pseudo-terminal");
-        let text = String::from_utf8_lossy(&out.stdout).replace("\r\n", "\n");
-        Output { status: out.status, stdout: text.into_bytes(), stderr: out.stderr }
+        tty(self.path(), args)
     }
 
     /// Run a verb that must succeed, returning stdout.
@@ -90,11 +79,12 @@ impl Repo {
         expect_code(&self.tty(args), 0, args)
     }
 
-    /// Run a verb that must be refused (exit 1), returning stderr.
+    /// Run a verb that must be refused (exit 1), returning stdout and
+    /// stderr together (a terminal merges them anyway).
     pub fn refused(&self, args: &[&str]) -> String {
         let out = self.ledger(args);
         expect_code(&out, 1, args);
-        String::from_utf8_lossy(&out.stderr).into_owned()
+        both(&out)
     }
 
     /// Run a verb under a TTY that must be refused (exit 1), returning output.
@@ -126,6 +116,61 @@ impl Repo {
         let out = self.ok(&args);
         decision_id(&out)
     }
+}
+
+/// Whether an invocation signs (or unsays a signature), and so must run at
+/// a terminal: `accept <dec>`, `accept … --confirm`, `revoke`.
+pub fn signs(args: &[&str]) -> bool {
+    match args.first().copied() {
+        Some("revoke") => true,
+        Some("accept") => {
+            args.contains(&"--confirm") || args.iter().skip(1).any(|a| a.starts_with("dec:"))
+        }
+        _ => false,
+    }
+}
+
+/// Run the binary, under a pseudo-terminal when the invocation signs.
+pub fn invoke(root: &Path, args: &[&str]) -> Output {
+    if signs(args) {
+        tty(root, args)
+    } else {
+        piped(root, args)
+    }
+}
+
+/// Run the binary with plain pipes.
+pub fn piped(root: &Path, args: &[&str]) -> Output {
+    let mut cmd = Command::cargo_bin("ledger").expect("binary");
+    cmd.arg("--root").arg(root).args(args);
+    cmd.output().expect("run")
+}
+
+/// Run the binary under a pseudo-terminal (`script(1)` from util-linux), so
+/// stdin is a TTY exactly as it is for a person at a shell. Output arrives
+/// merged on stdout with CRLF line ends, normalised here to LF; the exit
+/// status is the binary's own (`-e`).
+pub fn tty(root: &Path, args: &[&str]) -> Output {
+    let bin = assert_cmd::cargo::cargo_bin("ledger");
+    let mut line = shell_quote(&bin.to_string_lossy());
+    line.push_str(" --root ");
+    line.push_str(&shell_quote(&root.to_string_lossy()));
+    for a in args {
+        line.push(' ');
+        line.push_str(&shell_quote(a));
+    }
+    let out = std::process::Command::new("script")
+        .args(["-qefc", &line, "/dev/null"])
+        .stdin(std::process::Stdio::null())
+        .output()
+        .expect("script(1) from util-linux is required to drive a pseudo-terminal");
+    let text = String::from_utf8_lossy(&out.stdout).replace("\r\n", "\n");
+    Output { status: out.status, stdout: text.into_bytes(), stderr: out.stderr }
+}
+
+/// Stdout then stderr, as one string.
+pub fn both(out: &Output) -> String {
+    format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr))
 }
 
 /// The `dec:` id an `add` printed.

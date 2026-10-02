@@ -8,6 +8,8 @@
 //! stops the run rather than being signed around; and nothing the batch
 //! accepts would have been refused as a single accept.
 
+mod common;
+
 use std::path::Path;
 use std::process::Output;
 
@@ -48,9 +50,8 @@ impl Repo {
     }
 
     fn ledger(&self, args: &[&str]) -> Output {
-        let mut cmd = Command::cargo_bin("ledger").expect("binary");
-        cmd.arg("--root").arg(self.path()).args(args);
-        cmd.output().expect("run")
+        // Signing verbs run at a terminal, as a person runs them (#71).
+        common::invoke(self.path(), args)
     }
 
     fn ok(&self, args: &[&str]) -> String {
@@ -87,7 +88,7 @@ impl Repo {
     fn unusable(&self, args: &[&str]) -> String {
         let out = self.ledger(args);
         assert_eq!(out.status.code(), Some(2), "ledger {args:?} should be unusable");
-        String::from_utf8_lossy(&out.stderr).into_owned()
+        common::both(&out)
     }
 
     /// Add a decision to the batched set; returns its id.

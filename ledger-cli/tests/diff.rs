@@ -1,6 +1,8 @@
 //! `ledger diff <ref>..<ref>` over a real repository: two commits, the
 //! change between them reported decision-level, never textually.
 
+mod common;
+
 use std::path::Path;
 use std::process::Output;
 
@@ -39,9 +41,8 @@ impl Repo {
     }
 
     fn ledger(&self, args: &[&str]) -> Output {
-        let mut cmd = Command::cargo_bin("ledger").expect("binary");
-        cmd.arg("--root").arg(self.path()).args(args);
-        cmd.output().expect("run")
+        // Signing verbs run at a terminal, as a person runs them (#71).
+        common::invoke(self.path(), args)
     }
 
     fn ok(&self, args: &[&str]) -> String {

@@ -4,6 +4,8 @@
 //! each with its refusal — the write rejected with the same finding class
 //! `verify` would report one command later.
 
+mod common;
+
 use std::path::Path;
 use std::process::Output;
 
@@ -46,9 +48,8 @@ impl Repo {
     }
 
     fn ledger(&self, args: &[&str]) -> Output {
-        let mut cmd = Command::cargo_bin("ledger").expect("binary");
-        cmd.arg("--root").arg(self.path()).args(args);
-        cmd.output().expect("run")
+        // Signing verbs run at a terminal, as a person runs them (#71).
+        common::invoke(self.path(), args)
     }
 
     /// Run a verb that must succeed, returning stdout.
@@ -64,7 +65,8 @@ impl Repo {
         String::from_utf8_lossy(&out.stdout).into_owned()
     }
 
-    /// Run a verb that must be refused (exit 1), returning stderr.
+    /// Run a verb that must be refused (exit 1), returning stdout and
+    /// stderr together: a signing verb runs at a terminal, which merges them.
     fn refused(&self, args: &[&str]) -> String {
         let out = self.ledger(args);
         assert_eq!(
@@ -74,7 +76,7 @@ impl Repo {
             String::from_utf8_lossy(&out.stdout),
             String::from_utf8_lossy(&out.stderr)
         );
-        String::from_utf8_lossy(&out.stderr).into_owned()
+        common::both(&out)
     }
 
     fn verify_green(&self) {
