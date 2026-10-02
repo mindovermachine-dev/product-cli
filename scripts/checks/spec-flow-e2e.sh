@@ -15,6 +15,10 @@ HOST="$ROOT/spec-flow/src/SpecFlow.Cli"
 
 step() { printf '\n── %s ──\n' "$1"; }
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
+# Run a command and print its first line. Never `cmd | head -1`: under
+# pipefail, head closing the pipe early makes the command's later writes
+# fail with EPIPE (spec panics, exit 101) — a timing-dependent failure.
+first_line() { local out; out=$("$@"); printf '%s\n' "${out%%$'\n'*}"; }
 
 command -v dotnet >/dev/null || { echo "dotnet not on PATH" >&2; exit 2; }
 [ -x "$SPEC" ] || { echo "build first: cargo build -p spec-cli" >&2; exit 2; }
@@ -42,10 +46,10 @@ step "check — every entry point is unreviewed"
 "$SPEC" --root "$WORK" check --ci && fail "drift must fail the gate"
 
 step "accept — a principal names the act"
-"$SPEC" --root "$WORK" accept cand/shop-api-basketcontroller-settle-httppost \
+first_line "$SPEC" --root "$WORK" accept cand/shop-api-basketcontroller-settle-httppost \
   --name "Settle a basket" \
   --settles "What the customer owes when the basket closes." \
-  --principal emil@example.com | head -1
+  --principal emil@example.com
 
 step "accept — a machine cannot"
 "$SPEC" --root "$WORK" accept cand/shop-api-basketcontroller-health-httpget \
@@ -53,9 +57,9 @@ step "accept — a machine cannot"
   && fail "a machine must not ratify"
 
 step "reject — a principal refuses the probe, with a reason"
-"$SPEC" --root "$WORK" reject cand/shop-api-basketcontroller-health-httpget \
+first_line "$SPEC" --root "$WORK" reject cand/shop-api-basketcontroller-health-httpget \
   --reason "A liveness probe settles nothing; it is infrastructure." \
-  --principal emil@example.com | head -1
+  --principal emil@example.com
 
 step "check — a reasoned refusal covers its entry point"
 "$SPEC" --root "$WORK" check --ci || fail "the store should be clean here"
@@ -94,15 +98,15 @@ KEYS="$(mktemp -d)"
 trap 'rm -rf "$KEYS"' EXIT
 
 step "trust list — signing is off"
-"$SPEC" --root "$WORK" trust list | head -1
+first_line "$SPEC" --root "$WORK" trust list
 
 step "a secret key inside the repo is refused"
 "$SPEC" --root "$WORK" trust generate --id inside --principal emil@example.com \
   --out "$WORK/secret.key" && fail "a key inside the repo must be refused"
 
 step "adopt signing"
-"$SPEC" --root "$WORK" trust generate --id emil-2026 --principal emil@example.com \
-  --out "$KEYS/emil-2026.key" | head -1
+first_line "$SPEC" --root "$WORK" trust generate --id emil-2026 --principal emil@example.com \
+  --out "$KEYS/emil-2026.key"
 
 step "check — the pre-adoption history is graced"
 "$SPEC" --root "$WORK" check --ci || fail "adopting signing must not invalidate the past"
