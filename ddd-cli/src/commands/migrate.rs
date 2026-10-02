@@ -88,6 +88,8 @@ fn file_entry(
             // `revisit_if` edges afterwards, as their own filed versions.
             revisit_if: Vec::new(),
             note: Some(entry.note.clone()),
+            key: None,
+            exported: false,
         })
         .map_err(|e| author_err(&e))?;
     applied

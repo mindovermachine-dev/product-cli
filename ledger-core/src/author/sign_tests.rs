@@ -28,6 +28,7 @@ fn accept_signs_the_tip_and_a_revision_returns_the_decision_to_awaiting() {
         revisit_if: None,
         note: None,
         expected_parent: None,
+        key: None,
     })
     .expect("revise");
     let text = report::status(&crate::store::load(dir.path()), testkit::date("2026-08-10"));
@@ -133,11 +134,12 @@ fn forked_store(dir: &Path) -> (Author, DecisionId) {
         revisit_if: None,
         note: None,
         expected_parent: None,
+        key: None,
     };
     a.revise(&id, args).expect("left revision");
     let store = crate::store::load(dir);
-    let versions = store.log.iter().flat_map(|c| &c.file.versions);
-    let left = versions.filter(|v| v.parent.is_some()).next_back().expect("the left revision");
+    let mut versions = store.log.iter().flat_map(|c| &c.file.versions);
+    let left = versions.rfind(|v| v.parent.is_some()).expect("the left revision");
     let mut right = left.clone();
     right.statement = "The right writer's revision.".into();
     right.hash = crate::hash::version_hash(&right);
@@ -160,6 +162,7 @@ fn a_forked_chain_refuses_revision_rather_than_burying_the_conflict() {
         revisit_if: None,
         note: None,
             expected_parent: None,
+            key: None,
         })
         .expect_err("revise on a fork");
     assert!(matches!(err, AuthorError::Conflict(_)), "{err}");

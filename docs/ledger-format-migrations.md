@@ -19,6 +19,59 @@ only adds an unhashed field.
 
 ---
 
+## Format 5 / Spec v1.6 — `key` and `exported`; `L013`, `L014`, `G006` (2026-10-02)
+
+A **`format` bump without a `CANONICAL_FORM` bump**, by the formats 2–4
+pattern: `format: 5` adds two optional version fields (#67, PRD
+`ledger-cli-prd.md` §4 as amended 2026-10-01, ruling 2).
+
+- **`key`** — the decision's stable human name, `^[A-Z][A-Za-z0-9]{0,63}$`,
+  what the analyzers' generator turns into a type name. A malformed key is
+  a `SCHEMA` fault at parse.
+- **`exported`** — citable from other namespaces. Hashed as the string
+  `"true"` when set; absent (and omitted from the canonical object) when
+  false, because hashed content is strings only.
+
+Both are hashed when present and omitted when absent (spec §4.2 step 3),
+so every version written before them canonicalises to byte-identical
+content: no digest moves, no acceptance is invalidated, the prefix stays
+`ledger.decision-version.v1`. **Proof:**
+`ledger-cli/tests/digests.rs` re-derives every stored digest in every
+fixture store and in this repository's own `.decisions/` log under the
+current canonical form and asserts none moved; `canon_tests.rs` adds both
+fields to the mutation table (each moves the hash when present) and pins
+that an absent key and `exported: false` canonicalise like an unwritten
+field.
+
+**Two file-gate classes, by the `L010` amendment mechanism** (ruling 2:
+the key rules belong to the import surface, never graph-only). `L011` and
+`L012` stay reserved for the signing classes (#65, ruling D3), so these
+take the next free numbers:
+
+| Code | Fails when |
+|---|---|
+| `L013` | a version's `key` differs from the key its `parent` or `merged_from` carries |
+| `L014` | two live decisions of one namespace carry the same `key` on their latest versions |
+
+The file gate's closed count moves from **ten to twelve** (`finding.rs`
+`there_are_exactly_twelve_semantic_classes_plus_the_parse_gate`; the CLI
+suite's `fails_only_with` list and the new `l013` / `l014` fixtures).
+`L014` gains a graph-stage SPARQL cross-check, **`G006`** — never its only
+home. The emitter writes `ledger:key` and `ledger:exported "true"`.
+
+**Migration note.** Nothing to migrate mechanically: existing stores are
+format 1–4 and stay valid, and a writer declares `format: 5` only on a
+change-set that carries a key or an export flag. **Giving an existing
+decision a key is a new version** (`ledger revise <id> --key <Key>`): the
+hash moves, so every acceptance of the keyless version becomes history and
+the keyed version **needs re-acceptance** — the same rule as any other
+edit to hashed content, deliberately not waived for a naming act. Once
+given, the key is carried by every later version (the authoring verbs copy
+it from the parent) and a rename is refused by `L013`. A superseded
+decision's key is free: the successor may carry it (`L014` counts live
+decisions only). Carrying the key automatically across `supersede` waits
+on one-act supersession (audit C9).
+
 ## Format 4 / Spec v1.5 — the `revisit_if` reopen edge (2026-08-13)
 
 A **`format` bump without a `CANONICAL_FORM` bump**, by the same
@@ -238,26 +291,19 @@ Recorded now so the shape of the change is not a surprise.
   further `format` bump with a migration path for entries that carry none
   (this entry originally said `format: 2`, a number since consumed by L3's
   `merged_from`). Hashing is unaffected: `expires_at` is not hashed.
-- **OD-3 — signatures. Scheduled 2026-08-11 as milestone L6 / spec v1.6 /
-  `format: 5`; unimplemented.** This entry originally read "populating
-  `signature` is a `format: 2`" — that number was consumed by L3's
-  `merged_from`, the renumbered `format: 3` slot in turn by M8's
-  `contract:` scheme, and `format: 4` by v1.5's `revisit_if` edge, so the
-  signing bump renumbers to `format: 5`;
-  nothing else about the plan changes. What the revision will occupy
-  (PRD §4.5):
-  `signature` goes live as a detached, certificate-based signature (git's
-  `gpg.format` trio — `openpgp` | `ssh` | `x509`) over a canonical
-  acceptance payload — decision id, version hash, actor, signing timestamp —
-  required only above the tolerance floor (T2 signed, T1 claimed identity as
-  today); the trust root (allowed signers) enters the store as governed
-  entries with an explicitly-named genesis entry; the file gate gains `L011`
-  (required signature absent or invalid as of its signing timestamp) and
-  `L012` (acceptances exist under a since-revoked key — a review trigger,
-  never retroactive invalidation), its closed count of **ten becoming
-  twelve** by the same amendment mechanism as `L010`. Hashing is unaffected:
-  the signature is *over* the hash, not inside it — no digest moves,
-  `CANONICAL_FORM` stays `v1`.
+- **OD-3 — signatures. Ruled 2026-10-02 on #65; Session B.** This entry
+  originally read "populating `signature` is a `format: 2`"; that number
+  and its successors were consumed by L3's `merged_from`, M8's `contract:`
+  scheme, v1.5's `revisit_if` and v1.6's keys (`format: 5`). The rulings
+  (`ledger-cli-prd.md` §0 items 7–12) replace the August plan: signing is
+  required by **namespace policy**, not tier; the signature lives in a
+  **sidecar** `.decisions/sig/<acc-ulid>.<scheme>.sig` and the inline
+  `signature` field is retired (required empty, permanently); schemes are
+  `ssh`, then `dsse` verification, `none` for pre-v2 stores only. `L011`
+  (a required signature absent or invalid) and `L012` (acceptances under a
+  since-closed key — a review trigger) **keep their reserved numbers**;
+  `L013`/`L014` (format 5) took the next free ones. Hashing is unaffected:
+  the signature is over a closed payload, never inside a version hash.
 - **§9.4 — upstreams manifest.** A new file schema, not a change to these
   two. Closing the `based_on` vocabulary at that point **is** a hashed-meaning
   change and would require a `CANONICAL_FORM` bump, so the closure should

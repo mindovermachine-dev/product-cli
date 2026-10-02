@@ -24,6 +24,7 @@ use crate::finding::{Finding, VerifyClass};
 use crate::hash::VersionHash;
 use crate::id::DecisionId;
 use crate::identity::Identity;
+use crate::key::DecisionKey;
 use crate::revisit::RevisitRef;
 use crate::tier::{Tier, Tolerance};
 
@@ -129,6 +130,22 @@ pub struct VersionRaw {
     pub revisit_if: Vec<RevisitRef>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub supersedes: Option<DecisionId>,
+    /// The decision's stable human name (format 5): what the analyzers'
+    /// generator turns into a type name. Immutable along the version chain
+    /// once given (`L013`), unique among a namespace's live decisions
+    /// (`L014`). Hashed when present; absent on every earlier version, so
+    /// no format-1–4 digest moves.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<DecisionKey>,
+    /// Citable from other namespaces (format 5). Hashed as the string
+    /// `"true"` when set and omitted when false — hashed content is strings
+    /// only, and an absent default must canonicalise like an unwritten one.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub exported: bool,
+}
+
+fn is_false(b: &bool) -> bool {
+    !*b
 }
 
 /// A version whose §4.4 obligations already hold.

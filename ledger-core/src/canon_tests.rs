@@ -197,6 +197,8 @@ fn identity_mutations() -> Vec<Mutation> {
         ("supersedes", edit(|v| v.supersedes = Some(testkit::decision_id()))),
         ("tolerance_floor_at_creation", edit(|v| v.tolerance_floor_at_creation = Tier::T0)),
         ("tolerance_override", edit(|v| v.tolerance_override = Some(Tier::T2))),
+        ("key", edit(|v| v.key = Some("MoneyIsDecimal".parse().expect("key")))),
+        ("exported", edit(|v| v.exported = true)),
     ]
 }
 
@@ -289,4 +291,20 @@ fn the_tolerance_inputs_are_hashed_rather_than_the_resolved_tier() {
     let mut native = base();
     native.tolerance_floor_at_creation = Tier::T2;
     assert_ne!(version_hash(&overridden), version_hash(&native));
+}
+
+/// Format 5 (spec v1.6): `key` and `exported` are hashed when present and
+/// omitted when absent, so a version written before them canonicalises to
+/// the same bytes — the pinned vector above is exactly such a version.
+#[test]
+fn key_and_exported_are_omitted_when_absent_and_exported_hashes_as_a_string() {
+    let json = canonical_json(&base());
+    assert!(!json.contains("\"key\"") && !json.contains("\"exported\""), "{json}");
+    let mut v = base();
+    v.exported = true;
+    assert!(canonical_json(&v).contains(r#""exported":"true""#), "a string, never a boolean");
+    let parsed: VersionRaw =
+        serde_yaml::from_str(&format!("{}exported: false\n", serde_yaml::to_string(&base()).expect("ser")))
+            .expect("parse");
+    assert_eq!(version_hash(&parsed), version_hash(&base()), "false is the absent default");
 }

@@ -202,10 +202,45 @@ fn a_withdrawn_supersession_claim_clears_g005() {
     assert_eq!(graph_findings(&store), Vec::new());
 }
 
+fn keyed_pair(supersede: bool) -> crate::store::Store {
+    let mut a = testkit::version();
+    a.key = Some("MoneyIsDecimal".parse().expect("key"));
+    let mut b = a.clone();
+    b.decision = "dec:hafeok.ledger/01K2C4YQJ3F8M0PT5W7NZ9RDY5".parse().expect("id");
+    b.statement = "the successor".into();
+    if supersede {
+        b.supersedes = Some(a.decision.clone());
+    }
+    testkit::store(testkit::changeset(vec![testkit::sealed(a), testkit::sealed(b)], Vec::new()))
+}
+
 #[test]
-fn the_graph_class_set_is_closed_at_five() {
-    assert_eq!(super::ALL_GRAPH_CLASSES.len(), 5);
+fn g006_two_live_decisions_sharing_a_key_cross_check_l014() {
+    let findings = graph_findings(&keyed_pair(false));
+    assert_eq!(findings.len(), 1, "{findings:?}");
+    assert_eq!(findings[0].class, GraphClass::G006);
+    assert!(findings[0].message.contains("MoneyIsDecimal"), "{findings:?}");
+    let ttl = emit(&keyed_pair(false));
+    assert!(ttl.contains("ledger:key \"MoneyIsDecimal\""), "{ttl}");
+}
+
+#[test]
+fn g006_a_superseded_decision_hands_its_key_on() {
+    assert_eq!(graph_findings(&keyed_pair(true)), Vec::new());
+}
+
+#[test]
+fn an_exported_version_emits_the_string_true() {
+    let mut raw = testkit::version();
+    raw.exported = true;
+    let store = testkit::store(testkit::changeset(vec![testkit::sealed(raw)], Vec::new()));
+    assert!(emit(&store).contains("ledger:exported \"true\""));
+}
+
+#[test]
+fn the_graph_class_set_is_closed() {
+    assert_eq!(super::ALL_GRAPH_CLASSES.len(), 6);
     let codes: Vec<&str> = super::ALL_GRAPH_CLASSES.iter().map(|c| c.code()).collect();
-    assert_eq!(codes, ["G001", "G002", "G003", "G004", "G005"]);
+    assert_eq!(codes, ["G001", "G002", "G003", "G004", "G005", "G006"]);
     assert!(super::ALL_GRAPH_CLASSES.iter().all(|c| !c.title().is_empty()));
 }

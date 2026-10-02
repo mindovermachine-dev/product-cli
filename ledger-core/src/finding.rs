@@ -1,9 +1,12 @@
 //! The closed set of reasons `ledger verify` fails.
 //!
 //! This enum *is* the file gate's contract. The gate fails for a schema
-//! fault or one of ten semantic classes, and for nothing else — an eleventh
+//! fault or one of twelve semantic classes, and for nothing else — a new
 //! reason is a change to the format specification, not an implementation
-//! detail (`L010` arrived exactly that way, as the spec v1.1 amendment).
+//! detail (`L010` arrived exactly that way, as the spec v1.1 amendment, and
+//! `L013`/`L014` the same way at spec v1.6). `L011` and `L012` are reserved
+//! for the signing classes (#65, ruling D3) and are not yet variants: a
+//! reserved number is not a rule the gate can run.
 //! Adding a variant here without a row in `docs/ledger-format-v1.md` is
 //! caught by the `every_class_is_specified` test.
 //!
@@ -52,6 +55,13 @@ pub enum VerifyClass {
     /// A judgment whose named actor resolves to a model or CI identity
     /// (spec v1.1 — the judgment-actor gap L0 left open).
     L010,
+    /// A version whose `key` differs from the key its `parent` or
+    /// `merged_from` carries (spec v1.6): a key, once given, is immutable
+    /// along the decision's chain.
+    L013,
+    /// Two live decisions of one namespace whose latest versions carry the
+    /// same `key` (spec v1.6): a generated type name names one decision.
+    L014,
 }
 
 /// Every class, in report order. The list the format document mirrors.
@@ -67,6 +77,8 @@ pub const ALL_CLASSES: &[VerifyClass] = &[
     VerifyClass::L008,
     VerifyClass::L009,
     VerifyClass::L010,
+    VerifyClass::L013,
+    VerifyClass::L014,
 ];
 
 impl VerifyClass {
@@ -84,6 +96,8 @@ impl VerifyClass {
             Self::L008 => "L008",
             Self::L009 => "L009",
             Self::L010 => "L010",
+            Self::L013 => "L013",
+            Self::L014 => "L014",
         }
     }
 
@@ -101,6 +115,8 @@ impl VerifyClass {
             Self::L008 => "acceptance signs a hash matching no stored version",
             Self::L009 => "acceptance actor is not the author of its introducing commit",
             Self::L010 => "judgment actor resolves to a model or CI identity",
+            Self::L013 => "key differs from the key its parent version carries",
+            Self::L014 => "two live decisions of one namespace share a key",
         }
     }
 
@@ -185,13 +201,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn there_are_exactly_ten_semantic_classes_plus_the_parse_gate() {
-        // The gate fails for these reasons and no others. An eleventh class
-        // is a format-specification change — L010 itself shipped as the spec
-        // v1.1 amendment, moving this count from nine to ten.
-        assert_eq!(ALL_CLASSES.len(), 11);
+    fn there_are_exactly_twelve_semantic_classes_plus_the_parse_gate() {
+        // The gate fails for these reasons and no others. A new class is a
+        // format-specification change — L010 shipped as the spec v1.1
+        // amendment (nine to ten), L013 and L014 as spec v1.6 (ten to
+        // twelve). L011/L012 stay reserved for signing and are not counted.
+        assert_eq!(ALL_CLASSES.len(), 13);
         let semantic = ALL_CLASSES.iter().filter(|c| **c != VerifyClass::Schema).count();
-        assert_eq!(semantic, 10);
+        assert_eq!(semantic, 12);
+        let codes: Vec<&str> = ALL_CLASSES.iter().map(|c| c.code()).collect();
+        assert!(!codes.contains(&"L011") && !codes.contains(&"L012"), "reserved for signing");
     }
 
     #[test]

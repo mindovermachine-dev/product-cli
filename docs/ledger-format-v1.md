@@ -1,12 +1,20 @@
 # Decision Ledger — Entry Format v1
 
-**Status:** normative for `format: 1` through `format: 4`.
-Specification revision **v1.5** (2026-08-13): introduces `format: 4`,
+**Status:** normative for `format: 1` through `format: 5`.
+Specification revision **v1.6** (2026-10-02): introduces `format: 5`,
+which adds two optional version fields, `key` and `exported` (§3.8), and
+two file-gate classes, `L013` (key immutability) and `L014` (key
+uniqueness among live decisions), by the `L010` amendment mechanism —
+the file gate's closed count moves from ten to twelve, with `L011`/`L012`
+reserved for signing. Both fields are hashed when present and omitted when
+absent, so **every existing digest is unchanged** and `CANONICAL_FORM`
+does not bump. Revision
+**v1.5** (2026-08-13): introduces `format: 4`,
 which adds one optional version field, `revisit_if` — the reopen edge,
 ruled by the principal a **distinct edge type and never a basis** (§3.7).
 The field is hashed when present and omitted when absent, so **every
 existing digest is unchanged** and `CANONICAL_FORM` does not bump; the
-file gate's ten classes are unchanged. Revision
+file gate's ten classes were unchanged. Revision
 **v1.4** (2026-08-12, ddd M8): introduces
 `format: 3`, which adds one discharge scheme, `contract:` — the
 repository-diff contract check as a discharge kind (§3.4). No field
@@ -20,8 +28,8 @@ the graph stage gains `G005` (competing supersession). Revision **v1.2**
 (2026-08-11) defined "latest" as derived from the version parent DAG
 rather than file or ULID order (§5.2) and added `G004`, the forked-chain
 shape (§8). Revision v1.1 (2026-08-10) added gate class `L010`. The file
-gate's ten classes are unchanged by all four revisions — see
-`ledger-format-migrations.md`.
+gate's ten classes were unchanged by those four revisions; v1.6 is the
+first since v1.1 to add classes — see `ledger-format-migrations.md`.
 **Scope:** L0 of `decision-ledger-prd.md` — the file format, the canonical
 form, the version hash, and the `verify` gate. No graph, no index, no merge,
 no coverage query, no federation. (The L2 graph stage reports through the
@@ -80,7 +88,7 @@ is therefore a governed act, not a fix.
 
 ## 3. Schemas
 
-Every file declares `format: 1`.
+Every file declares its `format` (1 unless it uses a later field — §§3.6–3.8).
 
 ### 3.1 Identifiers
 
@@ -249,6 +257,8 @@ versions:
     based_on: [prd:decision-ledger-prd#4.2.1]
     revisit_if: [claim:DDD-adapter-02@sha256:…]   # format 4 only; not ground
     supersedes: dec:…                   # optional; no command at L0
+    key: MoneyIsDecimal                 # format 5 only; §3.8
+    exported: true                      # format 5 only; absent means false
 
 acceptances:
   - id: acc:01K2C5…
@@ -366,6 +376,41 @@ Rules:
   discharge scheme and every basis pointer already has. An eleventh class
   would be a further format-spec change, by the `L010` mechanism.
 
+### 3.8 The decision key and the export flag (format 5)
+
+Spec v1.6 (2026-10-02; `ledger-cli-prd.md` §4 as amended 2026-10-01,
+ruling 2). Two optional version fields:
+
+- **`key`** — the decision's stable human name, the string the analyzers'
+  generator turns into a type name. It matches
+  `^[A-Z][A-Za-z0-9]{0,63}$`; anything else is a `SCHEMA` fault at parse.
+- **`exported`** — `true` makes the decision citable from other
+  namespaces. Absent means `false`; an explicit `false` reads as absent.
+
+Rules:
+
+- **Immutable once given** (`L013`). A version must carry the key its
+  `parent` carries, and the key its `merged_from` carries, whenever that
+  predecessor has one. Giving a keyless decision a key is legal — it is a
+  new version, so the hash moves and the version needs re-acceptance.
+- **Unique among live decisions per namespace** (`L014`). Take each
+  decision's latest version (§5.2); drop decisions some other decision's
+  latest version `supersedes`; no two of the rest in one namespace (the
+  namespace inside the id, §3.1) may carry the same key. A superseded
+  decision's key is therefore free for its successor.
+- **Both rules are file-gate classes**, not graph-only: a generated type
+  name depends on each, so an importer of this format must enforce them.
+  `L014` also has a graph-stage cross-check (`G006`, §8), which is never
+  its only home.
+- **Same declare-what-you-need rule as formats 2–4.** A change-set
+  declares `format: 5` only when one of its versions carries a `key` or
+  `exported: true`; a lower-format file carrying either is a schema fault.
+- **Hashing.** `key` joins the hashed field set as a string; `exported`
+  as the string `"true"` when set and nothing when false (§4.2 step 7:
+  hashed content is strings only). Absent keys are omitted (§4.2 step 3),
+  so every version written before format 5 canonicalises to the same
+  bytes and the prefix stays `ledger.decision-version.v1`.
+
 ---
 
 ## 4. Canonicalisation and hashing
@@ -386,14 +431,17 @@ Exactly these keys, and no others:
 decision · parent · merged_from · set · statement · allocation ·
 discharge · discharge_stage · actor · expectation · exposure ·
 accepted_by · review_by · tolerance_floor_at_creation ·
-tolerance_override · based_on · revisit_if · supersedes
+tolerance_override · based_on · revisit_if · supersedes · key · exported
 ```
 
-`merged_from` joined the set at spec v1.3 (`format: 2`) and `revisit_if` at
-spec v1.5 (`format: 4`). Because an absent key is omitted from the canonical
+`merged_from` joined the set at spec v1.3 (`format: 2`), `revisit_if` at
+spec v1.5 (`format: 4`), and `key` and `exported` at spec v1.6
+(`format: 5`; `exported` canonicalises as `"true"` or is omitted). Because an absent key is omitted from the canonical
 object (§4.2 step 3), every version written before either field existed
 canonicalises to the same bytes as before: no digest moved, no acceptance
-was invalidated, and `CANONICAL_FORM` stays `v1`.
+was invalidated, and `CANONICAL_FORM` stays `v1`. The reference
+implementation proves it over every stored digest it holds
+(`ledger-cli/tests/digests.rs`).
 
 Outside the hash: the `hash` field itself (including it would be circular),
 everything at change-set level (`format`, `id`, `created_at`, `created_by`,
@@ -490,9 +538,11 @@ every one of them fail.
 
 ## 5. The gate
 
-`ledger verify` fails for a **schema fault** or one of **ten classes**, and
-for nothing else. An eleventh reason is a change to this document — `L010`
-itself arrived that way, as the spec v1.1 amendment.
+`ledger verify` fails for a **schema fault** or one of **twelve classes**,
+and for nothing else. A new reason is a change to this document — `L010`
+arrived that way, as the spec v1.1 amendment, and `L013`/`L014` as spec
+v1.6. `L011` and `L012` are **reserved** for the signing classes (#65,
+ruling D3) and are not classes until a revision specifies them.
 
 ### 5.1 The parse gate
 
@@ -501,9 +551,10 @@ an unknown `format`; an unknown key; an unknown discharge scheme; a file stem
 disagreeing with its declared id; a duplicate id; a per-allocation obligation
 from §3.6 that is not met (except the escape's, which is `L002`); a
 non-empty `signature`; a version naming an undeclared set; a revocation
-naming an acceptance nobody filed.
+naming an acceptance nobody filed; a `key` not matching
+`^[A-Z][A-Za-z0-9]{0,63}$`.
 
-### 5.2 The ten
+### 5.2 The twelve
 
 | Code | Fails when |
 |---|---|
@@ -517,11 +568,14 @@ naming an acceptance nobody filed.
 | `L008` | an acceptance's `(decision, version)` pair matches no filed version |
 | `L009` | an acceptance's actor is not the author of the commit that introduced it |
 | `L010` | a `judgment`'s `actor` is refused by §3.2 (spec v1.1) |
+| `L013` | a version's `key` differs from the key its `parent` or `merged_from` carries (spec v1.6, §3.8) |
+| `L014` | two live decisions of one namespace carry the same `key` on their latest versions (spec v1.6, §3.8) |
 
 Notes that are part of the specification, not implementation detail:
 
 - **Only the latest version of a decision is judged** by `L001`, `L003`,
-  `L005` and `L010`. An acceptance of a superseded version was already
+  `L005`, `L010` and `L014`. (`L013` judges every version against its
+  predecessors: a rename anywhere in the chain is a rename.) An acceptance of a superseded version was already
   invalidated when the hash moved; reporting it again is noise on a resolved
   fact.
 - **"Latest" derives from the parent DAG, never from file or ULID order**
@@ -554,7 +608,7 @@ Notes that are part of the specification, not implementation detail:
 `--gate readiness` blocks produce and runs every class except `L002` and
 `L003`, which are dispositions that must hold at release rather than
 preconditions for starting. `--gate completeness` blocks release and runs
-all ten. With no flag, all ten run.
+all twelve. With no flag, all twelve run.
 
 | Exit | Meaning |
 |---|---|
@@ -592,25 +646,16 @@ Stated so an adopter meets them in this document rather than in production.
   milestone. Late-discovery rate is the lagging proxy.
 - **ULID generation is not specified here** because L0 mints no ids. L1's
   `add` needs it.
-- **Planned, not yet normative — spec v1.6 / `format: 5` (PRD §4.5,
-  milestone L6; ruled 2026-08-11, unimplemented; renumbered by the M8
-  `contract:` scheme consuming `format: 3` and the v1.5 reopen edge
-  consuming `format: 4`).** The signing revision:
-  `signature` goes live as a detached, certificate-based signature (git's
-  `gpg.format` trio — `openpgp` | `ssh` | `x509`) over a canonical
-  acceptance payload — decision id, version hash, actor, signing timestamp
-  — required only when the acceptance's effective tier is above the
-  tolerance floor. The trust root (allowed signers) enters the store as
-  governed entries with an explicitly-named genesis entry. Two classes will
-  join the file gate by the same amendment mechanism that added `L010`:
-  `L011` (a signature required at the acceptance's effective tier is absent
-  or invalid against the trust root as of its signing timestamp) and `L012`
-  (acceptances exist under a since-revoked key — a review trigger, since
-  validity is judged at signing time, never retroactive invalidation) —
-  taking the closed class count from **ten to twelve** when that revision
-  lands. Hashing is unaffected: the signature is *over* the version hash,
-  never inside it, so no digest moves and `CANONICAL_FORM` stays `v1`.
-  Until that revision ships, everything in §§1–5 stands exactly as written.
+- **Planned, not yet normative — signing (Session B; ruled 2026-10-02 on
+  #65).** The August plan for this slot (tier-gated `gpg.format`
+  signatures as `format: 5`) is replaced by `ledger-cli-prd.md` §0 items
+  7–12: namespace policy decides when a signature is required; signatures
+  are sidecars under `.decisions/sig/`; schemes `ssh`, `dsse`
+  verification, and `none` for pre-v2 stores. `format: 5` went to the key
+  revision (§3.8). `L011` (a required signature absent or invalid) and
+  `L012` (acceptances under a since-closed key, a review trigger) keep
+  their reserved numbers. Until that revision ships, a non-empty
+  `signature` stays a schema fault.
 
 ---
 
@@ -643,7 +688,7 @@ L3's per-decision merge base.
 **Outside the import surface.** Sections 1–5 are what an outside
 implementation of the *format* reproduces; this section describes the
 reference implementation's L2 graph stage, which an outside implementation
-may skip without losing format conformance. The file gate's closed ten
+may skip without losing format conformance. The file gate's closed
 classes (§5) are unchanged by it.
 
 The `.decisions/index/` cache holds the RDF materialisation of the log
@@ -668,6 +713,7 @@ unchanged exit semantics (findings exit `1`):
 | `G003` | a version names a decision no change-set introduced |
 | `G004` | a decision's version chain forks into more than one tip (spec v1.2) |
 | `G005` | one decision is superseded by two live claimants (spec v1.3) |
+| `G006` | two live decisions of one namespace whose tips share a `key` — the cross-check of `L014` (spec v1.6) |
 
 `G004` is the state two divergent writers leave behind — a plain git merge
 of two branches' logs, each having revised the same decision from the same
@@ -682,7 +728,8 @@ branches, where it cannot refuse retroactively: each side's claim was
 legal alone. Only live claims count — a claimant whose next version drops
 the edge has withdrawn, which is exactly the arbitration act `ledger merge
 --resolve` records for the losing side. The graph classes are closed the
-same way the file classes are: a `G006` is a change to this section. Coverage (`ledger coverage`) reports the
+same way the file classes are: `G006` arrived as a change to this
+section (spec v1.6), and a `G007` would be another. Coverage (`ledger coverage`) reports the
 seven-state disposition vocabulary — `undecided`, `awaiting-acceptance`,
 `decided`, `escaped-priced`, `escape-review-due`, `expired`, `superseded`
 — per set and per namespace, with supersession chains walked to their

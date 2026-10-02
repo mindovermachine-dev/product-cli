@@ -64,6 +64,10 @@ pub struct AddArgs {
     pub revisit_if: Vec<crate::revisit::RevisitRef>,
     /// Free text on the change-set — what this act was.
     pub note: Option<String>,
+    /// The stable human name a generated type is built from (format 5).
+    pub key: Option<crate::key::DecisionKey>,
+    /// Citable from other namespaces (format 5).
+    pub exported: bool,
 }
 
 impl Author {
@@ -102,6 +106,9 @@ impl Author {
         })?;
         let path = self.append(&candidate)?;
         let mut lines = vec![format!("added {decision} to set `{}`", args.set)];
+        if let Some(key) = &args.key {
+            lines.push(format!("key `{key}` — the generated type name"));
+        }
         if unallocated {
             lines.push("unallocated — the readiness gate fails until `ledger allocate` runs".into());
         }
@@ -131,6 +138,8 @@ fn first_version(decision: &DecisionId, args: &AddArgs, floor: Tier) -> VersionR
         based_on: args.based_on.clone(),
         revisit_if: args.revisit_if.clone(),
         supersedes: None,
+        key: args.key.clone(),
+        exported: args.exported,
     };
     args.allocation.apply(&mut raw);
     raw.hash = version_hash(&raw);

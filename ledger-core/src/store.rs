@@ -144,33 +144,39 @@ pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str
             for fault in file.acceptances.iter().flat_map(|a| a.schema_faults()) {
                 store.schema_findings.push(fault);
             }
-            // `merged_from` is the format-2 field: a file using it must
-            // declare the format that defines it.
-            if file.format < crate::format::MERGE_FORMAT
-                && file.versions.iter().any(|v| v.merged_from.is_some())
-            {
-                store.schema_findings.push(Finding::schema(
-                    label,
-                    "carries `merged_from`, a format 2 field — declare `format: 2`",
-                ));
-            }
-            // `contract:` discharge pointers are format 3 (spec v1.4): a
-            // file using the scheme must declare the format defining it.
-            if file.format < crate::format::CONTRACT_FORMAT
-                && file
-                    .versions
-                    .iter()
-                    .any(|v| v.discharge.iter().any(|d| d.is_contract()))
-            {
-                store.schema_findings.push(Finding::schema(
-                    label,
-                    "carries a `contract:` discharge pointer, a format 3 scheme — declare `format: 3`",
-                ));
-            }
+            store.schema_findings.extend(format_faults(label, &file));
             store.log.push(LoggedChangeSet { path, file });
         }
         Err(e) => store.schema_findings.push(parse_fault("change-set", label, &e.to_string())),
     }
+}
+
+/// A file must declare the format that defines every field it uses —
+/// a lower-format file carrying a later field is a schema fault.
+fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
+    let uses = |pred: &dyn Fn(&crate::version::VersionRaw) -> bool| file.versions.iter().any(pred);
+    let rules: [(u32, bool, &str); 3] = [
+        (
+            format::MERGE_FORMAT,
+            uses(&|v| v.merged_from.is_some()),
+            "carries `merged_from`, a format 2 field — declare `format: 2`",
+        ),
+        (
+            format::CONTRACT_FORMAT,
+            uses(&|v| v.discharge.iter().any(|d| d.is_contract())),
+            "carries a `contract:` discharge pointer, a format 3 scheme — declare `format: 3`",
+        ),
+        (
+            format::KEY_FORMAT,
+            uses(&|v| v.key.is_some() || v.exported),
+            "carries a version `key` or `exported`, format 5 fields — declare `format: 5`",
+        ),
+    ];
+    rules
+        .into_iter()
+        .filter(|(needed, used, _)| *used && file.format < *needed)
+        .map(|(_, _, message)| Finding::schema(label, message))
+        .collect()
 }
 
 fn check_format(label: &str, declared: u32, store: &mut Store) {

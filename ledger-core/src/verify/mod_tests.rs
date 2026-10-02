@@ -277,11 +277,15 @@ fn l010_judges_the_latest_version_only() {
 #[test]
 fn every_class_the_enum_declares_is_reachable_here() {
     // A class with no test is a class nobody knows fires. L009 is exercised
-    // in the CLI's fixture suite, where a real repository exists.
+    // in the CLI's fixture suite, where a real repository exists; L013 and
+    // L014 in `keys_tests.rs`.
     let named: Vec<&str> = ALL_CLASSES.iter().map(|c| c.code()).collect();
     assert_eq!(
         named,
-        ["SCHEMA", "L001", "L002", "L003", "L004", "L005", "L006", "L007", "L008", "L009", "L010"]
+        [
+            "SCHEMA", "L001", "L002", "L003", "L004", "L005", "L006", "L007", "L008", "L009",
+            "L010", "L013", "L014"
+        ]
     );
 }
 

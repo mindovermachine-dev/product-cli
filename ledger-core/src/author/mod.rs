@@ -180,7 +180,11 @@ impl Author {
                 path.display()
             )));
         }
-        let text = serde_yaml::to_string(candidate)
+        // A file declares the format it actually uses: the shell starts at
+        // the current format and every verb's fields are counted here, once.
+        let mut candidate = candidate.clone();
+        candidate.format = candidate.format.max(crate::format::needed_for(&candidate));
+        let text = serde_yaml::to_string(&candidate)
             .map_err(|e| AuthorError::Io(format!("could not serialise the change-set: {e}")))?;
         product_core::fileops::write_file_atomic(&path, &text)
             .map_err(|e| AuthorError::Io(e.to_string()))?;

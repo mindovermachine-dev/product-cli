@@ -306,8 +306,10 @@ store (`.decisions/`), separate ontology.
   acceptance, and needs a migration note — it is never a quiet fix.
 - **Gate** — `ledger verify [--gate readiness|completeness] [--json]
   [--today YYYY-MM-DD] [--no-blame]`. Fails for a schema fault plus classes
-  `L001`–`L010` and **nothing else**; adding an eleventh is a format-spec
-  change (`L010` itself shipped that way, as spec v1.1).
+  `L001`–`L010`, `L013`, `L014` and **nothing else**; adding a class is a
+  format-spec change (`L010` shipped that way as spec v1.1, the key classes
+  `L013`/`L014` as spec v1.6 / format 5). `L011`/`L012` are **reserved** for
+  signing (#65 ruling D3) — never reuse them.
   Exit `0` conformant, `1` findings, `2` could not run. Runs in CI with
   `--export`, which adds a third stage: every committed
   `docs/decisions/<ns>.nt` must equal `ledger export --format ntriples

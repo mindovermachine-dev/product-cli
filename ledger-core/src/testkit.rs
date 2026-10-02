@@ -60,6 +60,8 @@ pub fn version() -> VersionRaw {
         based_on: vec!["prd:decision-ledger-prd#4.2.1".parse().expect("basis")],
         revisit_if: Vec::new(),
         supersedes: None,
+        key: None,
+        exported: false,
     }
 }
 

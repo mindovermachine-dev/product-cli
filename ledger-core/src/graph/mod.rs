@@ -10,7 +10,7 @@
 //! dependency, never this one's.
 //!
 //! Graph findings are a **distinct stage** of `verify`, outside the file
-//! gate's closed ten classes: `G001`–`G005`, reported by the same command
+//! gate's closed classes: `G001`–`G006`, reported by the same command
 //! with unchanged exit semantics.
 //!
 //! The same triples also serialise as sorted N-Triples ([`ntriples`]),
@@ -54,11 +54,21 @@ pub enum GraphClass {
     /// One decision superseded by two live claimants: the write-time fork
     /// refusal met across branches, where only an arbitration can settle it.
     G005,
+    /// Two live decisions of one namespace whose tips share a `key` — the
+    /// SPARQL cross-check of the file gate's `L014` (spec v1.6). Never the
+    /// only home of the rule: an outside implementation reproduces `L014`.
+    G006,
 }
 
 /// Every graph class, in report order.
-pub const ALL_GRAPH_CLASSES: &[GraphClass] =
-    &[GraphClass::G001, GraphClass::G002, GraphClass::G003, GraphClass::G004, GraphClass::G005];
+pub const ALL_GRAPH_CLASSES: &[GraphClass] = &[
+    GraphClass::G001,
+    GraphClass::G002,
+    GraphClass::G003,
+    GraphClass::G004,
+    GraphClass::G005,
+    GraphClass::G006,
+];
 
 impl GraphClass {
     pub fn code(self) -> &'static str {
@@ -68,6 +78,7 @@ impl GraphClass {
             Self::G003 => "G003",
             Self::G004 => "G004",
             Self::G005 => "G005",
+            Self::G006 => "G006",
         }
     }
 
@@ -78,6 +89,7 @@ impl GraphClass {
             Self::G003 => "version names a decision no change-set introduced",
             Self::G004 => "version chain forks into more than one tip",
             Self::G005 => "decision superseded by two live claimants",
+            Self::G006 => "two live decisions of one namespace share a key",
         }
     }
 }

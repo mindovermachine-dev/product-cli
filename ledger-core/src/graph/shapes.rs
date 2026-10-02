@@ -167,7 +167,38 @@ const SHAPES: &[Shape] = &[
             )
         },
     },
+    Shape {
+        // L014's cross-check (spec v1.6): two decisions of one namespace
+        // whose tips carry one key, neither superseded by a live claimant.
+        // A claimant is live when no later version of it exists.
+        class: GraphClass::G006,
+        select: KEY_COLLISION,
+        message: |row| {
+            (
+                term(row, "a"),
+                format!(
+                    "shares key `{}` with {} in one namespace — the graph cross-check of L014",
+                    term(row, "k"),
+                    term(row, "b")
+                ),
+            )
+        },
+    },
 ];
+
+const KEY_COLLISION: &str = "SELECT ?a ?b ?k WHERE { \
+     ?va <urn:ledger:ns#key> ?k . ?va <urn:ledger:ns#ofDecision> ?a . \
+     ?vb <urn:ledger:ns#key> ?k . ?vb <urn:ledger:ns#ofDecision> ?b . \
+     ?a <urn:ledger:ns#namespace> ?ns . ?b <urn:ledger:ns#namespace> ?ns . \
+     FILTER(STR(?a) < STR(?b)) \
+     FILTER NOT EXISTS { ?ca <http://www.w3.org/ns/prov#wasRevisionOf> ?va } \
+     FILTER NOT EXISTS { ?ma <urn:ledger:ns#mergedFrom> ?va } \
+     FILTER NOT EXISTS { ?cb <http://www.w3.org/ns/prov#wasRevisionOf> ?vb } \
+     FILTER NOT EXISTS { ?mb <urn:ledger:ns#mergedFrom> ?vb } \
+     FILTER NOT EXISTS { ?sa <urn:ledger:ns#supersedes> ?a . \
+       FILTER NOT EXISTS { ?xa <http://www.w3.org/ns/prov#wasRevisionOf> ?sa } } \
+     FILTER NOT EXISTS { ?sb <urn:ledger:ns#supersedes> ?b . \
+       FILTER NOT EXISTS { ?xb <http://www.w3.org/ns/prov#wasRevisionOf> ?sb } } }";
 
 /// Display form of a hash term: the first 12 hex characters.
 fn short_hash(term: &str) -> String {

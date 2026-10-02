@@ -50,6 +50,8 @@ fn constraint_add(statement: &str, tolerance_override: Option<Tier>) -> AddArgs 
         based_on: Vec::new(),
         revisit_if: Vec::new(),
         note: None,
+        key: None,
+        exported: false,
     }
 }
 
@@ -103,6 +105,8 @@ fn an_unallocated_add_is_the_one_sanctioned_pendency() {
             based_on: Vec::new(),
         revisit_if: Vec::new(),
             note: None,
+            key: None,
+            exported: false,
         })
         .expect("unallocated add writes");
     assert!(applied.lines.iter().any(|l| l.contains("unallocated")), "{:?}", applied.lines);
@@ -206,6 +210,7 @@ fn revise_moves_the_hash_and_a_stale_parent_is_a_conflict_not_a_merge() {
         revisit_if: None,
         note: None,
         expected_parent: Some(first_hash.clone()),
+        key: None,
     })
     .expect("revise from the tip");
 
@@ -216,6 +221,7 @@ fn revise_moves_the_hash_and_a_stale_parent_is_a_conflict_not_a_merge() {
         revisit_if: None,
         note: None,
             expected_parent: Some(first_hash),
+            key: None,
         })
         .expect_err("stale parent");
     assert!(matches!(err, AuthorError::Conflict(_)), "{err}");

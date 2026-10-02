@@ -201,6 +201,13 @@ fn emit_version(t: &mut Triples, v: &VersionRaw, cs_iri: &str) {
     if let Some(over) = v.tolerance_override {
         t.add(&iri, "ledger:toleranceOverride", literal(&over.to_string()));
     }
+    if let Some(key) = &v.key {
+        t.add(&iri, "ledger:key", literal(key.as_str()));
+    }
+    if v.exported {
+        // A string, as it is hashed: the format carries no booleans.
+        t.add(&iri, "ledger:exported", literal("true"));
+    }
     emit_edges(t, v, &iri);
     if let Some(old) = &v.supersedes {
         t.add(&iri, "ledger:supersedes", dec_iri(old));

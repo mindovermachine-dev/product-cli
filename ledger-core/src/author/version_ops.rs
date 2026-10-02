@@ -44,6 +44,11 @@ pub struct ReviseArgs {
     /// The version the author believes is the tip. When stated and stale,
     /// the verb refuses — merge is L3's problem, not a quiet overwrite.
     pub expected_parent: Option<VersionHash>,
+    /// Give the decision a key (format 5). A keyed decision keeps its key on
+    /// every revision without this; naming a different one is refused by
+    /// the same `L013` the gate runs. Giving a keyless decision a key is a
+    /// new version, so it needs re-acceptance.
+    pub key: Option<crate::key::DecisionKey>,
 }
 
 /// What a supersession records.
@@ -96,6 +101,9 @@ impl Author {
             }
             if let Some(edges) = &args.revisit_if {
                 raw.revisit_if = edges.clone();
+            }
+            if let Some(key) = &args.key {
+                raw.key = Some(key.clone());
             }
         })
         .map(|a| a.saying(format!("revised {id} — prior acceptances now sign history")))
