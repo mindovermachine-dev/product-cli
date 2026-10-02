@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-cli-src-commands-init-rs
+boundary: contract surface of ledger-cli/src/commands/init.rs
+verdict_knowledge: "CLI users learn `ledger init` scaffolds the store, and with `--namespace` also puts the namespace under policy — the store's first such call bootstraps the genesis."
+contract_location: ledger-cli/src/commands/init.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: run
+  file: ledger-cli/src/commands/init.rs
+  before: sha256:9f785f3cba97b7dfb50fe44fcce25733ec46297fb817503fec380f3decad69c9
+  after: sha256:dd3ea5698b10fadc2833730be7375ca6e6ce1ba48e668699929478d3cb2511e6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:52f055aa7176f682716b8e82c57f81ca7e18947a8e3f2d485dfe35b69ab6a3d1

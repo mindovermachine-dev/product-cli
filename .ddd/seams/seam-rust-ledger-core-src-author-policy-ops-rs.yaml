@@ -1,0 +1,56 @@
+format: 2
+id: seam/rust/ledger-core-src-author-policy-ops-rs
+boundary: contract surface of ledger-core/src/author/policy_ops.rs
+verdict_knowledge: "Callers learn a policy change files the next version naming the hash it replaces, and is the live, available genesis holder's act until Session B signs it under the policy in force."
+contract_location: ledger-core/src/author/policy_ops.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: impl Author
+  file: ledger-core/src/author/policy_ops.rs
+  before: absent
+  after: sha256:75437b91378b85341e55af4424454e6c312304cba7a7db182f891242259db23b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ab8bcbd2c167a0c81f78057831da26ce3aa9a69d5456157b89083d498dc05893
+- symbol: PolicyArgs
+  file: ledger-core/src/author/policy_ops.rs
+  before: absent
+  after: sha256:75437b91378b85341e55af4424454e6c312304cba7a7db182f891242259db23b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ca860078da295c88e83b1b256b6975f56b25a095b9acd6abb5441d1b90204756
+- symbol: accept_role
+  file: ledger-core/src/author/policy_ops.rs
+  before: absent
+  after: sha256:75437b91378b85341e55af4424454e6c312304cba7a7db182f891242259db23b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:0da0ae33738af3ad1ef4f072cd3d5266983affc864c9ab702916d24133ba520a
+- symbol: namespace
+  file: ledger-core/src/author/policy_ops.rs
+  before: absent
+  after: sha256:75437b91378b85341e55af4424454e6c312304cba7a7db182f891242259db23b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c9560408b6b63efb08a2c8a6482e748fb6ca66efd772f3575e02b3b08da75283
+- symbol: reaccept_within_days
+  file: ledger-core/src/author/policy_ops.rs
+  before: absent
+  after: sha256:75437b91378b85341e55af4424454e6c312304cba7a7db182f891242259db23b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:3e8b53974d7ad517e0aee0bd3e9e5078cbeff300a6e5199bb402e34917c85009
+- symbol: require_sk
+  file: ledger-core/src/author/policy_ops.rs
+  before: absent
+  after: sha256:75437b91378b85341e55af4424454e6c312304cba7a7db182f891242259db23b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:461c4b17987495492792124f4f0d24c9506738dc5a4dcdbd2984e8ceed12e83b
+- symbol: schemes
+  file: ledger-core/src/author/policy_ops.rs
+  before: absent
+  after: sha256:75437b91378b85341e55af4424454e6c312304cba7a7db182f891242259db23b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:64e6de193d1dbb39fda9da36d39c731e9d8cf95b4a2505076ccfa7b3d428f2d7
+- symbol: policy_set
+  file: ledger-core/src/author/policy_ops.rs
+  before: absent
+  after: sha256:75437b91378b85341e55af4424454e6c312304cba7a7db182f891242259db23b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:08d878466d85094abbc22d22b3e6d5feeb6e346a4120e97982b874324bfe5129

@@ -1,0 +1,140 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-availability-rs
+boundary: contract surface of ledger-core/src/authority/availability.rs
+verdict_knowledge: "Consumers learn the Unavailability and Availability record shapes and the closed basis vocabulary self | grantor | fallback-of-genesis."
+contract_location: ledger-core/src/authority/availability.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: Basis
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2c469738ece37289e0460fe32ae8c16a4b765e7c90aa0cbcadfe9aefd18e51c5
+- symbol: impl Basis
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:53a18521c8f883f4d7ad527d90adef2039d211b3b1394fae76efd88e9d03f186
+- symbol: Availability
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:28cf742ac13f7d937cc56eb988eac525cabd3d0d522620b949cf6fc37c64dc9a
+- symbol: Unavailability
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:0a490273ec5cd9a8a6ad82e638d8a7feb64bbcdc3b4870e342b93c75a446aa33
+- symbol: impl Deserialize<'de> for Basis
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:b508c6fb53ab377f2157f64b1f32eeed9e0c257999885ba82052cbb7acb63e83
+- symbol: impl FromStr for Basis
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:8ca3ec0fbcbcd9864b9adaad90f81a10502c8657eb09e4ba1050a61e5af94111
+- symbol: impl Serialize for Basis
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:9e7d7ad58db22c3b0ad372c4f4ce73219a5760ee31fe397c7f33fa4ff8eb7e8a
+- symbol: impl fmt::Display for Basis
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:dfa52d9996d40bf56ce1028907be4c7e99faa03b359e18b44dd7ac7f07a485d8
+- symbol: at
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:237eb9d4be898de9380867baf8de83fb828519078c4df5e768ef0b812fe46c37
+- symbol: available_at
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c8f949193be6ba6cb7e894cf773199d81348bbb8c3cc93b016838a87eeb21877
+- symbol: by
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:35b2c836c04bdb3742ab25255b7df6c40ee630b4fe339572016ce80f8544d2d1
+- symbol: ends
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6229d4478fa0f51a720852087505351c4ec483d629b82398d322d6dfde8dbb6c
+- symbol: id
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:79875a23dc09d428fc7d1faaa0b18c0bf6bf1ff6f3bc9e5af7db9659ba69b875
+- symbol: FallbackOfGenesis
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:02596cfd3122068c92d1337dd6aaa28964c8f5a1e6d2379cb5f9cd32ee9da584
+- symbol: Grantor
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2ea34dc1d26093d5d0808b23f37eb7ab8215550b59995e88d6c40cc736ef7c93
+- symbol: SelfDeclared
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6fb1eb3848098060261c52c55848ceac9bd9643e140663b386d81b3f79bd055d
+- symbol: basis
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:22d387b370bd8d61c8c248eee06995271a4c0893c8320e2a63252708fde1029d
+- symbol: from
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:500dea5c0c99bf9795f063f36f04945e2a9991ad81d45dc0e6a5b12d5252ff3f
+- symbol: grant
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c04dc36774135ebbc977104abec87a3d48ddc90a0ddab330cff57c18e41f902b
+- symbol: reason
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ac14d2b6f44a0fcd6993590e9bee59050bcad3603c3b3d98238133beda3fcd93
+- symbol: until
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:3b65bd3af41cdd4b08f63b3eec865bc08e64f9670a67e97ac699921bea535ce9
+- symbol: as_str
+  file: ledger-core/src/authority/availability.rs
+  before: absent
+  after: sha256:be410249adcccfd5058448fe52acc0f265416925ef34cfd75dadfb9b75bc44af
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:d02139b4723231b6fcc545f1ec03103bcf6cf491a54efa6239286bab6f647b0b

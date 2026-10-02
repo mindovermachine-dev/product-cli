@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-store-rs
+boundary: contract surface of ledger-core/src/store.rs
+verdict_knowledge: "Consumers learn the store loads role files beside sets and checks every file declares the format its fields need."
+contract_location: ledger-core/src/store.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: roles
+  file: ledger-core/src/store.rs
+  before: sha256:967cae5f57d7ea521863b9e27a931071e8c4bc76251eb4452613a97298bbfb20
+  after: sha256:eadd612c7affa101f6549f30f7f69c4994d63d36f750e53d42dee8b561ca48a6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:a7447bd11d3c8fa19b64244672ac6e742410dfa27415267be63bd795b34183b9
+- symbol: role
+  file: ledger-core/src/store.rs
+  before: sha256:967cae5f57d7ea521863b9e27a931071e8c4bc76251eb4452613a97298bbfb20
+  after: sha256:eadd612c7affa101f6549f30f7f69c4994d63d36f750e53d42dee8b561ca48a6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ded7787193834111f1dc675d6955ff170530fe34755099df0bda6b300c196b1a

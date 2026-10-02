@@ -1,0 +1,86 @@
+format: 2
+id: seam/rust/ledger-cli-src-commands-authority-enum-rs
+boundary: contract surface of ledger-cli/src/commands/authority_enum.rs
+verdict_knowledge: "CLI users learn the authority surface: `ledger role declare`, `grant new|accept|revoke`, `identity add|rotate|revoke|sync` and `policy show|set`, each a subcommand group whose flags parse through ledger-core's own types."
+contract_location: ledger-cli/src/commands/authority_enum.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: GrantCmd
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6888fdee5d0351c12a4e5740dbf56f1a5735518e1544e6498a6dcf5b268d23a3
+- symbol: IdentityCmd
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:f9f6ef07a24fac7ee0bc26a56a2f3675cd12c2e7431b605c03612d974a37a092
+- symbol: PolicyCmd
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:f73491a40dc2386af218933ca77ba7caf6a1bab93be6f820ce6b317ca3d0dc0b
+- symbol: RoleCmd
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2616333c970d78b86ae62989bdea56f556afa609f0279c1af234d1def67aa64d
+- symbol: Accept
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:a96f439da6ec80837b71267c8a5765d33aad08199c9ccad1df5c4ee854974f45
+- symbol: New
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:b7cb0429d67ae6977a8ea80e2ea1dc32cf7549537a5501052108be8eb158bb2d
+- symbol: Revoke
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:7c55c84f172a334d7f6723b6a91fc3da62d29a7767c9cac09731cfa529ad82bd
+- symbol: Add
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:91dae6d44efabba942f42b8a68bb138b0e3ea17edb7a8deb22f80886ac53ec03
+- symbol: Rotate
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:cfaa7e0f4dfd631d2cf50cfbc37ad3cea9c8fbce0ad237edb76d1b543ba14435
+- symbol: Sync
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:3ea7b4e9d1010fec224c163e7684bfdb43410cfeff423d99c2428aa8400593e1
+- symbol: Set
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:271865283e5127067bd02eecd41f8620daff9f8d9787171f1b30071a540f275d
+- symbol: Show
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:57bb3e532799378a82666a559d3e36f0f067d23ba3b0a8c42f6d5c41475f8df7
+- symbol: Declare
+  file: ledger-cli/src/commands/authority_enum.rs
+  before: absent
+  after: sha256:71ca3ce6db33be17b7680e8c0d95d1c8767bda038e47e0cbda7a5ea956f884f6
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6c9d628ce0d8855a906dda1d2d3678c3643915b3f40db459264672429d86bd76

@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-src-commands-evolve-rs
 boundary: contract surface of ledger-cli/src/commands/evolve.rs
-verdict_knowledge: "A caller learns that --revisit-if and --no-revisit-if state opposite things and are refused together, so a revision cannot both set and clear the reopen edges."
+verdict_knowledge: A caller learns that --revisit-if and --no-revisit-if state opposite things and are refused together, so a revision cannot both set and clear the reopen edges.
 contract_location: ledger-cli/src/commands/evolve.rs
 obligations: []
 metadata: {}
@@ -42,3 +42,9 @@ bindings:
   after: sha256:ce7e3e017469f42db24e089a68f8f8bc667e4eddaf03175f65e46c2654d2ad21
   base_revision: 15c635210dca8246aae371460e167ad7d293c2e6
   hash: sha256:a36d023355750071ee59340913a821accfecec7ea9ab419b824d4b8bbeef6a36
+- symbol: key
+  file: ledger-cli/src/commands/evolve.rs
+  before: sha256:ce7e3e017469f42db24e089a68f8f8bc667e4eddaf03175f65e46c2654d2ad21
+  after: sha256:c81a9f6e54111a244a6cecfedb65da2e1e0a84b1b6b5b8d29f100112d6e2f2b0
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c19dd68d9b25da260301632d57235edb486c362885185e8503717bec279fa331

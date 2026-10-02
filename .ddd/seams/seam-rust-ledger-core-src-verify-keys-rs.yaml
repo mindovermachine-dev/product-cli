@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-keys-rs
+boundary: contract surface of ledger-core/src/verify/keys.rs
+verdict_knowledge: "Consumers learn L013 judges every version against its parent and merged_from keys, and L014 the latest versions of a namespace's live decisions."
+contract_location: ledger-core/src/verify/keys.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: key_changed
+  file: ledger-core/src/verify/keys.rs
+  before: absent
+  after: sha256:67489ca406218a00b660a896f0710fc0e4631ccd222432d1938930c4aa6d9260
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:edfc162d1feb6dca66db7548c305579c06b6c253aaa143130d521d9fed2ff6f7
+- symbol: key_collision
+  file: ledger-core/src/verify/keys.rs
+  before: absent
+  after: sha256:67489ca406218a00b660a896f0710fc0e4631ccd222432d1938930c4aa6d9260
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:d941dd8787f10f0fb82406825f8d461853e996b84987f59bcb4685b1c15d7547

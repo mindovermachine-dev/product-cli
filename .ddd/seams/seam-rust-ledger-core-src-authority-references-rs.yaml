@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-references-rs
+boundary: contract surface of ledger-core/src/authority/references.rs
+verdict_knowledge: "Consumers learn the cross-record SCHEMA rules: every reference resolves, grant acceptances are the holder's over the grant's hash, nothing is revoked or closed twice, a policy chain has one root and one tip."
+contract_location: ledger-core/src/authority/references.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: faults
+  file: ledger-core/src/authority/references.rs
+  before: absent
+  after: sha256:f769607fa24749154575a997343858f32c8bdd8e563754597ce3f5c92175a838
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:df70573cb08c341def4b796941772efab92ed37339af9745e1bb357a3812ce0a

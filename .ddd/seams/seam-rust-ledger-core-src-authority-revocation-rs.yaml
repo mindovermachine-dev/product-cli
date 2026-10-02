@@ -1,0 +1,140 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-revocation-rs
+boundary: contract surface of ledger-core/src/authority/revocation.rs
+verdict_knowledge: "Consumers learn the revocation entity's two wire shapes (format 6 and legacy), read through target() and actor(), and which format admits which."
+contract_location: ledger-core/src/authority/revocation.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: Revocable
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:1c75cddb1e59eb5df80adb8d9b3bc7247874318f0d597c19a3a50231d628e88b
+- symbol: impl Revocation
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:f869116aec9639520fb43a5b7665c4deec6d4490d6e992bac0711eff4188f96c
+- symbol: Revocation
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6818b7830e3a7692ad78d4ec360dd87c2015bfe7994ab01230c7d198b0524e63
+- symbol: impl Deserialize<'de> for Revocable
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:7d768c703d61f33074dcb6a91d37d7c41727fce28bbe29b44530f5fef8d41aeb
+- symbol: impl FromStr for Revocable
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:1fd6ed4c7cc3c6aadbf582ce38110f34bf1ca0b6a9c874cfa4764ac667406f26
+- symbol: impl Serialize for Revocable
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:fb232167710ca2f0eaa0665ffe7c10c86d4a2a81edbbc4ee00efaa24fe85ae21
+- symbol: impl fmt::Display for Revocable
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c987c72eba9404338ab9ccf187df4fb52af54847f6658acd7327ad921dfb2b29
+- symbol: Acceptance
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:4e19a578fcb9fcae5045cd8b90a9d37aaa0c29c2de5374807d9530eeac40e280
+- symbol: Grant
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:b0833cbd7f7a9e85e2095894af5f6e9427f6c78ec977b63c1e59ea8aab6a7848
+- symbol: acceptance
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ca0510ace15c22d1af0ced601fc2ae3a10a17bf22ef07cbf8e714032aa839140
+- symbol: actor
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:d6a5dd7b4fc4b27453b252dc910047a292f64e6af762d71b1639c4ae9ebbbaed
+- symbol: at
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:16147db2eee0e7bed5302d5dc2fdda4aaa685c35a96ed62f1b07d4235f00ed43
+- symbol: by
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:3ed7011627d4c2ac0987270be4c96fd8dabbe9972b00edfde7322c02cb27232e
+- symbol: hash
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:28c07f2c0768d29b1e80ef03f14c45c094fc7a6618563780d42a1ff1eca6651d
+- symbol: id
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:321e7a24149e4d9d876cecd2434d5c4b2c04bdb19cab1a8b60ca354b945e8c4b
+- symbol: reason
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:88dd9a6b73308bba47a31911e26f2e621f4ac9171a9697d60b8623d6cb8e6515
+- symbol: revokes
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:9cf991fdcae2548eaf09f0517236f6c5be0e9e9edbe8e1b49479a4edbcceb57b
+- symbol: is_entity
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:1f548f4fc3c5707dc70b7dd6a97275d190ef3ca071705e31e17fe16dc0d15381
+- symbol: revoked_acceptance
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:66ed4c84edde1037047ab97b7d4f29299833dca27bebf99b683717b8bde937b6
+- symbol: shape_faults
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:9bdb813563b2083bf97b77fb319663d460bf33872c1366a60f4befe824cebaaf
+- symbol: subject
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:040e3408716c786a94fe29bf38fae9637dbdc9f8eb1d90323f206a18ada51277
+- symbol: target
+  file: ledger-core/src/authority/revocation.rs
+  before: absent
+  after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:4d1a1efe7fa3f8ce1a6db9885c6be0427cb279da9dd89451385004868705ab88

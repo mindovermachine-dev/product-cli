@@ -30,3 +30,15 @@ bindings:
   after: sha256:33fdca994a790fdc488ce4203a09b7ae82b0d52fd7c95ab52a353ba55fc70b0b
   base_revision: 576efaf12b38c16ff6e5600064ed15f4000b9fed
   hash: sha256:e46f7ddc46fae08408e252b358d9fe63e989efe6aaf854442d8836c19570033e
+- symbol: authority
+  file: ledger-core/src/lib.rs
+  before: sha256:33fdca994a790fdc488ce4203a09b7ae82b0d52fd7c95ab52a353ba55fc70b0b
+  after: sha256:3724e8647e114df766770519e3e0030e108d3dcca1d7832d7a6e18838b657621
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:138ce92f675bbe1c739f62e06907aba6238fb4c5e7fb28b04a930fc65d34c30c
+- symbol: key
+  file: ledger-core/src/lib.rs
+  before: sha256:33fdca994a790fdc488ce4203a09b7ae82b0d52fd7c95ab52a353ba55fc70b0b
+  after: sha256:3724e8647e114df766770519e3e0030e108d3dcca1d7832d7a6e18838b657621
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:de2879afbb652c00e9a42ac23d75a75e58be6f1c60d3998475784af5a09fa318

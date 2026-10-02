@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-finding-rs
+boundary: contract surface of ledger-core/src/finding.rs
+verdict_knowledge: "Consumers learn the file gate's closed classes grow to twelve with L013 (key immutability) and L014 (key uniqueness among live decisions); L011/L012 stay reserved for signing."
+contract_location: ledger-core/src/finding.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: L013
+  file: ledger-core/src/finding.rs
+  before: sha256:ec322f004b32904da4ddba83809539d0314ba09ced7f81c03bf5ea8be5787a62
+  after: sha256:9f01fcd85e997a75df60cc2f4c158fffa761f8cf067d293b3ed54160b75e4a01
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c1eacd4d7bb79de52206ce994efe48a11a213733a7edee5d507d70c5f1320aed
+- symbol: L014
+  file: ledger-core/src/finding.rs
+  before: sha256:ec322f004b32904da4ddba83809539d0314ba09ced7f81c03bf5ea8be5787a62
+  after: sha256:9f01fcd85e997a75df60cc2f4c158fffa761f8cf067d293b3ed54160b75e4a01
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:1d5f86c82e4ff63cf1aba60b708bfbd9e5fb4ff1984a0efc85fbbcfcda208c31
