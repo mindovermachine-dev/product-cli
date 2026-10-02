@@ -40,5 +40,19 @@
     ledger:from "2026-10-20T00:00:00Z"^^xsd:dateTime ; ledger:until "2026-10-27T00:00:00Z"^^xsd:dateTime ;
     ledger:basis "self" ; ledger:reason "leave" ;
     prov:wasAttributedTo <mailto:architect@customer.example> ; prov:generatedAtTime "2026-10-10T08:00:00Z"^^xsd:dateTime ;
-    prov:wasGeneratedBy <urn:cs:01K5N0000000000000000000C2> ;
-    ledger:availableAt "2026-10-24T08:00:00Z"^^xsd:dateTime ; ledger:availableBy <mailto:architect@customer.example> .
+    prov:wasGeneratedBy <urn:cs:01K5N0000000000000000000C2> .
+
+# The holder ends the leave early: an act of its own, never triples on the interval.
+<urn:avail:01K5N0000000000000000000V0> a ledger:Availability ; ledger:id "avail:01K5N0000000000000000000V0" ;
+    ledger:ends <urn:unav:01K5N0000000000000000000T0> ;
+    ledger:availableAt "2026-10-24T08:00:00Z"^^xsd:dateTime ;
+    prov:wasAttributedTo <mailto:architect@customer.example> ; prov:generatedAtTime "2026-10-24T08:00:00Z"^^xsd:dateTime ;
+    prov:wasGeneratedBy <urn:cs:01K5N0000000000000000000C3> .
+
+# The grantor revokes the fallback grant: a signed entity naming the grant; the grant node is untouched.
+<urn:rev:01K5P0000000000000000000R0> a ledger:Revocation ; ledger:id "rev:01K5P0000000000000000000R0" ;
+    ledger:hash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
+    ledger:revokes <urn:grant:01K5M2V7Q8H3N6R4T9W0X1Y2Z3> ;
+    ledger:revocationReason "slice architecture moved to the platform team" ;
+    prov:wasAttributedTo <mailto:owner@customer.example> ; prov:generatedAtTime "2026-11-02T09:00:00Z"^^xsd:dateTime ;
+    prov:wasGeneratedBy <urn:cs:01K5P0000000000000000000C4> .

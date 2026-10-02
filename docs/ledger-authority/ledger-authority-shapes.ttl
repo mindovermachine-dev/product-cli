@@ -13,6 +13,12 @@
 # authoritative for what may be written. Structural shapes are
 # plain node shapes; the temporal classes (A003, A005, A006) are
 # SPARQL-based constraints and are named by their gate code.
+#
+# Amended 2026-10-02 (ruling 3): no node gains triples after it is
+# created. Revocation is its own ledger:Revocation (ledger:revokes)
+# for a Grant as for an Acceptance, and the holder ending an
+# unavailability is its own ledger:Availability (ledger:ends).
+# "Revoked" is now "some Revocation revokes it".
 #################################################################
 
 lsh:RoleShape a sh:NodeShape ;
@@ -44,9 +50,6 @@ lsh:GrantShape a sh:NodeShape ;
     sh:property [ sh:path ledger:genesis ; sh:datatype xsd:string ; sh:in ( "true" ) ; sh:maxCount 1 ] ;
     sh:property [ sh:path ledger:externalRef ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
     sh:property [ sh:path ledger:supersedesGrant ; sh:class ledger:Grant ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ledger:revokedAt ; sh:datatype xsd:dateTime ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ledger:revokedBy ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ledger:revocationReason ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
     # primary grants carry no limits
     sh:sparql [ sh:message "A primary grant must not carry limits." ;
         sh:select """SELECT $this WHERE { $this <urn:ledger:ns#order> "primary" ; <urn:ledger:ns#limit> ?l }""" ] ;
@@ -64,12 +67,7 @@ lsh:GrantShape a sh:NodeShape ;
     sh:sparql [ sh:message "rank must be derived from order (primary=0, fallback-N=N)." ;
         sh:select """SELECT $this WHERE { $this <urn:ledger:ns#order> ?o ; <urn:ledger:ns#rank> ?r .
             BIND( IF(?o = "primary", 0, xsd:integer(STRAFTER(?o, "fallback-"))) AS ?expected )
-            FILTER (?r != ?expected) }""" ] ;
-    # revocation triples come together
-    sh:sparql [ sh:message "A revoked grant carries revokedAt, revokedBy and revocationReason together." ;
-        sh:select """SELECT $this WHERE {
-            { $this <urn:ledger:ns#revokedAt> ?a } UNION { $this <urn:ledger:ns#revokedBy> ?b } UNION { $this <urn:ledger:ns#revocationReason> ?c }
-            FILTER NOT EXISTS { $this <urn:ledger:ns#revokedAt> ?a2 ; <urn:ledger:ns#revokedBy> ?b2 ; <urn:ledger:ns#revocationReason> ?c2 } }""" ] .
+            FILTER (?r != ?expected) }""" ] .
 
 lsh:GrantAcceptanceShape a sh:NodeShape ;
     sh:targetClass ledger:GrantAcceptance ;
@@ -96,8 +94,6 @@ lsh:UnavailabilityShape a sh:NodeShape ;
     sh:property [ sh:path ledger:basis ; sh:datatype xsd:string ; sh:in ( "self" "grantor" "fallback-of-genesis" ) ; sh:minCount 1 ; sh:maxCount 1 ] ;
     sh:property [ sh:path ledger:reason ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
     sh:property [ sh:path prov:wasAttributedTo ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ledger:availableAt ; sh:datatype xsd:dateTime ; sh:maxCount 1 ] ;
-    sh:property [ sh:path ledger:availableBy ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:maxCount 1 ] ;
     sh:sparql [ sh:message "until must be after from." ;
         sh:select """SELECT $this WHERE { $this <urn:ledger:ns#from> ?f ; <urn:ledger:ns#until> ?u . FILTER (?u <= ?f) }""" ] ;
     sh:sparql [ sh:message "basis self: declared by the holder." ;
@@ -107,11 +103,40 @@ lsh:UnavailabilityShape a sh:NodeShape ;
         sh:select """SELECT $this WHERE { $this <urn:ledger:ns#basis> "fallback-of-genesis" ; <urn:ledger:ns#grant> ?g ; <http://www.w3.org/ns/prov#wasAttributedTo> ?d .
             FILTER NOT EXISTS { ?g <urn:ledger:ns#genesis> "true" .
                 ?fb <urn:ledger:ns#role> ?r ; <urn:ledger:ns#scope> "*" ; <urn:ledger:ns#order> "fallback-1" ; <urn:ledger:ns#holder> ?d .
-                ?g <urn:ledger:ns#role> ?r } }""" ] ;
-    sh:sparql [ sh:message "Availability may be filed only by the holder, and carries availableAt and availableBy together." ;
-        sh:select """SELECT $this WHERE {
-            { $this <urn:ledger:ns#availableAt> ?t } UNION { $this <urn:ledger:ns#availableBy> ?b }
-            FILTER NOT EXISTS { $this <urn:ledger:ns#availableAt> ?t2 ; <urn:ledger:ns#availableBy> ?b2 ; <urn:ledger:ns#grant> ?g . ?g <urn:ledger:ns#holder> ?b2 } }""" ] .
+                ?g <urn:ledger:ns#role> ?r } }""" ] .
+
+lsh:AvailabilityShape a sh:NodeShape ;
+    sh:targetClass ledger:Availability ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type prov:generatedAtTime prov:wasAttributedTo prov:wasGeneratedBy ) ;
+    sh:property [ sh:path ledger:id ; sh:datatype xsd:string ; sh:pattern "^avail:[0-9A-HJKMNP-TV-Z]{26}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:ends ; sh:class ledger:Unavailability ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:availableAt ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:generatedAtTime ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:sparql [ sh:message "Availability may be filed only by the holder of the unavailable grant." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#ends> ?u ; <http://www.w3.org/ns/prov#wasAttributedTo> ?a .
+            FILTER NOT EXISTS { ?u <urn:ledger:ns#grant> ?g . ?g <urn:ledger:ns#holder> ?a } }""" ] ;
+    sh:sparql [ sh:message "An unavailability is ended at most once." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#ends> ?u . ?other <urn:ledger:ns#ends> ?u . FILTER (?other != $this) }""" ] ;
+    sh:sparql [ sh:message "availableAt must fall after the interval's from." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#ends> ?u ; <urn:ledger:ns#availableAt> ?t . ?u <urn:ledger:ns#from> ?f . FILTER (?t <= ?f) }""" ] .
+
+lsh:RevocationShape a sh:NodeShape ;
+    sh:targetClass ledger:Revocation ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type prov:generatedAtTime prov:wasAttributedTo prov:wasGeneratedBy ) ;
+    sh:property [ sh:path ledger:id ; sh:datatype xsd:string ; sh:pattern "^rev:[0-9A-HJKMNP-TV-Z]{26}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:hash ; sh:datatype xsd:string ; sh:pattern "^sha256:[0-9a-f]{64}$" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path ledger:revokes ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:or ( [ sh:class ledger:Grant ] [ sh:class ledger:Acceptance ] ) ] ;
+    sh:property [ sh:path ledger:revocationReason ; sh:datatype xsd:string ; sh:minLength 1 ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:wasAttributedTo ; sh:nodeKind sh:IRI ; sh:pattern "^mailto:" ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:generatedAtTime ; sh:datatype xsd:dateTime ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    # The signature itself (sidecar or inline field, and when it is required)
+    # waits on the I4 ruling, #65; the hash above is what it will sign.
+    sh:sparql [ sh:message "A grant or acceptance is revoked at most once." ;
+        sh:select """SELECT $this WHERE { $this <urn:ledger:ns#revokes> ?t . ?other <urn:ledger:ns#revokes> ?t . FILTER (?other != $this) }""" ] .
 
 # --- Gate classes that live in the graph stage ---------------------------
 
@@ -122,8 +147,8 @@ lsh:A003 a sh:NodeShape ;
             $this <urn:ledger:ns#role> ?r ; <urn:ledger:ns#scope> ?s ; <urn:ledger:ns#order> ?o .
             ?other <urn:ledger:ns#role> ?r ; <urn:ledger:ns#scope> ?s ; <urn:ledger:ns#order> ?o .
             FILTER (?other != $this)
-            FILTER NOT EXISTS { $this <urn:ledger:ns#revokedAt> ?x }
-            FILTER NOT EXISTS { ?other <urn:ledger:ns#revokedAt> ?y }
+            FILTER NOT EXISTS { ?x <urn:ledger:ns#revokes> $this }
+            FILTER NOT EXISTS { ?y <urn:ledger:ns#revokes> ?other }
             FILTER NOT EXISTS { ?n <urn:ledger:ns#supersedesGrant> $this }
             FILTER NOT EXISTS { ?m <urn:ledger:ns#supersedesGrant> ?other }
             FILTER EXISTS { ?ga <urn:ledger:ns#grant> $this } FILTER EXISTS { ?gb <urn:ledger:ns#grant> ?other } }""" ] .

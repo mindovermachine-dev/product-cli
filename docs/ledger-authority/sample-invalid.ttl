@@ -13,3 +13,15 @@
     ledger:grant <urn:grant:01K5M0000000000000000000B0> ;
     ledger:signsHash "sha256:1111111111111111111111111111111111111111111111111111111111111111" ;
     prov:wasAttributedTo <mailto:someone-else@x> ; prov:generatedAtTime "2026-10-01T10:30:00Z"^^xsd:dateTime .
+# availability filed by someone other than the holder (a@x)
+<urn:unav:01K5N0000000000000000000B2> a ledger:Unavailability ; ledger:id "unav:01K5N0000000000000000000B2" ;
+    ledger:grant <urn:grant:01K5M0000000000000000000B0> ; ledger:from "2026-10-20T00:00:00Z"^^xsd:dateTime ;
+    ledger:basis "self" ; prov:wasAttributedTo <mailto:a@x> .
+<urn:avail:01K5N0000000000000000000B3> a ledger:Availability ; ledger:id "avail:01K5N0000000000000000000B3" ;
+    ledger:ends <urn:unav:01K5N0000000000000000000B2> ; ledger:availableAt "2026-10-22T00:00:00Z"^^xsd:dateTime ;
+    prov:wasAttributedTo <mailto:someone-else@x> ; prov:generatedAtTime "2026-10-22T00:00:00Z"^^xsd:dateTime .
+# a revocation with no reason, revoking a role (only grants and acceptances are revocable)
+<urn:rev:01K5P0000000000000000000B4> a ledger:Revocation ; ledger:id "rev:01K5P0000000000000000000B4" ;
+    ledger:hash "sha256:3333333333333333333333333333333333333333333333333333333333333333" ;
+    ledger:revokes <urn:ledger-role:architect> ;
+    prov:wasAttributedTo <mailto:o@x> ; prov:generatedAtTime "2026-10-23T00:00:00Z"^^xsd:dateTime .

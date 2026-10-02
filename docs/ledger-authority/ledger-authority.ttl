@@ -16,15 +16,20 @@
 #   sets       <urn:ledger-set:{id}>
 #   roles      <urn:ledger-role:{id}>   (new, same pattern as sets)
 #   hashes     <urn:sha256:{hex}>   (version nodes)
-# Revocations follow the existing pattern: triples on the revoked
-# node, not a separate node. Availability follows the same pattern
-# on the unavailability node.
+#   revocations <urn:rev:{ulid}>    availability <urn:avail:{ulid}>
+# Every node is immutable once emitted: nothing is ever added to a
+# node after its creation (ruling 3, 2026-10-01). A revocation is
+# its own signed ledger:Revocation that names what it revokes with
+# ledger:revokes — the same entity for a Grant as for an Acceptance.
+# Ending an unavailability is the holder's act, so it is its own
+# entity too: a ledger:Availability that names the interval it ends
+# with ledger:ends.
 #################################################################
 
 <urn:ledger:ns#authority> a owl:Ontology ;
     rdfs:label "Decision Ledger authority records"@en ;
     rdfs:comment "Roles, grants, ordered fallback and filed unavailability. Draft amendment to ledger-format-v1."@en ;
-    owl:versionInfo "draft-2026-09-22" .
+    owl:versionInfo "draft-2026-09-22, amended 2026-10-02 (ruling 3: revocation and availability are entities)" .
 
 ### Classes
 
@@ -46,7 +51,17 @@ ledger:GrantAcceptance a owl:Class ;
 ledger:Unavailability a owl:Class ;
     rdfs:subClassOf prov:Entity ;
     rdfs:label "Unavailability"@en ;
-    rdfs:comment "A filed interval during which a grant's holder does not hold active authority. Closed by ledger:until, or by availability triples on this node."@en .
+    rdfs:comment "A filed interval during which a grant's holder does not hold active authority. Closed by ledger:until, or by a ledger:Availability that ends it."@en .
+
+ledger:Revocation a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Revocation"@en ;
+    rdfs:comment "An act revoking one Grant or one Acceptance, named by ledger:revokes. Signed, attributed and permanent; the revoked node is never edited, so its own signature still verifies. Hashed over the closed payload {revokes, actor, at, reason} with prefix ledger.revocation.v1."@en .
+
+ledger:Availability a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Availability"@en ;
+    rdfs:comment "The holder's act ending an Unavailability early, named by ledger:ends. Only the holder of the unavailable grant may file one, whoever declared the interval."@en .
 
 ### Object properties
 
@@ -74,13 +89,19 @@ ledger:grantedBy a owl:ObjectProperty ;
     rdfs:label "granted by"@en ;
     rdfs:comment "mailto: IRI. Also emitted as prov:wasAttributedTo. On the genesis grant, equals ledger:holder."@en .
 
-ledger:revokedBy a owl:ObjectProperty ;
-    rdfs:comment "Reused from acceptance revocations. On a Grant: who filed the grant revocation."@en .
+ledger:revokes a owl:ObjectProperty ;
+    rdfs:domain ledger:Revocation ;
+    rdfs:label "revokes"@en ;
+    rdfs:comment "The one Grant or Acceptance this revocation revokes. Who revoked is prov:wasAttributedTo on the Revocation."@en .
 
-ledger:availableBy a owl:ObjectProperty ;
-    rdfs:domain ledger:Unavailability ;
-    rdfs:label "available by"@en ;
-    rdfs:comment "mailto: IRI of the holder ending the unavailability. Only the holder may."@en .
+ledger:ends a owl:ObjectProperty ;
+    rdfs:domain ledger:Availability ; rdfs:range ledger:Unavailability ;
+    rdfs:label "ends"@en ;
+    rdfs:comment "The Unavailability this availability ends. Who ended it is prov:wasAttributedTo on the Availability."@en .
+
+ledger:revokedBy a owl:ObjectProperty ;
+    owl:deprecated true ;
+    rdfs:comment "Retired by ruling 3. The pre-v2 shape on an Acceptance; readers accept it during the transition and warn. Never emitted on authority nodes."@en .
 
 ### Datatype properties
 
@@ -114,7 +135,7 @@ ledger:externalRef a owl:DatatypeProperty ;
     rdfs:comment "Genesis only. Opaque pointer to the mandate outside the tool. Never dereferenced."@en .
 
 ledger:hash a owl:DatatypeProperty ;
-    rdfs:comment "Reused. On a Grant: sha256:<hex> over the canonical form with prefix ledger.authority-grant.v1."@en .
+    rdfs:comment "Reused. On a Grant: sha256:<hex> over the canonical form with prefix ledger.authority-grant.v1. On a Revocation: over its closed payload with prefix ledger.revocation.v1."@en .
 
 ledger:signsHash a owl:DatatypeProperty ;
     rdfs:domain ledger:GrantAcceptance ; rdfs:range xsd:string ;
@@ -135,13 +156,15 @@ ledger:reason a owl:DatatypeProperty ;
     rdfs:range xsd:string .
 
 ledger:availableAt a owl:DatatypeProperty ;
-    rdfs:domain ledger:Unavailability ; rdfs:range xsd:dateTime ;
-    rdfs:comment "Set when the holder files availability. Ends the interval whoever declared it."@en .
+    rdfs:domain ledger:Availability ; rdfs:range xsd:dateTime ;
+    rdfs:comment "When the holder is available again. Ends the interval whoever declared it."@en .
 
 ledger:revokedAt a owl:DatatypeProperty ; rdfs:range xsd:dateTime ;
-    rdfs:comment "Reused. On a Grant: when the grant was revoked."@en .
+    owl:deprecated true ;
+    rdfs:comment "Retired by ruling 3, as ledger:revokedBy. When something was revoked is prov:generatedAtTime on its Revocation."@en .
 
-ledger:revocationReason a owl:DatatypeProperty ; rdfs:range xsd:string .
+ledger:revocationReason a owl:DatatypeProperty ;
+    rdfs:domain ledger:Revocation ; rdfs:range xsd:string .
 
 ledger:title a owl:DatatypeProperty ; rdfs:range xsd:string .
 ledger:owner a owl:ObjectProperty ;
