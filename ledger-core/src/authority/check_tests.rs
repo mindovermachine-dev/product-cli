@@ -154,3 +154,58 @@ fn a_policy_mapping_counts_only_the_mapped_role() {
     assert!(authorize(&auth, &who, Act::Accept, decision(), at, Some("steward")).is_ok());
     assert_eq!(authorize(&auth, &who, Act::Accept, decision(), at, Some("architect")), Err(Denial::NoGrant));
 }
+
+/// D9 (e): a `fallback-1` over a set, and a primary over `*` in its role.
+fn set_fallback_beside_a_star_primary(primary_role: &str, away_now: bool) -> Result<Authorized, Denial> {
+    let primary = grant("1", primary_role, ARCHITECT, "*", 0);
+    let fb = grant("2", "architect", BACKUP, "set:ledger-design", 1);
+    let mut cs = fixture::changeset(vec![primary.clone(), fb.clone()], vec![accepted("3", &primary), accepted("4", &fb)]);
+    if away_now {
+        cs.unavailabilities.push(away("5", &primary, "2026-10-01T00:00:00Z", None));
+    }
+    let roles = vec![
+        role("architect", &[Capability::AcceptDecision, Capability::GrantRole]),
+        role("reviewer", &[Capability::AcceptDecision]),
+    ];
+    check(&fixture::store(roles, cs), BACKUP, Act::Accept, decision())
+}
+
+#[test]
+fn a_set_fallback_waits_on_an_available_star_primary_of_its_role() {
+    let refused = set_fallback_beside_a_star_primary("architect", false);
+    assert!(matches!(refused, Err(Denial::Outranked(..))), "the primary covers the target: {refused:?}");
+    let acts = set_fallback_beside_a_star_primary("architect", true);
+    assert!(acts.is_ok(), "the primary is unavailable, so the fallback acts: {acts:?}");
+}
+
+#[test]
+fn a_primary_in_another_role_never_outranks_a_fallback() {
+    assert!(set_fallback_beside_a_star_primary("reviewer", false).is_ok());
+    assert!(set_fallback_beside_a_star_primary("reviewer", true).is_ok());
+}
+
+#[test]
+fn grants_of_equal_rank_act_concurrently() {
+    let one = grant("1", "architect", ARCHITECT, "set:ledger-design", 1);
+    let two = grant("2", "architect", BACKUP, "*", 1);
+    let cs = fixture::changeset(vec![one.clone(), two.clone()], vec![accepted("3", &one), accepted("4", &two)]);
+    let store = fixture::store(may_accept(), cs);
+    assert_eq!(check(&store, ARCHITECT, Act::Accept, decision()).map(|a| a.grant), Ok(one.id.to_string()));
+    assert_eq!(check(&store, BACKUP, Act::Accept, decision()).map(|a| a.grant), Ok(two.id.to_string()));
+}
+
+#[test]
+fn a_grantor_below_star_grants_over_its_own_scope_only() {
+    let g = grant("1", "architect", ARCHITECT, "ns:hafeok.ledger", 0);
+    let store = fixture::store(may_accept(), fixture::changeset(vec![g.clone()], vec![accepted("2", &g)]));
+    let own = GrantScope::Namespace("hafeok.ledger".into());
+    assert!(check(&store, ARCHITECT, Act::Grant, Target::Scope(&own)).is_ok());
+    for other in ["*", "ns:hafeok.other", "set:ledger-design", "pattern:money"] {
+        let scope: GrantScope = other.parse().expect("scope");
+        assert_eq!(
+            check(&store, ARCHITECT, Act::Grant, Target::Scope(&scope)),
+            Err(Denial::WrongScope(g.id.to_string())),
+            "a grant over ns:hafeok.ledger may not grant over {other}"
+        );
+    }
+}

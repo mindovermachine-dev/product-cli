@@ -7,7 +7,7 @@ use ledger_core::author::{GrantArgs, InitNamespaceArgs, KeyArgs, PolicyArgs, Rol
 use ledger_core::authority::Authority;
 
 use super::authority_enum::{GrantCmd, IdentityCmd, PolicyCmd, RoleCmd};
-use super::common::{finish, open_author, require_terminal};
+use super::common::{finish, open_author};
 use super::{resolve_root, EXIT_OK};
 
 fn parse_all<T: std::str::FromStr<Err = String>>(raw: &[String]) -> Result<Vec<T>, String> {
@@ -45,7 +45,6 @@ pub fn grant(root: Option<PathBuf>, cmd: GrantCmd) -> Result<i32, String> {
             finish(open_author(root)?.grant(args))
         }
         GrantCmd::Revoke { grant, reason } => {
-            require_terminal("grant revoke")?;
             finish(open_author(root)?.revoke_grant(&grant.parse()?, reason))
         }
     }

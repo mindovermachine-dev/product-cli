@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-author-authority-ops-rs
 boundary: contract surface of ledger-core/src/author/authority_ops.rs
-verdict_knowledge: "Callers learn the authority verbs (init_namespace, declare_role, grant, accept_grant, revoke_grant) run the role check, then the same delta-gate as every verb, refusing with AuthorError::Unauthorized or the verify finding."
+verdict_knowledge: Callers learn the authority verbs (init_namespace, declare_role, grant, accept_grant, revoke_grant) run the role check, then the same delta-gate as every verb, refusing with AuthorError::Unauthorized or the verify finding.
 contract_location: ledger-core/src/author/authority_ops.rs
 obligations: []
 metadata: {}
@@ -138,3 +138,9 @@ bindings:
   after: sha256:a35ab887a19b4d0766eb6454f9e56100e6cbf9d610f9b98a1c4f29794f4e43f3
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:691a8eac0c703a8f4fbd23d0c2303398a471283d702bc4039cf11338b3db4023
+- symbol: DEFAULT_ACCEPT_ROLE
+  file: ledger-core/src/author/authority_ops.rs
+  before: sha256:a35ab887a19b4d0766eb6454f9e56100e6cbf9d610f9b98a1c4f29794f4e43f3
+  after: sha256:076c9f377fd4fe315c83939e86e5f9d8b8ee906501fd93933d37700a394197d7
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:7f2841c9f365166acc461ab4feee70e6622b858b8f9a59749e0bebfe38014528

@@ -10,10 +10,13 @@
 //! 3. unrevoked and unsuperseded;
 //! 4. accepted by its holder;
 //! 5. available at the act's time (no unavailability covers it);
-//! 6. if a fallback, not limited from this act, and **active**: every
-//!    standing, accepted, available grant of the same role and scope at a
-//!    lower rank is absent. A fallback acts only when those before it
-//!    cannot.
+//! 6. if a fallback, not limited from this act, and **active**: no live,
+//!    available grant of the same role at a lower rank covers the act's
+//!    target (D9 (e), ruled 2026-10-02). A fallback acts only when those
+//!    before it cannot. The comparison is per target through [`covers`],
+//!    not by identical scope strings: a `fallback-1` over a set waits on a
+//!    primary over `*` in its role. Another role never outranks, and equal
+//!    rank acts concurrently.
 //!
 //! When no grant passes, the refusal names the furthest any grant got, so
 //! "you hold the role but have not accepted it" reads differently from
@@ -151,17 +154,18 @@ fn judge(
     if let Some(limit) = act.withheld_by().filter(|l| grant.limits.contains(l)) {
         return Err(Denial::Limited(id, limit.as_str()));
     }
-    match outranking(auth, grant, at) {
+    match outranking(auth, grant, target, at) {
         Some(before) => Err(Denial::Outranked(id, before)),
         None => Ok(()),
     }
 }
 
-/// A grant of the same role and scope at a lower rank that can act now.
-fn outranking(auth: &Authority<'_>, grant: &Grant, at: DateTime<Utc>) -> Option<String> {
+/// A grant of the same role at a lower rank, covering the target, that can
+/// act now.
+fn outranking(auth: &Authority<'_>, grant: &Grant, target: Target<'_>, at: DateTime<Utc>) -> Option<String> {
     auth.grants
         .values()
-        .filter(|g| g.role == grant.role && g.scope == grant.scope)
+        .filter(|g| g.role == grant.role && covers(&g.scope, target))
         .filter(|g| g.order.rank() < grant.order.rank())
         .find(|g| auth.is_live(g) && auth.is_available(g, at))
         .map(|g| g.id.to_string())

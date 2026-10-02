@@ -139,15 +139,17 @@ pub fn parse_revisit_if(raw: &[String]) -> Result<Vec<ledger_core::revisit::Revi
     raw.iter().map(|r| r.parse()).collect()
 }
 
-/// Refuse unless stdin is a terminal (#71). Checked before the store is
-/// opened, so a refused invocation reads nothing and writes nothing.
+/// Refuse unless stdin is a terminal (#71, #85). Called only by
+/// `terminal::gate`, before the store is opened, so a refused invocation
+/// reads nothing and writes nothing.
 pub fn require_terminal(verb: &str) -> Result<(), String> {
     use std::io::IsTerminal;
     if std::io::stdin().is_terminal() {
         return Ok(());
     }
     Err(format!(
-        "refused: `ledger {verb}` runs only at a terminal, and stdin is not one — signing is a \
-         person's act, never a script's or an agent's (PRD §5). Nothing was written."
+        "refused: `ledger {verb}` runs only at a terminal, and stdin is not one — signing and \
+         authority records are a person's act, never a script's or an agent's (PRD §5). \
+         Nothing was written."
     ))
 }

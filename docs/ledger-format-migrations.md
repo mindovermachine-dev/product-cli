@@ -46,8 +46,11 @@ byte-identical to the key bindings.
 authority records stays a pre-v2 store: no namespace has a policy, nothing
 is role-checked, and every existing acceptance is judged exactly as before.
 `ledger init --namespace <ns> --external-ref <mandate>` puts a namespace
-under policy; the store's first one bootstraps the genesis (a role carrying
-every capability, the genesis grant, the holder's acceptance of it). From
+under policy; the store's first one bootstraps the genesis (the root role,
+the genesis grant, the holder's acceptance of it). As landed in #80 the root
+role carried every capability; since #85 (D9 (f)) it carries the four
+authority capabilities only, and the policy's accept role is a separate
+role (`acceptor` by default) that nobody holds until it is granted. From
 then on `accept` and `revoke` in that namespace need a live, accepted,
 available grant of the policy's accept role. Legacy revocations stay in
 their legacy shape — a log file is never rewritten.
