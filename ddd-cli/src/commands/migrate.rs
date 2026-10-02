@@ -198,6 +198,7 @@ fn author_err(e: &ledger_core::author::AuthorError) -> ProductError {
             findings.iter().map(ToString::to_string).collect::<Vec<_>>().join("; ")
         ),
         AuthorError::Conflict(m) | AuthorError::Usage(m) | AuthorError::Io(m) => m.clone(),
+        AuthorError::Unauthorized(_) => e.to_string(),
     };
     ProductError::ConfigError(msg)
 }
