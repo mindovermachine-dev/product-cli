@@ -2,6 +2,8 @@
 
 For a ruling on issue I4. On the left are the five rulings recorded in `docs/decision-ledger-prd.md` §4.5 and milestone L6 (principal: Emil, 2026-08-11; no code was written for them). On the right is `docs/ledger-cli-prd.md` §4 and §7, **as amended 2026-10-01**. The last section covers `L001`, which the import story depends on.
 
+> **All ruled 2026-10-02 on #65** (now closed): namespace policy (D1); a sidecar with the inline field retired (D2); `L011`/`L012` kept, new classes from `L013` (D3); `ssh`, then `dsse` verification, `none` for pre-v2 stores only, `webauthn` later (D4); the trust root as a governed projection; `L012` as a review trigger with an optional deadline set by policy. The ruling text is in `docs/ledger-cli-prd.md` §0, items 7–12. The comparison below is the record the rulings were made on.
+
 ## Already ruled (2026-10-01), shown for reference
 
 | | 2026-08-11 | PRD as amended | Status |
