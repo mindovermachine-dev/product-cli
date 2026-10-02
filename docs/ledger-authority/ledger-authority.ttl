@@ -1,0 +1,170 @@
+@prefix ledger: <urn:ledger:ns#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+
+#################################################################
+# Decision Ledger — authority records vocabulary (DRAFT)
+#
+# Extends the vocabulary the ledger graph stage already emits
+# (urn:ledger:ns#). Nothing here is hashed; the files are the
+# truth and this is the read model. IRI conventions inherited:
+#   entities   <urn:{id}>          e.g. <urn:grant:01K5…>
+#   identities <mailto:{identity}>
+#   sets       <urn:ledger-set:{id}>
+#   roles      <urn:ledger-role:{id}>   (new, same pattern as sets)
+#   hashes     <urn:sha256:{hex}>   (version nodes)
+# Revocations follow the existing pattern: triples on the revoked
+# node, not a separate node. Availability follows the same pattern
+# on the unavailability node.
+#################################################################
+
+<urn:ledger:ns#authority> a owl:Ontology ;
+    rdfs:label "Decision Ledger authority records"@en ;
+    rdfs:comment "Roles, grants, ordered fallback and filed unavailability. Draft amendment to ledger-format-v1."@en ;
+    owl:versionInfo "draft-2026-09-22" .
+
+### Classes
+
+ledger:Role a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Role"@en ;
+    rdfs:comment "Declared scope: what a role may do. One node per .decisions/roles/<id>.yml."@en .
+
+ledger:Grant a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Grant"@en ;
+    rdfs:comment "A grant of a role over a scope to one identity at one order. Permanent once filed; changes are new grants that supersede."@en .
+
+ledger:GrantAcceptance a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Grant acceptance"@en ;
+    rdfs:comment "The holder's acceptance of a grant. A grant is live only once accepted."@en .
+
+ledger:Unavailability a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Unavailability"@en ;
+    rdfs:comment "A filed interval during which a grant's holder does not hold active authority. Closed by ledger:until, or by availability triples on this node."@en .
+
+### Object properties
+
+ledger:role a owl:ObjectProperty ;
+    rdfs:domain ledger:Grant ; rdfs:range ledger:Role ;
+    rdfs:label "role"@en .
+
+ledger:grant a owl:ObjectProperty ;
+    rdfs:range ledger:Grant ;
+    rdfs:label "grant"@en ;
+    rdfs:comment "On a GrantAcceptance or Unavailability: the grant it concerns."@en .
+
+ledger:supersedesGrant a owl:ObjectProperty ;
+    rdfs:domain ledger:Grant ; rdfs:range ledger:Grant ;
+    rdfs:label "supersedes grant"@en ;
+    rdfs:comment "Distinct from ledger:supersedes (decision to decision) so the two chains are never confused."@en .
+
+ledger:holder a owl:ObjectProperty ;
+    rdfs:domain ledger:Grant ;
+    rdfs:label "holder"@en ;
+    rdfs:comment "Range is a mailto: IRI, as everywhere in the ledger graph."@en .
+
+ledger:grantedBy a owl:ObjectProperty ;
+    rdfs:domain ledger:Grant ;
+    rdfs:label "granted by"@en ;
+    rdfs:comment "mailto: IRI. Also emitted as prov:wasAttributedTo. On the genesis grant, equals ledger:holder."@en .
+
+ledger:revokedBy a owl:ObjectProperty ;
+    rdfs:comment "Reused from acceptance revocations. On a Grant: who filed the grant revocation."@en .
+
+ledger:availableBy a owl:ObjectProperty ;
+    rdfs:domain ledger:Unavailability ;
+    rdfs:label "available by"@en ;
+    rdfs:comment "mailto: IRI of the holder ending the unavailability. Only the holder may."@en .
+
+### Datatype properties
+
+ledger:may a owl:DatatypeProperty ;
+    rdfs:domain ledger:Role ; rdfs:range xsd:string ;
+    rdfs:label "may"@en ;
+    rdfs:comment "One triple per capability. Closed vocabulary: see ledger:CapabilityScheme."@en .
+
+ledger:scope a owl:DatatypeProperty ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Reused from Acceptance. Wire form kind:payload or '*'. A literal, because sets and patterns may live in other stores."@en .
+
+ledger:order a owl:DatatypeProperty ;
+    rdfs:domain ledger:Grant ; rdfs:range xsd:string ;
+    rdfs:comment "Hashed token: 'primary' or 'fallback-N'."@en .
+
+ledger:rank a owl:DatatypeProperty ;
+    rdfs:domain ledger:Grant ; rdfs:range xsd:integer ;
+    rdfs:comment "Derived from ledger:order (primary=0, fallback-N=N). Projection only; never hashed. Exists so SPARQL can order."@en .
+
+ledger:limit a owl:DatatypeProperty ;
+    rdfs:domain ledger:Grant ; rdfs:range xsd:string ;
+    rdfs:comment "One triple per limit. Only on non-primary grants. Closed vocabulary: see ledger:LimitScheme."@en .
+
+ledger:genesis a owl:DatatypeProperty ;
+    rdfs:domain ledger:Grant ; rdfs:range xsd:string ;
+    rdfs:comment "The literal \"true\" on the genesis grant only. A string, not xsd:boolean, because hashed content is strings only."@en .
+
+ledger:externalRef a owl:DatatypeProperty ;
+    rdfs:domain ledger:Grant ; rdfs:range xsd:string ;
+    rdfs:comment "Genesis only. Opaque pointer to the mandate outside the tool. Never dereferenced."@en .
+
+ledger:hash a owl:DatatypeProperty ;
+    rdfs:comment "Reused. On a Grant: sha256:<hex> over the canonical form with prefix ledger.authority-grant.v1."@en .
+
+ledger:signsHash a owl:DatatypeProperty ;
+    rdfs:domain ledger:GrantAcceptance ; rdfs:range xsd:string ;
+    rdfs:comment "The grant hash the holder accepted. Mirrors ledger:signsVersion; a literal because grant nodes are keyed by id, not hash."@en .
+
+ledger:from a owl:DatatypeProperty ;
+    rdfs:domain ledger:Unavailability ; rdfs:range xsd:dateTime .
+
+ledger:until a owl:DatatypeProperty ;
+    rdfs:domain ledger:Unavailability ; rdfs:range xsd:dateTime ;
+    rdfs:comment "Absent means open-ended."@en .
+
+ledger:basis a owl:DatatypeProperty ;
+    rdfs:domain ledger:Unavailability ; rdfs:range xsd:string ;
+    rdfs:comment "self | grantor | fallback-of-genesis."@en .
+
+ledger:reason a owl:DatatypeProperty ;
+    rdfs:range xsd:string .
+
+ledger:availableAt a owl:DatatypeProperty ;
+    rdfs:domain ledger:Unavailability ; rdfs:range xsd:dateTime ;
+    rdfs:comment "Set when the holder files availability. Ends the interval whoever declared it."@en .
+
+ledger:revokedAt a owl:DatatypeProperty ; rdfs:range xsd:dateTime ;
+    rdfs:comment "Reused. On a Grant: when the grant was revoked."@en .
+
+ledger:revocationReason a owl:DatatypeProperty ; rdfs:range xsd:string .
+
+ledger:title a owl:DatatypeProperty ; rdfs:range xsd:string .
+ledger:owner a owl:ObjectProperty ;
+    rdfs:comment "Reused from DecisionSet. On a Role: mailto: IRI of the role file's owner."@en .
+
+### Closed vocabularies, as SKOS concept schemes so a reader can enumerate them
+
+ledger:CapabilityScheme a skos:ConceptScheme ; skos:prefLabel "Role capabilities"@en .
+ledger:cap-accept-decision        a skos:Concept ; skos:inScheme ledger:CapabilityScheme ; skos:notation "accept-decision" .
+ledger:cap-sign-off-pattern       a skos:Concept ; skos:inScheme ledger:CapabilityScheme ; skos:notation "sign-off-pattern" .
+ledger:cap-waive-invalidation     a skos:Concept ; skos:inScheme ledger:CapabilityScheme ; skos:notation "waive-invalidation" .
+ledger:cap-grant-role             a skos:Concept ; skos:inScheme ledger:CapabilityScheme ; skos:notation "grant-role" .
+ledger:cap-revoke-grant           a skos:Concept ; skos:inScheme ledger:CapabilityScheme ; skos:notation "revoke-grant" .
+ledger:cap-declare-unavailability a skos:Concept ; skos:inScheme ledger:CapabilityScheme ; skos:notation "declare-unavailability" .
+ledger:cap-rotate-genesis         a skos:Concept ; skos:inScheme ledger:CapabilityScheme ; skos:notation "rotate-genesis" .
+
+ledger:LimitScheme a skos:ConceptScheme ; skos:prefLabel "Fallback limits"@en .
+ledger:lim-no-grants            a skos:Concept ; skos:inScheme ledger:LimitScheme ; skos:notation "no-grants" .
+ledger:lim-no-grant-revocations a skos:Concept ; skos:inScheme ledger:LimitScheme ; skos:notation "no-grant-revocations" .
+ledger:lim-no-genesis           a skos:Concept ; skos:inScheme ledger:LimitScheme ; skos:notation "no-genesis" .
+ledger:lim-no-role-edits        a skos:Concept ; skos:inScheme ledger:LimitScheme ; skos:notation "no-role-edits" .
+
+ledger:BasisScheme a skos:ConceptScheme ; skos:prefLabel "Unavailability basis"@en .
+ledger:basis-self                a skos:Concept ; skos:inScheme ledger:BasisScheme ; skos:notation "self" .
+ledger:basis-grantor             a skos:Concept ; skos:inScheme ledger:BasisScheme ; skos:notation "grantor" .
+ledger:basis-fallback-of-genesis a skos:Concept ; skos:inScheme ledger:BasisScheme ; skos:notation "fallback-of-genesis" .

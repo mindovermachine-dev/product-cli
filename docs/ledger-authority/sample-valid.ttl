@@ -1,0 +1,44 @@
+@prefix ledger: <urn:ledger:ns#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+<urn:ledger-role:architect> a ledger:Role ; ledger:title "Slice architecture authority" ;
+    ledger:owner <mailto:owner@customer.example> ;
+    ledger:may "accept-decision", "sign-off-pattern", "waive-invalidation", "grant-role" .
+
+<urn:grant:01K5M0000000000000000000G0> a ledger:Grant ; ledger:id "grant:01K5M0000000000000000000G0" ;
+    ledger:hash "sha256:0000000000000000000000000000000000000000000000000000000000000000" ;
+    ledger:role <urn:ledger-role:architect> ; ledger:scope "*" ;
+    ledger:holder <mailto:owner@customer.example> ; ledger:grantedBy <mailto:owner@customer.example> ;
+    ledger:order "primary" ; ledger:rank 0 ; ledger:genesis "true" ; ledger:externalRef "contract 2026/117" ;
+    prov:wasAttributedTo <mailto:owner@customer.example> ; prov:generatedAtTime "2026-10-01T09:00:00Z"^^xsd:dateTime ;
+    prov:wasGeneratedBy <urn:cs:01K5M0000000000000000000C0> .
+
+<urn:gacc:01K5M0000000000000000000A0> a ledger:GrantAcceptance ; ledger:id "gacc:01K5M0000000000000000000A0" ;
+    ledger:grant <urn:grant:01K5M0000000000000000000G0> ;
+    ledger:signsHash "sha256:0000000000000000000000000000000000000000000000000000000000000000" ;
+    prov:wasAttributedTo <mailto:owner@customer.example> ; prov:generatedAtTime "2026-10-01T09:05:00Z"^^xsd:dateTime ;
+    prov:wasGeneratedBy <urn:cs:01K5M0000000000000000000C0> .
+
+<urn:grant:01K5M2V7Q8H3N6R4T9W0X1Y2Z3> a ledger:Grant ; ledger:id "grant:01K5M2V7Q8H3N6R4T9W0X1Y2Z3" ;
+    ledger:hash "sha256:53db5f5c0d3ea0be8693e8a5b523285d3cbdfab8e9f1c1b7ec973dbd3b410c51" ;
+    ledger:role <urn:ledger-role:architect> ; ledger:scope "set:slice-architecture" ;
+    ledger:holder <mailto:architect@customer.example> ; ledger:grantedBy <mailto:owner@customer.example> ;
+    ledger:order "fallback-1" ; ledger:rank 1 ;
+    ledger:limit "no-grants", "no-grant-revocations", "no-genesis", "no-role-edits" ;
+    prov:wasAttributedTo <mailto:owner@customer.example> ; prov:generatedAtTime "2026-10-01T09:10:00Z"^^xsd:dateTime ;
+    prov:wasGeneratedBy <urn:cs:01K5M0000000000000000000C1> .
+
+<urn:gacc:01K5M0000000000000000000A1> a ledger:GrantAcceptance ; ledger:id "gacc:01K5M0000000000000000000A1" ;
+    ledger:grant <urn:grant:01K5M2V7Q8H3N6R4T9W0X1Y2Z3> ;
+    ledger:signsHash "sha256:53db5f5c0d3ea0be8693e8a5b523285d3cbdfab8e9f1c1b7ec973dbd3b410c51" ;
+    prov:wasAttributedTo <mailto:architect@customer.example> ; prov:generatedAtTime "2026-10-01T10:30:00Z"^^xsd:dateTime ;
+    prov:wasGeneratedBy <urn:cs:01K5M0000000000000000000C1> .
+
+<urn:unav:01K5N0000000000000000000T0> a ledger:Unavailability ; ledger:id "unav:01K5N0000000000000000000T0" ;
+    ledger:grant <urn:grant:01K5M2V7Q8H3N6R4T9W0X1Y2Z3> ;
+    ledger:from "2026-10-20T00:00:00Z"^^xsd:dateTime ; ledger:until "2026-10-27T00:00:00Z"^^xsd:dateTime ;
+    ledger:basis "self" ; ledger:reason "leave" ;
+    prov:wasAttributedTo <mailto:architect@customer.example> ; prov:generatedAtTime "2026-10-10T08:00:00Z"^^xsd:dateTime ;
+    prov:wasGeneratedBy <urn:cs:01K5N0000000000000000000C2> ;
+    ledger:availableAt "2026-10-24T08:00:00Z"^^xsd:dateTime ; ledger:availableBy <mailto:architect@customer.example> .

@@ -1,0 +1,15 @@
+@prefix ledger: <urn:ledger:ns#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+<urn:ledger-role:architect> a ledger:Role ; ledger:owner <mailto:o@x> ; ledger:may "accept-decision" .
+# primary with limits, wrong rank, bad scope, model as holder is a file-gate matter but shape catches mailto
+<urn:grant:01K5M0000000000000000000B0> a ledger:Grant ; ledger:id "grant:01K5M0000000000000000000B0" ;
+    ledger:hash "sha256:1111111111111111111111111111111111111111111111111111111111111111" ;
+    ledger:role <urn:ledger-role:architect> ; ledger:scope "team:foo" ;
+    ledger:holder <mailto:a@x> ; ledger:grantedBy <mailto:o@x> ;
+    ledger:order "primary" ; ledger:rank 2 ; ledger:limit "no-grants" ; ledger:externalRef "x" .
+# acceptance by the wrong person
+<urn:gacc:01K5M0000000000000000000B1> a ledger:GrantAcceptance ; ledger:id "gacc:01K5M0000000000000000000B1" ;
+    ledger:grant <urn:grant:01K5M0000000000000000000B0> ;
+    ledger:signsHash "sha256:1111111111111111111111111111111111111111111111111111111111111111" ;
+    prov:wasAttributedTo <mailto:someone-else@x> ; prov:generatedAtTime "2026-10-01T10:30:00Z"^^xsd:dateTime .
