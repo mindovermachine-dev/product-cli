@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-mod-rs
+boundary: contract surface of ledger-core/src/verify/mod.rs
+verdict_knowledge: "Callers learn a verify report may carry an export stage: present only when asked for, conformant only when empty, so an export check that did not run never reads as one that passed."
+contract_location: ledger-core/src/verify/mod.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: export
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:eb1ec3c4605693809ce7e804334835d745f3cb73337136b288da57370ab21088
+  after: sha256:46b980d87c476d0c39e6808eb358c0d9c7ba15a8fee64378972de39ebc9c3842
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:2f060806d615e8bc20e43ee249e5bc68fcf42a7939abeb3a9f6cd9aa6c20cfe0
+- symbol: export_findings
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:eb1ec3c4605693809ce7e804334835d745f3cb73337136b288da57370ab21088
+  after: sha256:46b980d87c476d0c39e6808eb358c0d9c7ba15a8fee64378972de39ebc9c3842
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:e59c8aba1893b27fdb596bb6699b6a0948090ad927be604f2bbda045e02cecd3

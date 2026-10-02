@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-graph-mod-rs
+boundary: contract surface of ledger-core/src/graph/mod.rs
+verdict_knowledge: "Consumers learn the graph serialises two ways from one triple map — the Turtle index and the N-Triples export — so neither can state a triple the other lacks."
+contract_location: ledger-core/src/graph/mod.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: export
+  file: ledger-core/src/graph/mod.rs
+  before: sha256:b88f27d719720db481774f76222d00438f57b01a453b5e99b582b2b421760523
+  after: sha256:f5d26088ceabe64a8ad0b39e61bf20fa3a52f5987bb37b2a9c950b096e3322cf
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:4412b87fc268353fb0a1920a3b1324abbd37a38cc7dc94567f7f3ef74a5b3887
+- symbol: ntriples
+  file: ledger-core/src/graph/mod.rs
+  before: sha256:b88f27d719720db481774f76222d00438f57b01a453b5e99b582b2b421760523
+  after: sha256:f5d26088ceabe64a8ad0b39e61bf20fa3a52f5987bb37b2a9c950b096e3322cf
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:4ad13926d01182ca22dbaacd53b7055226d7164171d7c18d1b9b012d0c65c554

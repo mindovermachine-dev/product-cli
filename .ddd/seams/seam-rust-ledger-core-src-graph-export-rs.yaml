@@ -1,0 +1,68 @@
+format: 2
+id: seam/rust/ledger-core-src-graph-export-rs
+boundary: contract surface of ledger-core/src/graph/export.rs
+verdict_knowledge: "Consumers learn the export is a function of the log alone: one namespace's decisions, versions, acceptances, their revocations, the sets they name and the change-sets that filed them; and that a committed export which differs, names an unspoken namespace, is missing for a spoken one, or does not exist at all is a finding naming the regeneration command."
+contract_location: ledger-core/src/graph/export.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: EXPORT_DIR
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:43f4094c9efad653d2330218acc5f0e45c0739ed9efa190a22b21b3ea25a7160
+- symbol: check
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:2408255b2ebd0dc1e02aac9c9589237d5e72c8d56e7f81f408be0e3875c85408
+- symbol: default_path
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:76a022428e99e2049abf80719a3f10d89923410d4595e28a69b54c9165c15c3f
+- symbol: export
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:2623defb41955aee736f3c208abffa2c7e5d7610ffdc8791eea94060c7abf9da
+- symbol: namespaces
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:86713d835c3aa041be62a4dab9a666c0cf336a250f1f0569a0e2cfc4091f8fc4
+- symbol: select
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:9cc3e7c15aca951a6714c54dd8bcb72481b916813c4fc944af742ecea06a9bda
+- symbol: write
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:8ed6000b846ee805c173df2492398e63536a229ffa41cf62c2c612fd81da56b9
+- symbol: ExportFinding
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:a5358b7d29507a2b5cd15671f77601f3abf3c4b175db1ea0c773eca7247dc7fb
+- symbol: message
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:edf45c5d28b0f8080dd21f8bf0f4b010b1901ca40fe84b0520e4bdf4be57614d
+- symbol: subject
+  file: ledger-core/src/graph/export.rs
+  before: absent
+  after: sha256:ce8cc42de0eec451bc071892fadb8d0bea9cd1a06bd9ba2d47c2926920e883c3
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:810548a59df1fe688bf7b30f943db8f236ccaae48894bd06ebd897977b2f3f26

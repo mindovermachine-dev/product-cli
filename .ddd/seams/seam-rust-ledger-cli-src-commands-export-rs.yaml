@@ -1,0 +1,38 @@
+format: 2
+id: seam/rust/ledger-cli-src-commands-export-rs
+boundary: contract surface of ledger-cli/src/commands/export.rs
+verdict_knowledge: "CLI users learn the log has a committed read model: `ledger export --format ntriples` writes one namespace (or every namespace the log speaks) to docs/decisions/<ns>.nt, `--out -` prints it, and a format or namespace the log does not have is refused with exit 2, never written as an empty file."
+contract_location: ledger-cli/src/commands/export.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: run
+  file: ledger-cli/src/commands/export.rs
+  before: absent
+  after: sha256:a8a4f0f1e0bbe368c561fdaf66837dcd7375a3561c18768e27439bee2828f4a8
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:c9fbbe6595cedef35aa7373210452ce1a50c9be171807271ea65311630cce7e5
+- symbol: Flags
+  file: ledger-cli/src/commands/export.rs
+  before: absent
+  after: sha256:a8a4f0f1e0bbe368c561fdaf66837dcd7375a3561c18768e27439bee2828f4a8
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:b35b1f5242e347f3905bf3d13d1bb4a54c13420beb47429f46dfef6efe273da2
+- symbol: format
+  file: ledger-cli/src/commands/export.rs
+  before: absent
+  after: sha256:a8a4f0f1e0bbe368c561fdaf66837dcd7375a3561c18768e27439bee2828f4a8
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:4cd0829734d94373dde0cca3a357018531529ec5c000424218fb25668324fb0b
+- symbol: namespace
+  file: ledger-cli/src/commands/export.rs
+  before: absent
+  after: sha256:a8a4f0f1e0bbe368c561fdaf66837dcd7375a3561c18768e27439bee2828f4a8
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:a85f5b33050dbf0928db8a3af332d1a490d52a94c4ec55a60d49cc72e98f0bef
+- symbol: out
+  file: ledger-cli/src/commands/export.rs
+  before: absent
+  after: sha256:a8a4f0f1e0bbe368c561fdaf66837dcd7375a3561c18768e27439bee2828f4a8
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:a76268906f7eb82ff71d6539984022aaac431ffb976fcd3d6ac70812ce57f593
