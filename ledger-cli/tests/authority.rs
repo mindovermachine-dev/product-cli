@@ -169,3 +169,54 @@ fn a_namespace_without_policy_is_not_role_checked() {
     repo.ok_tty(&["accept", &id]);
     repo.ok(&["verify", "--no-blame"]);
 }
+
+fn acceptance_of(repo: &Repo) -> String {
+    let store = ledger_core::store::load(repo.path());
+    store.log.iter().flat_map(|c| c.file.acceptances.iter()).map(|a| a.id.to_string()).next_back().expect("acceptance")
+}
+
+#[test]
+fn revoke_files_a_revocation_entity_and_leaves_the_acceptance_untouched() {
+    let repo = governed();
+    let id = repo.add("Money is decimal.", &[]);
+    repo.ok_tty(&["accept", &id]);
+    let acc = acceptance_of(&repo);
+    let files_before: Vec<(String, String)> = repo
+        .log_files()
+        .into_iter()
+        .map(|f| (f.clone(), std::fs::read_to_string(repo.path().join(".decisions/log").join(&f)).expect("read")))
+        .collect();
+    let out = repo.ok_tty(&["revoke", &acc, "--reason", "filed against the wrong version"]);
+    assert!(out.contains("by rev:"), "{out}");
+    for (file, text) in &files_before {
+        let now = std::fs::read_to_string(repo.path().join(".decisions/log").join(file)).expect("read");
+        assert_eq!(&now, text, "{file} was edited by a revocation");
+    }
+    let log = repo.log_files().pop().expect("log");
+    let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(log)).expect("read");
+    assert!(text.contains("format: 6") && text.contains(&format!("revokes: {acc}")) && text.contains("hash: sha256:"), "{text}");
+    repo.ok(&["verify", "--no-blame"]);
+}
+
+#[test]
+fn revoking_in_a_governed_namespace_needs_the_accept_role() {
+    let repo = governed();
+    let id = repo.add("Money is decimal.", &[]);
+    repo.ok_tty(&["accept", &id]);
+    let acc = acceptance_of(&repo);
+    repo.act_as(ARCHITECT);
+    let refused = repo.refused(&["revoke", &acc, "--reason", "not mine to unsay"]);
+    assert!(refused.contains("may not revoke an acceptance"), "{refused}");
+}
+
+#[test]
+fn a_model_identity_cannot_revoke_a_persons_acceptance() {
+    let repo = Repo::with_identity(ARCHITECT);
+    repo.declare();
+    let id = repo.add("Money is decimal.", &[]);
+    repo.ok_tty(&["accept", &id]);
+    let acc = acceptance_of(&repo);
+    repo.act_as("noreply@anthropic.com");
+    let refused = repo.refused(&["revoke", &acc, "--reason", "an agent tidying up"]);
+    assert!(refused.contains("[L006]") && refused.contains("revoker"), "{refused}");
+}

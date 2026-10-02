@@ -120,3 +120,30 @@ fn every_authority_node_is_emitted_with_its_shape_triples() {
         assert!(ttl.contains(needle), "missing {needle}:\n{ttl}");
     }
 }
+
+#[test]
+fn l006_refuses_a_model_revoker_in_either_revocation_shape() {
+    for format in [1, 6] {
+        let sealed = testkit::sealed(testkit::version());
+        let acceptance = testkit::acceptance(&sealed);
+        let mut cs = testkit::changeset(vec![sealed], vec![acceptance]);
+        cs.format = format;
+        let mut r = testkit::legacy_revocation("2026-10-02T09:00:00Z", "a model unsaying a person");
+        if format == 6 {
+            r.id = Some("rev:01K2C4YQJ3F8M0PT5W7NZ9RDY2".parse().expect("rev id"));
+            r.revokes = r.acceptance.take().map(crate::authority::Revocable::Acceptance);
+            r.actor = Some(testkit::identity("claude@anthropic.com"));
+            r.by = None;
+            r.hash = Some(crate::authority::payload::revocation_hash(&r));
+        } else {
+            r.by = Some(testkit::identity("noreply@anthropic.com"));
+        }
+        cs.revocations.push(r);
+        let report = run(&testkit::store(cs));
+        assert!(
+            report.findings.iter().any(|f| f.class == VerifyClass::L006 && f.message.contains("revoker")),
+            "format {format}: {}",
+            messages(&report)
+        );
+    }
+}

@@ -92,9 +92,10 @@ fn a_namespace_export_holds_only_that_namespace() {
     let ours = export(&store, "hafeok.ledger").expect("spoken");
     assert!(!ours.contains("hafeok.other"), "{ours}");
     assert!(!ours.contains("RDY1"), "the other namespace's acceptance stays out: {ours}");
-    assert!(ours.contains("<urn:ledger:ns#revokedAt>"), "our revocation comes along: {ours}");
+    assert!(ours.contains("<urn:ledger:ns#revokes>"), "our revocation comes along: {ours}");
+    assert!(!ours.contains("revokedAt"), "no triple lands on the acceptance (ruling 3): {ours}");
     let theirs = export(&store, "hafeok.other").expect("spoken");
-    assert!(!theirs.contains("revokedAt"), "a revocation follows its acceptance: {theirs}");
+    assert!(!theirs.contains("Revocation"), "a revocation follows its acceptance: {theirs}");
     assert!(export(&store, "hafeok.nobody").is_none());
 }
 

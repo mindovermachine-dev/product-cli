@@ -278,7 +278,7 @@ acceptances:
     expires_at: 2027-08-10              # optional (OD-6 open)
     signature: ""                       # reserved; empty in format 1
 
-revocations:
+revocations:                            # formats 1–5 shape; format 6: §3.9.2
   - acceptance: acc:01K2C5…
     at: 2026-08-11T09:00:00Z
     by: emk@delegate.dk
@@ -893,7 +893,17 @@ truth; the emission is byte-deterministic, so deleting the index and
 rebuilding reproduces it byte-identically — the PRD §5 correctness test,
 run in CI. Acceptance provenance is PROV-O (an acceptance
 `prov:wasAttributedTo` its actor; a version `prov:wasRevisionOf` its
-parent; both `prov:wasGeneratedBy` their change-set). `based_on` tokens
+parent; both `prov:wasGeneratedBy` their change-set). **No triple is ever
+added to a node after the record that creates it is filed** (ruling 3,
+spec v1.7): a revocation is its own `ledger:Revocation, prov:Entity` node
+— `ledger:id`, `ledger:hash`, `ledger:revokes <urn:acc:…>` (or
+`<urn:grant:…>`), `ledger:revocationReason`, `prov:wasAttributedTo`,
+`prov:generatedAtTime` — so an acceptance's triples are fixed at filing.
+A legacy-shape revocation (formats 1–5, no id) is emitted the same way at
+`<urn:rev:legacy-<acc-ulid>>`, with its computed payload hash and no
+`ledger:id`. The retired shape (`ledger:revokedAt`, `ledger:revokedBy`
+on the acceptance IRI) is no longer emitted; readers tolerate it during
+the transition. `based_on` tokens
 become `ledger:basedOn` literals exactly as written — the vocabulary stays
 open at this milestone; the graph exposes it and does not police it.
 

@@ -252,14 +252,10 @@ fn emit_acceptance(t: &mut Triples, a: &Acceptance, cs_iri: &str) {
     }
 }
 
+/// A revocation is its own node, always (ruling 3, #66): no triple is ever
+/// added to the acceptance or grant it names. A legacy-shape revocation
+/// (formats 1–5) has no id, so its node is minted from the acceptance it
+/// revokes, `<urn:rev:legacy-<acc-ulid>>`, carrying no `ledger:id`.
 fn emit_revocation(t: &mut Triples, r: &Revocation, cs_iri: &str) {
-    if r.is_entity() {
-        super::authority::emit_revocation(t, r, cs_iri);
-        return;
-    }
-    let (Some(acceptance), Some(by)) = (r.revoked_acceptance(), r.actor()) else { return };
-    let iri = format!("<urn:{acceptance}>");
-    t.add(&iri, "ledger:revokedAt", stamp(&r.at));
-    t.add(&iri, "ledger:revokedBy", mailto(by));
-    t.add(&iri, "ledger:revocationReason", literal(&r.reason));
+    super::authority::emit_revocation(t, r, cs_iri);
 }

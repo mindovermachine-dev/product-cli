@@ -118,9 +118,22 @@ fn emit_grant(t: &mut Triples, g: &Grant, cs_iri: &str) {
 /// A `rev:` revocation entity: its own node naming what it revokes. Every
 /// payload field is a triple, so a consumer can rebuild the signed bytes.
 pub(super) fn emit_revocation(t: &mut Triples, r: &Revocation, cs_iri: &str) {
-    let (Some(id), Some(target), Some(actor)) = (&r.id, r.target(), r.actor()) else { return };
-    let n = iri(id);
-    typed(t, &n, "ledger:Revocation", &id.to_string(), cs_iri);
+    let (Some(target), Some(actor)) = (r.target(), r.actor()) else { return };
+    let n = match (&r.id, r.revoked_acceptance()) {
+        (Some(id), _) => {
+            let n = iri(id);
+            typed(t, &n, "ledger:Revocation", &id.to_string(), cs_iri);
+            n
+        }
+        (None, Some(acc)) => {
+            let n = format!("<urn:rev:legacy-{}>", acc.ulid());
+            t.add(&n, "a", "ledger:Revocation".into());
+            t.add(&n, "a", "prov:Entity".into());
+            t.add(&n, "prov:wasGeneratedBy", cs_iri.to_string());
+            n
+        }
+        (None, None) => return,
+    };
     let hash = r.hash.clone().unwrap_or_else(|| crate::authority::payload::revocation_hash(r));
     t.add(&n, "ledger:hash", literal(&hash.to_string()));
     t.add(&n, "ledger:revokes", iri(&target));

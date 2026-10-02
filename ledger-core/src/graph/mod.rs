@@ -32,6 +32,10 @@ mod tests;
 #[path = "export_tests.rs"]
 mod export_tests;
 
+#[cfg(test)]
+#[path = "revocation_tests.rs"]
+mod revocation_tests;
+
 use std::fmt;
 
 use serde::Serialize;
