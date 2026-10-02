@@ -174,10 +174,12 @@ pub enum Commands {
         /// The out-of-band mandate the genesis grant rests on
         #[arg(long, value_name = "REF")]
         external_ref: Option<String>,
-        /// The genesis role's id
+        /// The genesis (root) role's id: grant-role, revoke-grant,
+        /// declare-unavailability, rotate-genesis — never a decision capability
         #[arg(long, value_name = "ROLE", default_value = "steward")]
         role: String,
-        /// The role whose grants carry accept-decision (default: genesis role)
+        /// The role whose grants carry accept-decision; never the genesis
+        /// role (default: acceptor, declared if absent)
         #[arg(long, value_name = "ROLE")]
         accept_role: Option<String>,
     },

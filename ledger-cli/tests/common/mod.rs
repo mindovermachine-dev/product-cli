@@ -1,10 +1,10 @@
 //! A temporary git repository with a ledger store, driven through the binary.
 //!
 //! Shared by the integration suites that need a real repository. A signing
-//! invocation — `accept` naming a decision or carrying `--confirm`, and
-//! `revoke` — refuses a non-interactive caller (#71), so [`invoke`] runs it
-//! under a pseudo-terminal, which is how a person runs it; everything else
-//! runs with plain pipes. [`Repo::piped`] forces pipes, for the refusal
+//! invocation, and every verb that writes an authority record, refuses a
+//! non-interactive caller (#71, #85), so [`invoke`] runs it under a
+//! pseudo-terminal, which is how a person runs it; everything else runs
+//! with plain pipes. [`Repo::piped`] forces pipes, for the refusal
 //! tests themselves.
 
 #![allow(dead_code)]
@@ -118,21 +118,28 @@ impl Repo {
     }
 }
 
-/// Whether an invocation signs (or unsays a signature), and so must run at
-/// a terminal: `accept <dec>`, `accept … --confirm`, `revoke`.
-pub fn signs(args: &[&str]) -> bool {
+/// Whether an invocation must run at a terminal (#71, #85): it signs, or
+/// unsays a signature, or writes an authority record. The binary's own
+/// classification is `commands::terminal::mode`; this mirrors it so the
+/// suites drive each verb the way a person runs it.
+pub fn needs_terminal(args: &[&str]) -> bool {
+    let sub = args.get(1).copied();
     match args.first().copied() {
-        Some("revoke") => true,
+        Some("revoke" | "role" | "available" | "unavailable") => true,
         Some("accept") => {
             args.contains(&"--confirm") || args.iter().skip(1).any(|a| a.starts_with("dec:"))
         }
+        Some("init") => args.contains(&"--namespace"),
+        Some("grant") => true,
+        Some("identity") => sub != Some("sync"),
+        Some("policy") => sub == Some("set"),
         _ => false,
     }
 }
 
-/// Run the binary, under a pseudo-terminal when the invocation signs.
+/// Run the binary, under a pseudo-terminal when the invocation needs one.
 pub fn invoke(root: &Path, args: &[&str]) -> Output {
-    if signs(args) {
+    if needs_terminal(args) {
         tty(root, args)
     } else {
         piped(root, args)

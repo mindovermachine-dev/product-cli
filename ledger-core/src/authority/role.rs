@@ -39,6 +39,12 @@ impl Capability {
         Self::RotateGenesis,
     ];
 
+    /// The genesis (root) role's capabilities: acts on the authority
+    /// structure, none of the three decision capabilities (D9 (f), ruled
+    /// 2026-10-02). Accepting is a separate role, granted separately.
+    pub const ROOT: &'static [Capability] =
+        &[Self::GrantRole, Self::RevokeGrant, Self::DeclareUnavailability, Self::RotateGenesis];
+
     pub fn as_str(self) -> &'static str {
         match self {
             Self::AcceptDecision => "accept-decision",

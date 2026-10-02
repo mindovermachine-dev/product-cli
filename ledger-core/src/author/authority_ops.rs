@@ -9,11 +9,15 @@
 //! the decision-class → role mapping exists.
 //!
 //! **Genesis.** The first `init --namespace` in a store bootstraps the
-//! trust root: a role carrying every capability, the genesis grant
+//! trust root: the root role carrying the four authority capabilities
+//! ([`Capability::ROOT`]) and none of the decision ones, the genesis grant
 //! (self-granted, `*`, primary, naming the out-of-band mandate), the
-//! holder's acceptance of it, and the namespace's first policy. Later
-//! namespaces are the genesis holder's to initialise, and file a policy
-//! only — a store has one trust root (`A005`).
+//! holder's acceptance of it, and the namespace's first policy, whose
+//! `accept_role` is a different role (D9 (f)). Nobody holds the accept role
+//! until it is granted — to the genesis holder too, if that person is to
+//! accept. Later namespaces are the genesis holder's to initialise, and
+//! file a policy (and the accept role, if new) only — a store has one trust
+//! root (`A005`).
 
 use crate::authority::payload::{grant_hash, revocation_hash};
 use crate::authority::{
@@ -31,12 +35,16 @@ pub struct InitNamespaceArgs {
     /// The mandate outside the tool — required when the store has no
     /// genesis yet, ignored after.
     pub external_ref: Option<String>,
-    /// The genesis role's id (created with every capability if absent).
+    /// The genesis role's id (created with [`Capability::ROOT`] if absent).
     pub role: String,
-    /// The role whose grants carry `accept-decision` here; defaults to the
-    /// genesis role.
+    /// The role whose grants carry `accept-decision` here; defaults to
+    /// [`DEFAULT_ACCEPT_ROLE`], and never the genesis role.
     pub accept_role: Option<String>,
 }
+
+/// The accept role `init --namespace` names when none is given. Declared
+/// with `accept-decision` alone when absent — the fewest claims.
+pub const DEFAULT_ACCEPT_ROLE: &str = "acceptor";
 
 /// What `role declare` states.
 pub struct RoleArgs {
@@ -83,43 +91,72 @@ impl Author {
         }
         let genesis = auth.genesis().cloned();
         let mut candidate = self.shell(Some(format!("init namespace {}", args.namespace)))?;
-        let (new_role, accept_role, mut lines) = match genesis {
+        let (mut new_roles, root_role, mut lines) = match genesis {
             None => self.bootstrap(&store, &args, &mut candidate)?,
-            Some(g) => self.join_genesis(&auth, &g, &args)?,
+            Some(g) => self.join_genesis(&auth, &g)?,
         };
+        let accept_role = args.accept_role.clone().unwrap_or_else(|| DEFAULT_ACCEPT_ROLE.to_string());
+        if accept_role == root_role {
+            return Err(AuthorError::Usage(format!(
+                "the accept role must differ from the genesis role `{root_role}` — the genesis role acts on \
+                 the authority structure, not on decisions (D9 (f))"
+            )));
+        }
+        if store.roles.iter().all(|r| r.id != accept_role) {
+            new_roles.push(self.new_role(&accept_role, "Accepts decisions", &[Capability::AcceptDecision]));
+            lines.push(format!("declared role `{accept_role}` — may accept-decision; held by nobody until granted"));
+        }
         let policy = self.first_policy(&args.namespace, &accept_role)?;
         lines.push(format!("namespace `{}` under policy {} (accept role `{accept_role}`)", args.namespace, policy.id));
         candidate.policies.push(policy);
-        if let Some(role) = &new_role {
-            store.roles.push(role.clone());
-        }
+        store.roles.extend(new_roles.iter().cloned());
         self.refusal_check(&store, &candidate, |_| false)?;
-        if let Some(role) = &new_role {
+        for role in &new_roles {
             self.write_role(role)?;
         }
         let path = self.append(&candidate)?;
         Ok(Applied { path, lines })
     }
 
-    /// The genesis records: role (if new), grant, its acceptance.
+    fn new_role(&self, id: &str, title: &str, may: &[Capability]) -> Role {
+        Role {
+            format: crate::format::AUTHORITY_FORMAT,
+            id: id.to_string(),
+            title: Some(title.into()),
+            owner: self.who.clone(),
+            may: may.to_vec(),
+            created_at: self.today(),
+            notes: None,
+        }
+    }
+
+    /// The genesis records: the root role (if new), grant, its acceptance.
+    /// An existing role of the root id must carry every root capability.
     fn bootstrap(
         &mut self,
         store: &Store,
         args: &InitNamespaceArgs,
         candidate: &mut crate::changeset::ChangeSet,
-    ) -> Result<(Option<Role>, String, Vec<String>), AuthorError> {
+    ) -> Result<(Vec<Role>, String, Vec<String>), AuthorError> {
         let mandate = args.external_ref.clone().filter(|r| !r.trim().is_empty()).ok_or_else(|| {
             AuthorError::Usage("the store has no genesis yet — `--external-ref` names the mandate it rests on".into())
         })?;
-        let new_role = store.roles.iter().all(|r| r.id != args.role).then(|| Role {
-            format: crate::format::AUTHORITY_FORMAT,
-            id: args.role.clone(),
-            title: Some("Genesis steward".into()),
-            owner: self.who.clone(),
-            may: Capability::ALL.to_vec(),
-            created_at: self.today(),
-            notes: None,
-        });
+        let new_roles = match store.role(&args.role) {
+            None => vec![self.new_role(&args.role, "Genesis steward", Capability::ROOT)],
+            Some(existing) => {
+                let missing: Vec<&str> =
+                    Capability::ROOT.iter().filter(|c| !existing.may(**c)).map(|c| c.as_str()).collect();
+                if !missing.is_empty() {
+                    return Err(AuthorError::Conflict(format!(
+                        "role `{}` cannot be the genesis role: it lacks {} — the root role carries grant-role, \
+                         revoke-grant, declare-unavailability and rotate-genesis (D9 (f))",
+                        args.role,
+                        missing.join(", ")
+                    )));
+                }
+                Vec::new()
+            }
+        };
         let grant = self.seal_grant(&GrantArgs {
             role: args.role.clone(),
             holder: self.who.clone(),
@@ -131,8 +168,7 @@ impl Author {
         let line = format!("genesis {} — {} holds `{}` over *", grant.id, self.who, args.role);
         candidate.grant_acceptances.push(self.grant_acceptance(&grant)?);
         candidate.grants.push(grant);
-        let accept_role = args.accept_role.clone().unwrap_or_else(|| args.role.clone());
-        Ok((new_role, accept_role, vec![line]))
+        Ok((new_roles, args.role.clone(), vec![line]))
     }
 
     /// A later namespace: the live, available genesis holder's act.
@@ -140,15 +176,14 @@ impl Author {
         &self,
         auth: &Authority<'_>,
         genesis: &Grant,
-        args: &InitNamespaceArgs,
-    ) -> Result<(Option<Role>, String, Vec<String>), AuthorError> {
+    ) -> Result<(Vec<Role>, String, Vec<String>), AuthorError> {
         if genesis.holder != self.who || !auth.is_available(genesis, self.now) {
             return Err(AuthorError::Unauthorized(format!(
                 "a namespace is put under policy by the genesis holder ({}), available now",
                 genesis.holder
             )));
         }
-        Ok((None, args.accept_role.clone().unwrap_or_else(|| genesis.role.clone()), Vec::new()))
+        Ok((Vec::new(), genesis.role.clone(), Vec::new()))
     }
 
     fn first_policy(&mut self, namespace: &str, accept_role: &str) -> Result<Policy, AuthorError> {

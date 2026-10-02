@@ -22,6 +22,7 @@ mod inspect;
 mod merge_cmd;
 mod resolve_cmd;
 mod sign;
+mod terminal;
 mod verify;
 
 use std::path::PathBuf;
@@ -36,7 +37,7 @@ pub const EXIT_ERROR: i32 = 2;
 
 /// Dispatch, mapping every outcome to an exit code.
 pub fn run(command: Commands, root: Option<PathBuf>) -> i32 {
-    let result = dispatch(command, root);
+    let result = terminal::gate(&command).and_then(|()| dispatch(command, root));
     match result {
         Ok(code) => code,
         Err(message) => {
