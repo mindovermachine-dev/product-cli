@@ -21,8 +21,10 @@ pub const NS: &str = "urn:ledger:ns#";
 pub const PROV: &str = "http://www.w3.org/ns/prov#";
 
 /// Subject → predicate → objects, all ordered: determinism by construction.
+/// Terms are held in their Turtle spelling (prefixed names, `a`); the
+/// N-Triples writer expands them, so both serialisations share one graph.
 #[derive(Default)]
-struct Triples(BTreeMap<String, BTreeMap<String, BTreeSet<String>>>);
+pub(super) struct Triples(pub(super) BTreeMap<String, BTreeMap<String, BTreeSet<String>>>);
 
 impl Triples {
     fn add(&mut self, subject: &str, predicate: &str, object: String) {
@@ -59,14 +61,30 @@ impl Triples {
     }
 }
 
-fn literal(value: &str) -> String {
-    let escaped = value
-        .replace('\\', "\\\\")
-        .replace('"', "\\\"")
-        .replace('\n', "\\n")
-        .replace('\r', "\\r")
-        .replace('\t', "\\t");
-    format!("\"{escaped}\"")
+/// A string literal escaped the RDF 1.2 canonical way: `ECHAR` for BS, HT,
+/// LF, FF, CR, `"` and `\`; uppercase-hex `UCHAR` for the other C0
+/// controls, DEL, U+FFFE and U+FFFF. Valid Turtle as well, so the index and
+/// the committed export spell every literal identically.
+pub(super) fn literal(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 2);
+    out.push('"');
+    for c in value.chars() {
+        match c {
+            '\u{8}' => out.push_str("\\b"),
+            '\t' => out.push_str("\\t"),
+            '\n' => out.push_str("\\n"),
+            '\u{c}' => out.push_str("\\f"),
+            '\r' => out.push_str("\\r"),
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\u{0}'..='\u{1f}' | '\u{7f}' | '\u{fffe}' | '\u{ffff}' => {
+                out.push_str(&format!("\\u{:04X}", u32::from(c)));
+            }
+            other => out.push(other),
+        }
+    }
+    out.push('"');
+    out
 }
 
 fn date(value: &chrono::NaiveDate) -> String {
@@ -91,6 +109,11 @@ fn hash_iri(hash: &crate::hash::VersionHash) -> String {
 
 /// The whole store as one deterministic Turtle document.
 pub fn emit(store: &Store) -> String {
+    triples(store).render()
+}
+
+/// The store's triples, shared by the Turtle index and the N-Triples export.
+pub(super) fn triples(store: &Store) -> Triples {
     let mut t = Triples::default();
     for set in &store.sets {
         emit_set(&mut t, set);
@@ -128,7 +151,7 @@ pub fn emit(store: &Store) -> String {
             emit_revocation(&mut t, r);
         }
     }
-    t.render()
+    t
 }
 
 fn emit_set(t: &mut Triples, set: &crate::set::DecisionSet) {

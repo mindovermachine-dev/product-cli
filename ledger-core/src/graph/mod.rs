@@ -10,16 +10,26 @@
 //! dependency, never this one's.
 //!
 //! Graph findings are a **distinct stage** of `verify`, outside the file
-//! gate's closed ten classes: `G001`–`G004`, reported by the same command
+//! gate's closed ten classes: `G001`–`G005`, reported by the same command
 //! with unchanged exit semantics.
+//!
+//! The same triples also serialise as sorted N-Triples ([`ntriples`]),
+//! which is the committed per-namespace export ([`export`]) the analyzers'
+//! generator reads; `verify --export` holds it byte-identical to the log.
 
+pub mod export;
 pub mod index;
+pub mod ntriples;
 pub mod shapes;
 pub mod turtle;
 
 #[cfg(test)]
 #[path = "tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "export_tests.rs"]
+mod export_tests;
 
 use std::fmt;
 

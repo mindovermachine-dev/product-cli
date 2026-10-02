@@ -59,13 +59,23 @@ pub struct Report {
     pub blame_uncommitted: usize,
     /// Whether git could be consulted at all.
     pub blame_unavailable: bool,
+    /// The export stage (`verify --export`): committed exports that do not
+    /// match the log. `None` when the stage was not asked for, so an unrun
+    /// check never reads as a clean one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub export: Option<Vec<crate::graph::export::ExportFinding>>,
 }
 
 impl Report {
-    /// Whether the gate passes: no file-stage findings, no graph-stage
-    /// findings. Two stages, one exit discipline.
+    /// Whether the gate passes: no file-stage, graph-stage or (when run)
+    /// export-stage findings. Three stages, one exit discipline.
     pub fn is_conformant(&self) -> bool {
-        self.findings.is_empty() && self.graph.is_empty()
+        self.findings.is_empty() && self.graph.is_empty() && self.export_findings().is_empty()
+    }
+
+    /// The export stage's findings; empty when it was not run.
+    pub fn export_findings(&self) -> &[crate::graph::export::ExportFinding] {
+        self.export.as_deref().unwrap_or_default()
     }
 }
 

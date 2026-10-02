@@ -12,6 +12,7 @@ mod common;
 mod declare;
 mod diff_cmd;
 mod evolve;
+mod export;
 mod graph_cmds;
 mod init;
 mod inspect;
@@ -156,6 +157,18 @@ pub enum Commands {
         #[arg(long, value_name = "DATE")]
         review_by: String,
     },
+    /// Write the log as sorted, canonical N-Triples, one file per namespace
+    Export {
+        /// Output format: ntriples
+        #[arg(long, value_name = "FORMAT")]
+        format: String,
+        /// One namespace; default every namespace the log speaks
+        #[arg(long, value_name = "NS")]
+        namespace: Option<String>,
+        /// Output file (default docs/decisions/<ns>.nt); `-` prints it
+        #[arg(long, value_name = "PATH")]
+        out: Option<PathBuf>,
+    },
     /// Scaffold the .decisions/ store: the §5 layout plus the ignore line
     Init,
     /// Walk the change-sets in creation order
@@ -266,6 +279,10 @@ pub enum Commands {
         /// Skip the git blame pass (class L009)
         #[arg(long)]
         no_blame: bool,
+        /// Also hold every committed docs/decisions/<ns>.nt byte-identical
+        /// to the log's export
+        #[arg(long)]
+        export: bool,
     },
 }
 
@@ -336,13 +353,16 @@ fn dispatch_read(command: Commands, root: Option<PathBuf>) -> Result<i32, String
             graph_cmds::coverage(root, set.as_deref(), json, today.as_deref())
         }
         Commands::Diff { spec, json } => diff_cmd::run(root, &spec, json),
+        Commands::Export { format, namespace, out } => {
+            export::run(root, export::Flags { format, namespace, out })
+        }
         Commands::Log { set } => inspect::log(root, set.as_deref()),
         Commands::Show { decision, set, group, json, today } => {
             inspect::show(root, inspect::ShowFlags { decision, set, group, json, today })
         }
         Commands::Status { today } => inspect::status(root, today.as_deref()),
-        Commands::Verify { gate, json, today, no_blame } => {
-            verify::run(root, verify::Args { gate, json, today, blame: !no_blame })
+        Commands::Verify { gate, json, today, no_blame, export } => {
+            verify::run(root, verify::Args { gate, json, today, blame: !no_blame, export })
         }
         // Every writing verb is handled by `dispatch`, which routes here
         // only for what is left. Reaching this arm means a variant was

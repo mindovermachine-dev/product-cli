@@ -688,3 +688,34 @@ seven-state disposition vocabulary — `undecided`, `awaiting-acceptance`,
 — per set and per namespace, with supersession chains walked to their
 tips, and always states §8-of-the-PRD's honest limit: coverage is measured
 against the enumerated set, and nothing verifies the set itself.
+
+### 8.1 The committed export and the export stage
+
+**Outside the import surface**, like the rest of this section. `ledger
+export --format ntriples [--namespace <ns>] [--out <path>|-]` writes one
+namespace of the log to `docs/decisions/<ns>.nt` (every namespace the log
+speaks when `--namespace` is absent). It is the read model the analyzers'
+generator consumes.
+
+- **Triples.** They are exactly the index's triples (§8), restricted to one namespace:
+  - the namespace's decisions and their versions;
+  - acceptances of those decisions, and revocations of those acceptances;
+  - the sets those versions name;
+  - the change-sets that filed any of these, each holding only what belongs to the namespace.
+
+  `ledger:set` is the set IRI `<urn:ledger-set:<id>>`; a reader takes the set id from its local part.
+- **Form.** RDF 1.2 canonical N-Triples:
+  - every term written in full: no prefixes, and `rdf:type` instead of `a`;
+  - literals with `ECHAR` for BS, HT, LF, FF, CR, `"` and `\`;
+  - uppercase-hex `UCHAR` for the other C0 controls, DEL, U+FFFE and U+FFFF;
+  - one space after each term, one LF per line;
+  - lines sorted by code point.
+
+  The bytes are therefore a function of the log alone.
+- **Export stage.** `ledger verify --export` re-derives every committed export and compares bytes. It reports a distinct `[EXPORT]` stage with unchanged exit semantics (findings exit `1`). It fails when:
+  - an export differs from the log's;
+  - an export names a namespace the log does not speak;
+  - a namespace the log speaks has no committed export;
+  - there is no committed export at all.
+
+  Without `--export` the stage does not run, and the JSON report omits its key rather than reporting an empty pass. `*.citations.nt` files (the analyzers' citation projection) share the directory and are never compared.

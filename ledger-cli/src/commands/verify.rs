@@ -16,6 +16,8 @@ pub struct Args {
     pub json: bool,
     pub today: Option<String>,
     pub blame: bool,
+    /// Run the export stage: committed exports against the log.
+    pub export: bool,
 }
 
 pub fn run(root: Option<PathBuf>, args: Args) -> Result<i32, String> {
@@ -26,7 +28,10 @@ pub fn run(root: Option<PathBuf>, args: Args) -> Result<i32, String> {
         blame: args.blame,
     };
     let loaded = store::load(&repo_root);
-    let report = verify(&loaded, &options);
+    let mut report = verify(&loaded, &options);
+    if args.export {
+        report.export = Some(ledger_core::graph::export::check(&repo_root, &loaded));
+    }
     if args.json {
         let text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
         println!("{text}");

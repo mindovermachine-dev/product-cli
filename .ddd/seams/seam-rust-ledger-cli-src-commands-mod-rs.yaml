@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-src-commands-mod-rs
 boundary: contract surface of ledger-cli/src/commands/mod.rs
-verdict_knowledge: "A caller learns the dispatch is split along the line the store draws — verbs that append to the log, reads that never touch it — and that a variant wired into neither half is reported rather than panicked."
+verdict_knowledge: A caller learns the dispatch is split along the line the store draws — verbs that append to the log, reads that never touch it — and that a variant wired into neither half is reported rather than panicked.
 contract_location: ledger-cli/src/commands/mod.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,9 @@ bindings:
   after: sha256:8b4b19c07692c320df8f40eb3bdc5900bd88d727fd44e73228d806818935c00e
   base_revision: 15c635210dca8246aae371460e167ad7d293c2e6
   hash: sha256:5bf93076f9aa528629225b22b0b4ab52c49b81ff42197f47b9946123921bc2f3
+- symbol: Export
+  file: ledger-cli/src/commands/mod.rs
+  before: sha256:868016abfdfa70e94c6a0a15243b7ec1e116404d442b0276fa6d29344173e9b2
+  after: sha256:4aaac5cc484d1cde0c42d54fa370a6941470cb9f5ccf339271c258370b087a86
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:0b9bbd3b28ed12bc85f8929fe8951b81b366e5ff527eb9c6e685ba337ebf399f

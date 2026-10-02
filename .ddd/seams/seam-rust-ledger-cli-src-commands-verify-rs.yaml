@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-cli-src-commands-verify-rs
+boundary: contract surface of ledger-cli/src/commands/verify.rs
+verdict_knowledge: "CI and users learn `verify --export` adds a third stage to the gate: every committed export must equal the log's byte for byte, and an unrun stage is absent from the report rather than shown as a pass, with exit 1 for findings exactly as the file and graph stages."
+contract_location: ledger-cli/src/commands/verify.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: export
+  file: ledger-cli/src/commands/verify.rs
+  before: sha256:28ee9c6ba59745c8dd4be9346411800570e8717f9e35235aaa2f316f7b597453
+  after: sha256:941bee563315b3445981b62fd7e5cb5c846f9063cb0bc54b46659ddd617a47ee
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:3666cead2bc348cfdcb505d1a9db4afe9980c7ba01e8d2a51180e1b8a209a655

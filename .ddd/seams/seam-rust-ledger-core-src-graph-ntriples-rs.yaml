@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-graph-ntriples-rs
+boundary: contract surface of ledger-core/src/graph/ntriples.rs
+verdict_knowledge: "Readers of the export learn its form: RDF 1.2 canonical N-Triples, full terms, one LF per line, lines sorted by code point, ledger:set as the set IRI, so equal logs give equal bytes and a hand edit is detectable."
+contract_location: ledger-core/src/graph/ntriples.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: emit
+  file: ledger-core/src/graph/ntriples.rs
+  before: absent
+  after: sha256:f6d96ed920aa9ca8e1284167ac6bff1ed2e27121fb2177efe78e6a11a6bc567b
+  base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
+  hash: sha256:69eee3ae893029df7d6c4624415f74ccf088cc5b952537037a2df305d2debc91

@@ -19,7 +19,8 @@ pub fn render(report: &Report) -> String {
             report.decisions
         ));
     } else {
-        let total = report.findings.len() + report.graph.len();
+        let exported = report.export_findings();
+        let total = report.findings.len() + report.graph.len() + exported.len();
         lines.push(format!("non-conformant — {total} finding(s):"));
         for f in &report.findings {
             lines.push(format!("  - [{}] {}: {}", f.class.code(), f.subject, f.message));
@@ -28,6 +29,12 @@ pub fn render(report: &Report) -> String {
             lines.push(format!("graph stage — {} finding(s):", report.graph.len()));
             for g in &report.graph {
                 lines.push(format!("  - [{}] {}: {}", g.class.code(), g.subject, g.message));
+            }
+        }
+        if !exported.is_empty() {
+            lines.push(format!("export stage — {} finding(s):", exported.len()));
+            for x in exported {
+                lines.push(format!("  - [EXPORT] {}: {}", x.subject, x.message));
             }
         }
     }
@@ -46,6 +53,9 @@ fn status_lines(report: &Report) -> Vec<String> {
         for id in &report.awaiting_acceptance {
             out.push(format!("  - {id}"));
         }
+    }
+    if report.export.as_ref().is_some_and(Vec::is_empty) {
+        out.push("export: every committed export matches the log byte for byte".to_string());
     }
     if report.blame_unavailable {
         out.push(
@@ -99,6 +109,20 @@ mod tests {
         assert!(text.contains("conformant"), "{text}");
         assert!(text.contains("1 allocated, awaiting acceptance:"), "{text}");
         assert!(text.contains("  - dec:x/Y"), "{text}");
+    }
+
+    #[test]
+    fn the_export_stage_lists_its_findings_and_says_when_it_is_clean() {
+        use crate::graph::export::ExportFinding;
+        let stale = ExportFinding { subject: "docs/decisions/x.nt".into(), message: "stale".into() };
+        let r = Report { export: Some(vec![stale]), ..report() };
+        let text = render(&r);
+        assert!(text.starts_with("non-conformant — 1 finding(s):"), "{text}");
+        assert!(text.contains("export stage — 1 finding(s):"), "{text}");
+        assert!(text.contains("  - [EXPORT] docs/decisions/x.nt: stale"), "{text}");
+        let clean = Report { export: Some(Vec::new()), ..report() };
+        assert!(render(&clean).contains("every committed export matches the log"));
+        assert!(!render(&report()).contains("export"), "an unrun stage claims nothing");
     }
 
     #[test]
