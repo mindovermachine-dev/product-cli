@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-tests-common-mod-rs
 boundary: contract surface of ledger-cli/tests/common/mod.rs
-verdict_knowledge: "Test authors learn signing invocations run under a pseudo-terminal through script(1) and everything else under pipes, so the binary's real TTY check is what the suites exercise."
+verdict_knowledge: Test authors learn signing invocations run under a pseudo-terminal through script(1) and everything else under pipes, so the binary's real TTY check is what the suites exercise.
 contract_location: ledger-cli/tests/common/mod.rs
 obligations: []
 metadata: {}
@@ -138,3 +138,15 @@ bindings:
   after: sha256:415e75b01a2e6fcc013927aaf81d26eb982ff957d235dc6a009cd887ee6c984b
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:bce258a1e637728f6128e83d6c484de081adbdef74e241534abdb25f34649bc6
+- symbol: needs_terminal
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:415e75b01a2e6fcc013927aaf81d26eb982ff957d235dc6a009cd887ee6c984b
+  after: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:f07adafee88c2316fa0257fcad76d8841e9b49e813d1548b1264b76123d74b2d
+- symbol: signs
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:415e75b01a2e6fcc013927aaf81d26eb982ff957d235dc6a009cd887ee6c984b
+  after: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:85cc76b224f6fc803b5d8b7c18fe921f86b91a07c0cc1b44df56972b7b842358
