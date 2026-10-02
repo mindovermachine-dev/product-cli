@@ -1,0 +1,50 @@
+format: 2
+id: seam/rust/ledger-cli-src-commands-authority-rs
+boundary: contract surface of ledger-cli/src/commands/authority.rs
+verdict_knowledge: "CLI users learn that every authority verb maps to one ledger-core author call; `grant revoke` refuses a non-interactive caller; `policy show` reports a namespace without policy as pre-v2 and unchecked; `identity sync` rewrites allowed_signers from the log."
+contract_location: ledger-cli/src/commands/authority.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: available
+  file: ledger-cli/src/commands/authority.rs
+  before: absent
+  after: sha256:fb9336b6177eff969c8fb278bd70625acfb6d2b52427d8e734e0a4b30969c9f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:3feabfbbfe6506d10481cd6a1f7851fb9c34465112acbf4a79027c5e796cd77f
+- symbol: grant
+  file: ledger-cli/src/commands/authority.rs
+  before: absent
+  after: sha256:fb9336b6177eff969c8fb278bd70625acfb6d2b52427d8e734e0a4b30969c9f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:50bd9f4b8a80d8efdbed2d2b4b2a3cfea836c26d10a37cd8288f6b8e5dc678eb
+- symbol: identity
+  file: ledger-cli/src/commands/authority.rs
+  before: absent
+  after: sha256:fb9336b6177eff969c8fb278bd70625acfb6d2b52427d8e734e0a4b30969c9f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:30dca8a7cb73dbde27ca37013a02af8588cbd9412126455fba0edf00cab24671
+- symbol: init_namespace
+  file: ledger-cli/src/commands/authority.rs
+  before: absent
+  after: sha256:fb9336b6177eff969c8fb278bd70625acfb6d2b52427d8e734e0a4b30969c9f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ada79172661a75b55cd5e7a6d6119142de10373d4b984e20cbb84b369fb9ab44
+- symbol: policy
+  file: ledger-cli/src/commands/authority.rs
+  before: absent
+  after: sha256:fb9336b6177eff969c8fb278bd70625acfb6d2b52427d8e734e0a4b30969c9f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:71c0851f3d5538b5c6219fba64f4810fedad0bbba3365f656af3464d62b63028
+- symbol: role
+  file: ledger-cli/src/commands/authority.rs
+  before: absent
+  after: sha256:fb9336b6177eff969c8fb278bd70625acfb6d2b52427d8e734e0a4b30969c9f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:be9bed382bc8fe79bd85fe297bd4cb8dd6fd112b3f9f084916d0ed1d89d73fe7
+- symbol: unavailable
+  file: ledger-cli/src/commands/authority.rs
+  before: absent
+  after: sha256:fb9336b6177eff969c8fb278bd70625acfb6d2b52427d8e734e0a4b30969c9f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:8621365ab0745fbf5a452795533704ed571360134ae2866edf31b9c876dcba76

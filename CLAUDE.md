@@ -306,8 +306,10 @@ store (`.decisions/`), separate ontology.
   acceptance, and needs a migration note — it is never a quiet fix.
 - **Gate** — `ledger verify [--gate readiness|completeness] [--json]
   [--today YYYY-MM-DD] [--no-blame]`. Fails for a schema fault plus classes
-  `L001`–`L010` and **nothing else**; adding an eleventh is a format-spec
-  change (`L010` itself shipped that way, as spec v1.1).
+  `L001`–`L010`, `L013`, `L014` and **nothing else**; adding a class is a
+  format-spec change (`L010` shipped that way as spec v1.1, the key classes
+  `L013`/`L014` as spec v1.6 / format 5). `L011`/`L012` are **reserved** for
+  signing (#65 ruling D3) — never reuse them.
   Exit `0` conformant, `1` findings, `2` could not run. Runs in CI with
   `--export`, which adds a third stage: every committed
   `docs/decisions/<ns>.nt` must equal `ledger export --format ntriples
@@ -316,6 +318,23 @@ store (`.decisions/`), separate ontology.
   act changes the export: rerun `ledger export --format ntriples` (no
   `--namespace` writes every namespace) and commit the result.
   Allocated-awaiting-acceptance is *status*, not a failure.
+- **Authority (format 6 / spec v1.7, #69)** — roles
+  (`.decisions/roles/<id>.yml`), grants + grant acceptances, unavailability
+  / availability, key bindings, namespace policy, and the `rev:` revocation
+  entity, all in `ledger-core/src/authority/`. `ledger init --namespace
+  <ns> --external-ref <mandate>` bootstraps the genesis; `role declare`,
+  `grant new|accept|revoke`, `unavailable`, `available`, `identity
+  add|rotate|revoke|sync`, `policy show|set`. The role check is one
+  function, `authority::authorize`, which `accept`, `revoke` and the grant
+  verbs call; a namespace **without** a policy is pre-v2 and not
+  role-checked. `allowed_signers` is derived (never hand-edited) and held by
+  `verify`'s `[SIGNERS]` stage. Graph classes `A003`/`A005`; `A006` deferred.
+- **Signing verbs refuse a non-interactive caller** (#71). `accept <dec>`,
+  `accept … --confirm` and `revoke` exit non-zero and write nothing unless
+  stdin is a terminal — no flag, no environment override. The selection dry
+  run (`accept --set|--group` without `--confirm`) writes nothing and stays
+  scriptable. Integration tests drive signing verbs under a pseudo-terminal
+  via `script(1)` (util-linux): `ledger-cli/tests/common/mod.rs` `invoke`.
 - **Acceptance is the principal's, never an agent's.** Do not create
   `acceptances:` entries under any framing, including fixtures — fixture
   acceptances use `fixture-human@example` and live only under

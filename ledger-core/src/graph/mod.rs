@@ -10,13 +10,14 @@
 //! dependency, never this one's.
 //!
 //! Graph findings are a **distinct stage** of `verify`, outside the file
-//! gate's closed ten classes: `G001`–`G005`, reported by the same command
+//! gate's closed classes: `G001`–`G006`, reported by the same command
 //! with unchanged exit semantics.
 //!
 //! The same triples also serialise as sorted N-Triples ([`ntriples`]),
 //! which is the committed per-namespace export ([`export`]) the analyzers'
 //! generator reads; `verify --export` holds it byte-identical to the log.
 
+pub(crate) mod authority;
 pub mod export;
 pub mod index;
 pub mod ntriples;
@@ -30,6 +31,10 @@ mod tests;
 #[cfg(test)]
 #[path = "export_tests.rs"]
 mod export_tests;
+
+#[cfg(test)]
+#[path = "revocation_tests.rs"]
+mod revocation_tests;
 
 use std::fmt;
 
@@ -54,11 +59,28 @@ pub enum GraphClass {
     /// One decision superseded by two live claimants: the write-time fork
     /// refusal met across branches, where only an arbitration can settle it.
     G005,
+    /// Two live decisions of one namespace whose tips share a `key` — the
+    /// SPARQL cross-check of the file gate's `L014` (spec v1.6). Never the
+    /// only home of the rule: an outside implementation reproduces `L014`.
+    G006,
+    /// Two live grants share role, scope and order (the authority shapes'
+    /// gate class; spec v1.7).
+    A003,
+    /// More than one live genesis grant (spec v1.7).
+    A005,
 }
 
 /// Every graph class, in report order.
-pub const ALL_GRAPH_CLASSES: &[GraphClass] =
-    &[GraphClass::G001, GraphClass::G002, GraphClass::G003, GraphClass::G004, GraphClass::G005];
+pub const ALL_GRAPH_CLASSES: &[GraphClass] = &[
+    GraphClass::G001,
+    GraphClass::G002,
+    GraphClass::G003,
+    GraphClass::G004,
+    GraphClass::G005,
+    GraphClass::G006,
+    GraphClass::A003,
+    GraphClass::A005,
+];
 
 impl GraphClass {
     pub fn code(self) -> &'static str {
@@ -68,6 +90,9 @@ impl GraphClass {
             Self::G003 => "G003",
             Self::G004 => "G004",
             Self::G005 => "G005",
+            Self::G006 => "G006",
+            Self::A003 => "A003",
+            Self::A005 => "A005",
         }
     }
 
@@ -78,6 +103,9 @@ impl GraphClass {
             Self::G003 => "version names a decision no change-set introduced",
             Self::G004 => "version chain forks into more than one tip",
             Self::G005 => "decision superseded by two live claimants",
+            Self::G006 => "two live decisions of one namespace share a key",
+            Self::A003 => "two live grants share role, scope and order",
+            Self::A005 => "more than one live genesis grant",
         }
     }
 }

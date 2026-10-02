@@ -1,0 +1,30 @@
+# Two live decisions of one namespace share a key (spec v1.6): a generated
+# type name would name both.
+format: 5
+id: cs:01K2C4YQJ3F8M0PT5W7NZ9RDXW
+created_at: 2026-08-10T09:14:22Z
+created_by: fixture-human@example
+decisions:
+  - id: dec:fixture.ledger/01K2C4YQJ3F8M0PT5W7NZ9RDXV
+    created_at: 2026-08-10T09:14:22Z
+    created_by: fixture-human@example
+  - id: dec:fixture.ledger/01K2C4YQJ3F8M0PT5W7NZ9RDXY
+    created_at: 2026-08-10T09:14:22Z
+    created_by: fixture-human@example
+versions:
+  - decision: dec:fixture.ledger/01K2C4YQJ3F8M0PT5W7NZ9RDXV
+    hash: sha256:6aec43b0491d3328bbe10541057528be29bfa43f792c802ac6e34dd43e01554d
+    set: ledger-fixture
+    statement: Monetary amounts use decimal, never double.
+    allocation: constraint
+    discharge: [analyzer:DEC001-no-float-money]
+    tolerance_floor_at_creation: T1
+    key: MoneyIsDecimal
+  - decision: dec:fixture.ledger/01K2C4YQJ3F8M0PT5W7NZ9RDXY
+    hash: sha256:35f7086e88a0eb4cc3b35d59a8e2926ffc1b8a9d5c02e31cc5035050f7c7db49
+    set: ledger-fixture
+    statement: Prices are stored as decimal minor units.
+    allocation: constraint
+    discharge: [analyzer:DEC002-minor-units]
+    tolerance_floor_at_creation: T1
+    key: MoneyIsDecimal

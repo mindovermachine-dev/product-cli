@@ -45,12 +45,7 @@ fn a_revoked_acceptance_returns_the_decision_to_awaiting() {
     let sealed = testkit::sealed(testkit::version());
     let acceptance = testkit::acceptance(&sealed);
     let mut cs = testkit::changeset(vec![sealed], vec![acceptance]);
-    cs.revocations.push(crate::acceptance::Revocation {
-        acceptance: testkit::acceptance_id(),
-        at: testkit::stamp("2026-08-10T10:00:00Z"),
-        by: testkit::identity("fixture-human@example"),
-        reason: "wrong version".into(),
-    });
+    cs.revocations.push(testkit::legacy_revocation("2026-08-10T10:00:00Z", "wrong version"));
     assert_eq!(state_of(cs), DispositionState::AwaitingAcceptance);
 }
 

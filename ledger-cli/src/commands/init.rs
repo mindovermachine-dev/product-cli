@@ -6,7 +6,10 @@ use ledger_core::init::{apply_init, plan_init, render_init};
 
 use super::EXIT_OK;
 
-pub fn run(root: Option<PathBuf>) -> Result<i32, String> {
+pub fn run(
+    root: Option<PathBuf>,
+    namespace: Option<ledger_core::author::InitNamespaceArgs>,
+) -> Result<i32, String> {
     // Not `resolve_root`: init is what creates the store, so requiring one
     // to already exist would be circular.
     let repo_root = match root {
@@ -16,5 +19,8 @@ pub fn run(root: Option<PathBuf>) -> Result<i32, String> {
     let plan = plan_init(&repo_root);
     apply_init(&repo_root, &plan).map_err(|e| e.to_string())?;
     println!("{}", render_init(&plan));
-    Ok(EXIT_OK)
+    match namespace {
+        Some(args) => super::authority::init_namespace(repo_root, args),
+        None => Ok(EXIT_OK),
+    }
 }

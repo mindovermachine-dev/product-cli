@@ -1,4 +1,4 @@
-//! The gate's failure classes, one passing store against nine violating ones.
+//! The gate's failure classes, one passing store against the violating ones.
 //!
 //! Eight classes have a checked-in fixture store under `tests/fixtures/`,
 //! readable as documentation of the format. `L009` cannot: blame consistency
@@ -56,7 +56,10 @@ fn fails_only_with(fixture: &str, code: &str) {
     assert_eq!(out.status.code(), Some(1), "{fixture} should fail the gate:\n{text}");
     assert!(text.contains(&format!("[{code}]")), "{fixture} should report {code}:\n{text}");
     for other in
-        ["L001", "L002", "L003", "L004", "L005", "L006", "L007", "L008", "L009", "L010", "SCHEMA"]
+        [
+            "L001", "L002", "L003", "L004", "L005", "L006", "L007", "L008", "L009", "L010", "L013",
+            "L014", "SCHEMA",
+        ]
     {
         if other != code {
             assert!(
@@ -117,6 +120,18 @@ fn l008_an_acceptance_signing_a_hash_no_version_carries() {
 #[test]
 fn l010_a_judgment_exercised_by_a_model_identity() {
     fails_only_with("l010", "L010");
+}
+
+#[test]
+fn l013_a_key_renamed_along_the_version_chain() {
+    fails_only_with("l013", "L013");
+}
+
+#[test]
+fn l014_two_live_decisions_of_one_namespace_sharing_a_key() {
+    fails_only_with("l014", "L014");
+    // The graph stage cross-checks the same collision (never its only home).
+    assert!(stderr(&gate("l014", &[])).contains("[G006]"));
 }
 
 #[test]

@@ -30,6 +30,12 @@ pub fn three_way(path: &str, base: &str, ours: &str, theirs: &str) -> DriverOutc
     if path.contains("/log/") {
         return log_conflict(path, base);
     }
+    // Derived from the log, never merged as text: whichever side is kept,
+    // `verify` holds it to the merged log's derivation, and
+    // `ledger identity sync` rewrites it (spec v1.7).
+    if path.ends_with(crate::authority::signers::FILE) {
+        return DriverOutcome::KeepOurs;
+    }
     if base == ours {
         return DriverOutcome::TakeTheirs;
     }
@@ -108,6 +114,7 @@ mod tests {
 
     #[test]
     fn a_log_file_changed_on_both_sides_refuses_by_class() {
+        assert_eq!(three_way(".decisions/allowed_signers", "a", "b", "c"), DriverOutcome::KeepOurs);
         let collision = three_way(".decisions/log/X.yml", "", "a", "b");
         let DriverOutcome::Conflict { class, .. } = collision else { panic!("conflict") };
         assert_eq!(class, ConflictClass::UlidCollision);

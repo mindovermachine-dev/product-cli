@@ -15,6 +15,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::acceptance::{Acceptance, Revocation};
+use crate::authority::{
+    Availability, Grant, GrantAcceptance, KeyBinding, Policy, Unavailability,
+};
 use crate::id::{ChangeSetId, DecisionId};
 use crate::identity::Identity;
 use crate::version::VersionRaw;
@@ -52,9 +55,72 @@ pub struct ChangeSet {
     pub acceptances: Vec<Acceptance>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub revocations: Vec<Revocation>,
+    /// The authority records (format 6, `docs/ledger-authority/`): grants,
+    /// their acceptances, unavailability and its end, key bindings, and
+    /// namespace policy versions. Revocations of grants share
+    /// `revocations` with revocations of acceptances — one entity.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub grants: Vec<Grant>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub grant_acceptances: Vec<GrantAcceptance>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub unavailabilities: Vec<Unavailability>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub availabilities: Vec<Availability>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub key_bindings: Vec<KeyBinding>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub policies: Vec<Policy>,
 }
 
 impl ChangeSet {
+    /// An empty change-set for one act — every list empty.
+    pub fn empty(
+        format: u32,
+        id: ChangeSetId,
+        created_at: DateTime<Utc>,
+        created_by: Identity,
+        note: Option<String>,
+    ) -> Self {
+        Self {
+            format,
+            id,
+            created_at,
+            created_by,
+            parents: Vec::new(),
+            note,
+            decisions: Vec::new(),
+            versions: Vec::new(),
+            acceptances: Vec::new(),
+            revocations: Vec::new(),
+            grants: Vec::new(),
+            grant_acceptances: Vec::new(),
+            unavailabilities: Vec::new(),
+            availabilities: Vec::new(),
+            key_bindings: Vec::new(),
+            policies: Vec::new(),
+        }
+    }
+
+    /// How many entries the act filed, of every kind.
+    pub fn entry_count(&self) -> usize {
+        self.decisions.len()
+            + self.versions.len()
+            + self.acceptances.len()
+            + self.revocations.len()
+            + self.authority_count()
+    }
+
+    /// How many authority records (format 6) the act filed.
+    pub fn authority_count(&self) -> usize {
+        self.grants.len()
+            + self.grant_acceptances.len()
+            + self.unavailabilities.len()
+            + self.availabilities.len()
+            + self.key_bindings.len()
+            + self.policies.len()
+    }
+
     /// The filename this change-set belongs in, relative to `log/`.
     pub fn file_name(&self) -> String {
         format!("{}.yml", self.id.ulid())
@@ -63,10 +129,7 @@ impl ChangeSet {
     /// Whether the act recorded anything at all. An empty change-set is not
     /// a fault, but it is nothing, and saying so is cheaper than wondering.
     pub fn is_empty(&self) -> bool {
-        self.decisions.is_empty()
-            && self.versions.is_empty()
-            && self.acceptances.is_empty()
-            && self.revocations.is_empty()
+        self.entry_count() == 0
     }
 }
 

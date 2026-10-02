@@ -18,3 +18,15 @@ bindings:
   after: sha256:f38f96caafd08da1fe5b89a00fc14de94a176058f54e58716805ed44bf141ae2
   base_revision: 15c635210dca8246aae371460e167ad7d293c2e6
   hash: sha256:3697f53f7fe4e3ef954cb0f36a688b683b8031d0d1b088aacc19727bc1071038
+- symbol: exported
+  file: ledger-core/src/author/decision.rs
+  before: sha256:f38f96caafd08da1fe5b89a00fc14de94a176058f54e58716805ed44bf141ae2
+  after: sha256:2d6d3a4de812ab0d5eb833aefcf1d065103f3dc5a03315939607a7ab22fcb7a2
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:e1d6090171dd6f8cb7f95e4e57a5e0a9d96593347d8fe58af94c47231d1b0246
+- symbol: key
+  file: ledger-core/src/author/decision.rs
+  before: sha256:f38f96caafd08da1fe5b89a00fc14de94a176058f54e58716805ed44bf141ae2
+  after: sha256:2d6d3a4de812ab0d5eb833aefcf1d065103f3dc5a03315939607a7ab22fcb7a2
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:af36914fba24d58e666e24ce0b43149f60b7e5dcd8200dac30b04306a1a80ad4

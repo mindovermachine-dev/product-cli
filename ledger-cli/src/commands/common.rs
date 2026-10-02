@@ -34,7 +34,7 @@ pub fn finish(result: Result<Applied, AuthorError>) -> Result<i32, String> {
             println!("filed {}", applied.path.display());
             Ok(EXIT_OK)
         }
-        Err(err @ (AuthorError::Refused(_) | AuthorError::Conflict(_))) => {
+        Err(err @ (AuthorError::Refused(_) | AuthorError::Conflict(_) | AuthorError::Unauthorized(_))) => {
             eprint!("{err}");
             let text = err.to_string();
             if !text.ends_with('\n') {
@@ -137,4 +137,17 @@ pub fn parse_based_on(raw: &[String]) -> Result<Vec<ledger_core::version::BasisR
 /// the distinction the ruling draws is a type distinction here too.
 pub fn parse_revisit_if(raw: &[String]) -> Result<Vec<ledger_core::revisit::RevisitRef>, String> {
     raw.iter().map(|r| r.parse()).collect()
+}
+
+/// Refuse unless stdin is a terminal (#71). Checked before the store is
+/// opened, so a refused invocation reads nothing and writes nothing.
+pub fn require_terminal(verb: &str) -> Result<(), String> {
+    use std::io::IsTerminal;
+    if std::io::stdin().is_terminal() {
+        return Ok(());
+    }
+    Err(format!(
+        "refused: `ledger {verb}` runs only at a terminal, and stdin is not one — signing is a \
+         person's act, never a script's or an agent's (PRD §5). Nothing was written."
+    ))
 }

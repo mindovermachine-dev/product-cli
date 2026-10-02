@@ -1,6 +1,6 @@
 //! Rules over what a decision is allocated to, at what tier, by whom.
 //!
-//! Five of the ten classes: `L001` unallocated, `L003` expired acceptance,
+//! Five of the twelve classes: `L001` unallocated, `L003` expired acceptance,
 //! `L005` stranded below a raised floor, `L006` an acceptor who is not an
 //! accountable actor, `L010` a judgment exercised by one. `L002` and `L004`
 //! are raised earlier — an unpriced escape and a below-floor override are

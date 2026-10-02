@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-version-rs
 boundary: contract surface of ledger-core/src/version.rs
-verdict_knowledge: "A caller learns a version carries two edge lists, based_on and revisit_if, that never merge: ground and tripwire are separate fields on the wire, separate keys in the hash, and separate types. A caller reading either as the other would report a fired tripwire as a lost basis."
+verdict_knowledge: 'A caller learns a version carries two edge lists, based_on and revisit_if, that never merge: ground and tripwire are separate fields on the wire, separate keys in the hash, and separate types. A caller reading either as the other would report a fired tripwire as a lost basis.'
 contract_location: ledger-core/src/version.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,15 @@ bindings:
   after: sha256:97dee56cb7c9c9f54ad96856ab0659d80efe67036a26a5a45bb39d0d5dd28023
   base_revision: 15c635210dca8246aae371460e167ad7d293c2e6
   hash: sha256:bc8027d153a6d491c11ec8bb32b48ad3e1ca8a9ef7204c42a93080ed3839390a
+- symbol: exported
+  file: ledger-core/src/version.rs
+  before: sha256:97dee56cb7c9c9f54ad96856ab0659d80efe67036a26a5a45bb39d0d5dd28023
+  after: sha256:5ae65ae48e1d72e81ab88644616f0c3958c07704ae65fc3d30fffd3c7e738f54
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:8227d6efeed1209ff5369adf3993995b391e4d855bc033aa0def07dab4e31112
+- symbol: key
+  file: ledger-core/src/version.rs
+  before: sha256:97dee56cb7c9c9f54ad96856ab0659d80efe67036a26a5a45bb39d0d5dd28023
+  after: sha256:5ae65ae48e1d72e81ab88644616f0c3958c07704ae65fc3d30fffd3c7e738f54
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:f949430e307a020627023ef100ecdd42708d4fcdf916b7c1ae026138636a28a3

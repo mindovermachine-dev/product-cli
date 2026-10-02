@@ -1,0 +1,56 @@
+format: 2
+id: seam/rust/ledger-core-src-author-availability-ops-rs
+boundary: contract surface of ledger-core/src/author/availability_ops.rs
+verdict_knowledge: "Callers learn a holder files their own unavailability freely, anyone else needs declare-unavailability and a basis they stand in, and only the holder ends an interval early."
+contract_location: ledger-core/src/author/availability_ops.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: impl Author
+  file: ledger-core/src/author/availability_ops.rs
+  before: absent
+  after: sha256:9e499fb16a3098b5924058918e083bd8aede00de56205b07283a090b847935f4
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6103274cf9e24cc92cebe8cd168ea0e9a9725b6c4ed730924c623cbe9f2fefa0
+- symbol: UnavailableArgs
+  file: ledger-core/src/author/availability_ops.rs
+  before: absent
+  after: sha256:9e499fb16a3098b5924058918e083bd8aede00de56205b07283a090b847935f4
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2adb73f572740d57a19ecacbb703596f3c0d1606ddd194558edb6d679b0e4484
+- symbol: from
+  file: ledger-core/src/author/availability_ops.rs
+  before: absent
+  after: sha256:9e499fb16a3098b5924058918e083bd8aede00de56205b07283a090b847935f4
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:7721818e6095f73dec4d96f7c2b818f5dc6ceebfe9beef5dec7b90395a30543c
+- symbol: grant
+  file: ledger-core/src/author/availability_ops.rs
+  before: absent
+  after: sha256:9e499fb16a3098b5924058918e083bd8aede00de56205b07283a090b847935f4
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:91801e32ccb9e0e14e3220c4a08aecf988ba8a89bb2550eff790c399b3a2267d
+- symbol: reason
+  file: ledger-core/src/author/availability_ops.rs
+  before: absent
+  after: sha256:9e499fb16a3098b5924058918e083bd8aede00de56205b07283a090b847935f4
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2c73c55b3fe75efb05950f6a4ef35aec79e3d1e3b8ed1206bdd6dd4fc51d3663
+- symbol: until
+  file: ledger-core/src/author/availability_ops.rs
+  before: absent
+  after: sha256:9e499fb16a3098b5924058918e083bd8aede00de56205b07283a090b847935f4
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6321afc2656b6407251f71bf4f83a8dbe027792e5f8b958dbc65d9ef234d5b5c
+- symbol: available
+  file: ledger-core/src/author/availability_ops.rs
+  before: absent
+  after: sha256:9e499fb16a3098b5924058918e083bd8aede00de56205b07283a090b847935f4
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:8ca50e986c141ef8bd3b83f3df315ce3752954db5e4c7ed265f40b101c96a470
+- symbol: unavailable
+  file: ledger-core/src/author/availability_ops.rs
+  before: absent
+  after: sha256:9e499fb16a3098b5924058918e083bd8aede00de56205b07283a090b847935f4
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c75b1af77e6d2b8d7d94f1bb15b7873d05d67bbe22e73b8cc1c1575578677c6e

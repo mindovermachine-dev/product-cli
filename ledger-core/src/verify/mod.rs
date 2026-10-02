@@ -1,7 +1,7 @@
 //! The gate — the whole of L0's checking surface.
 //!
 //! One pass over the log produces every finding: the parse gate, then the
-//! ten classes. Failing for exactly those reasons is the format's measure of
+//! twelve classes. Failing for exactly those reasons is the format's measure of
 //! success, so the orchestration here is deliberately flat — there is no
 //! place for a rule to hide.
 //!
@@ -10,8 +10,10 @@
 //! reported as status, never as a failure, because a gate that fires on
 //! ordinary work is a gate people learn to ignore.
 
+pub mod authority;
 pub mod disposition;
 pub mod integrity;
+pub mod keys;
 pub mod state;
 pub mod view;
 
@@ -47,7 +49,7 @@ impl Options {
 pub struct Report {
     pub findings: Vec<Finding>,
     /// The L2 graph stage: cross-entry shape findings (`G001`–`G004`),
-    /// distinct from the file gate's closed ten classes.
+    /// distinct from the file gate's closed classes.
     pub graph: Vec<crate::graph::GraphFinding>,
     /// Entries that loaded cleanly, for the summary line.
     pub entries: usize,
@@ -64,13 +66,21 @@ pub struct Report {
     /// check never reads as a clean one.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub export: Option<Vec<crate::graph::export::ExportFinding>>,
+    /// The trust-root stage: a committed `allowed_signers` that is not the
+    /// log's derivation (spec v1.7). Always run; empty when nothing binds
+    /// a key and no file is committed.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub signers: Vec<crate::graph::export::ExportFinding>,
 }
 
 impl Report {
     /// Whether the gate passes: no file-stage, graph-stage or (when run)
     /// export-stage findings. Three stages, one exit discipline.
     pub fn is_conformant(&self) -> bool {
-        self.findings.is_empty() && self.graph.is_empty() && self.export_findings().is_empty()
+        self.findings.is_empty()
+            && self.graph.is_empty()
+            && self.export_findings().is_empty()
+            && self.signers.is_empty()
     }
 
     /// The export stage's findings; empty when it was not run.
@@ -91,6 +101,9 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     findings.extend(disposition::model_judge(&view));
     findings.extend(integrity::hash_mismatch(&view));
     findings.extend(integrity::dangling_acceptance(&view));
+    findings.extend(keys::key_changed(&view));
+    findings.extend(keys::key_collision(&view));
+    findings.extend(authority::findings(store));
 
     let mut report = Report {
         entries: store.entry_count(),
@@ -112,6 +125,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     report.findings = findings;
     // The graph stage: structural integrity, so it runs under both gates.
     report.graph = crate::graph::shapes::graph_findings(store);
+    report.signers = crate::authority::signers::check(store);
     report
 }
 

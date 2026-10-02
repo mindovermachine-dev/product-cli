@@ -2,7 +2,6 @@
 
 use std::path::Path;
 
-use crate::acceptance::Revocation;
 use crate::id::DecisionId;
 use crate::store::Store;
 use crate::testkit;
@@ -29,12 +28,7 @@ fn two_namespace_store() -> Store {
     let mut theirs_acc = testkit::acceptance(&theirs);
     theirs_acc.id = "acc:01K2C4YQJ3F8M0PT5W7NZ9RDY1".parse().expect("acc id");
     let mut cs = testkit::changeset(vec![ours, theirs], vec![ours_acc, theirs_acc]);
-    cs.revocations.push(Revocation {
-        acceptance: testkit::acceptance_id(),
-        at: testkit::stamp("2026-08-11T09:00:00Z"),
-        by: testkit::identity("fixture-human@example"),
-        reason: "filed against the wrong version".into(),
-    });
+    cs.revocations.push(testkit::legacy_revocation("2026-08-11T09:00:00Z", "filed against the wrong version"));
     testkit::store(cs)
 }
 
@@ -98,9 +92,10 @@ fn a_namespace_export_holds_only_that_namespace() {
     let ours = export(&store, "hafeok.ledger").expect("spoken");
     assert!(!ours.contains("hafeok.other"), "{ours}");
     assert!(!ours.contains("RDY1"), "the other namespace's acceptance stays out: {ours}");
-    assert!(ours.contains("<urn:ledger:ns#revokedAt>"), "our revocation comes along: {ours}");
+    assert!(ours.contains("<urn:ledger:ns#revokes>"), "our revocation comes along: {ours}");
+    assert!(!ours.contains("revokedAt"), "no triple lands on the acceptance (ruling 3): {ours}");
     let theirs = export(&store, "hafeok.other").expect("spoken");
-    assert!(!theirs.contains("revokedAt"), "a revocation follows its acceptance: {theirs}");
+    assert!(!theirs.contains("Revocation"), "a revocation follows its acceptance: {theirs}");
     assert!(export(&store, "hafeok.nobody").is_none());
 }
 
@@ -183,4 +178,23 @@ fn a_spoken_namespace_without_an_export_and_an_unspoken_export_both_fail() {
     assert_eq!(findings.len(), 2, "{text}");
     assert!(text.contains("which the log does not speak"), "{text}");
     assert!(text.contains("no export of it is committed"), "{text}");
+}
+
+#[test]
+fn a_namespace_export_carries_its_own_authority_records_only() {
+    use crate::authority::fixture::{self, accepted, genesis, grant, role};
+    use crate::authority::Capability;
+    let g = genesis("1", "steward");
+    let elsewhere = grant("2", "steward", "other@x", "ns:hafeok.other", 0);
+    let mut cs = fixture::changeset(vec![g.clone(), elsewhere.clone()], vec![accepted("3", &g)]);
+    let sealed = testkit::sealed(testkit::version());
+    cs.decisions = testkit::changeset(vec![sealed.clone()], Vec::new()).decisions;
+    cs.versions = vec![sealed];
+    let mut store = fixture::store(vec![role("steward", Capability::ALL)], cs);
+    store.roles.push(role("unrelated", &[Capability::AcceptDecision]));
+    let text = super::export::export(&store, "hafeok.ledger").expect("the namespace is spoken");
+    assert!(text.contains(&format!("<urn:{}>", g.id)), "the genesis (*) reaches every namespace");
+    assert!(text.contains("<urn:ledger-role:steward>"), "the role its grant names");
+    assert!(!text.contains(&format!("<urn:{}>", elsewhere.id)), "another namespace's grant stays out");
+    assert!(!text.contains("ledger-role:unrelated"), "a role nothing here names stays out");
 }

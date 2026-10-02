@@ -1,0 +1,38 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-signers-rs
+boundary: contract surface of ledger-core/src/authority/signers.rs
+verdict_knowledge: "Consumers learn allowed_signers is derived from key bindings in OpenSSH form, written by the identity verbs, and held byte-identical by verify's [SIGNERS] stage."
+contract_location: ledger-core/src/authority/signers.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: FILE
+  file: ledger-core/src/authority/signers.rs
+  before: absent
+  after: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:42c11c0b601f749011c444d3f0f5ae2b3e1a0b661dc7b5bfeef34c4fc4d9dfaf
+- symbol: check
+  file: ledger-core/src/authority/signers.rs
+  before: absent
+  after: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:3b1e1f2a482345182a44f18964132df572d5286c0b0abd7b38cd90bf81bd3aee
+- symbol: derive
+  file: ledger-core/src/authority/signers.rs
+  before: absent
+  after: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:180eb95485203148d83f5bd0cda8497a2c6ad152d0db6d69dd6003057fc27363
+- symbol: path
+  file: ledger-core/src/authority/signers.rs
+  before: absent
+  after: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:9df6e998915a94205751969a4d43eec1c64c204a7511d2def7a48304ad6af48a
+- symbol: write
+  file: ledger-core/src/authority/signers.rs
+  before: absent
+  after: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ad4a7b609fad5fce0b4ca42b4bbec5caf1b6a108126cda88e09bbad0a41e4218

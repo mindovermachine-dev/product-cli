@@ -173,12 +173,7 @@ fn a_revoked_acceptance_stops_being_judged_for_expiry() {
     let mut acceptance = testkit::acceptance(&sealed);
     acceptance.expires_at = Some(testkit::date("2026-08-09"));
     let mut cs = testkit::changeset(vec![sealed], vec![acceptance]);
-    cs.revocations.push(crate::acceptance::Revocation {
-        acceptance: testkit::acceptance_id(),
-        at: testkit::stamp("2026-08-10T10:00:00Z"),
-        by: testkit::identity("fixture-human@example"),
-        reason: "filed against the wrong version".into(),
-    });
+    cs.revocations.push(testkit::legacy_revocation("2026-08-10T10:00:00Z", "filed against the wrong version"));
     let report = run(cs);
     assert!(!classes(&report).contains(&VerifyClass::L003), "{:?}", report.findings);
 }
@@ -277,11 +272,15 @@ fn l010_judges_the_latest_version_only() {
 #[test]
 fn every_class_the_enum_declares_is_reachable_here() {
     // A class with no test is a class nobody knows fires. L009 is exercised
-    // in the CLI's fixture suite, where a real repository exists.
+    // in the CLI's fixture suite, where a real repository exists; L013 and
+    // L014 in `keys_tests.rs`.
     let named: Vec<&str> = ALL_CLASSES.iter().map(|c| c.code()).collect();
     assert_eq!(
         named,
-        ["SCHEMA", "L001", "L002", "L003", "L004", "L005", "L006", "L007", "L008", "L009", "L010"]
+        [
+            "SCHEMA", "L001", "L002", "L003", "L004", "L005", "L006", "L007", "L008", "L009",
+            "L010", "L013", "L014"
+        ]
     );
 }
 

@@ -167,7 +167,83 @@ const SHAPES: &[Shape] = &[
             )
         },
     },
+    Shape {
+        // L014's cross-check (spec v1.6): two decisions of one namespace
+        // whose tips carry one key, neither superseded by a live claimant.
+        // A claimant is live when no later version of it exists.
+        class: GraphClass::G006,
+        select: KEY_COLLISION,
+        message: |row| {
+            (
+                term(row, "a"),
+                format!(
+                    "shares key `{}` with {} in one namespace — the graph cross-check of L014",
+                    term(row, "k"),
+                    term(row, "b")
+                ),
+            )
+        },
+    },
+    Shape {
+        // The authority shapes' A003 (docs/ledger-authority/), tightened to
+        // count only a GrantAcceptance as acceptance (the draft's
+        // `?ga ledger:grant $this` also matches an Unavailability).
+        class: GraphClass::A003,
+        select: GRANT_COLLISION,
+        message: |row| {
+            (
+                term(row, "g"),
+                format!(
+                    "shares role, scope and order with {} — two live grants cannot both hold one place in the order",
+                    term(row, "other")
+                ),
+            )
+        },
+    },
+    Shape {
+        // A005: a revoked genesis is not live either (the draft shape
+        // filters supersession only; a revocation ends a grant as surely).
+        class: GraphClass::A005,
+        select: "SELECT ?g ?other WHERE { \
+                 ?g <urn:ledger:ns#genesis> \"true\" . ?other <urn:ledger:ns#genesis> \"true\" . \
+                 FILTER(STR(?g) < STR(?other)) \
+                 FILTER NOT EXISTS { ?n <urn:ledger:ns#supersedesGrant> ?g } \
+                 FILTER NOT EXISTS { ?m <urn:ledger:ns#supersedesGrant> ?other } \
+                 FILTER NOT EXISTS { ?x <urn:ledger:ns#revokes> ?g } \
+                 FILTER NOT EXISTS { ?y <urn:ledger:ns#revokes> ?other } }",
+        message: |row| {
+            (
+                term(row, "g"),
+                format!("is a live genesis grant beside {} — the store has one trust root", term(row, "other")),
+            )
+        },
+    },
 ];
+
+const GRANT_COLLISION: &str = "SELECT ?g ?other WHERE { \
+     ?g a <urn:ledger:ns#Grant> ; <urn:ledger:ns#role> ?r ; <urn:ledger:ns#scope> ?s ; <urn:ledger:ns#order> ?o . \
+     ?other a <urn:ledger:ns#Grant> ; <urn:ledger:ns#role> ?r ; <urn:ledger:ns#scope> ?s ; <urn:ledger:ns#order> ?o . \
+     FILTER(STR(?g) < STR(?other)) \
+     FILTER NOT EXISTS { ?x <urn:ledger:ns#revokes> ?g } \
+     FILTER NOT EXISTS { ?y <urn:ledger:ns#revokes> ?other } \
+     FILTER NOT EXISTS { ?n <urn:ledger:ns#supersedesGrant> ?g } \
+     FILTER NOT EXISTS { ?m <urn:ledger:ns#supersedesGrant> ?other } \
+     FILTER EXISTS { ?ga a <urn:ledger:ns#GrantAcceptance> ; <urn:ledger:ns#grant> ?g } \
+     FILTER EXISTS { ?gb a <urn:ledger:ns#GrantAcceptance> ; <urn:ledger:ns#grant> ?other } }";
+
+const KEY_COLLISION: &str = "SELECT ?a ?b ?k WHERE { \
+     ?va <urn:ledger:ns#key> ?k . ?va <urn:ledger:ns#ofDecision> ?a . \
+     ?vb <urn:ledger:ns#key> ?k . ?vb <urn:ledger:ns#ofDecision> ?b . \
+     ?a <urn:ledger:ns#namespace> ?ns . ?b <urn:ledger:ns#namespace> ?ns . \
+     FILTER(STR(?a) < STR(?b)) \
+     FILTER NOT EXISTS { ?ca <http://www.w3.org/ns/prov#wasRevisionOf> ?va } \
+     FILTER NOT EXISTS { ?ma <urn:ledger:ns#mergedFrom> ?va } \
+     FILTER NOT EXISTS { ?cb <http://www.w3.org/ns/prov#wasRevisionOf> ?vb } \
+     FILTER NOT EXISTS { ?mb <urn:ledger:ns#mergedFrom> ?vb } \
+     FILTER NOT EXISTS { ?sa <urn:ledger:ns#supersedes> ?a . \
+       FILTER NOT EXISTS { ?xa <http://www.w3.org/ns/prov#wasRevisionOf> ?sa } } \
+     FILTER NOT EXISTS { ?sb <urn:ledger:ns#supersedes> ?b . \
+       FILTER NOT EXISTS { ?xb <http://www.w3.org/ns/prov#wasRevisionOf> ?sb } } }";
 
 /// Display form of a hash term: the first 12 hex characters.
 fn short_hash(term: &str) -> String {

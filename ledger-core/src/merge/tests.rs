@@ -173,6 +173,8 @@ mod acts {
             based_on: Vec::new(),
             revisit_if: Vec::new(),
             note: None,
+            key: None,
+            exported: false,
         })
         .expect("add")
         .lines
@@ -204,6 +206,7 @@ mod acts {
             revisit_if: None,
             note: None,
             expected_parent: None,
+            key: None,
         })
         .expect("left revision");
         let store = crate::store::load(dir);

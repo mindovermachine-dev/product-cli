@@ -45,6 +45,8 @@ pub struct ReviseEdges<'a> {
     pub no_revisit_if: bool,
     /// What this act was, recorded on the change-set.
     pub note: Option<String>,
+    /// Give the decision a key (format 5).
+    pub key: Option<String>,
 }
 
 pub fn revise(
@@ -69,6 +71,7 @@ pub fn revise(
         revisit_if,
         note: edges.note.clone(),
         expected_parent: parent.map(str::parse).transpose()?,
+        key: edges.key.as_deref().map(str::parse).transpose()?,
     };
     finish(author.revise(&decision(id)?, args))
 }

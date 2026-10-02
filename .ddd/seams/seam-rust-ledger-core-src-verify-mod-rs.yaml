@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-verify-mod-rs
 boundary: contract surface of ledger-core/src/verify/mod.rs
-verdict_knowledge: "Callers learn a verify report may carry an export stage: present only when asked for, conformant only when empty, so an export check that did not run never reads as one that passed."
+verdict_knowledge: 'Callers learn a verify report may carry an export stage: present only when asked for, conformant only when empty, so an export check that did not run never reads as one that passed.'
 contract_location: ledger-core/src/verify/mod.rs
 obligations: []
 metadata: {}
@@ -18,3 +18,21 @@ bindings:
   after: sha256:46b980d87c476d0c39e6808eb358c0d9c7ba15a8fee64378972de39ebc9c3842
   base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
   hash: sha256:e59c8aba1893b27fdb596bb6699b6a0948090ad927be604f2bbda045e02cecd3
+- symbol: authority
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:46b980d87c476d0c39e6808eb358c0d9c7ba15a8fee64378972de39ebc9c3842
+  after: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2f34f3ed8046b56fc16b6fc0b6f3ce7e383f5e449302ffd3003ae88c27366a78
+- symbol: keys
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:46b980d87c476d0c39e6808eb358c0d9c7ba15a8fee64378972de39ebc9c3842
+  after: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c44274a446403290d6db645fa0e23e276746e83925e9d8bf25dc103f280ac1ef
+- symbol: signers
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:46b980d87c476d0c39e6808eb358c0d9c7ba15a8fee64378972de39ebc9c3842
+  after: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:43f0095bf6da8b8d8817f4fff7a61ff300124751895b748fc52713bc350250c8

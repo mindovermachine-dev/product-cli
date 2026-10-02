@@ -1,0 +1,80 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-mod-rs
+boundary: contract surface of ledger-core/src/authority/mod.rs
+verdict_knowledge: "Consumers learn the authority module's re-exported surface: records, the role check, the view, and that a namespace without policy is pre-v2."
+contract_location: ledger-core/src/authority/mod.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: availability
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:51fd4bafe889d5ec6fd17d13338791f9f429a70880b7e13a1102225b70966029
+- symbol: binding
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c6d816c8b0e68f07bcc7d29de71d8f1dcb591a81a227544ca3ddc781dfc8f482
+- symbol: check
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:a37fd23b0540be04cc7cc2ac71d1352169acc02425a6c6c69ccd408ece5ae9ed
+- symbol: grant
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2477efe5796cdaa897ca5ce4197d766665a2fc596a676e68e9dc682a41931114
+- symbol: payload
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:f2235f8ef260dd57acb8a8c87e5c981540859abb48b4bc9f9b77bbe3d3e5b656
+- symbol: policy
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:d80063e804a7ba83cb1e6f0d1f7ecf17c868a50ebba3c31bb02f1d5ce3d824f6
+- symbol: references
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:58e781984b9410b3b869f617788a351d655f478d3178ddf157ca7cd55ece70f8
+- symbol: revocation
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:d705e02c84b8b19764db8073c521f8581f1edbe9fb9932d24d48a3b5353ae6f3
+- symbol: role
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:54467949e488dc95bcb911ce9062240b4f5876c2b8b4691c1e09ed729f80cf7f
+- symbol: signers
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:687a6e96379aba4949d4e2f56ea7c4a4e5a089195a4771ed9bb5c51fd32c3d4f
+- symbol: structure
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:90d37230c1af85e4d24361f9c8f848cd83a86bc6b615b153b11745f844341869
+- symbol: view
+  file: ledger-core/src/authority/mod.rs
+  before: absent
+  after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:11bd741251c51c6d1b493bf5d12ce3db33338fe69a0f853449dbf0079b857121

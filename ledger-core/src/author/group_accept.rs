@@ -77,6 +77,10 @@ impl Author {
         plan: Plan,
         expires_at: Option<NaiveDate>,
     ) -> Result<Outcome, AuthorError> {
+        let denied = self.unauthorized_members(store, &plan);
+        if !denied.is_empty() {
+            return Ok(refuse(plan, role_refusal(denied)));
+        }
         let mut candidate = self.shell(Some(note(&plan)))?;
         let mut signed: Vec<String> = Vec::new();
         for m in plan.signable() {
@@ -109,6 +113,20 @@ impl Author {
         }
         let path = self.append(&candidate)?;
         Ok(Outcome { plan, dry_run: false, signed, filed: Some(path), refusal: None })
+    }
+
+    /// The role check per member: the same check a single accept runs.
+    fn unauthorized_members(&self, store: &Store, plan: &Plan) -> Vec<String> {
+        let view = crate::verify::view::View::build(store);
+        plan.signable()
+            .filter_map(|m| {
+                let id = m.decision.parse().ok()?;
+                match self.decision_authority(store, &view, &id, crate::authority::Act::Accept) {
+                    Err(e) => Some(format!("{} — {e}", m.decision)),
+                    Ok(_) => None,
+                }
+            })
+            .collect()
     }
 
     /// Gate each acceptance on its own, so a member that would fail as a
@@ -193,6 +211,14 @@ fn drift(
         plan.manifest
     );
     refuse(plan, Refusal { kind: "drift", message, detail })
+}
+
+fn role_refusal(detail: Vec<String>) -> Refusal {
+    Refusal {
+        kind: "role",
+        message: "a member is outside what this identity holds authority to accept — the same role check a single accept runs".to_string(),
+        detail,
+    }
 }
 
 fn gate_refusal(detail: Vec<String>) -> Refusal {

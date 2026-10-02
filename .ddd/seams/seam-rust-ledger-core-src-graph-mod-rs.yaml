@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-graph-mod-rs
 boundary: contract surface of ledger-core/src/graph/mod.rs
-verdict_knowledge: "Consumers learn the graph serialises two ways from one triple map — the Turtle index and the N-Triples export — so neither can state a triple the other lacks."
+verdict_knowledge: Consumers learn the graph serialises two ways from one triple map — the Turtle index and the N-Triples export — so neither can state a triple the other lacks.
 contract_location: ledger-core/src/graph/mod.rs
 obligations: []
 metadata: {}
@@ -18,3 +18,21 @@ bindings:
   after: sha256:f5d26088ceabe64a8ad0b39e61bf20fa3a52f5987bb37b2a9c950b096e3322cf
   base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
   hash: sha256:4ad13926d01182ca22dbaacd53b7055226d7164171d7c18d1b9b012d0c65c554
+- symbol: A003
+  file: ledger-core/src/graph/mod.rs
+  before: sha256:f5d26088ceabe64a8ad0b39e61bf20fa3a52f5987bb37b2a9c950b096e3322cf
+  after: sha256:5bbd624937834e22a93264fa25af4177d9e388234f847f322c2e0e6d72956479
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:e439c44dce2ccc9e8a4b8c28030e65061390281fab53ec9d18b39064e499b85f
+- symbol: A005
+  file: ledger-core/src/graph/mod.rs
+  before: sha256:f5d26088ceabe64a8ad0b39e61bf20fa3a52f5987bb37b2a9c950b096e3322cf
+  after: sha256:5bbd624937834e22a93264fa25af4177d9e388234f847f322c2e0e6d72956479
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2f45e8c4252b9b2d376215a136f8d49e2aff6c28fe04a1a55c0ac86c66036ebf
+- symbol: G006
+  file: ledger-core/src/graph/mod.rs
+  before: sha256:f5d26088ceabe64a8ad0b39e61bf20fa3a52f5987bb37b2a9c950b096e3322cf
+  after: sha256:5bbd624937834e22a93264fa25af4177d9e388234f847f322c2e0e6d72956479
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:7871d5fa4ebe9b45ca4fb92a8bc9a7825aeacd4ad8c24bd5de6d77b98a2436b1

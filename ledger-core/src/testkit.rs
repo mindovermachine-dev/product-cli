@@ -60,6 +60,8 @@ pub fn version() -> VersionRaw {
         based_on: vec!["prd:decision-ledger-prd#4.2.1".parse().expect("basis")],
         revisit_if: Vec::new(),
         supersedes: None,
+        key: None,
+        exported: false,
     }
 }
 
@@ -104,18 +106,17 @@ pub fn changeset(versions: Vec<VersionRaw>, acceptances: Vec<Acceptance>) -> Cha
             created_by: identity("fixture-human@example"),
         })
         .collect();
-    ChangeSet {
-        format: 1,
-        id: format!("cs:{CS_ULID}").parse::<ChangeSetId>().expect("change-set id"),
-        created_at: stamp("2026-08-10T09:14:22Z"),
-        created_by: identity("fixture-human@example"),
-        parents: Vec::new(),
-        note: Some("fixture".into()),
-        decisions,
-        versions,
-        acceptances,
-        revocations: Vec::new(),
-    }
+    let mut cs = ChangeSet::empty(
+        1,
+        format!("cs:{CS_ULID}").parse::<ChangeSetId>().expect("change-set id"),
+        stamp("2026-08-10T09:14:22Z"),
+        identity("fixture-human@example"),
+        Some("fixture".into()),
+    );
+    cs.decisions = decisions;
+    cs.versions = versions;
+    cs.acceptances = acceptances;
+    cs
 }
 
 /// An in-memory store holding one change-set plus the default set.
@@ -124,11 +125,26 @@ pub fn store(changeset: ChangeSet) -> Store {
         root: std::path::PathBuf::from("/fixture"),
         dir: std::path::PathBuf::from("/fixture/.decisions"),
         sets: vec![set()],
+        roles: Vec::new(),
         log: vec![LoggedChangeSet {
             path: std::path::PathBuf::from(format!("/fixture/.decisions/log/{CS_ULID}.yml")),
             file: changeset,
         }],
         schema_findings: Vec::new(),
+    }
+}
+
+/// A legacy-shape (formats 1–5) revocation of the fixture acceptance.
+pub fn legacy_revocation(at: &str, reason: &str) -> crate::acceptance::Revocation {
+    crate::acceptance::Revocation {
+        id: None,
+        revokes: None,
+        acceptance: Some(acceptance_id()),
+        at: stamp(at),
+        actor: None,
+        by: Some(identity("fixture-human@example")),
+        reason: reason.into(),
+        hash: None,
     }
 }
 

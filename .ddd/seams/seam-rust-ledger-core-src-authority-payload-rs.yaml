@@ -1,0 +1,62 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-payload-rs
+boundary: contract surface of ledger-core/src/authority/payload.rs
+verdict_knowledge: "Consumers learn the four closed payloads and their prefixes — ledger.authority-grant.v1, ledger.revocation.v1, ledger.identity-binding.v1, ledger.namespace-policy.v1 — under the one canonical-JSON law."
+contract_location: ledger-core/src/authority/payload.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: BINDING_FORM
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:b1d96fb7b3c9b6705287a420f75526933df997a5f64554b520d1cf7ceba93dfd
+- symbol: GRANT_FORM
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6525a85404570c91340b17472628225f9eba75e8cbf3389e9e0807be6bfa7f3f
+- symbol: POLICY_FORM
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:0dc9f45eaa4e3fba37de6dbc288d7fd13bba4979396bfc8c7ad6c1fb57db97d9
+- symbol: REVOCATION_FORM
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c20cd4bade2c9e9bc54dfaf1b36a242c0878bc7e806e494342fd5704738337c3
+- symbol: binding_hash
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:f67daf7fc2375837373dedeb5a16aaa0bc0dc787edf4e45e9e62241d5dcd6000
+- symbol: grant_hash
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:e6068928cb10da5882945072829e29915970bf10539dbb76aeab6b970323a422
+- symbol: grant_json
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:7b9307e489264b408430d69d7f3f4e6de38ea7879e1d219859ade36d8a72ddb7
+- symbol: policy_hash
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:e255ecdcfbefaab2a675b075e76f6609293aca36d9880807cbfaa55628657586
+- symbol: revocation_hash
+  file: ledger-core/src/authority/payload.rs
+  before: absent
+  after: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:b419179243c802a6cedbe78fb6593a22975ff9895774839ecb2194eeb9265db7

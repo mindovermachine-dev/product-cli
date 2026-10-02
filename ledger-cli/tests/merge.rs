@@ -7,6 +7,8 @@
 //! is an ordinary recorded act; the reconciled version is unaccepted; and
 //! the index rebuild stays byte-identical after the whole affair.
 
+mod common;
+
 use std::path::{Path, PathBuf};
 use std::process::Output;
 
@@ -58,9 +60,8 @@ impl Repo {
     }
 
     fn ledger(&self, args: &[&str]) -> Output {
-        let mut cmd = Command::cargo_bin("ledger").expect("binary");
-        cmd.arg("--root").arg(self.path()).args(args);
-        cmd.output().expect("run")
+        // Signing verbs run at a terminal, as a person runs them (#71).
+        common::invoke(self.path(), args)
     }
 
     fn ledger_stdin(&self, args: &[&str], stdin: &str) -> Output {

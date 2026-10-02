@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-authority-rs
+boundary: contract surface of ledger-core/src/verify/authority.rs
+verdict_knowledge: "Consumers learn the gate polices authority records through SCHEMA, L006 (every identity an authority record names) and L007 (every stored authority hash) — no new class."
+contract_location: ledger-core/src/verify/authority.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: findings
+  file: ledger-core/src/verify/authority.rs
+  before: absent
+  after: sha256:21f5841df8f302ae277844299a2aac02fb23fc0eae497df0ffb5af43b5ba062c
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ae79dd220b85a24fc1489d2de745cf9225f948c848a546208cef12bdabd0c778

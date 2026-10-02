@@ -1,0 +1,56 @@
+format: 2
+id: seam/rust/ledger-core-src-key-rs
+boundary: contract surface of ledger-core/src/key.rs
+verdict_knowledge: "Consumers learn the decision key type: ^[A-Z][A-Za-z0-9]{0,63}$, refused at parse otherwise, the name a generated type is built from."
+contract_location: ledger-core/src/key.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: MAX_LEN
+  file: ledger-core/src/key.rs
+  before: absent
+  after: sha256:52b95604de2a229113653371459b7065ec75bcae4f0e01a0a573c8fa305008bf
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:83a4f1f21fde62eaff05c352086f2489a88ba0c4521a16d1c118c37fec1ebe01
+- symbol: impl DecisionKey
+  file: ledger-core/src/key.rs
+  before: absent
+  after: sha256:52b95604de2a229113653371459b7065ec75bcae4f0e01a0a573c8fa305008bf
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:f25345caf617ae0869096769139080aeef5fb74dda4c6166a1cda5a215b32ddd
+- symbol: DecisionKey
+  file: ledger-core/src/key.rs
+  before: absent
+  after: sha256:52b95604de2a229113653371459b7065ec75bcae4f0e01a0a573c8fa305008bf
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2e94e21bbb05db63d23de7caeb3bf1aae28ebad6af113e1cd8c6e48f0bd1dd2a
+- symbol: impl Deserialize<'de> for DecisionKey
+  file: ledger-core/src/key.rs
+  before: absent
+  after: sha256:52b95604de2a229113653371459b7065ec75bcae4f0e01a0a573c8fa305008bf
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c0c21eb346a2890f8ede6845d64b3c71eb698782133d6be0acaa3234164abb7d
+- symbol: impl FromStr for DecisionKey
+  file: ledger-core/src/key.rs
+  before: absent
+  after: sha256:52b95604de2a229113653371459b7065ec75bcae4f0e01a0a573c8fa305008bf
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ee8fd2c3c40d5497ab1d3c1a53931d57f6cef6fa6d78f4ca5132a61154ca1542
+- symbol: impl Serialize for DecisionKey
+  file: ledger-core/src/key.rs
+  before: absent
+  after: sha256:52b95604de2a229113653371459b7065ec75bcae4f0e01a0a573c8fa305008bf
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:da2cebdf9583f38a458b75b0c67ec5e10a1de397a6ffd1e041f565be6cfbe3dd
+- symbol: impl fmt::Display for DecisionKey
+  file: ledger-core/src/key.rs
+  before: absent
+  after: sha256:52b95604de2a229113653371459b7065ec75bcae4f0e01a0a573c8fa305008bf
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:3d862d3f5f75718e26b31d45cd40bf4f9832f4d9e8a0280d0ee96635fae9273f
+- symbol: as_str
+  file: ledger-core/src/key.rs
+  before: absent
+  after: sha256:52b95604de2a229113653371459b7065ec75bcae4f0e01a0a573c8fa305008bf
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:7249efdb20fc7ca6d46e294fad1e719dffc08fbc4a638289d0a15701476a6671

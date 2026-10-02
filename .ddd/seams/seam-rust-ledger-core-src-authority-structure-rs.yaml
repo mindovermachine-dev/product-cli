@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-structure-rs
+boundary: contract surface of ledger-core/src/authority/structure.rs
+verdict_knowledge: "Consumers learn the single-record SCHEMA rules for roles, grants, intervals, bindings and policies."
+contract_location: ledger-core/src/authority/structure.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: entry_faults
+  file: ledger-core/src/authority/structure.rs
+  before: absent
+  after: sha256:e0c3d508f0ef2979262139e05969da693efea418db1ceb75badccdcc7e72d504
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:13642d90c7abdb8d81a5ef1af66478ee4f1095c50e222940ddecf5dde556a490
+- symbol: role_faults
+  file: ledger-core/src/authority/structure.rs
+  before: absent
+  after: sha256:e0c3d508f0ef2979262139e05969da693efea418db1ceb75badccdcc7e72d504
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:1163450ba0c074eabde3261db44d8bdff046bf260aa5e2dbd617edd78e9e3b81

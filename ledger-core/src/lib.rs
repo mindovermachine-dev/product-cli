@@ -7,7 +7,7 @@
 //! source of truth; everything derived is out of scope at this milestone.
 //!
 //! The load-bearing pieces are [`canon`] (the canonical form an acceptance
-//! signs, specified in `docs/ledger-format-v1.md`) and [`verify`] (the ten
+//! signs, specified in `docs/ledger-format-v1.md`) and [`verify`] (the twelve
 //! failure classes the CI gate polices). Both are stable surfaces other
 //! implementations import from the format document, not from this crate.
 
@@ -16,6 +16,7 @@
 pub mod acceptance;
 pub mod allocation;
 pub mod author;
+pub mod authority;
 pub mod batch;
 pub mod blame;
 pub mod canon;
@@ -31,6 +32,7 @@ pub mod hold;
 pub mod id;
 pub mod identity;
 pub mod init;
+pub mod key;
 pub mod merge;
 pub mod mint;
 pub mod render;

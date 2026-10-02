@@ -52,11 +52,14 @@ pub fn load_at(root: &Path, rev: &str) -> Result<Store, String> {
         let stem = file_stem(&path);
         if path.starts_with(&format!("{STORE_DIR}/sets/")) {
             crate::store::take_set(&mut store, &label, &stem, &text);
+        } else if path.starts_with(&format!("{STORE_DIR}/roles/")) {
+            crate::store::take_role(&mut store, &label, &stem, &text);
         } else if path.starts_with(&format!("{STORE_DIR}/log/")) {
             crate::store::take_log(&mut store, PathBuf::from(&label), &label, &stem, &text);
         }
     }
     store.sets.sort_by(|a, b| a.id.cmp(&b.id));
+    store.roles.sort_by(|a, b| a.id.cmp(&b.id));
     store.log.sort_by(|a, b| a.file.id.cmp(&b.file.id));
     Ok(store)
 }

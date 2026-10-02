@@ -1,0 +1,74 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-fixture-rs
+boundary: contract surface of ledger-core/src/authority/fixture.rs
+verdict_knowledge: "Test authors learn the builders for roles, grants, acceptances and intervals used by the authority tests."
+contract_location: ledger-core/src/authority/fixture.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: GENESIS_HOLDER
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:aeef2a66da754dbca7fa8d52fe7636c2434515b7ea846e4d8beb2ea040b2c8b4
+- symbol: accepted
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:562ef8638769289030b7a952581e4c6b1d9910ff9f0302dfaaf3e0216dc4aca5
+- symbol: away
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ba66628e3cc35c43aed9c67c06f7821b3878044fc6c42f23e91ca0af7cfafb89
+- symbol: changeset
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:b1a83f2a4a95e1b33202c592cfcb703c7e751512b024c57f973bd35f1bc59f43
+- symbol: genesis
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:319b4585dbea456fbe695e38b4b7606ebb3092cf7bbc0b1ecc14e39aab948639
+- symbol: grant
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:2f6d49df9d4998c99d40d23077295901b4b169024b75de45307aec57b07daaa2
+- symbol: limited
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:7ecf1b6e91bf5fde39f2a954fe93e20e98aaedad87f5ae47c155124eed6d2f64
+- symbol: reseal
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:b60ef1ed3dfa1cab8e2e5cbfacd3d6a0901c8c29636ecae24d056c0e2261aaef
+- symbol: role
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:cafd6b3bc3d3770ff8ea22036fda21cd37037d7b5879111392ec0590f3e306ed
+- symbol: store
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:646cab1c3c0d8fafd3cbd83486b6ead18f59061f76dcfe8fdc2d6ab472cae2ac
+- symbol: ulid
+  file: ledger-core/src/authority/fixture.rs
+  before: absent
+  after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:94365e2a1f3f1994d49844cd571493df9f24366ebfa91d35285b4f0db21ebb9d

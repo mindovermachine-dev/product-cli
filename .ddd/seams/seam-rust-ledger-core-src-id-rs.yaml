@@ -1,0 +1,56 @@
+format: 2
+id: seam/rust/ledger-core-src-id-rs
+boundary: contract surface of ledger-core/src/id.rs
+verdict_knowledge: "Consumers learn the authority id schemes grant:, gacc:, unav:, avail:, rev:, key:, pol:, each validated as a ULID under its own prefix."
+contract_location: ledger-core/src/id.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: validate_namespace
+  file: ledger-core/src/id.rs
+  before: sha256:20d593f788e35f81afcf13613c0c56a8751fd56afdeb648f0a8dcf72b2d39651
+  after: sha256:906636447b76e0ffc4147d5e6830d56cd1426b5f7222bda4d0c9f35ac7c007c5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:508c34010a90a62f0c0f72fd83b8ca497dc76355a4c1b533a540b01eb8227aa4
+- symbol: AvailabilityId
+  file: ledger-core/src/id.rs
+  before: sha256:20d593f788e35f81afcf13613c0c56a8751fd56afdeb648f0a8dcf72b2d39651
+  after: sha256:906636447b76e0ffc4147d5e6830d56cd1426b5f7222bda4d0c9f35ac7c007c5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:3e4031f724ba7abcc3283cb62237e8f62f854d16a73379997bd9b29c1721ec2d
+- symbol: GrantAcceptanceId
+  file: ledger-core/src/id.rs
+  before: sha256:20d593f788e35f81afcf13613c0c56a8751fd56afdeb648f0a8dcf72b2d39651
+  after: sha256:906636447b76e0ffc4147d5e6830d56cd1426b5f7222bda4d0c9f35ac7c007c5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:1c979e42c0c589fdb57db600e6dc00b2b895fb1f83f2ea92e4bb411ec55d763b
+- symbol: GrantId
+  file: ledger-core/src/id.rs
+  before: sha256:20d593f788e35f81afcf13613c0c56a8751fd56afdeb648f0a8dcf72b2d39651
+  after: sha256:906636447b76e0ffc4147d5e6830d56cd1426b5f7222bda4d0c9f35ac7c007c5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:a67e0bdcd7cae4d3e35c4fa14936303aceaf693ad5f1fa11429eae0b04731c18
+- symbol: KeyBindingId
+  file: ledger-core/src/id.rs
+  before: sha256:20d593f788e35f81afcf13613c0c56a8751fd56afdeb648f0a8dcf72b2d39651
+  after: sha256:906636447b76e0ffc4147d5e6830d56cd1426b5f7222bda4d0c9f35ac7c007c5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:1bf58d00c0f907c061646db53bdc1b8524106029ba599fdc72b1297c7f113f53
+- symbol: PolicyId
+  file: ledger-core/src/id.rs
+  before: sha256:20d593f788e35f81afcf13613c0c56a8751fd56afdeb648f0a8dcf72b2d39651
+  after: sha256:906636447b76e0ffc4147d5e6830d56cd1426b5f7222bda4d0c9f35ac7c007c5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6cb972aae2e6398563a7cf664b47239b98fbd7c014692fb0d47ea7c75ed9c7dd
+- symbol: RevocationId
+  file: ledger-core/src/id.rs
+  before: sha256:20d593f788e35f81afcf13613c0c56a8751fd56afdeb648f0a8dcf72b2d39651
+  after: sha256:906636447b76e0ffc4147d5e6830d56cd1426b5f7222bda4d0c9f35ac7c007c5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:dc04638c445ca661c8f42329df5495a68aac512ec8530ab555a9abdfb24cf6d4
+- symbol: UnavailabilityId
+  file: ledger-core/src/id.rs
+  before: sha256:20d593f788e35f81afcf13613c0c56a8751fd56afdeb648f0a8dcf72b2d39651
+  after: sha256:906636447b76e0ffc4147d5e6830d56cd1426b5f7222bda4d0c9f35ac7c007c5
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:fec42a783f969dedbe065ec6cf40671869ab71ffce66a9508c2898f4c68e37c3

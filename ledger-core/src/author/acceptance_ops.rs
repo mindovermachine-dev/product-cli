@@ -6,12 +6,16 @@
 //! gate runs; an expired-on-arrival acceptance by the same `L003`. This
 //! module never creates an acceptance for anyone but the configured
 //! identity, and revocation appends — history keeps the mistake and the
-//! correction both.
+//! correction both. A revocation is its own `rev:` entity (spec v1.7,
+//! ruling 3): the acceptance it names is never edited, so the acceptance's
+//! content — and any signature over it — stays fixed.
 
 use chrono::NaiveDate;
 
-use crate::acceptance::{Acceptance, AcceptanceScope, Revocation};
+use crate::acceptance::{Acceptance, AcceptanceScope};
+use crate::authority::{Act, Authority, Authorized, Revocable, Target};
 use crate::id::{AcceptanceId, DecisionId};
+use crate::store::Store;
 use crate::verify::view::View;
 
 use super::{Applied, Author, AuthorError};
@@ -49,12 +53,36 @@ fn signable_tip(
 }
 
 impl Author {
+    /// The role check on a decision (spec v1.7): in a namespace under
+    /// policy, the actor needs a live, accepted, available grant of the
+    /// policy's accept role covering the decision. A namespace without a
+    /// policy is a pre-v2 store, and nothing is role-checked there.
+    pub(crate) fn decision_authority(
+        &self,
+        store: &Store,
+        view: &View,
+        decision: &DecisionId,
+        act: Act,
+    ) -> Result<Option<Authorized>, AuthorError> {
+        let auth = Authority::build(store);
+        let Some(policy) = auth.policy(decision.namespace()) else { return Ok(None) };
+        let set = view
+            .latest
+            .get(&decision.to_string())
+            .and_then(|i| view.versions.get(*i))
+            .map(|v| v.raw.set.clone())
+            .unwrap_or_default();
+        let target = Target::Decision { namespace: decision.namespace(), set: &set };
+        self.authorized(store, act, target, Some(&policy.accept_role)).map(Some)
+    }
+
     /// Sign the latest version of a decision as the configured identity.
     pub fn accept(&mut self, args: AcceptArgs) -> Result<Applied, AuthorError> {
         let store = self.load();
         let view = View::build(&store);
         let hash = signable_tip(&view, &args.decision)?;
         self.refuse_duplicate(&view, &args.decision, &hash)?;
+        let held = self.decision_authority(&store, &view, &args.decision, Act::Accept)?;
         let acceptance = Acceptance {
             id: self.mint.mint_id("acc").map_err(AuthorError::Io)?,
             decision: args.decision.clone(),
@@ -69,15 +97,16 @@ impl Author {
         candidate.acceptances.push(acceptance);
         self.refusal_check(&store, &candidate, |_| false)?;
         let path = self.append(&candidate)?;
-        Ok(Applied {
-            path,
-            lines: vec![format!(
-                "{} accepted {} of {} — the signature names this exact state",
-                self.who,
-                hash.short(),
-                args.decision
-            )],
-        })
+        let mut lines = vec![format!(
+            "{} accepted {} of {} — the signature names this exact state",
+            self.who,
+            hash.short(),
+            args.decision
+        )];
+        if let Some(by) = held {
+            lines.push(format!("under {} (`{}`)", by.grant, by.role));
+        }
+        Ok(Applied { path, lines })
     }
 
     /// A second live signature of the same hash by the same actor adds
@@ -104,33 +133,32 @@ impl Author {
         Ok(())
     }
 
-    /// Unsay a prior acceptance, with the reason on record.
+    /// Unsay a prior acceptance, with the reason on record (#66): a
+    /// format-6 `rev:` entity naming the acceptance, which is never edited.
+    /// In a namespace under policy the revoker needs the accept role, as an
+    /// acceptor would; `L006` refuses a model revoker everywhere.
     pub fn revoke(&mut self, args: RevokeArgs) -> Result<Applied, AuthorError> {
-        if args.reason.trim().is_empty() {
-            return Err(AuthorError::Usage("a revocation carries its reason".to_string()));
-        }
         let store = self.load();
         let view = View::build(&store);
-        let already_revoked = view.revoked.contains(&args.acceptance.to_string());
-        if already_revoked {
+        if view.revoked.contains(&args.acceptance.to_string()) {
             return Err(AuthorError::Conflict(format!(
                 "{} is already revoked — one reversal is enough",
                 args.acceptance
             )));
         }
-        let revocation = Revocation {
-            acceptance: args.acceptance.clone(),
-            at: self.now,
-            by: self.who.clone(),
-            reason: args.reason.clone(),
-        };
+        let revoked = view.acceptances.iter().map(|a| a.acceptance).find(|a| a.id == args.acceptance);
+        if let Some(acceptance) = revoked {
+            self.decision_authority(&store, &view, &acceptance.decision, Act::RevokeAcceptance)?;
+        }
+        let revocation = self.revocation(Revocable::Acceptance(args.acceptance.clone()), args.reason.clone())?;
+        let id = revocation.id.as_ref().map(ToString::to_string).unwrap_or_default();
         let mut candidate = self.shell(None)?;
         candidate.revocations.push(revocation);
         self.refusal_check(&store, &candidate, |_| false)?;
         let path = self.append(&candidate)?;
         Ok(Applied {
             path,
-            lines: vec![format!("revoked {} — {}", args.acceptance, args.reason)],
+            lines: vec![format!("revoked {} by {id} — {}", args.acceptance, args.reason)],
         })
     }
 }

@@ -21,6 +21,8 @@ pub struct Flags {
     pub based_on: Vec<String>,
     pub revisit_if: Vec<String>,
     pub note: Option<String>,
+    pub key: Option<String>,
+    pub exported: bool,
 }
 
 pub fn run(root: Option<PathBuf>, flags: Flags) -> Result<i32, String> {
@@ -40,6 +42,8 @@ pub fn run(root: Option<PathBuf>, flags: Flags) -> Result<i32, String> {
         based_on: parse_based_on(&flags.based_on)?,
         revisit_if: parse_revisit_if(&flags.revisit_if)?,
         note: flags.note,
+        key: flags.key.as_deref().map(str::parse).transpose()?,
+        exported: flags.exported,
     };
     finish(author.add(args))
 }

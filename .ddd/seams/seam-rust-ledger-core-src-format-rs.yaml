@@ -24,3 +24,15 @@ bindings:
   after: sha256:e9029de89b7816bb89cfd8e0e7ad2192e583f030f4892f62ea7bd30d1727369a
   base_revision: 15c635210dca8246aae371460e167ad7d293c2e6
   hash: sha256:e2b23292d3b2ee1dd7665c6402b5e2c01afadde05806be39eb004c674d8d85cb
+- symbol: AUTHORITY_FORMAT
+  file: ledger-core/src/format.rs
+  before: sha256:e9029de89b7816bb89cfd8e0e7ad2192e583f030f4892f62ea7bd30d1727369a
+  after: sha256:d4d49b35c1452211c58e1b712ced20e7d6efde9eba017a2d3bac61a19d9e2f89
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:bbd641c068f36c8c0c616daf83b144aabb5d908e5b9af741dae2d29e4b721eaf
+- symbol: KEY_FORMAT
+  file: ledger-core/src/format.rs
+  before: sha256:e9029de89b7816bb89cfd8e0e7ad2192e583f030f4892f62ea7bd30d1727369a
+  after: sha256:d4d49b35c1452211c58e1b712ced20e7d6efde9eba017a2d3bac61a19d9e2f89
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:326e654cbc5c484da89c2416ae81ff5b164acffd5604ed18b4f56e78b42db89f

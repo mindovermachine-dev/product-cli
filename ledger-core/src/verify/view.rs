@@ -24,7 +24,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
-use crate::acceptance::{Acceptance, Revocation};
+use crate::acceptance::Acceptance;
 use crate::finding::Finding;
 use crate::store::Store;
 use crate::version::{DecisionVersion, VersionRaw};
@@ -83,7 +83,9 @@ impl<'a> View<'a> {
                 view.acceptances.push(ViewedAcceptance { acceptance, path: &logged.path });
             }
             for revocation in &logged.file.revocations {
-                view.revoked.insert(revocation.acceptance.to_string());
+                if let Some(acceptance) = revocation.revoked_acceptance() {
+                    view.revoked.insert(acceptance.to_string());
+                }
             }
         }
         view.derive_latest();
@@ -163,7 +165,7 @@ impl<'a> View<'a> {
         let filed: BTreeSet<String> =
             self.acceptances.iter().map(|a| a.acceptance.id.to_string()).collect();
         for revocation in store.log.iter().flat_map(|c| &c.file.revocations) {
-            let Revocation { acceptance, .. } = revocation;
+            let Some(acceptance) = revocation.revoked_acceptance() else { continue };
             if !filed.contains(&acceptance.to_string()) {
                 self.findings.push(Finding::schema(
                     &acceptance.to_string(),

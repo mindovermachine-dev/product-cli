@@ -1,0 +1,134 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-policy-rs
+boundary: contract surface of ledger-core/src/authority/policy.rs
+verdict_knowledge: "Consumers learn the namespace policy shape: schemes (ssh | dsse | none), require_sk, accept_role, the re-acceptance deadline and the replaces chain."
+contract_location: ledger-core/src/authority/policy.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: Scheme
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:d4907d62b4db3aaa3e7b1e1267c8b609e943f66ff7ce494c4a5ac72e918f1977
+- symbol: impl Scheme
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:0cf7469c7c74ad8e6ca4d27aebbd3ebfea351e04a0a9937b85abf022dfd26a0b
+- symbol: Policy
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6b69163a7e08487bba9d0d421676412921f26c1698691efda13de61f58c87cde
+- symbol: impl Deserialize<'de> for Scheme
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:99a80de4f20b43c2adad7b1ce67f7420587ef235433b0f51a20715bdb234587f
+- symbol: impl FromStr for Scheme
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:e07aa733025a89314cc4ba444e65f3f72f299eb69453a3ab3126eb205dfa75fb
+- symbol: impl Serialize for Scheme
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:5504421d2c5ad6bd2565017eb6a38b79de5f642c7e4a14f45da270002c89c051
+- symbol: impl fmt::Display for Scheme
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:0e7c7dd5e369a758074e59aac3429b154371a6693659ef96084d17bda5a82956
+- symbol: accept_role
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:70874ce28da175d3c689885f3eccfc9f3f97387a21e61f39f38af299abc47f53
+- symbol: at
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c6db1e9604fef5ca7e7015a9b7e6a99cd1e215a28a2bf5acf98d56b08540e927
+- symbol: by
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:4a42a5181cab3f7bed3afd7d35e9e5c976d32e3a99aeb8346857d9f80ddb1003
+- symbol: hash
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:7dac34269e6cd392f7f12e1e59f176793696ae0637c3a750f1f6c11abe1ec71b
+- symbol: id
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6b389702f68618a02c7fc428e1a0d79639a25246afdd989bc38c9732c1ae6ca9
+- symbol: namespace
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:054f68fb48e54074e2fc37a738be9aee06dff56e7e206f081b472345c9092cc9
+- symbol: reaccept_within_days
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:40e754e39bd803067659f6708c728b56713973d3fc2d9ad01c1832d81674ac13
+- symbol: replaces
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:88d23349e88f8c75bb0ae39c0e3ee8d1ab87596c4ba2d0fc6e2cb32b35ed3d51
+- symbol: require_sk
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:88e15a1ac1b3b1f7c6b345b61f276dd653a215d1fb518edc11c30303d1a8cc21
+- symbol: schemes
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:166ba45fdbf1b0bb08fe8e98da8a861f834dab38f1165bc655739db540ac4695
+- symbol: Dsse
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:a318196eca479a0e5232d8b528064d2bc0f0610a4620937bc15c718debd112b6
+- symbol: None
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:4374fa25459f6021b8bad378716166c24030a5e2dc37063f18100e1b99ecc2fd
+- symbol: Ssh
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:e7e52f082f4cb1be809dfa1a3dfcad2f1a084bd255359b4e4ce38e85721d4bbd
+- symbol: as_str
+  file: ledger-core/src/authority/policy.rs
+  before: absent
+  after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:ad6d821e0d99137d05d63170b762d167c7f4ba3d00c30dcd7e60debb7d483b05

@@ -1,0 +1,62 @@
+format: 2
+id: seam/rust/ledger-core-src-changeset-rs
+boundary: contract surface of ledger-core/src/changeset.rs
+verdict_knowledge: "Consumers learn a change-set carries the format-6 authority lists beside decisions, versions, acceptances and revocations, with empty() and entry counts covering every kind."
+contract_location: ledger-core/src/changeset.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: availabilities
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:0b0e8cb523426085eeff6386a37d0857f15be6a463a5f12e3294bb271fa048c0
+- symbol: grant_acceptances
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:a927ff290475b64e789c9dbe518b353a4e12dad516e2390cd65032a5791d7451
+- symbol: grants
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:33a63f68733427b8bb8964c6a7878c971b59c00b563bfe6394e4f9511a77cb72
+- symbol: key_bindings
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:25ba471b97f7fc38bf05a23e0cb4b602fc0f8b5d7601498f3e529e944f1fe2c9
+- symbol: policies
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:759d192403cfdb03cf5025180fd3196458ee8d2eb2f671fdcd2d8c4a3a63cf94
+- symbol: unavailabilities
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:087873ff4ef755fa9622c6eb5828b612a7773becf95453358917430d445e8968
+- symbol: authority_count
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:e3b032c3c3a271368f83296196ec2c12c651c78131d5eee4b0d0a9cc33719bff
+- symbol: empty
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:4a14d06b823b22a9597284692a201245420f05508128fc6c2f02c1216ad3777c
+- symbol: entry_count
+  file: ledger-core/src/changeset.rs
+  before: sha256:33274ea98f4a7f96b58021e09ec91205d140d3654828132cb74d1ef4debda398
+  after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:370983173de896f16fe302261036f485b1e78a7dd877b7d02f4982478b49586d

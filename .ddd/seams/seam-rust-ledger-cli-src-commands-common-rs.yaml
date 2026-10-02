@@ -18,3 +18,9 @@ bindings:
   after: sha256:1ae04eb75dec1c8d76f161ead74419e1d3a10ce1d2678a824f466aaf710e3f2d
   base_revision: 576efaf12b38c16ff6e5600064ed15f4000b9fed
   hash: sha256:b4888fccaa969383b7bbb89208bd278bbbb3a64b4062d3af227d8d4d07610bc4
+- symbol: require_terminal
+  file: ledger-cli/src/commands/common.rs
+  before: sha256:1ae04eb75dec1c8d76f161ead74419e1d3a10ce1d2678a824f466aaf710e3f2d
+  after: sha256:e18872577a4efa7d43145b2be0be44254a98c8e5fefdf9db7a90a4808c0d8f6b
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:f666494ac1f07d798ca8dfffbceb898e7d8a2f13cf1bc60ec969a4265ff27588

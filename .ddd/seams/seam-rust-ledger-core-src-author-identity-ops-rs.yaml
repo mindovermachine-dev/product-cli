@@ -1,0 +1,56 @@
+format: 2
+id: seam/rust/ledger-core-src-author-identity-ops-rs
+boundary: contract surface of ledger-core/src/author/identity_ops.rs
+verdict_knowledge: "Callers learn identity add|rotate|revoke append key bindings (the namespace's first is the genesis holder's, self-bound under the mandate), refuse a software key under an -sk policy, and rewrite allowed_signers."
+contract_location: ledger-core/src/author/identity_ops.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: impl Author
+  file: ledger-core/src/author/identity_ops.rs
+  before: absent
+  after: sha256:631159afb84250dbf0264d0ee3ed6c4237603f91a5cbb85c935b476a593e0d7f
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:e39f71cf9ad9a001f728f95b55d59107311f6c89e6e57ac7e55711f2827bae91
+- symbol: KeyArgs
+  file: ledger-core/src/author/identity_ops.rs
+  before: absent
+  after: sha256:631159afb84250dbf0264d0ee3ed6c4237603f91a5cbb85c935b476a593e0d7f
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:61b05976032f97251aae99c6bb94a269da6ea889b9aaef2d42125a70d64681bb
+- symbol: key
+  file: ledger-core/src/author/identity_ops.rs
+  before: absent
+  after: sha256:631159afb84250dbf0264d0ee3ed6c4237603f91a5cbb85c935b476a593e0d7f
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:6292e0b57ef7b6fd660f13015fb91162e6c9e38d8c5781682d0f719e18b658d3
+- symbol: key_type
+  file: ledger-core/src/author/identity_ops.rs
+  before: absent
+  after: sha256:631159afb84250dbf0264d0ee3ed6c4237603f91a5cbb85c935b476a593e0d7f
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:200799a08fa0846a1186e73baf822fd1088478c92a46c1bf640e996312482f83
+- symbol: namespace
+  file: ledger-core/src/author/identity_ops.rs
+  before: absent
+  after: sha256:631159afb84250dbf0264d0ee3ed6c4237603f91a5cbb85c935b476a593e0d7f
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:749f83a6dd0fd199012790f1e928de94d08df5e1003bdacbdf3107fb5bf39794
+- symbol: identity_add
+  file: ledger-core/src/author/identity_ops.rs
+  before: absent
+  after: sha256:631159afb84250dbf0264d0ee3ed6c4237603f91a5cbb85c935b476a593e0d7f
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:91b867837bd5857b3744fc0bc622e078d97541e4e9fb16b4cd9015be503c2d5e
+- symbol: identity_revoke
+  file: ledger-core/src/author/identity_ops.rs
+  before: absent
+  after: sha256:631159afb84250dbf0264d0ee3ed6c4237603f91a5cbb85c935b476a593e0d7f
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:c447f6deb28929ae306450df3b3c346f0d43ea78ca0e783ac7a26150027dea40
+- symbol: identity_rotate
+  file: ledger-core/src/author/identity_ops.rs
+  before: absent
+  after: sha256:631159afb84250dbf0264d0ee3ed6c4237603f91a5cbb85c935b476a593e0d7f
+  base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
+  hash: sha256:1d1e76f424f26c57de5f5876967fb259865e574d448915211feb418effa32e07

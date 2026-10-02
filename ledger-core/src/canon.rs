@@ -97,11 +97,12 @@ pub fn canonical_json(raw: &VersionRaw) -> String {
 /// lets override-rate-per-set (§10) come out of hashed content. The three
 /// list fields are bound and discarded here because they are canonicalised
 /// as sets by the caller.
-fn scalar_fields(raw: &VersionRaw) -> [(&'static str, Option<String>); 15] {
+fn scalar_fields(raw: &VersionRaw) -> [(&'static str, Option<String>); 17] {
     let VersionRaw {
         decision, parent, merged_from, hash: _, set, statement, allocation, discharge: _,
         discharge_stage, actor, expectation, exposure, accepted_by, review_by,
         tolerance_floor_at_creation, tolerance_override, based_on: _, revisit_if: _, supersedes,
+        key, exported,
     } = raw;
     [
         ("decision", Some(decision.to_string())),
@@ -121,6 +122,11 @@ fn scalar_fields(raw: &VersionRaw) -> [(&'static str, Option<String>); 15] {
         ("tolerance_floor_at_creation", Some(tolerance_floor_at_creation.to_string())),
         ("tolerance_override", tolerance_override.map(|t| t.to_string())),
         ("supersedes", supersedes.as_ref().map(ToString::to_string)),
+        // Format 5 (spec v1.6). Both omitted when absent, so every earlier
+        // digest is unchanged. `exported` is the string "true" or nothing:
+        // hashed content is strings only, and `false` is the default.
+        ("key", key.as_ref().map(ToString::to_string)),
+        ("exported", exported.then(|| "true".to_string())),
     ]
 }
 

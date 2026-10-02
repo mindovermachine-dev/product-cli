@@ -15,9 +15,13 @@
 //! (`log/<ulid>.yml`, `sets/<id>.yml`), never edit one.
 
 mod acceptance_ops;
+mod authority_ops;
+mod availability_ops;
 mod declare;
 mod decision;
 mod group_accept;
+mod identity_ops;
+mod policy_ops;
 mod report;
 mod version_ops;
 
@@ -26,6 +30,10 @@ mod version_ops;
 mod tests;
 
 pub use acceptance_ops::{AcceptArgs, RevokeArgs};
+pub use authority_ops::{GrantArgs, InitNamespaceArgs, RoleArgs};
+pub use availability_ops::UnavailableArgs;
+pub use identity_ops::KeyArgs;
+pub use policy_ops::PolicyArgs;
 pub use group_accept::AcceptGroupArgs;
 pub use declare::DeclareArgs;
 pub use decision::{AddArgs, AllocationArgs};
@@ -57,6 +65,10 @@ pub enum AuthorError {
     Usage(String),
     /// The filesystem or git said no.
     Io(String),
+    /// The actor lacks the authority the act needs: the role check
+    /// (`authority::check::authorize`) refused, or the act is the genesis
+    /// holder's alone.
+    Unauthorized(String),
 }
 
 impl fmt::Display for AuthorError {
@@ -70,6 +82,7 @@ impl fmt::Display for AuthorError {
                 Ok(())
             }
             Self::Conflict(m) | Self::Usage(m) | Self::Io(m) => f.write_str(m),
+            Self::Unauthorized(m) => write!(f, "refused — {m}"),
         }
     }
 }
@@ -150,6 +163,7 @@ impl Author {
             root: current.root.clone(),
             dir: current.dir.clone(),
             sets: current.sets.clone(),
+            roles: current.roles.clone(),
             log: current.log.to_vec(),
             schema_findings: current.schema_findings.clone(),
         };
@@ -180,7 +194,11 @@ impl Author {
                 path.display()
             )));
         }
-        let text = serde_yaml::to_string(candidate)
+        // A file declares the format it actually uses: the shell starts at
+        // the current format and every verb's fields are counted here, once.
+        let mut candidate = candidate.clone();
+        candidate.format = candidate.format.max(crate::format::needed_for(&candidate));
+        let text = serde_yaml::to_string(&candidate)
             .map_err(|e| AuthorError::Io(format!("could not serialise the change-set: {e}")))?;
         product_core::fileops::write_file_atomic(&path, &text)
             .map_err(|e| AuthorError::Io(e.to_string()))?;
@@ -189,17 +207,12 @@ impl Author {
 
     /// A fresh change-set shell for one act, attributed to this author.
     pub(crate) fn shell(&mut self, note: Option<String>) -> Result<ChangeSet, AuthorError> {
-        Ok(ChangeSet {
-            format: crate::format::CURRENT_FORMAT,
-            id: self.mint.mint_id("cs").map_err(AuthorError::Io)?,
-            created_at: self.now,
-            created_by: self.who.clone(),
-            parents: Vec::new(),
+        Ok(ChangeSet::empty(
+            crate::format::CURRENT_FORMAT,
+            self.mint.mint_id("cs").map_err(AuthorError::Io)?,
+            self.now,
+            self.who.clone(),
             note,
-            decisions: Vec::new(),
-            versions: Vec::new(),
-            acceptances: Vec::new(),
-            revocations: Vec::new(),
-        })
+        ))
     }
 }
