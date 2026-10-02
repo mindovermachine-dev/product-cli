@@ -13,7 +13,7 @@ Ruled on the audit of the implementation (`ledger-core` / `ledger-cli`, binary `
 3. **Revocation is its own signed entity; acceptances are immutable.** A `ledger:Revocation` names the acceptance it revokes (`ledger:revokes`), carries its reason and attribution, and is signed. Revoking requires the role. No triple is ever added to an acceptance node after it is created, so the acceptance's signature covers its fixed content and stays valid when it is revoked.
 4. **The signed payload is a closed field list under the ledger's one canonicalisation law (audit C4).** Not RDFC-1.0 over a node. The acceptance payload is `{decision, version, actor, at, scope, expires_at}` — scope and expiry are signed, so an acceptance cannot be re-scoped under its signature — canonicalised as the format's canonical JSON (§4 of `ledger-format-v1.md`) under its own domain-separation prefix. The revocation payload is likewise closed. The export carries every payload field as a triple, so a consumer can rebuild the signed bytes from the export alone.
 5. **The export keeps `ledger:set` as an IRI** (`<urn:ledger-set:<id>>`). The analyzers' reader takes the set id from the IRI's local part, and keeps every `rdf:type` value of a node rather than the last.
-6. **`mailto:` is canonical.** An identity is a `mailto:` IRI in every form; a bare address is normalised to `mailto:` on parse.
+6. **`mailto:` is the identity's IRI form; the file keeps the bare address** (refined 2026-10-02). Parse normalises `mailto:x@y` and `x@y` to one identity; the stored and hashed form stays the bare address `x@y`, so no digest moves and the canonical form is unchanged; the graph projection and the export emit `<mailto:x@y>`, and equality compares that form.
 
 ## 1. Purpose
 
@@ -23,7 +23,7 @@ The ledger is the source of truth for decisions. Code cites decisions through `D
 
 - Files are the truth; the graph is a read model. A file holds one act (a change-set); every hashed entity is identified by the hash of its content; hashed content is strings only; the format refuses to restate facts.
 - File gate before graph stage: the file gate is the format's import surface — single-file and cross-entry rules every implementation must reproduce, computed at verify time and never materialised; the graph stage is the reference implementation's SPARQL cross-check and is never the only home of a rule.
-- Identities are `mailto:` IRIs, canonical in every form; a bare address is normalised to `mailto:` on parse. A model is never a holder.
+- Identities are `mailto:` IRIs in the graph and in equality; files and hashes keep the bare address, and parse normalises either spelling to one identity. A model is never a holder.
 - Everything the CLI does must be reproducible from the repository alone, with no service in the loop.
 
 ## 3. Users
