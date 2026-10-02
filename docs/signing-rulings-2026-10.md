@@ -58,6 +58,14 @@ The PRD's registry seam can hold all three. The decision is whether `openpgp` an
 
 ## What `L001` protects (the import story)
 
+> **Ruled 2026-10-02 on #65.** Options 3 and 4 are rejected. The ruling is to allocate each imported decision by what enforces it, derived from how it is cited:
+> - cited from an analyzer rule: `constraint` with `analyzer:<rule>`;
+> - cited only through `[DesignDecision(Scope=…)]`: `escaped`;
+> - cited as affirmative design behind a human merge gate: `judgment`;
+> - not cited: left unallocated, with `L001` failing on it.
+>
+> Interim acceptances are not imported; the holder accepts at import. The text below is the analysis the ruling was made on. The ruling itself, and #73's scope, are on the issues.
+
 `L001` fails when a decision's latest version has no `allocation` (`ledger-core/src/verify/disposition.rs` `unallocated`). It protects the ledger's founding claim (`decision-ledger-prd.md` §2.1): for a declared assurance level, specification demand is constant and **fully allocated** across four stores:
 
 - `constraint`: an extra-actor (analyzer or compiler) decides before the act;
