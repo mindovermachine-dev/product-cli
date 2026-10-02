@@ -163,3 +163,15 @@ lsh:A005 a sh:NodeShape ;
 
 # A006 (orphaned acceptance) needs the gate policy mapping decision class -> role,
 # which is a separate amendment. Its shape is deferred until that vocabulary exists.
+
+# --- Implementation notes (Session A, #69, 2026-10-02) -------------------
+# The reference implementation runs A003 and A005 in `ledger verify`'s
+# graph stage (ledger-core/src/graph/shapes.rs) with two tightenings:
+#   A003 counts only `?ga a ledger:GrantAcceptance` as acceptance — the
+#        draft's `?ga ledger:grant $this` also matches an Unavailability,
+#        which names its grant with the same predicate;
+#   A005 also excludes a revoked genesis grant — a revocation ends a grant
+#        as surely as supersession does.
+# The structural node shapes above are enforced in the file gate as SCHEMA
+# faults (ledger-format-v1.md §3.9.4), where an outside implementation of
+# the format must enforce them too.

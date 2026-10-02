@@ -1,7 +1,15 @@
 # Decision Ledger — Entry Format v1
 
-**Status:** normative for `format: 1` through `format: 5`.
-Specification revision **v1.6** (2026-10-02): introduces `format: 5`,
+**Status:** normative for `format: 1` through `format: 6`.
+Specification revision **v1.7** (2026-10-02): introduces `format: 6`,
+the **authority records** (§3.9) — role files, grants and their
+acceptances, unavailability and availability, key bindings, namespace
+policy, and the `rev:` **revocation entity** that revokes a grant or an
+acceptance. No version field changes, so **every existing digest is
+unchanged**; four new payload prefixes are added (§3.9.3). No new file-gate
+class: `SCHEMA`, `L006` and `L007` are extended to the new records by the
+`L010` mechanism; the graph stage gains `A003` and `A005`. Revision
+**v1.6** (2026-10-02): introduces `format: 5`,
 which adds two optional version fields, `key` and `exported` (§3.8), and
 two file-gate classes, `L013` (key immutability) and `L014` (key
 uniqueness among live decisions), by the `L010` amendment mechanism —
@@ -411,6 +419,194 @@ Rules:
   so every version written before format 5 canonicalises to the same
   bytes and the prefix stays `ledger.decision-version.v1`.
 
+### 3.9 Authority records (format 6)
+
+Spec v1.7 (2026-10-02; #69, #66). The file schema the authority
+vocabulary projects (`docs/ledger-authority/ledger-authority.ttl`,
+draft-2026-09-22 as amended for ruling 3). Nothing here changes how a
+decision version is read or hashed.
+
+#### 3.9.1 Files
+
+```
+.decisions/
+  roles/<role-id>.yml        declared scope, like a set file (written once)
+  allowed_signers            derived from key bindings; never edited (§3.9.5)
+```
+
+```yaml
+# roles/steward.yml
+format: 6
+id: steward                    # set-id rule
+title: Genesis steward         # optional
+owner: emk@delegate.dk
+may: [accept-decision, grant-role]   # closed vocabulary, ≥ 1
+created_at: 2026-10-02
+notes: …                       # optional
+```
+
+The capability vocabulary is closed: `accept-decision`,
+`sign-off-pattern`, `waive-invalidation`, `grant-role`, `revoke-grant`,
+`declare-unavailability`, `rotate-genesis`.
+
+#### 3.9.2 Log entries
+
+A change-set carrying any of these declares `format: 6`.
+
+```yaml
+grants:
+  - id: grant:<ulid>
+    role: steward
+    scope: "*"                 # * | ns:<namespace> | set:<set-id> | pattern:<id>
+    holder: emk@delegate.dk
+    granted_by: emk@delegate.dk
+    order: primary             # primary | fallback-N (N ≥ 1)
+    limits: [no-grants]        # fallback only: no-grants | no-grant-revocations | no-genesis | no-role-edits
+    genesis: true              # the genesis grant only
+    external_ref: contract 2026/117   # the genesis grant only, required there
+    supersedes: grant:<ulid>   # optional
+    at: 2026-10-02T09:00:00Z
+    hash: sha256:…             # ledger.authority-grant.v1
+grant_acceptances:
+  - id: gacc:<ulid>
+    grant: grant:<ulid>
+    signs: sha256:…            # the grant's hash
+    actor: emk@delegate.dk     # must be the holder
+    at: …
+unavailabilities:
+  - id: unav:<ulid>
+    grant: grant:<ulid>
+    from: …
+    until: …                   # optional; absent is open-ended; after `from`
+    basis: self                # self | grantor | fallback-of-genesis
+    reason: …                  # optional
+    by: …
+    at: …
+availabilities:
+  - id: avail:<ulid>
+    ends: unav:<ulid>
+    available_at: …            # after the interval's `from`
+    by: …                      # the holder of the unavailable grant
+    at: …
+revocations:                   # the format 6 shape
+  - id: rev:<ulid>
+    revokes: grant:<ulid>      # or acc:<ulid>
+    actor: …
+    at: …
+    reason: …                  # non-empty
+    hash: sha256:…             # ledger.revocation.v1
+key_bindings:
+  - id: key:<ulid>
+    act: add                   # add | rotate | revoke
+    principal: emk@delegate.dk
+    namespace: hafeok.ledger
+    key_type: ssh-ed25519      # add | rotate only
+    key: AAAA…                 # add | rotate only (base64)
+    closes: key:<ulid>         # rotate | revoke only: the window it closes
+    self_bound: true           # the namespace's first binding, by the genesis holder
+    mandate: contract 2026/117 # with self_bound only: the genesis external_ref
+    by: …
+    at: …                      # opens (or closes) the window
+    hash: sha256:…             # ledger.identity-binding.v1
+policies:
+  - id: pol:<ulid>
+    namespace: hafeok.ledger
+    schemes: [ssh]             # ssh | dsse | none; ≥ 1
+    require_sk: true           # optional; absent is false
+    accept_role: steward       # the role whose grants carry accept-decision here
+    reaccept_within_days: 30   # optional (ruling 12)
+    replaces: sha256:…         # absent on the namespace's first policy
+    by: …
+    at: …
+    hash: sha256:…             # ledger.namespace-policy.v1
+```
+
+**Two revocation shapes.** Formats 1–5 carry the legacy shape
+`{acceptance, at, by, reason}`; format 6 carries the entity shape above,
+which revokes a grant or an acceptance. A file carries the shape its
+declared format defines; the other, or a mixture, is a schema fault. Both
+shapes are read forever — a log file is never rewritten.
+
+#### 3.9.3 Hashing
+
+Each hashed record is a **closed payload** canonicalised by §4.2's law
+(strings normalised, absent keys omitted, lists as sets, keys code-point
+sorted, compact) and digested exactly as §4.3, under its own prefix:
+
+| Prefix | Payload keys |
+|---|---|
+| `ledger.authority-grant.v1` | `id`, `role`, `scope`, `holder`, `granted_by`, `order`, `limits` (set), `genesis` (`"true"` or absent), `external_ref`, `supersedes` |
+| `ledger.revocation.v1` | `revokes`, `actor`, `at`, `reason` (the PRD §7 closed payload; `at` as RFC 3339 UTC seconds) |
+| `ledger.identity-binding.v1` | `id`, `act`, `principal`, `namespace`, `key_type`, `key`, `closes`, `self_bound` (`"true"` or absent), `mandate`, `by`, `at` |
+| `ledger.namespace-policy.v1` | `id`, `namespace`, `schemes` (set), `require_sk` (`"true"` or absent), `accept_role`, `reaccept_within_days`, `replaces`, `by` |
+
+The stored `hash` is never inside its own payload. A legacy revocation
+has no stored hash; its payload is still computable from
+`{acceptance, by, at, reason}` read as `{revokes, actor, at, reason}`.
+
+#### 3.9.4 What the gate checks
+
+No new file-gate class. The records are policed by the classes that
+already mean what is wrong:
+
+- **`SCHEMA`** — every rule of §3.9.2 a single record states (a primary
+  grant with limits; a genesis grant not self-granted, `*`, primary and
+  carrying `external_ref`; `external_ref` off the genesis; `until` not after
+  `from`; a binding carrying fields its `act` does not define; a policy
+  with no scheme), and every cross-record rule: a grant naming an
+  undeclared role or superseding no filed grant; a grant acceptance not by
+  the holder or not signing the grant's hash; an unavailability whose
+  declarer does not stand in its `basis`; an availability not by the
+  holder, not after `from`, or ending an interval twice; a revocation
+  naming no filed grant or acceptance, or a second revocation of one
+  record; a binding in a namespace with no policy, closing what opens no
+  window, another principal's window, or one already closed, or a
+  self-bound binding whose mandate is no genesis `external_ref`; a
+  namespace with two root policies or a forked `replaces` chain; a policy
+  whose `accept_role` is no declared role that may `accept-decision`; an id
+  filed twice; a role file that is not format 6, misnamed, duplicated, or
+  may do nothing.
+- **`L006`** (extended, stricter, additive) — every identity an authority
+  record attributes an act to or gives authority to: a grant's holder and
+  grantor, a grant acceptance's actor, an unavailability's and an
+  availability's declarer, a revocation's actor, a binding's principal and
+  filer, a policy's author. A model is never a holder.
+- **`L007`** (extended) — a stored grant, revocation, binding or policy
+  hash that does not equal its recomputed payload digest.
+
+**Liveness.** A grant is *live* when unrevoked, unsuperseded, and accepted
+by its holder (a grant acceptance signing its current hash); *available*
+at an instant when no unavailability covers it (`[from, until)`, unless an
+availability ended it at or before the instant). The namespace's policy *in
+force* is the tip of its `replaces` chain.
+
+**The role check is verb-time.** An authoring verb asks whether the actor
+holds a live, accepted, available grant of a role that `may` the act, over
+a scope covering it (`*`; a namespace scope its own namespace; a set scope
+its own set; namespaces match exactly), and — for a fallback — one not
+limited from the act while no live, available grant of the same role and
+scope at a lower rank exists. In a namespace with a policy, accepting and
+revoking an acceptance count only grants of the policy's `accept_role`. A
+namespace without a policy is a pre-v2 namespace: nothing is role-checked
+there. The gate-time counterpart over history — an acceptance whose actor
+held no such grant (`A006`) — waits on the decision-class → role mapping.
+
+#### 3.9.5 `allowed_signers`
+
+Derived, one line per key window, in OpenSSH's `allowed_signers` form so
+`ssh-keygen -Y verify -f .decisions/allowed_signers` reads it:
+
+```
+<principal> namespaces="ledger-accept@<ns>" valid-after="<YYYYMMDDhhmmssZ>"[ valid-before="<…>"] <key_type> <key>
+```
+
+`valid-after` is the opening binding's `at`; `valid-before` the `at` of the
+`rotate` or `revoke` that closed it. Lines are sorted by code point, under a
+two-line `#` header. `verify` re-derives the file and fails a
+**`[SIGNERS]`** stage when the committed bytes differ, when the log binds
+keys and no file is committed, or when a file is committed and the log
+binds none. Outside the file gate's classes, like the export stage.
+
 ---
 
 ## 4. Canonicalisation and hashing
@@ -714,6 +910,14 @@ unchanged exit semantics (findings exit `1`):
 | `G004` | a decision's version chain forks into more than one tip (spec v1.2) |
 | `G005` | one decision is superseded by two live claimants (spec v1.3) |
 | `G006` | two live decisions of one namespace whose tips share a `key` — the cross-check of `L014` (spec v1.6) |
+| `A003` | two live grants (unrevoked, unsuperseded, accepted) share role, scope and order (spec v1.7) |
+| `A005` | more than one live (unsuperseded, unrevoked) genesis grant (spec v1.7) |
+
+`A003` and `A005` are the authority shapes' gate classes
+(`docs/ledger-authority/ledger-authority-shapes.ttl`), with two
+tightenings recorded there: `A003` counts only a `ledger:GrantAcceptance`
+as acceptance, and `A005` excludes a revoked genesis. `A006` (an orphaned
+acceptance) is deferred until the decision-class → role mapping exists.
 
 `G004` is the state two divergent writers leave behind — a plain git merge
 of two branches' logs, each having revised the same decision from the same

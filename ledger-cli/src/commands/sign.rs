@@ -16,14 +16,13 @@
 //! `--confirm` carrying the manifest that read produced, which is a value
 //! nobody types by accident because only a dry run can produce it.
 
-use std::io::IsTerminal;
 use std::path::PathBuf;
 use std::time::Instant;
 
 use ledger_core::author::{AcceptArgs, AcceptGroupArgs, AuthorError, RevokeArgs};
 use ledger_core::show::Selector;
 
-use super::common::{self, finish, open_author, parse_date};
+use super::common::{self, finish, open_author, parse_date, require_terminal};
 use super::{EXIT_OK, EXIT_VIOLATIONS};
 
 /// What one `accept` invocation covers, and how it reports.
@@ -75,7 +74,7 @@ fn grouped(root: Option<PathBuf>, selector: Selector, flags: AcceptFlags) -> Res
     };
     let outcome = match author.accept_group(args) {
         Ok(outcome) => outcome,
-        Err(err @ (AuthorError::Refused(_) | AuthorError::Conflict(_))) => {
+        Err(err @ (AuthorError::Refused(_) | AuthorError::Conflict(_) | AuthorError::Unauthorized(_))) => {
             eprintln!("{err}");
             return Ok(EXIT_VIOLATIONS);
         }
@@ -110,14 +109,3 @@ pub fn revoke(root: Option<PathBuf>, acceptance: &str, reason: String) -> Result
     finish(author.revoke(args))
 }
 
-/// Refuse unless stdin is a terminal. Checked before the store is opened,
-/// so a refused invocation reads nothing and writes nothing.
-fn require_terminal(verb: &str) -> Result<(), String> {
-    if std::io::stdin().is_terminal() {
-        return Ok(());
-    }
-    Err(format!(
-        "refused: `ledger {verb}` runs only at a terminal, and stdin is not one — signing is a \
-         person's act, never a script's or an agent's (PRD §5). Nothing was written."
-    ))
-}

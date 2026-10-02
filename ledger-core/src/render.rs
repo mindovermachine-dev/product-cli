@@ -20,7 +20,8 @@ pub fn render(report: &Report) -> String {
         ));
     } else {
         let exported = report.export_findings();
-        let total = report.findings.len() + report.graph.len() + exported.len();
+        let total =
+            report.findings.len() + report.graph.len() + exported.len() + report.signers.len();
         lines.push(format!("non-conformant — {total} finding(s):"));
         for f in &report.findings {
             lines.push(format!("  - [{}] {}: {}", f.class.code(), f.subject, f.message));
@@ -35,6 +36,12 @@ pub fn render(report: &Report) -> String {
             lines.push(format!("export stage — {} finding(s):", exported.len()));
             for x in exported {
                 lines.push(format!("  - [EXPORT] {}: {}", x.subject, x.message));
+            }
+        }
+        if !report.signers.is_empty() {
+            lines.push(format!("trust-root stage — {} finding(s):", report.signers.len()));
+            for x in &report.signers {
+                lines.push(format!("  - [SIGNERS] {}: {}", x.subject, x.message));
             }
         }
     }

@@ -116,16 +116,9 @@ impl Acceptance {
     }
 }
 
-/// Explicit reversal of a prior acceptance. History is append-only: a
-/// mistaken acceptance is revoked, never deleted (§3.4).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Revocation {
-    pub acceptance: AcceptanceId,
-    pub at: DateTime<Utc>,
-    pub by: Identity,
-    pub reason: String,
-}
+/// A revocation — since spec v1.7 its own entity, shared with grants. Kept
+/// importable from here because acceptances are what it first revoked.
+pub use crate::authority::revocation::Revocation;
 
 #[path = "acceptance_tests.rs"]
 #[cfg(test)]

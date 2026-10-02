@@ -19,6 +19,44 @@ only adds an unhashed field.
 
 ---
 
+## Format 6 / Spec v1.7 — the authority records; `A003`, `A005` (2026-10-02)
+
+A **`format` bump without a `CANONICAL_FORM` bump** (#69; the revocation
+entity's use for acceptances lands with #66). `format: 6` adds the
+authority records (spec §3.9): `roles/<id>.yml`, and as log entries
+`grants`, `grant_acceptances`, `unavailabilities`, `availabilities`,
+`key_bindings`, `policies`, and the `rev:` revocation entity. Nothing about
+a decision version changes, so no version digest moves and no acceptance is
+invalidated.
+
+**New hash prefixes**, each over a closed payload under the one
+canonical-JSON law (spec §3.9.3): `ledger.authority-grant.v1`,
+`ledger.revocation.v1`, `ledger.identity-binding.v1`,
+`ledger.namespace-policy.v1`.
+
+**No new file-gate class.** `SCHEMA` gains the structural and referential
+rules of §3.9.4; `L006` is extended to every identity an authority record
+names; `L007` to every stored authority hash — each by the `L010`
+mechanism (stricter, additive). The closed count stays twelve. The graph
+stage gains `A003` and `A005` (closed count of graph classes: eight), and
+`verify` gains the `[SIGNERS]` stage holding `.decisions/allowed_signers`
+byte-identical to the key bindings.
+
+**Migration note.** Nothing to migrate mechanically. A store with no
+authority records stays a pre-v2 store: no namespace has a policy, nothing
+is role-checked, and every existing acceptance is judged exactly as before.
+`ledger init --namespace <ns> --external-ref <mandate>` puts a namespace
+under policy; the store's first one bootstraps the genesis (a role carrying
+every capability, the genesis grant, the holder's acceptance of it). From
+then on `accept` and `revoke` in that namespace need a live, accepted,
+available grant of the policy's accept role. Legacy revocations stay in
+their legacy shape — a log file is never rewritten.
+
+**Deferred to Session B** (signing): that every key binding and every policy
+change is signed under the policy in force before it, and the `L011`/`L012`
+checks against `allowed_signers`. Until then a policy change carries the
+hash of the policy it replaces and is the genesis holder's act.
+
 ## Format 5 / Spec v1.6 — `key` and `exported`; `L013`, `L014`, `G006` (2026-10-02)
 
 A **`format` bump without a `CANONICAL_FORM` bump**, by the formats 2–4

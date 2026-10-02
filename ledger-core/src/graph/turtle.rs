@@ -24,10 +24,10 @@ pub const PROV: &str = "http://www.w3.org/ns/prov#";
 /// Terms are held in their Turtle spelling (prefixed names, `a`); the
 /// N-Triples writer expands them, so both serialisations share one graph.
 #[derive(Default)]
-pub(super) struct Triples(pub(super) BTreeMap<String, BTreeMap<String, BTreeSet<String>>>);
+pub(crate) struct Triples(pub(super) BTreeMap<String, BTreeMap<String, BTreeSet<String>>>);
 
 impl Triples {
-    fn add(&mut self, subject: &str, predicate: &str, object: String) {
+    pub(super) fn add(&mut self, subject: &str, predicate: &str, object: String) {
         self.0
             .entry(subject.to_string())
             .or_default()
@@ -87,15 +87,15 @@ pub(super) fn literal(value: &str) -> String {
     out
 }
 
-fn date(value: &chrono::NaiveDate) -> String {
+pub(super) fn date(value: &chrono::NaiveDate) -> String {
     format!("\"{value}\"^^xsd:date")
 }
 
-fn stamp(value: &chrono::DateTime<chrono::Utc>) -> String {
+pub(super) fn stamp(value: &chrono::DateTime<chrono::Utc>) -> String {
     format!("\"{}\"^^xsd:dateTime", value.to_rfc3339_opts(chrono::SecondsFormat::Secs, true))
 }
 
-fn mailto(identity: &crate::identity::Identity) -> String {
+pub(super) fn mailto(identity: &crate::identity::Identity) -> String {
     format!("<mailto:{identity}>")
 }
 
@@ -117,6 +117,9 @@ pub(super) fn triples(store: &Store) -> Triples {
     let mut t = Triples::default();
     for set in &store.sets {
         emit_set(&mut t, set);
+    }
+    for role in &store.roles {
+        super::authority::emit_role(&mut t, role);
     }
     for logged in &store.log {
         let cs = &logged.file;
@@ -148,8 +151,9 @@ pub(super) fn triples(store: &Store) -> Triples {
             emit_acceptance(&mut t, a, &cs_iri);
         }
         for r in &cs.revocations {
-            emit_revocation(&mut t, r);
+            emit_revocation(&mut t, r, &cs_iri);
         }
+        super::authority::emit_changeset(&mut t, cs, &cs_iri);
     }
     t
 }
@@ -248,9 +252,14 @@ fn emit_acceptance(t: &mut Triples, a: &Acceptance, cs_iri: &str) {
     }
 }
 
-fn emit_revocation(t: &mut Triples, r: &Revocation) {
-    let iri = format!("<urn:{}>", r.acceptance);
+fn emit_revocation(t: &mut Triples, r: &Revocation, cs_iri: &str) {
+    if r.is_entity() {
+        super::authority::emit_revocation(t, r, cs_iri);
+        return;
+    }
+    let (Some(acceptance), Some(by)) = (r.revoked_acceptance(), r.actor()) else { return };
+    let iri = format!("<urn:{acceptance}>");
     t.add(&iri, "ledger:revokedAt", stamp(&r.at));
-    t.add(&iri, "ledger:revokedBy", mailto(&r.by));
+    t.add(&iri, "ledger:revokedBy", mailto(by));
     t.add(&iri, "ledger:revocationReason", literal(&r.reason));
 }

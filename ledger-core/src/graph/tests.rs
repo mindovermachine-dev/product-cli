@@ -239,8 +239,10 @@ fn an_exported_version_emits_the_string_true() {
 
 #[test]
 fn the_graph_class_set_is_closed() {
-    assert_eq!(super::ALL_GRAPH_CLASSES.len(), 6);
+    // G006 arrived with spec v1.6; A003/A005 are the authority shapes'
+    // gate classes (spec v1.7). A006 waits on the decision-class -> role map.
+    assert_eq!(super::ALL_GRAPH_CLASSES.len(), 8);
     let codes: Vec<&str> = super::ALL_GRAPH_CLASSES.iter().map(|c| c.code()).collect();
-    assert_eq!(codes, ["G001", "G002", "G003", "G004", "G005", "G006"]);
+    assert_eq!(codes, ["G001", "G002", "G003", "G004", "G005", "G006", "A003", "A005"]);
     assert!(super::ALL_GRAPH_CLASSES.iter().all(|c| !c.title().is_empty()));
 }

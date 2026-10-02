@@ -17,6 +17,7 @@
 //! which is the committed per-namespace export ([`export`]) the analyzers'
 //! generator reads; `verify --export` holds it byte-identical to the log.
 
+pub(crate) mod authority;
 pub mod export;
 pub mod index;
 pub mod ntriples;
@@ -58,6 +59,11 @@ pub enum GraphClass {
     /// SPARQL cross-check of the file gate's `L014` (spec v1.6). Never the
     /// only home of the rule: an outside implementation reproduces `L014`.
     G006,
+    /// Two live grants share role, scope and order (the authority shapes'
+    /// gate class; spec v1.7).
+    A003,
+    /// More than one live genesis grant (spec v1.7).
+    A005,
 }
 
 /// Every graph class, in report order.
@@ -68,6 +74,8 @@ pub const ALL_GRAPH_CLASSES: &[GraphClass] = &[
     GraphClass::G004,
     GraphClass::G005,
     GraphClass::G006,
+    GraphClass::A003,
+    GraphClass::A005,
 ];
 
 impl GraphClass {
@@ -79,6 +87,8 @@ impl GraphClass {
             Self::G004 => "G004",
             Self::G005 => "G005",
             Self::G006 => "G006",
+            Self::A003 => "A003",
+            Self::A005 => "A005",
         }
     }
 
@@ -90,6 +100,8 @@ impl GraphClass {
             Self::G004 => "version chain forks into more than one tip",
             Self::G005 => "decision superseded by two live claimants",
             Self::G006 => "two live decisions of one namespace share a key",
+            Self::A003 => "two live grants share role, scope and order",
+            Self::A005 => "more than one live genesis grant",
         }
     }
 }

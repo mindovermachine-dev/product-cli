@@ -61,46 +61,108 @@ pub fn write(path: &Path, text: &str) -> Result<(), String> {
 /// The store restricted to one namespace: its decisions, their versions,
 /// the acceptances of those decisions, the revocations of those
 /// acceptances, the sets those versions name, and the change-sets that
-/// filed any of it (each holding only what belongs here).
+/// filed any of it (each holding only what belongs here). The authority
+/// records that reach the namespace come too (spec v1.7): its policy
+/// versions and key bindings, the grants whose scope covers it (`*`, its
+/// `ns:`, or a set its versions name) with their acceptances,
+/// unavailability, availability and revocations, and the roles those
+/// grants and policies name.
 pub fn select(store: &Store, namespace: &str) -> Store {
     let ours = |id: &crate::id::DecisionId| id.namespace() == namespace;
-    let accepted: BTreeSet<String> = store
+    let named: BTreeSet<String> = store
         .log
         .iter()
-        .flat_map(|c| c.file.acceptances.iter())
-        .filter(|a| ours(&a.decision))
-        .map(|a| a.id.to_string())
+        .flat_map(|c| c.file.versions.iter())
+        .filter(|v| ours(&v.decision))
+        .map(|v| v.set.clone())
         .collect();
+    let reach = Reach::of(store, namespace, &named);
     let log: Vec<LoggedChangeSet> = store
         .log
         .iter()
         .map(|logged| LoggedChangeSet {
             path: logged.path.clone(),
-            file: restrict(&logged.file, &ours, &accepted),
+            file: restrict(&logged.file, &ours, &reach),
         })
         .filter(|logged| !logged.file.is_empty())
         .collect();
-    let named: BTreeSet<&str> =
-        log.iter().flat_map(|c| c.file.versions.iter()).map(|v| v.set.as_str()).collect();
+    let roles = reach.roles(&log);
     Store {
         root: store.root.clone(),
         dir: store.dir.clone(),
-        sets: store.sets.iter().filter(|s| named.contains(s.id.as_str())).cloned().collect(),
+        sets: store.sets.iter().filter(|s| named.contains(&s.id)).cloned().collect(),
+        roles: store.roles.iter().filter(|r| roles.contains(&r.id)).cloned().collect(),
         log,
         schema_findings: Vec::new(),
+    }
+}
+
+/// Which records' ids reach one namespace.
+struct Reach<'n> {
+    namespace: &'n str,
+    acceptances: BTreeSet<String>,
+    grants: BTreeSet<String>,
+    intervals: BTreeSet<String>,
+}
+
+impl<'n> Reach<'n> {
+    fn of(store: &Store, namespace: &'n str, named: &BTreeSet<String>) -> Self {
+        use crate::authority::GrantScope;
+        let files = || store.log.iter().map(|c| &c.file);
+        let acceptances = files()
+            .flat_map(|c| c.acceptances.iter())
+            .filter(|a| a.decision.namespace() == namespace)
+            .map(|a| a.id.to_string())
+            .collect();
+        let grants: BTreeSet<String> = files()
+            .flat_map(|c| c.grants.iter())
+            .filter(|g| match &g.scope {
+                GrantScope::All => true,
+                GrantScope::Namespace(n) => n == namespace,
+                GrantScope::Set(s) => named.contains(s),
+                GrantScope::Pattern(_) => false,
+            })
+            .map(|g| g.id.to_string())
+            .collect();
+        let intervals = files()
+            .flat_map(|c| c.unavailabilities.iter())
+            .filter(|u| grants.contains(&u.grant.to_string()))
+            .map(|u| u.id.to_string())
+            .collect();
+        Self { namespace, acceptances, grants, intervals }
+    }
+
+    /// The roles the kept grants and policies name.
+    fn roles(&self, log: &[LoggedChangeSet]) -> BTreeSet<String> {
+        let files = || log.iter().map(|c| &c.file);
+        files()
+            .flat_map(|c| c.grants.iter().map(|g| g.role.clone()))
+            .chain(files().flat_map(|c| c.policies.iter().map(|p| p.accept_role.clone())))
+            .collect()
     }
 }
 
 fn restrict(
     cs: &ChangeSet,
     ours: &impl Fn(&crate::id::DecisionId) -> bool,
-    accepted: &BTreeSet<String>,
+    reach: &Reach<'_>,
 ) -> ChangeSet {
+    use crate::authority::Revocable;
     let mut kept = cs.clone();
     kept.decisions.retain(|d| ours(&d.id));
     kept.versions.retain(|v| ours(&v.decision));
     kept.acceptances.retain(|a| ours(&a.decision));
-    kept.revocations.retain(|r| accepted.contains(&r.acceptance.to_string()));
+    kept.revocations.retain(|r| match r.target() {
+        Some(Revocable::Acceptance(a)) => reach.acceptances.contains(&a.to_string()),
+        Some(Revocable::Grant(g)) => reach.grants.contains(&g.to_string()),
+        None => false,
+    });
+    kept.grants.retain(|g| reach.grants.contains(&g.id.to_string()));
+    kept.grant_acceptances.retain(|ga| reach.grants.contains(&ga.grant.to_string()));
+    kept.unavailabilities.retain(|u| reach.intervals.contains(&u.id.to_string()));
+    kept.availabilities.retain(|a| reach.intervals.contains(&a.ends.to_string()));
+    kept.key_bindings.retain(|b| b.namespace == reach.namespace);
+    kept.policies.retain(|p| p.namespace == reach.namespace);
     kept
 }
 

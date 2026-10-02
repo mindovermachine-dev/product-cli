@@ -40,7 +40,7 @@ pub fn validate_ulid(s: &str) -> Result<(), String> {
 
 /// A namespace: an owning scope, not a repo path. Dot-separated lowercase
 /// segments, so `hafeok.ledger` reads as scope-within-scope.
-fn validate_namespace(ns: &str) -> Result<(), String> {
+pub fn validate_namespace(ns: &str) -> Result<(), String> {
     if ns.is_empty() {
         return Err("namespace is empty".to_string());
     }
@@ -109,6 +109,29 @@ pub struct ChangeSetId(String);
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AcceptanceId(String);
 
+/// The authority records' ids (format 6), one scheme per entity so a
+/// reference can never land on the wrong kind of record.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct GrantId(String);
+/// `gacc:<ulid>` — a holder's acceptance of a grant.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct GrantAcceptanceId(String);
+/// `unav:<ulid>` — a filed unavailability interval.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct UnavailabilityId(String);
+/// `avail:<ulid>` — the holder ending an unavailability.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct AvailabilityId(String);
+/// `rev:<ulid>` — a revocation of a grant or an acceptance.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct RevocationId(String);
+/// `key:<ulid>` — a key-binding act (`identity add|rotate|revoke`).
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct KeyBindingId(String);
+/// `pol:<ulid>` — one version of a namespace policy.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PolicyId(String);
+
 macro_rules! prefixed_ulid_id {
     ($ty:ident, $prefix:literal, $label:literal) => {
         impl $ty {
@@ -140,6 +163,13 @@ macro_rules! prefixed_ulid_id {
 
 prefixed_ulid_id!(ChangeSetId, "cs", "change-set");
 prefixed_ulid_id!(AcceptanceId, "acc", "acceptance");
+prefixed_ulid_id!(GrantId, "grant", "grant");
+prefixed_ulid_id!(GrantAcceptanceId, "gacc", "grant acceptance");
+prefixed_ulid_id!(UnavailabilityId, "unav", "unavailability");
+prefixed_ulid_id!(AvailabilityId, "avail", "availability");
+prefixed_ulid_id!(RevocationId, "rev", "revocation");
+prefixed_ulid_id!(KeyBindingId, "key", "key binding");
+prefixed_ulid_id!(PolicyId, "pol", "policy");
 
 /// Serde for every id type: the wire form is the rendered string.
 macro_rules! string_serde {
@@ -162,6 +192,13 @@ macro_rules! string_serde {
 string_serde!(DecisionId);
 string_serde!(ChangeSetId);
 string_serde!(AcceptanceId);
+string_serde!(GrantId);
+string_serde!(GrantAcceptanceId);
+string_serde!(UnavailabilityId);
+string_serde!(AvailabilityId);
+string_serde!(RevocationId);
+string_serde!(KeyBindingId);
+string_serde!(PolicyId);
 
 #[path = "id_tests.rs"]
 #[cfg(test)]

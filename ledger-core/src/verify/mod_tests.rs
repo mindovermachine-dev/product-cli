@@ -173,12 +173,7 @@ fn a_revoked_acceptance_stops_being_judged_for_expiry() {
     let mut acceptance = testkit::acceptance(&sealed);
     acceptance.expires_at = Some(testkit::date("2026-08-09"));
     let mut cs = testkit::changeset(vec![sealed], vec![acceptance]);
-    cs.revocations.push(crate::acceptance::Revocation {
-        acceptance: testkit::acceptance_id(),
-        at: testkit::stamp("2026-08-10T10:00:00Z"),
-        by: testkit::identity("fixture-human@example"),
-        reason: "filed against the wrong version".into(),
-    });
+    cs.revocations.push(testkit::legacy_revocation("2026-08-10T10:00:00Z", "filed against the wrong version"));
     let report = run(cs);
     assert!(!classes(&report).contains(&VerifyClass::L003), "{:?}", report.findings);
 }

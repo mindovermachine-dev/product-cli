@@ -63,7 +63,7 @@ fn a_revocation_names_the_acceptance_it_reverses_with_a_reason() {
         testkit::acceptance_id()
     );
     let r: Revocation = serde_yaml::from_str(&text).expect("parse");
-    assert_eq!(r.acceptance, testkit::acceptance_id());
+    assert_eq!(r.acceptance, Some(testkit::acceptance_id()));
     assert!(!r.reason.is_empty());
 }
 

@@ -16,6 +16,7 @@
 pub mod acceptance;
 pub mod allocation;
 pub mod author;
+pub mod authority;
 pub mod batch;
 pub mod blame;
 pub mod canon;

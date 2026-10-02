@@ -71,6 +71,14 @@ pub enum Commands {
         #[arg(long)]
         exported: bool,
     },
+    /// End an unavailability early — the holder's act
+    Available {
+        /// `unav:<ulid>`
+        interval: String,
+        /// When the holder is available again (RFC 3339; default now)
+        #[arg(long, value_name = "INSTANT")]
+        at: Option<String>,
+    },
     /// Allocate (or re-allocate) a decision by filing its next version
     Allocate {
         decision: String,
@@ -148,8 +156,31 @@ pub enum Commands {
         #[arg(long, value_name = "PATH")]
         out: Option<PathBuf>,
     },
-    /// Scaffold the .decisions/ store: the §5 layout plus the ignore line
-    Init,
+    /// Grant a role, accept a grant, revoke one
+    Grant {
+        #[command(subcommand)]
+        cmd: super::authority_enum::GrantCmd,
+    },
+    /// Bind, rotate or revoke your signing keys (regenerates allowed_signers)
+    Identity {
+        #[command(subcommand)]
+        cmd: super::authority_enum::IdentityCmd,
+    },
+    /// Scaffold the .decisions/ store; with --namespace, put it under policy
+    Init {
+        /// Put this namespace under policy (genesis on the store's first)
+        #[arg(long, value_name = "NS")]
+        namespace: Option<String>,
+        /// The out-of-band mandate the genesis grant rests on
+        #[arg(long, value_name = "REF")]
+        external_ref: Option<String>,
+        /// The genesis role's id
+        #[arg(long, value_name = "ROLE", default_value = "steward")]
+        role: String,
+        /// The role whose grants carry accept-decision (default: genesis role)
+        #[arg(long, value_name = "ROLE")]
+        accept_role: Option<String>,
+    },
     /// Walk the change-sets in creation order
     Log {
         /// Only change-sets touching this set
@@ -182,8 +213,18 @@ pub enum Commands {
         /// %P — the repo-relative pathname
         path: String,
     },
+    /// Show or change a namespace's policy
+    Policy {
+        #[command(subcommand)]
+        cmd: super::authority_enum::PolicyCmd,
+    },
     /// Rebuild the RDF index under .decisions/index/ from the log
     Reindex,
+    /// Declare a role
+    Role {
+        #[command(subcommand)]
+        cmd: super::authority_enum::RoleCmd,
+    },
     /// Restate a decision as a new version; prior acceptances become history
     Revise {
         decision: String,
@@ -243,6 +284,19 @@ pub enum Commands {
         /// The successor decision
         #[arg(long, value_name = "DEC")]
         by: String,
+        #[arg(long)]
+        reason: Option<String>,
+    },
+    /// File an unavailability interval on a grant
+    Unavailable {
+        /// `grant:<ulid>`
+        grant: String,
+        /// Start (RFC 3339; default now)
+        #[arg(long, value_name = "INSTANT")]
+        from: Option<String>,
+        /// End (RFC 3339; absent means open-ended)
+        #[arg(long, value_name = "INSTANT")]
+        until: Option<String>,
         #[arg(long)]
         reason: Option<String>,
     },

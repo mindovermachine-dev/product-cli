@@ -28,6 +28,8 @@ pub struct Store {
     pub root: PathBuf,
     pub dir: PathBuf,
     pub sets: Vec<DecisionSet>,
+    /// Role files (`roles/<id>.yml`, format 6) — declared scope, like sets.
+    pub roles: Vec<crate::authority::Role>,
     pub log: Vec<LoggedChangeSet>,
     pub schema_findings: Vec<Finding>,
 }
@@ -38,18 +40,16 @@ impl Store {
         self.sets.iter().find(|s| s.id == id)
     }
 
+    /// The role with this id, when one is declared.
+    pub fn role(&self, id: &str) -> Option<&crate::authority::Role> {
+        self.roles.iter().find(|r| r.id == id)
+    }
+
     /// How many entries loaded cleanly, for the summary line.
     pub fn entry_count(&self) -> usize {
-        self.log
-            .iter()
-            .map(|c| {
-                c.file.decisions.len()
-                    + c.file.versions.len()
-                    + c.file.acceptances.len()
-                    + c.file.revocations.len()
-            })
-            .sum::<usize>()
+        self.log.iter().map(|c| c.file.entry_count()).sum::<usize>()
             + self.sets.len()
+            + self.roles.len()
     }
 }
 
@@ -74,8 +74,10 @@ pub fn load(repo_root: &Path) -> Store {
         ..Store::default()
     };
     load_sets(&dir.join("sets"), &mut store);
+    load_roles(&dir.join("roles"), &mut store);
     load_log(&dir.join("log"), &mut store);
     store.sets.sort_by(|a, b| a.id.cmp(&b.id));
+    store.roles.sort_by(|a, b| a.id.cmp(&b.id));
     store.log.sort_by(|a, b| a.file.id.cmp(&b.file.id));
     store
 }
@@ -86,6 +88,28 @@ fn load_sets(dir: &Path, store: &mut Store) {
             Ok(text) => take_set(store, &file_label(&path), &stem(&path), &text),
             Err(e) => store.schema_findings.push(Finding::schema(&file_label(&path), e.to_string())),
         }
+    }
+}
+
+fn load_roles(dir: &Path, store: &mut Store) {
+    for path in yaml_files(dir) {
+        match std::fs::read_to_string(&path) {
+            Ok(text) => take_role(store, &file_label(&path), &stem(&path), &text),
+            Err(e) => store.schema_findings.push(Finding::schema(&file_label(&path), e.to_string())),
+        }
+    }
+}
+
+/// Parse one role file's text into the store. Shared like [`take_set`].
+pub(crate) fn take_role(store: &mut Store, label: &str, stem: &str, text: &str) {
+    match serde_yaml::from_str::<crate::authority::Role>(text) {
+        Ok(role) => {
+            check_format(label, role.format, store);
+            let faults = crate::authority::structure::role_faults(&role, stem, store);
+            store.schema_findings.extend(faults.into_iter().map(|m| Finding::schema(label, m)));
+            store.roles.push(role);
+        }
+        Err(e) => store.schema_findings.push(parse_fault("role", label, &e.to_string())),
     }
 }
 
@@ -144,6 +168,10 @@ pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str
             for fault in file.acceptances.iter().flat_map(|a| a.schema_faults()) {
                 store.schema_findings.push(fault);
             }
+            for r in &file.revocations {
+                let faults = r.shape_faults(file.format);
+                store.schema_findings.extend(faults.into_iter().map(|m| Finding::schema(&r.subject(), m)));
+            }
             store.schema_findings.extend(format_faults(label, &file));
             store.log.push(LoggedChangeSet { path, file });
         }
@@ -155,7 +183,8 @@ pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str
 /// a lower-format file carrying a later field is a schema fault.
 fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
     let uses = |pred: &dyn Fn(&crate::version::VersionRaw) -> bool| file.versions.iter().any(pred);
-    let rules: [(u32, bool, &str); 3] = [
+    let authority = file.authority_count() > 0;
+    let rules: [(u32, bool, &str); 4] = [
         (
             format::MERGE_FORMAT,
             uses(&|v| v.merged_from.is_some()),
@@ -170,6 +199,11 @@ fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
             format::KEY_FORMAT,
             uses(&|v| v.key.is_some() || v.exported),
             "carries a version `key` or `exported`, format 5 fields — declare `format: 5`",
+        ),
+        (
+            format::AUTHORITY_FORMAT,
+            authority,
+            "carries authority records (grants, bindings, policy …), format 6 entries — declare `format: 6`",
         ),
     ];
     rules

@@ -191,3 +191,40 @@ ledger:BasisScheme a skos:ConceptScheme ; skos:prefLabel "Unavailability basis"@
 ledger:basis-self                a skos:Concept ; skos:inScheme ledger:BasisScheme ; skos:notation "self" .
 ledger:basis-grantor             a skos:Concept ; skos:inScheme ledger:BasisScheme ; skos:notation "grantor" .
 ledger:basis-fallback-of-genesis a skos:Concept ; skos:inScheme ledger:BasisScheme ; skos:notation "fallback-of-genesis" .
+
+#################################################################
+# Added 2026-10-02 (Session A, #69): the trust-root and policy
+# records the #65 rulings name but this draft did not yet define.
+# Projected from the format-6 log entries (ledger-format-v1.md §3.9).
+#################################################################
+
+ledger:KeyBinding a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Key binding"@en ;
+    rdfs:comment "One identity act (add | rotate | revoke) binding a principal's public key in a namespace. allowed_signers is derived from these and never edited. Hashed with prefix ledger.identity-binding.v1."@en .
+
+ledger:NamespacePolicy a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Namespace policy"@en ;
+    rdfs:comment "One version of what a namespace promises its citers: required schemes, -sk keys, the accept-decision role, the re-acceptance deadline. The policy in force is the tip of the ledger:replacesPolicy chain. Hashed with prefix ledger.namespace-policy.v1."@en .
+
+ledger:bindingAct a owl:DatatypeProperty ; rdfs:domain ledger:KeyBinding ; rdfs:range xsd:string ;
+    rdfs:comment "add | rotate | revoke."@en .
+ledger:principal a owl:ObjectProperty ; rdfs:domain ledger:KeyBinding ;
+    rdfs:comment "mailto: IRI of the identity the key is bound to."@en .
+ledger:keyType a owl:DatatypeProperty ; rdfs:domain ledger:KeyBinding ; rdfs:range xsd:string .
+ledger:publicKey a owl:DatatypeProperty ; rdfs:domain ledger:KeyBinding ; rdfs:range xsd:string .
+ledger:closes a owl:ObjectProperty ; rdfs:domain ledger:KeyBinding ; rdfs:range ledger:KeyBinding ;
+    rdfs:comment "The binding whose window a rotate or revoke closes."@en .
+ledger:selfBound a owl:DatatypeProperty ; rdfs:domain ledger:KeyBinding ; rdfs:range xsd:string ;
+    rdfs:comment "The literal \"true\" on a namespace's genesis bootstrap binding only."@en .
+ledger:mandate a owl:DatatypeProperty ; rdfs:domain ledger:KeyBinding ; rdfs:range xsd:string ;
+    rdfs:comment "With selfBound: the genesis grant's externalRef."@en .
+ledger:requiresScheme a owl:DatatypeProperty ; rdfs:domain ledger:NamespacePolicy ; rdfs:range xsd:string ;
+    rdfs:comment "ssh | dsse | none. One triple per scheme."@en .
+ledger:requiresSecurityKey a owl:DatatypeProperty ; rdfs:domain ledger:NamespacePolicy ; rdfs:range xsd:string ;
+    rdfs:comment "The literal \"true\" when keys must be -sk."@en .
+ledger:acceptRole a owl:ObjectProperty ; rdfs:domain ledger:NamespacePolicy ; rdfs:range ledger:Role .
+ledger:reacceptWithinDays a owl:DatatypeProperty ; rdfs:domain ledger:NamespacePolicy ; rdfs:range xsd:integer .
+ledger:replacesPolicy a owl:DatatypeProperty ; rdfs:domain ledger:NamespacePolicy ; rdfs:range xsd:string ;
+    rdfs:comment "The hash of the policy this one replaces; absent on the first."@en .

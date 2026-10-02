@@ -7,6 +7,8 @@
 //! exists on this side of the crate boundary.
 
 mod add;
+mod authority;
+mod authority_enum;
 mod basis_text;
 mod cli_enum;
 mod common;
@@ -67,7 +69,12 @@ fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
         Commands::Escape { decision, exposure, review_by } => {
             evolve::escape(root, &decision, exposure, &review_by)
         }
-        Commands::Init => init::run(root),
+        Commands::Init { namespace, external_ref, role, accept_role } => {
+            init::run(root, namespace.map(|namespace| ledger_core::author::InitNamespaceArgs {
+                namespace, external_ref, role, accept_role,
+            }))
+        }
+
         Commands::Merge { rev, resolve, install, json } => {
             merge_cmd::run(root, merge_cmd::Flags { rev, resolve, install, json })
         }
@@ -86,6 +93,21 @@ fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
         Commands::Revoke { acceptance, reason } => sign::revoke(root, &acceptance, reason),
         Commands::Supersede { decision, by, reason } => {
             evolve::supersede(root, &decision, &by, reason)
+        }
+        other => dispatch_authority(other, root),
+    }
+}
+
+/// The authority verbs (spec v1.7): who may accept, revoke and grant.
+fn dispatch_authority(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
+    match command {
+        Commands::Available { interval, at } => authority::available(root, &interval, at.as_deref()),
+        Commands::Grant { cmd } => authority::grant(root, cmd),
+        Commands::Identity { cmd } => authority::identity(root, cmd),
+        Commands::Policy { cmd } => authority::policy(root, cmd),
+        Commands::Role { cmd } => authority::role(root, cmd),
+        Commands::Unavailable { grant, from, until, reason } => {
+            authority::unavailable(root, &grant, from.as_deref(), until.as_deref(), reason)
         }
         read => dispatch_read(read, root),
     }

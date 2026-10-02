@@ -318,6 +318,17 @@ store (`.decisions/`), separate ontology.
   act changes the export: rerun `ledger export --format ntriples` (no
   `--namespace` writes every namespace) and commit the result.
   Allocated-awaiting-acceptance is *status*, not a failure.
+- **Authority (format 6 / spec v1.7, #69)** — roles
+  (`.decisions/roles/<id>.yml`), grants + grant acceptances, unavailability
+  / availability, key bindings, namespace policy, and the `rev:` revocation
+  entity, all in `ledger-core/src/authority/`. `ledger init --namespace
+  <ns> --external-ref <mandate>` bootstraps the genesis; `role declare`,
+  `grant new|accept|revoke`, `unavailable`, `available`, `identity
+  add|rotate|revoke|sync`, `policy show|set`. The role check is one
+  function, `authority::authorize`, which `accept`, `revoke` and the grant
+  verbs call; a namespace **without** a policy is pre-v2 and not
+  role-checked. `allowed_signers` is derived (never hand-edited) and held by
+  `verify`'s `[SIGNERS]` stage. Graph classes `A003`/`A005`; `A006` deferred.
 - **Signing verbs refuse a non-interactive caller** (#71). `accept <dec>`,
   `accept … --confirm` and `revoke` exit non-zero and write nothing unless
   stdin is a terminal — no flag, no environment override. The selection dry

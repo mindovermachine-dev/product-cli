@@ -11,7 +11,9 @@
 use chrono::NaiveDate;
 
 use crate::acceptance::{Acceptance, AcceptanceScope, Revocation};
+use crate::authority::{Act, Authority, Authorized, Target};
 use crate::id::{AcceptanceId, DecisionId};
+use crate::store::Store;
 use crate::verify::view::View;
 
 use super::{Applied, Author, AuthorError};
@@ -49,12 +51,36 @@ fn signable_tip(
 }
 
 impl Author {
+    /// The role check on a decision (spec v1.7): in a namespace under
+    /// policy, the actor needs a live, accepted, available grant of the
+    /// policy's accept role covering the decision. A namespace without a
+    /// policy is a pre-v2 store, and nothing is role-checked there.
+    pub(crate) fn decision_authority(
+        &self,
+        store: &Store,
+        view: &View,
+        decision: &DecisionId,
+        act: Act,
+    ) -> Result<Option<Authorized>, AuthorError> {
+        let auth = Authority::build(store);
+        let Some(policy) = auth.policy(decision.namespace()) else { return Ok(None) };
+        let set = view
+            .latest
+            .get(&decision.to_string())
+            .and_then(|i| view.versions.get(*i))
+            .map(|v| v.raw.set.clone())
+            .unwrap_or_default();
+        let target = Target::Decision { namespace: decision.namespace(), set: &set };
+        self.authorized(store, act, target, Some(&policy.accept_role)).map(Some)
+    }
+
     /// Sign the latest version of a decision as the configured identity.
     pub fn accept(&mut self, args: AcceptArgs) -> Result<Applied, AuthorError> {
         let store = self.load();
         let view = View::build(&store);
         let hash = signable_tip(&view, &args.decision)?;
         self.refuse_duplicate(&view, &args.decision, &hash)?;
+        let held = self.decision_authority(&store, &view, &args.decision, Act::Accept)?;
         let acceptance = Acceptance {
             id: self.mint.mint_id("acc").map_err(AuthorError::Io)?,
             decision: args.decision.clone(),
@@ -69,15 +95,16 @@ impl Author {
         candidate.acceptances.push(acceptance);
         self.refusal_check(&store, &candidate, |_| false)?;
         let path = self.append(&candidate)?;
-        Ok(Applied {
-            path,
-            lines: vec![format!(
-                "{} accepted {} of {} — the signature names this exact state",
-                self.who,
-                hash.short(),
-                args.decision
-            )],
-        })
+        let mut lines = vec![format!(
+            "{} accepted {} of {} — the signature names this exact state",
+            self.who,
+            hash.short(),
+            args.decision
+        )];
+        if let Some(by) = held {
+            lines.push(format!("under {} (`{}`)", by.grant, by.role));
+        }
+        Ok(Applied { path, lines })
     }
 
     /// A second live signature of the same hash by the same actor adds
@@ -119,10 +146,14 @@ impl Author {
             )));
         }
         let revocation = Revocation {
-            acceptance: args.acceptance.clone(),
+            id: None,
+            revokes: None,
+            acceptance: Some(args.acceptance.clone()),
             at: self.now,
-            by: self.who.clone(),
+            actor: None,
+            by: Some(self.who.clone()),
             reason: args.reason.clone(),
+            hash: None,
         };
         let mut candidate = self.shell(None)?;
         candidate.revocations.push(revocation);

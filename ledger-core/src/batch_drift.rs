@@ -57,6 +57,7 @@ fn truncated(store: &Store, k: usize) -> Store {
         root: store.root.clone(),
         dir: store.dir.clone(),
         sets: store.sets.clone(),
+        roles: store.roles.clone(),
         log: store.log.iter().take(k).cloned().collect(),
         schema_findings: Vec::new(),
     }

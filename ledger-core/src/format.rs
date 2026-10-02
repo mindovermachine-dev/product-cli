@@ -39,8 +39,15 @@ pub const REVISIT_FORMAT: u32 = 4;
 /// `CANONICAL_FORM` stays `v1` and no existing digest moves.
 pub const KEY_FORMAT: u32 = 5;
 
+/// The format that carries the authority records (spec v1.7): role files,
+/// grants and their acceptances, unavailability and availability, key
+/// bindings, namespace policy, and the `rev:` revocation entity that
+/// revokes a grant or an acceptance. A role file declares it; a change-set
+/// declares it only when it files one of these.
+pub const AUTHORITY_FORMAT: u32 = 6;
+
 /// Every format version this tool can validate an entry against.
-pub const SUPPORTED_FORMATS: &[u32] = &[1, 2, 3, 4, 5];
+pub const SUPPORTED_FORMATS: &[u32] = &[1, 2, 3, 4, 5, 6];
 
 /// Whether an entry declaring `format: n` can be validated here.
 pub fn is_supported(n: u32) -> bool {
@@ -63,6 +70,9 @@ pub fn needed_for(cs: &crate::changeset::ChangeSet) -> u32 {
     }
     if cs.versions.iter().any(|v| v.key.is_some() || v.exported) {
         needed = needed.max(KEY_FORMAT);
+    }
+    if cs.authority_count() > 0 || cs.revocations.iter().any(|r| r.is_entity()) {
+        needed = needed.max(AUTHORITY_FORMAT);
     }
     needed
 }
@@ -87,7 +97,7 @@ mod tests {
         assert!(!is_supported(9));
         assert_eq!(
             unsupported_message(9),
-            "declares format 9; this tool validates format(s) 1, 2, 3, 4, 5"
+            "declares format 9; this tool validates format(s) 1, 2, 3, 4, 5, 6"
         );
     }
 
