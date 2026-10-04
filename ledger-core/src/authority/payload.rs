@@ -1,5 +1,4 @@
-//! The hashed payloads of the authority records and the acceptance — one
-//! law, five prefixes.
+//! Every hashed payload outside the version — one law, five prefixes.
 //!
 //! Every payload is a closed field list canonicalised by the format's one
 //! canonical-JSON law ([`crate::canon::put`] / [`crate::canon::put_set`],

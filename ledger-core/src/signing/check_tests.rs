@@ -33,9 +33,7 @@ fn sidecar(ulid: &str, bytes: Vec<u8>) -> Sidecar {
     Sidecar { ulid: ulid.to_string(), scheme: Scheme::Dsse, file: Sidecar::file_name(ulid, Scheme::Dsse), bytes }
 }
 
-fn store(signer: &SigningKey, tamper: bool) -> crate::store::Store {
-    let g = genesis("1", "steward");
-    let holder = testkit::identity(fixture::GENESIS_HOLDER);
+fn policy(g: &crate::authority::Grant) -> Policy {
     let mut policy = Policy {
         id: format!("pol:{}", fixture::ulid("3")).parse().expect("id"),
         namespace: NS.into(),
@@ -44,14 +42,18 @@ fn store(signer: &SigningKey, tamper: bool) -> crate::store::Store {
         accept_role: "acceptor".into(),
         reaccept_within_days: None,
         replaces: None,
-        by: holder.clone(),
+        by: testkit::identity(fixture::GENESIS_HOLDER),
         under: Some(g.id.clone()),
         at: testkit::stamp("2026-10-01T09:00:00Z"),
         hash: VersionHash::zero(),
         at_hashed: true,
     };
     policy.hash = policy_hash(&policy);
-    let bound = SigningKey::from_bytes(&[7u8; 32]);
+    policy
+}
+
+fn self_bound(g: &crate::authority::Grant, bound: &SigningKey) -> KeyBinding {
+    let holder = testkit::identity(fixture::GENESIS_HOLDER);
     let mut binding = KeyBinding {
         id: format!("key:{}", fixture::ulid("4")).parse().expect("id"),
         act: BindingAct::Add,
@@ -62,24 +64,31 @@ fn store(signer: &SigningKey, tamper: bool) -> crate::store::Store {
         closes: None,
         self_bound: true,
         mandate: g.external_ref.clone(),
-        by: holder.clone(),
+        by: holder,
         under: None,
         at: testkit::stamp("2026-10-01T09:10:00Z"),
         hash: VersionHash::zero(),
     };
     binding.hash = binding_hash(&binding);
+    binding
+}
+
+fn store(signer: &SigningKey, tamper: bool) -> crate::store::Store {
+    let g = genesis("1", "steward");
+    let bound = SigningKey::from_bytes(&[7u8; 32]);
+    let binding = self_bound(&g, &bound);
     let mut version = testkit::version();
     version.decision = format!("dec:{NS}/01K2C4YQJ3F8M0PT5W7NZ9RDXA").parse().expect("dec");
     let version = testkit::sealed(version);
     let mut acc = testkit::acceptance(&version);
-    acc.actor = holder;
+    acc.actor = testkit::identity(fixture::GENESIS_HOLDER);
     acc.at = testkit::stamp("2026-10-02T09:00:00Z");
     let mut acc_bytes = acceptance_bytes(&acc);
     if tamper {
         acc_bytes.push(b' ');
     }
     let mut cs = fixture::changeset(vec![g.clone()], vec![accepted("2", &g)]);
-    cs.policies = vec![policy];
+    cs.policies = vec![policy(&g)];
     cs.key_bindings = vec![binding.clone()];
     cs.versions = vec![version];
     cs.acceptances = vec![acc.clone()];

@@ -155,6 +155,7 @@ pub(super) fn triples(store: &Store) -> Triples {
         }
         super::authority::emit_changeset(&mut t, cs, &cs_iri);
     }
+    super::authority::emit_signatures(&mut t, store);
     t
 }
 
@@ -249,6 +250,9 @@ fn emit_acceptance(t: &mut Triples, a: &Acceptance, cs_iri: &str) {
     t.add(&iri, "prov:wasGeneratedBy", cs_iri.to_string());
     if let Some(expires) = &a.expires_at {
         t.add(&iri, "ledger:expiresAt", date(expires));
+    }
+    if let Some(g) = &a.under {
+        t.add(&iri, "ledger:under", format!("<urn:{g}>"));
     }
 }
 

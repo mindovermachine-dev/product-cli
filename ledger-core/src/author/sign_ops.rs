@@ -54,7 +54,21 @@ impl Author {
                 what.namespace
             ))
         })?;
-        let (key_type, blob, on_disk) = ssh::public_half(&key).map_err(AuthorError::Usage)?;
+        self.refuse_key(store, policy, &what, &key)?;
+        let bytes = ssh::sign(&key, what.namespace, &what.bytes).map_err(AuthorError::Io)?;
+        self.pending_sidecars.push(Sidecar {
+            ulid: what.ulid.to_string(),
+            scheme: Scheme::Ssh,
+            file: Sidecar::file_name(what.ulid, Scheme::Ssh),
+            bytes,
+        });
+        Ok(())
+    }
+
+    /// The three key refusals: not `-sk` under an `-sk` policy, an
+    /// agent-held software key, a key that is not the signer's live one.
+    fn refuse_key(&self, store: &Store, policy: &Policy, what: &ToSign<'_>, key: &std::path::Path) -> Result<(), AuthorError> {
+        let (key_type, blob, on_disk) = ssh::public_half(key).map_err(AuthorError::Usage)?;
         let hardware = key_type.starts_with("sk-");
         if policy.require_sk && !hardware {
             return Err(AuthorError::Unauthorized(format!(
@@ -81,13 +95,6 @@ impl Author {
                 what.namespace
             )));
         }
-        let bytes = ssh::sign(&key, what.namespace, &what.bytes).map_err(AuthorError::Io)?;
-        self.pending_sidecars.push(Sidecar {
-            ulid: what.ulid.to_string(),
-            scheme: Scheme::Ssh,
-            file: Sidecar::file_name(what.ulid, Scheme::Ssh),
-            bytes,
-        });
         Ok(())
     }
 

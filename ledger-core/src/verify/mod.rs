@@ -126,10 +126,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     findings.extend(keys::key_changed(&view));
     findings.extend(keys::key_collision(&view));
     findings.extend(authority::findings(store));
-    let landing = match opts.history {
-        true => crate::landing::Landing::compute(&store.root, opts.base.as_deref()).unwrap_or_default(),
-        false => crate::landing::Landing::unknown(),
-    };
+    let landing = landing(store, opts);
     let signing = crate::signing::check::check(store, &landing, opts.today);
     findings.extend(signing.findings.iter().cloned());
     findings.extend(history::findings(store, &landing));
@@ -155,11 +152,25 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     findings.dedup();
     report.findings = findings;
     // The graph stage: structural integrity, so it runs under both gates.
-    report.graph = crate::graph::shapes::graph_findings(store);
-    report.graph.extend(acts::unauthorised(store, &landing));
-    report.graph.sort_by(|a, b| (a.class, &a.subject).cmp(&(b.class, &b.subject)));
+    report.graph = graph_stage(store, &landing);
     report.signers = crate::authority::signers::check(store, &signing.trusted);
     report
+}
+
+/// The graph stage: the SPARQL shapes, then `A006` over history.
+fn graph_stage(store: &Store, landing: &crate::landing::Landing) -> Vec<crate::graph::GraphFinding> {
+    let mut graph = crate::graph::shapes::graph_findings(store);
+    graph.extend(acts::unauthorised(store, landing));
+    graph.sort_by(|a, b| (a.class, &a.subject).cmp(&(b.class, &b.subject)));
+    graph
+}
+
+/// Landing order from git when the run consults history (D6), else none.
+fn landing(store: &Store, opts: &Options) -> crate::landing::Landing {
+    match opts.history {
+        true => crate::landing::Landing::compute(&store.root, opts.base.as_deref()).unwrap_or_default(),
+        false => crate::landing::Landing::unknown(),
+    }
 }
 
 /// Every namespace a decision is filed in whose log carries no policy.

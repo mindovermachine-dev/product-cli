@@ -1,7 +1,17 @@
 # Decision Ledger — Entry Format v1
 
-**Status:** normative for `format: 1` through `format: 6`.
-Specification revision **v1.7** (2026-10-02): introduces `format: 6`,
+**Status:** normative for `format: 1` through `format: 7`.
+Specification revision **v1.8** (2026-10-04, #70): introduces `format: 7`,
+**signing** (§3.10) — `under`, the grant an act is made under, on
+acceptances, revocations, grants, policies and key bindings; `at` in the
+policy payload; the acceptance payload `ledger.acceptance.v1`; signature
+sidecars under `.decisions/sig/`; and the file-gate classes `L011`
+(required signature absent or invalid) and `L012` (an acceptance under a
+since-closed key past its re-acceptance deadline), the numbers reserved for
+them since v1.6 — the closed count moves from twelve to fourteen. Every
+new payload field is hashed when present and omitted when absent, so
+**every existing digest is unchanged**. The graph stage gains `A006`.
+Revision **v1.7** (2026-10-02): introduces `format: 6`,
 the **authority records** (§3.9) — role files, grants and their
 acceptances, unavailability and availability, key bindings, namespace
 policy, and the `rev:` **revocation entity** that revokes a grant or an
@@ -593,8 +603,8 @@ the policy's `accept_role`, which is never the genesis role: the genesis
 (root) role carries `grant-role`, `revoke-grant`, `declare-unavailability`
 and `rotate-genesis` and none of the decision capabilities (D9 (f)). A
 namespace without a policy is a pre-v2 namespace: nothing is role-checked
-there. The gate-time counterpart over history — an acceptance whose actor
-held no such grant (`A006`) — waits on the decision-class → role mapping.
+there. Since v1.8 the check also runs at verify, over history, as of each
+act (`A006`, §3.10.7).
 
 #### 3.9.5 `allowed_signers`
 
@@ -605,12 +615,211 @@ Derived, one line per key window, in OpenSSH's `allowed_signers` form so
 <principal> namespaces="ledger-accept@<ns>",valid-after="<YYYYMMDDhhmmssZ>"[,valid-before="<…>"] <key_type> <key>
 ```
 
+Options are comma-separated, as OpenSSH's grammar requires (v1.7 wrote
+them space-separated, which `ssh-keygen` refuses as an invalid key; v1.8
+corrects the derivation, and no committed store carried the file).
 `valid-after` is the opening binding's `at`; `valid-before` the `at` of the
-`rotate` or `revoke` that closed it. Lines are sorted by code point, under a
+`rotate` or `revoke` that closed it. Since v1.8 only **trusted** bindings
+are written (§3.10.5): an unsigned or wrongly signed binding never reaches
+the file. Lines are sorted by code point, under a
 two-line `#` header. `verify` re-derives the file and fails a
 **`[SIGNERS]`** stage when the committed bytes differ, when the log binds
 keys and no file is committed, or when a file is committed and the log
 binds none. Outside the file gate's classes, like the export stage.
+
+---
+
+### 3.10 Signing (format 7)
+
+Spec v1.8 (#70; rulings D1–D4 of #65 and D5–D9 of 2 October 2026). A
+namespace's policy says when a signature is required (D1); a signature is
+a sidecar (D2); the schemes are `ssh`, `dsse` (verified, never signed by
+this CLI) and `none` (D4).
+
+#### 3.10.1 New fields
+
+| Field | On | Meaning |
+|---|---|---|
+| `under` | acceptance, `rev:` revocation, grant, policy, key binding | the id of the grant the act is made under (D9 (a)). Absent on the genesis grant, a self-bound binding, a principal's acts on its own keys, and a pre-policy act. A key binding carries it only when filed by someone other than its principal (the genesis holder, D7). |
+| `at` in the policy payload | policy | hashed when the policy is filed in a format-7 file (D8): every policy filed from v1.8 on. A format-6 policy keeps the payload it was hashed under. |
+
+A change-set carrying `under` anywhere, or a policy, declares `format: 7`;
+`under` in a lower-format file is a schema fault. The inline acceptance
+field `signature` is **retired**: required empty in every format, and any
+value is a schema fault.
+
+#### 3.10.2 Payloads
+
+§3.9.3's table, as amended, plus the acceptance:
+
+| Prefix | Payload keys |
+|---|---|
+| `ledger.acceptance.v1` | `decision`, `version`, `actor`, `at`, `scope` (wire form: `version` or `class:<ref>`), `expires_at` (`YYYY-MM-DD`), `under` |
+| `ledger.revocation.v1` | `revokes`, `actor`, `at`, `reason`, `under` |
+| `ledger.authority-grant.v1` | §3.9.3's keys, `under` |
+| `ledger.identity-binding.v1` | §3.9.3's keys, `under` |
+| `ledger.namespace-policy.v1` | §3.9.3's keys, `under`, `at` (format 7) |
+
+Every instant is RFC 3339 UTC in whole seconds with `Z`
+(`2026-10-04T09:00:00Z`). An acceptance's digest is computed, never stored:
+acceptances carried none before v1.8, so none moves.
+
+#### 3.10.3 The signed bytes
+
+What a signature signs is exactly what the digest digests:
+
+```
+signed_bytes = UTF-8(prefix) || 0x0A || canonical_json_bytes
+digest       = "sha256:" || lowercase_hex(SHA-256(signed_bytes))
+```
+
+`prefix` is the payload's prefix from §3.10.2 (no trailing space), `0x0A`
+one line feed, and `canonical_json_bytes` the payload under §4.2's law,
+UTF-8, compact. Example — an acceptance of `dec:fixture.ledger/01K…` with
+no expiry and no `under` signs the bytes
+`ledger.acceptance.v1\n{"actor":"owner@customer.example","at":"2026-10-04T09:00:00Z","decision":"dec:fixture.ledger/01K…","scope":"version","version":"sha256:…"}`.
+The reference implementation's one function for these bytes is
+`ledger_core::hash::signed_bytes`, and `domain_hash` digests its output.
+
+#### 3.10.4 Sidecars and schemes
+
+A signature is a file `.decisions/sig/<ulid>.<scheme>.sig`, where `<ulid>`
+is the ULID of the entity it signs. One per scheme. A sidecar whose name
+is not `<ulid>.<ssh|dsse>.sig`, or which names no signable entity, is a
+schema fault. The **signable entities** are the acceptance, the
+revocation of an acceptance (a grant's revocation is signed with the grant,
+#82), the key binding, and the policy change. Each is signed by:
+
+| Entity | Signer | Signature namespace |
+|---|---|---|
+| acceptance | its `actor` | the decision's namespace |
+| revocation of an acceptance | its `actor` | the revoked acceptance's namespace |
+| key binding | its `by` (§3.10.5) | its `namespace` |
+| policy change (`replaces` present, format 7) | its `by` | its `namespace` |
+
+`<ns>` is the ledger namespace of the store that holds the entity, never a
+flag and never derived from the principal.
+
+- **`ssh`.** `ssh-keygen -Y sign -f <key> -n ledger-accept@<ns>` over the
+  signed bytes; verified with `ssh-keygen -Y verify -f <allowed_signers>
+  -I <signer> -n ledger-accept@<ns> -s <sidecar> -Overify-time=<at>`, the
+  allowed-signers text being the trusted bindings (§3.9.5, §3.10.5) and
+  `<at>` the entity's own `at` (a policy change's too, D8).
+- **`dsse`.** A sidecar holds one DSSE envelope with `payloadType`
+  `application/vnd.ledger.signed-bytes.v1` and `payload` the base64 of the
+  signed bytes; a signature verifies when it is ed25519 over DSSE's PAE by
+  an `ssh-ed25519` key the signer has bound in the namespace, open at the
+  entity's `at`. The open CLI verifies DSSE and never produces it.
+- **`none`.** No sidecar. Valid only where policy lists it.
+
+**Requirement.** The policy in force for the namespace at the entity's
+position (§3.10.6) — for a policy change, the policy it replaces (D1) —
+lists the required schemes. With `none` listed, an entity may carry no
+sidecar; otherwise each listed scheme needs a sidecar. A sidecar that is
+present always has to verify. An entity before its namespace's first policy
+is not checked. A namespace's first policy replaces nothing and is
+unsigned.
+
+#### 3.10.5 Trusted bindings and the first key (D7)
+
+Key bindings are judged first, in order (§3.10.6). A binding is **trusted**
+when its filer is one D7 allows and, where the policy in force requires a
+signature, its signature verifies against the bindings already trusted:
+
+- the genesis holder's **self-bound** first binding in a namespace, carrying
+  the genesis grant's `external_ref` as `mandate`, signed by the key it binds;
+- a principal's **first key** (no open window in the namespace) is filed and
+  signed by the genesis holder: `by` the genesis holder, `principal` the new
+  holder, `under` the genesis grant;
+- every further `add`, and every `rotate`, is the principal's own, signed by
+  a live key of theirs (a `rotate` by the key it closes);
+- a `revoke` is the principal's, or the genesis holder's under the genesis
+  grant.
+
+A binding filed by anyone else is a schema fault (D7); one whose required
+signature does not verify is `L011`. Neither is trusted, and only trusted
+bindings reach `allowed_signers`.
+
+#### 3.10.6 Order: landing and `at` (D6)
+
+An entity's **landing commit** is the first commit on the first-parent
+history of the verified commit whose tree contains the file the entity is
+filed in (a log file is written once, so an entity lands with its file).
+Its **position** is (landing index, `at`). Uncommitted files land at the
+tip.
+
+- **Before.** An act is before a terminating entry (a key's close, a grant's
+  revocation) when it landed no later and its `at` is earlier. In one
+  commit, `at` decides.
+- **Enabling entries** (a key's binding, a grant, a grant acceptance) cover
+  an act when they are not after it: landed no later, `at` no later.
+- A terminating entry applies to every act that is not before it — so a
+  close filed with `at` set to the time of compromise invalidates what
+  landed in between.
+- **Branches.** Entities on an unmerged branch land at the tip, after
+  everything on the base. `ledger verify --base <ref>` (default
+  `origin/HEAD` when the clone has it) computes landing against the base
+  and reads the base's log files and sidecars a branch checkout lacks, so a
+  branch verifies as its merge would. On a merge ref the merge commit's
+  first-parent line is the base line, and the two agree.
+
+**Closed keys.** An entity signed by a key whose window a later binding
+closed: dated at or after the close, it fails the `-Overify-time` check
+(`L011`); landed after the close, whatever its date, it is `L011`; dated and
+landed before it, an acceptance is a review item ("needs re-acceptance")
+until a later valid acceptance of the same version by the same actor
+affirms it, and `L012` once the policy's `reaccept_within_days` deadline
+(from the close) has passed. The reader takes the latest valid acceptance
+of a version.
+
+#### 3.10.7 The role check over history (`A006`) and history rules
+
+- **`A006`** (graph stage, §8). Every acceptance and every `rev:` revocation
+  is re-judged as of its position (§3.10.6): the grant it names (`under`)
+  must be held by its actor, of a role that may do the act (in a governed
+  namespace, the policy's `accept_role`), over a scope covering the target,
+  live, accepted and available at its `at`, and not outranked (D9 (e)). The
+  check never searches for another grant; a governed act with no `under`
+  fails. An act before its namespace's first policy is not checked (D5 (c));
+  a grant's revocation is checked once the store has a genesis.
+- **Unchecked namespaces.** `verify` names each namespace the log speaks
+  that has no policy, as a notice, not a failure.
+- **Opting in is one-way.** A namespace that had a policy when a log file
+  landed and has none at the verified commit fails `L007`.
+- **Roles are write-once.** A landed role file whose content differs from
+  its content at its landing commit fails `L007`.
+
+#### 3.10.8 The export and the export-only verifier
+
+The export (§8.1) carries every payload field of every signable entity and
+one node per sidecar: `<entity> ledger:signature <urn:sig:<file>>`, with
+`ledger:signatureScheme` and `ledger:signatureFile` (`sig/<file>`). An
+export-only verifier rebuilds the signed bytes by these rules:
+
+- an identity is the IRI with `mailto:` stripped;
+- `at` is the `prov:generatedAtTime` literal's lexical form, exactly as
+  hashed (§3.10.2);
+- an absent field is omitted; values pass §4.2's law;
+- `scope` is the `ledger:scope` literal (wire form); `expires_at` the
+  `ledger:expiresAt` literal; `decision`, `version`, `revokes`, `closes`
+  and `under` the IRI with `urn:` stripped (`under` is the grant id);
+- a binding's `id`, `act`, `namespace`, `key_type`, `key`, `self_bound`
+  and `mandate` are `ledger:id`, `ledger:bindingAct`, `ledger:namespace`,
+  `ledger:keyType`, `ledger:publicKey`, `ledger:selfBound` and
+  `ledger:mandate`; `principal` is `ledger:principal`, `by` is
+  `prov:wasAttributedTo`;
+- a policy's `schemes` are its `ledger:requiresScheme` literals as a set,
+  `accept_role` the `ledger:acceptRole` IRI's local part after
+  `urn:ledger-role:`, `replaces` the `ledger:replacesPolicy` literal, and a
+  policy that carries a signature hashed its `at`.
+
+It rebuilds `allowed_signers` from the `KeyBinding` nodes (§3.9.5, under
+the two-line header) and verifies each signature with the §3.10.4
+commands. **Its limit:** it checks signatures and key windows by `at`; it
+cannot check landing order (§3.10.6), which `verify` checks in the
+repository. A committed export is held byte-identical by a `verify` that
+does check order, so an export from a green repository holds no act that
+fails it.
 
 ---
 
@@ -739,11 +948,11 @@ every one of them fail.
 
 ## 5. The gate
 
-`ledger verify` fails for a **schema fault** or one of **twelve classes**,
-and for nothing else. A new reason is a change to this document — `L010`
-arrived that way, as the spec v1.1 amendment, and `L013`/`L014` as spec
-v1.6. `L011` and `L012` are **reserved** for the signing classes (#65,
-ruling D3) and are not classes until a revision specifies them.
+`ledger verify` fails for a **schema fault** or one of **fourteen
+classes**, and for nothing else. A new reason is a change to this document
+— `L010` arrived that way, as the spec v1.1 amendment, `L013`/`L014` as
+spec v1.6, and the signing classes `L011`/`L012` (numbers reserved for them
+by #65, ruling D3) as spec v1.8.
 
 ### 5.1 The parse gate
 
@@ -753,9 +962,11 @@ disagreeing with its declared id; a duplicate id; a per-allocation obligation
 from §3.6 that is not met (except the escape's, which is `L002`); a
 non-empty `signature`; a version naming an undeclared set; a revocation
 naming an acceptance nobody filed; a `key` not matching
-`^[A-Z][A-Za-z0-9]{0,63}$`.
+`^[A-Z][A-Za-z0-9]{0,63}$`; `under` in a file below format 7; a sidecar
+that is misnamed or names no signable entity; a key binding filed by a
+party D7 does not allow (§3.10.5).
 
-### 5.2 The twelve
+### 5.2 The fourteen
 
 | Code | Fails when |
 |---|---|
@@ -769,6 +980,8 @@ naming an acceptance nobody filed; a `key` not matching
 | `L008` | an acceptance's `(decision, version)` pair matches no filed version |
 | `L009` | an acceptance's actor is not the author of the commit that introduced it |
 | `L010` | a `judgment`'s `actor` is refused by §3.2 (spec v1.1) |
+| `L011` | a signature the namespace's policy requires is absent or does not verify, including one dated or landed after its key's close (spec v1.8, §3.10.4–§3.10.6) |
+| `L012` | an acceptance under a key closed after it — dated and landed before the close — not re-accepted by the policy's deadline (spec v1.8, §3.10.6); before the deadline it is a review item |
 | `L013` | a version's `key` differs from the key its `parent` or `merged_from` carries (spec v1.6, §3.8) |
 | `L014` | two live decisions of one namespace carry the same `key` on their latest versions (spec v1.6, §3.8) |
 
@@ -806,10 +1019,10 @@ Notes that are part of the specification, not implementation detail:
 
 ### 5.3 Gates and exit codes
 
-`--gate readiness` blocks produce and runs every class except `L002` and
-`L003`, which are dispositions that must hold at release rather than
-preconditions for starting. `--gate completeness` blocks release and runs
-all twelve. With no flag, all twelve run.
+`--gate readiness` blocks produce and runs every class except `L002`,
+`L003` and `L012`, which are dispositions that must hold at release rather
+than preconditions for starting. `--gate completeness` blocks release and
+runs all fourteen. With no flag, all fourteen run.
 
 | Exit | Meaning |
 |---|---|
@@ -927,12 +1140,15 @@ unchanged exit semantics (findings exit `1`):
 | `G006` | two live decisions of one namespace whose tips share a `key` — the cross-check of `L014` (spec v1.6) |
 | `A003` | two live grants (unrevoked, unsuperseded, accepted) share role, scope and order (spec v1.7) |
 | `A005` | more than one live (unsuperseded, unrevoked) genesis grant (spec v1.7) |
+| `A006` | an acceptance or `rev:` revocation whose named grant did not, as of the act, let its actor do it — or a governed act naming none (spec v1.8, §3.10.7) |
 
 `A003` and `A005` are the authority shapes' gate classes
 (`docs/ledger-authority/ledger-authority-shapes.ttl`), with two
 tightenings recorded there: `A003` counts only a `ledger:GrantAcceptance`
-as acceptance, and `A005` excludes a revoked genesis. `A006` (an orphaned
-acceptance) is deferred until the decision-class → role mapping exists.
+as acceptance, and `A005` excludes a revoked genesis. `A006` is not a
+SPARQL shape: it is computed by the verbs' own role check
+(`authorize_named`) over the authority records as of each act, because it
+needs landing order (§3.10.6), which the graph does not carry.
 
 `G004` is the state two divergent writers leave behind — a plain git merge
 of two branches' logs, each having revised the same decision from the same

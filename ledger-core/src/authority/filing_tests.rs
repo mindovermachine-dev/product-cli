@@ -1,4 +1,4 @@
-//! D7: each binding act by a signer the rule allows, and by one it does not.
+//! D7: each binding act, by a signer the rule allows or refuses.
 
 use crate::authority::fixture::{self, accepted, genesis, role};
 use crate::authority::{BindingAct, Capability, KeyBinding};

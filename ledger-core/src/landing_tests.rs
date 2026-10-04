@@ -1,4 +1,4 @@
-//! Landing on the first-parent line, and the branch/merge agreement.
+//! Landing on the first-parent line, including the branch/merge agreement.
 
 use std::path::Path;
 use std::process::Command;

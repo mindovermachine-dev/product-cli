@@ -305,11 +305,11 @@ store (`.decisions/`), separate ontology.
   change to the canonical form bumps `CANONICAL_FORM`, invalidates every
   acceptance, and needs a migration note — it is never a quiet fix.
 - **Gate** — `ledger verify [--gate readiness|completeness] [--json]
-  [--today YYYY-MM-DD] [--no-blame]`. Fails for a schema fault plus classes
-  `L001`–`L010`, `L013`, `L014` and **nothing else**; adding a class is a
+  [--today YYYY-MM-DD] [--no-blame] [--base <ref>]`. Fails for a schema
+  fault plus classes `L001`–`L014` and **nothing else**; adding a class is a
   format-spec change (`L010` shipped that way as spec v1.1, the key classes
-  `L013`/`L014` as spec v1.6 / format 5). `L011`/`L012` are **reserved** for
-  signing (#65 ruling D3) — never reuse them.
+  `L013`/`L014` as spec v1.6 / format 5, the signing classes `L011`/`L012`
+  as spec v1.8 / format 7).
   Exit `0` conformant, `1` findings, `2` could not run. Runs in CI with
   `--export`, which adds a third stage: every committed
   `docs/decisions/<ns>.nt` must equal `ledger export --format ntriples
@@ -329,9 +329,23 @@ store (`.decisions/`), separate ontology.
   verbs call; a namespace **without** a policy is pre-v2 and not
   role-checked. `allowed_signers` is derived (never hand-edited) and held by
   `verify`'s `[SIGNERS]` stage. Graph classes `A003`/`A005`; `A006` deferred.
-- **Signing verbs refuse a non-interactive caller** (#71). `accept <dec>`,
-  `accept … --confirm` and `revoke` exit non-zero and write nothing unless
-  stdin is a terminal — no flag, no environment override. The selection dry
+- **Signing (format 7 / spec v1.8, #70)** — `ledger-core/src/signing/`.
+  A namespace's policy lists the required schemes; a signature is a sidecar
+  `.decisions/sig/<ulid>.<scheme>.sig` over the entity's signed bytes
+  (`hash::signed_bytes`: prefix, `0x0A`, canonical JSON — what the digest
+  digests). The verbs sign with `git config user.signingkey` (`ssh`);
+  `dsse` is verified, never signed. Every act names its grant (`under`,
+  D9), chosen with `--as <role>` when more than one qualifies. Order is
+  landing on the first-parent history, then `at` (D6, `landing.rs`);
+  `verify --base <ref>` judges a branch as its merge would. `A006`
+  re-runs the role check over history as of each act; key bindings follow
+  D7 (`authority/filing.rs`, called by the verbs and by `verify`).
+  Integration suites need `ssh-keygen` (OpenSSH) as well as `script(1)`.
+- **Authority verbs and signing verbs refuse a non-interactive caller**
+  (#71, #85). `accept <dec>`, `accept … --confirm`, `revoke`, and every verb
+  that writes an authority record exit non-zero and write nothing unless
+  stdin is a terminal — no flag, no environment override
+  (`ledger-cli/src/commands/terminal.rs` classifies the whole surface). The selection dry
   run (`accept --set|--group` without `--confirm`) writes nothing and stays
   scriptable. Integration tests drive signing verbs under a pseudo-terminal
   via `script(1)` (util-linux): `ledger-cli/tests/common/mod.rs` `invoke`.

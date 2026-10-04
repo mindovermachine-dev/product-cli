@@ -58,66 +58,83 @@ pub fn subjects<'a>(store: &'a Store, landing: &Landing) -> Vec<Subject<'a>> {
     for logged in &store.log {
         let path = relative(&store.root, &logged.path);
         let cs = &logged.file;
-        for a in &cs.acceptances {
-            out.push(Subject {
-                kind: Kind::Acceptance,
-                id: a.id.to_string(),
-                ulid: ulid_of(&a.id.to_string()),
-                namespace: a.decision.namespace().to_string(),
-                signer: a.actor.clone(),
-                at: a.at,
-                position: landing.position(&path, a.at),
-                bytes: acceptance_bytes(a),
-                binding: None,
-                policy: None,
-            });
-        }
-        for r in cs.revocations.iter().filter(|r| r.is_entity()) {
-            let (Some(Revocable::Acceptance(acc)), Some(actor)) = (r.target(), r.actor()) else { continue };
-            let Some(namespace) = acceptance_namespace(store, &acc.to_string()) else { continue };
-            out.push(Subject {
-                kind: Kind::Revocation,
-                id: r.subject(),
-                ulid: ulid_of(&r.subject()),
-                namespace,
-                signer: actor.clone(),
-                at: r.at,
-                position: landing.position(&path, r.at),
-                bytes: revocation_bytes(r),
-                binding: None,
-                policy: None,
-            });
-        }
-        for b in &cs.key_bindings {
-            out.push(Subject {
-                kind: Kind::Binding,
-                id: b.id.to_string(),
-                ulid: ulid_of(&b.id.to_string()),
-                namespace: b.namespace.clone(),
-                signer: b.by.clone(),
-                at: b.at,
-                position: landing.position(&path, b.at),
-                bytes: binding_bytes(b),
-                binding: Some(b),
-                policy: None,
-            });
-        }
-        for p in cs.policies.iter().filter(|p| p.at_hashed && p.replaces.is_some()) {
-            out.push(Subject {
-                kind: Kind::Policy,
-                id: p.id.to_string(),
-                ulid: ulid_of(&p.id.to_string()),
-                namespace: p.namespace.clone(),
-                signer: p.by.clone(),
-                at: p.at,
-                position: landing.position(&path, p.at),
-                bytes: policy_bytes(p),
-                binding: None,
-                policy: Some(p),
-            });
-        }
+        out.extend(cs.acceptances.iter().map(|a| acceptance(a, landing.position(&path, a.at))));
+        out.extend(
+            cs.revocations
+                .iter()
+                .filter(|r| r.is_entity())
+                .filter_map(|r| revocation(store, r, landing.position(&path, r.at))),
+        );
+        out.extend(cs.key_bindings.iter().map(|b| binding(b, landing.position(&path, b.at))));
+        out.extend(
+            cs.policies
+                .iter()
+                .filter(|p| p.at_hashed && p.replaces.is_some())
+                .map(|p| policy(p, landing.position(&path, p.at))),
+        );
     }
     out
+}
+
+fn acceptance<'a>(a: &crate::acceptance::Acceptance, position: Position) -> Subject<'a> {
+    Subject {
+        kind: Kind::Acceptance,
+        id: a.id.to_string(),
+        ulid: ulid_of(&a.id.to_string()),
+        namespace: a.decision.namespace().to_string(),
+        signer: a.actor.clone(),
+        at: a.at,
+        position,
+        bytes: acceptance_bytes(a),
+        binding: None,
+        policy: None,
+    }
+}
+
+fn revocation<'a>(store: &Store, r: &crate::authority::Revocation, position: Position) -> Option<Subject<'a>> {
+    let (Some(Revocable::Acceptance(acc)), Some(actor)) = (r.target(), r.actor()) else { return None };
+    Some(Subject {
+        kind: Kind::Revocation,
+        id: r.subject(),
+        ulid: ulid_of(&r.subject()),
+        namespace: acceptance_namespace(store, &acc.to_string())?,
+        signer: actor.clone(),
+        at: r.at,
+        position,
+        bytes: revocation_bytes(r),
+        binding: None,
+        policy: None,
+    })
+}
+
+fn binding(b: &KeyBinding, position: Position) -> Subject<'_> {
+    Subject {
+        kind: Kind::Binding,
+        id: b.id.to_string(),
+        ulid: ulid_of(&b.id.to_string()),
+        namespace: b.namespace.clone(),
+        signer: b.by.clone(),
+        at: b.at,
+        position,
+        bytes: binding_bytes(b),
+        binding: Some(b),
+        policy: None,
+    }
+}
+
+fn policy(p: &Policy, position: Position) -> Subject<'_> {
+    Subject {
+        kind: Kind::Policy,
+        id: p.id.to_string(),
+        ulid: ulid_of(&p.id.to_string()),
+        namespace: p.namespace.clone(),
+        signer: p.by.clone(),
+        at: p.at,
+        position,
+        bytes: policy_bytes(p),
+        binding: None,
+        policy: Some(p),
+    }
 }
 
 /// The namespace of the acceptance `id`, wherever it is filed.

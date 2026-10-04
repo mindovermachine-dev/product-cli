@@ -1,4 +1,4 @@
-//! What the record held at landing and must still hold (D6's landing).
+//! What the record held at landing, it must still hold (D6's landing).
 //!
 //! - **Roles are write-once** (Session A close-out §3 question 8, ruled
 //!   2026-10-02). A grant names its role by id only, so a role file edited

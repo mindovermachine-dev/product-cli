@@ -23,13 +23,9 @@ pub struct PolicyArgs {
 }
 
 impl Author {
-    /// File the namespace's next policy.
-    pub fn policy_set(&mut self, args: PolicyArgs) -> Result<Applied, AuthorError> {
-        let store = self.load();
-        let auth = Authority::build(&store);
-        let current = auth.policy(&args.namespace).cloned().ok_or_else(|| {
-            AuthorError::Usage(format!("namespace `{}` has no policy — `ledger init --namespace` first", args.namespace))
-        })?;
+    /// A policy change is the live, available genesis holder's act, and it
+    /// never maps acceptance to the genesis role (D9 (f)).
+    fn refuse_policy_change(&self, auth: &Authority<'_>, args: &PolicyArgs) -> Result<(), AuthorError> {
         let genesis_now = auth.genesis().is_some_and(|g| g.holder == self.who && auth.is_available(g, self.now));
         if !genesis_now {
             return Err(AuthorError::Unauthorized(
@@ -42,6 +38,17 @@ impl Author {
                 g.role
             )));
         }
+        Ok(())
+    }
+
+    /// File the namespace's next policy.
+    pub fn policy_set(&mut self, args: PolicyArgs) -> Result<Applied, AuthorError> {
+        let store = self.load();
+        let auth = Authority::build(&store);
+        let current = auth.policy(&args.namespace).cloned().ok_or_else(|| {
+            AuthorError::Usage(format!("namespace `{}` has no policy — `ledger init --namespace` first", args.namespace))
+        })?;
+        self.refuse_policy_change(&auth, &args)?;
         let mut next = Policy {
             id: self.mint.mint_id("pol").map_err(AuthorError::Io)?,
             namespace: current.namespace.clone(),
