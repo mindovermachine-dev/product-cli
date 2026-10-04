@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-revocation-rs
 boundary: contract surface of ledger-core/src/authority/revocation.rs
-verdict_knowledge: "Consumers learn the revocation entity's two wire shapes (format 6 and legacy), read through target() and actor(), and which format admits which."
+verdict_knowledge: Consumers learn the revocation entity's two wire shapes (format 6 and legacy), read through target() and actor(), and which format admits which.
 contract_location: ledger-core/src/authority/revocation.rs
 obligations: []
 metadata: {}
@@ -138,3 +138,9 @@ bindings:
   after: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:4d1a1efe7fa3f8ce1a6db9885c6be0427cb279da9dd89451385004868705ab88
+- symbol: under
+  file: ledger-core/src/authority/revocation.rs
+  before: sha256:73186a4720bae72c0442da21b6f740a8cf0a9c936989fc78c5213676e510e2b5
+  after: sha256:6165187c4ccc08be0d326d77dc53822c3a59379e4ce3c7691f791a3761c0f95d
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:a3b4adfab4ea2ce3f4bfe83e748718944936e6d691f9c428a7edcc8d558507cc

@@ -36,3 +36,39 @@ bindings:
   after: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:43f0095bf6da8b8d8817f4fff7a61ff300124751895b748fc52713bc350250c8
+- symbol: acts
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  after: sha256:f2a5034e42540146c2ecf030672279b6599c4c7cd6afbdee03e1709338b77bb1
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:38a6f054230635d16e232776a1e90c01d0cdb2ea20561222eb027d3c249bdac0
+- symbol: history
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  after: sha256:f2a5034e42540146c2ecf030672279b6599c4c7cd6afbdee03e1709338b77bb1
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b09b47c7e953ac46beee46a88ad0a702f4e8d3ec53a5342f2b30535694405fa4
+- symbol: base
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  after: sha256:f2a5034e42540146c2ecf030672279b6599c4c7cd6afbdee03e1709338b77bb1
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d783d4f50e9b30a507c69e236d2ce26ce3a62980679fbd45d810168e7461d869
+- symbol: reaccept
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  after: sha256:f2a5034e42540146c2ecf030672279b6599c4c7cd6afbdee03e1709338b77bb1
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:5b0f0aea083035849ef58bdbebb370828e204e884d311a8c9a2a10424e9f9dea
+- symbol: unchecked
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  after: sha256:f2a5034e42540146c2ecf030672279b6599c4c7cd6afbdee03e1709338b77bb1
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:51d2f37ce1bf4bfb460d7c454cc88d452ceb5ff393b0170b6df446635647b508
+- symbol: offline
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:0c65f689ea087cff96dfd55f911b8dbd476806ebb18346023693d1b2a7955956
+  after: sha256:f2a5034e42540146c2ecf030672279b6599c4c7cd6afbdee03e1709338b77bb1
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:bd0f306ef2a690d2a2c795c6df2fc4002060af81045fbdafc344729e21fb01bf

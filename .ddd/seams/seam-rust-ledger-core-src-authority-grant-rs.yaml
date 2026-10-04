@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-grant-rs
 boundary: contract surface of ledger-core/src/authority/grant.rs
-verdict_knowledge: "Consumers learn the Grant and GrantAcceptance shapes and the closed scope, order and limit vocabularies."
+verdict_knowledge: Consumers learn the Grant and GrantAcceptance shapes and the closed scope, order and limit vocabularies.
 contract_location: ledger-core/src/authority/grant.rs
 obligations: []
 metadata: {}
@@ -258,3 +258,9 @@ bindings:
   after: sha256:a4beacf15581fe2669bcbd0bbe93f0fed23c475dd8989542d98e57236c95122c
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:f309ebbc9770fcae0536c66d9d990debcc22216adaafeec71dd9303b1cde9de1
+- symbol: under
+  file: ledger-core/src/authority/grant.rs
+  before: sha256:a4beacf15581fe2669bcbd0bbe93f0fed23c475dd8989542d98e57236c95122c
+  after: sha256:99968e03387202b2ca36b1ea22780357e528ac7c7c7a73c9909f46e43f5f8ca1
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:c2a9266d76dddf7693635d4fbe8b720021f92a6ece3e57dd561670e349fde237

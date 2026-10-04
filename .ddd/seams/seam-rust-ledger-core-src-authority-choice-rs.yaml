@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-choice-rs
+boundary: contract surface of ledger-core/src/authority/choice.rs
+verdict_knowledge: "Callers learn which grant an act is made under (D9): one candidate is used, several need --as, the narrowest covering scope then the lowest rank wins within the role, and a broader role is refused when one with fewer claims qualifies."
+contract_location: ledger-core/src/authority/choice.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: choose
+  file: ledger-core/src/authority/choice.rs
+  before: absent
+  after: sha256:9d127ba6619d05d279b47f3eda59b89ac3861d225df9b94e8f247709643c7bc7
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:881fffd37e9669e998654ab70d648ee7fdc915839a01e721f70ccad4ca9789fc

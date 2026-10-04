@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-policy-rs
 boundary: contract surface of ledger-core/src/authority/policy.rs
-verdict_knowledge: "Consumers learn the namespace policy shape: schemes (ssh | dsse | none), require_sk, accept_role, the re-acceptance deadline and the replaces chain."
+verdict_knowledge: 'Consumers learn the namespace policy shape: schemes (ssh | dsse | none), require_sk, accept_role, the re-acceptance deadline and the replaces chain.'
 contract_location: ledger-core/src/authority/policy.rs
 obligations: []
 metadata: {}
@@ -132,3 +132,15 @@ bindings:
   after: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:ad6d821e0d99137d05d63170b762d167c7f4ba3d00c30dcd7e60debb7d483b05
+- symbol: at_hashed
+  file: ledger-core/src/authority/policy.rs
+  before: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  after: sha256:019610e34d36d8d7df754ceed7e39ac9f5e769e24356d325002fa0aecc3b1d7d
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:6793e230fb4954f5c5eaf70e1c7dac193b099bd23bfb3fb88e92052e2c714da2
+- symbol: under
+  file: ledger-core/src/authority/policy.rs
+  before: sha256:d277a0fce0004730f3aa773ae399efbd52c5f7592191c1e10611ada82e191b92
+  after: sha256:019610e34d36d8d7df754ceed7e39ac9f5e769e24356d325002fa0aecc3b1d7d
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:420bfab2356a0b0bf95fdf1c00aecfe4031b0949aa04a4a92c5af1f6ca92ff96

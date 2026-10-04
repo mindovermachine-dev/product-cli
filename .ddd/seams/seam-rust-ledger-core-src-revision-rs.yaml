@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-revision-rs
+boundary: contract surface of ledger-core/src/revision.rs
+verdict_knowledge: "Callers learn that a store can be loaded as it stood at a revision, and that a branch's store can be overlaid with the base's log files and sidecars to judge what the merge would hold."
+contract_location: ledger-core/src/revision.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: overlay_base
+  file: ledger-core/src/revision.rs
+  before: sha256:80fb70c076602ef47186c8bba13ba2dfaff7271ff67b3e83ec985e065220568d
+  after: sha256:43237ebeef45def2f8402c6d4e742516d07e8b61c3744c7729f9f7fcf20f4d4c
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:2f02d92118bf546c3ab365e928745a9075128a890d1be6a71207a345cf79932e

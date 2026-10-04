@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-check-rs
 boundary: contract surface of ledger-core/src/authority/check.rs
-verdict_knowledge: "Callers learn `authorize` — the one role check accept, revoke and the grant verbs share — and the ordered Denial vocabulary naming how far the best grant got."
+verdict_knowledge: Callers learn `authorize` — the one role check accept, revoke and the grant verbs share — and the ordered Denial vocabulary naming how far the best grant got.
 contract_location: ledger-core/src/authority/check.rs
 obligations: []
 metadata: {}
@@ -114,3 +114,51 @@ bindings:
   after: sha256:5bd4190f515e0d1b1d851a658ff7143c5390d1fcc64782e9d139ea4dfae5a542
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:99043b292323cc0f8b5057864459414f694ec0a3225e2e55d7fd6c914cd143fd
+- symbol: authorize
+  file: ledger-core/src/authority/check.rs
+  before: sha256:5db3f36cfb0de262e0bccac573fd741165f73abd86d4ecb80610872e1ebcffcf
+  after: sha256:4b91145a78cf64d9cc4bf310451f16e383afcbd3d38a80a2df699f9bc384f5fa
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d81cf2063ac22b2a94858719764fcaec5b38e3afe55e331f1d2ddd08a18bd1ae
+- symbol: authorize_named
+  file: ledger-core/src/authority/check.rs
+  before: sha256:5db3f36cfb0de262e0bccac573fd741165f73abd86d4ecb80610872e1ebcffcf
+  after: sha256:4b91145a78cf64d9cc4bf310451f16e383afcbd3d38a80a2df699f9bc384f5fa
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b1291068af324f146bd6397724077dfa57a1bb78dbfe7aaa4c636e64941e73d6
+- symbol: candidates
+  file: ledger-core/src/authority/check.rs
+  before: sha256:5db3f36cfb0de262e0bccac573fd741165f73abd86d4ecb80610872e1ebcffcf
+  after: sha256:4b91145a78cf64d9cc4bf310451f16e383afcbd3d38a80a2df699f9bc384f5fa
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:22f0848b27dddbd3854d2d757aa7bcaa63e86e90cf4934ebc938c1e4c6a56cb6
+- symbol: impl Authorized
+  file: ledger-core/src/authority/check.rs
+  before: sha256:5db3f36cfb0de262e0bccac573fd741165f73abd86d4ecb80610872e1ebcffcf
+  after: sha256:4b91145a78cf64d9cc4bf310451f16e383afcbd3d38a80a2df699f9bc384f5fa
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:4620d97053b5eefd1522cf331bbae71dca473452568be053630c49616f029f32
+- symbol: Ambiguous
+  file: ledger-core/src/authority/check.rs
+  before: sha256:5db3f36cfb0de262e0bccac573fd741165f73abd86d4ecb80610872e1ebcffcf
+  after: sha256:4b91145a78cf64d9cc4bf310451f16e383afcbd3d38a80a2df699f9bc384f5fa
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:73516068490187187669c4a83d4c5b73653020ff240112353f8dd0f5cfe02f30
+- symbol: Broader
+  file: ledger-core/src/authority/check.rs
+  before: sha256:5db3f36cfb0de262e0bccac573fd741165f73abd86d4ecb80610872e1ebcffcf
+  after: sha256:4b91145a78cf64d9cc4bf310451f16e383afcbd3d38a80a2df699f9bc384f5fa
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:c05b600356ad27735e1caffe5cf02d595c43642a4886833c5d93fe8cbe33861e
+- symbol: NotInRole
+  file: ledger-core/src/authority/check.rs
+  before: sha256:5db3f36cfb0de262e0bccac573fd741165f73abd86d4ecb80610872e1ebcffcf
+  after: sha256:4b91145a78cf64d9cc4bf310451f16e383afcbd3d38a80a2df699f9bc384f5fa
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b6c16270367da030b67041f9daa372e02fc979dfa930cd7edda3c7b8f31a71ab
+- symbol: NotTheirs
+  file: ledger-core/src/authority/check.rs
+  before: sha256:5db3f36cfb0de262e0bccac573fd741165f73abd86d4ecb80610872e1ebcffcf
+  after: sha256:4b91145a78cf64d9cc4bf310451f16e383afcbd3d38a80a2df699f9bc384f5fa
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:fb45d8e51a1cd7f9bb88ce446e1add43b6dc8ab24ac38b0504f8aed5a82cdf36

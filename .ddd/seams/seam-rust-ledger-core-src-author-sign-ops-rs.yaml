@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-author-sign-ops-rs
+boundary: contract surface of ledger-core/src/author/sign_ops.rs
+verdict_knowledge: "Authoring verbs learn the one signing step: what the policy in force requires, the key refusals (not -sk under an -sk policy, an agent-held software key, a key that is not the signer's live one), and that signatures are gated with the change-set and written beside it."
+contract_location: ledger-core/src/author/sign_ops.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: impl Author
+  file: ledger-core/src/author/sign_ops.rs
+  before: absent
+  after: sha256:73174122ddeb636e0d7fb09b4a833a228205ebd668dc19b56849bacd0955f127
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:0455e21b4d7df47bbb1eb8d0d34d8906bfac9c00b5b1cb71d75b72663e954058

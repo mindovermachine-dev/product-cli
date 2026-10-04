@@ -1,0 +1,116 @@
+format: 2
+id: seam/rust/ledger-core-src-landing-rs
+boundary: contract surface of ledger-core/src/landing.rs
+verdict_knowledge: "Callers learn when an entity entered the record (D6): its landing commit on the first-parent history, positions ordered by landing then at, computed against a base so a branch reads as its merge would."
+contract_location: ledger-core/src/landing.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: content_at
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:de353870dcb59a536722b394b0f6254a628af89ac088ce0f7f7ecd1944ee55c1
+- symbol: relative
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:13e1ec5237dc3a526ae16592dc9157be23531166e61920a56b879eca69ba4694
+- symbol: touched_after_landing
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:6ff48d8a44f272c24636b0dfe9e7c635932fbe47bf3397325ca2302881850c58
+- symbol: impl Landing
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d53a042ee3deb7f18067c432942fe7ddfae155dd86d9931b9050046add87d65d
+- symbol: impl Position
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3f52a8b9d1e8ff4d83ac4e5ed23a7cf9a968c02666d2c08a699e9ab66930b47b
+- symbol: Landing
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:ce6fda77a246923f982845c2b55bda71e71f4f82e242e97f667cc9ce85069f0f
+- symbol: Position
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b4f9e84da22eeb631d506c95352173b913c1495bbb13274b329472adb63d906b
+- symbol: available
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:eb6c19a4e1a57d5f4b269b69ab826842a5129bddf35c8c2ccb16a9b487251000
+- symbol: at
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:80804b18e816f4d7aa19a545c4391ad44986725c8dd3f558e8c2d39926cbdaac
+- symbol: index
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3dd50e15321f258d15ec6693293a49b57fa237b7bf8d738badfe11d88fef313e
+- symbol: commit
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:44493029e75abac6ff512c72f65f9b3839457252051852c69d3c0307e43734b2
+- symbol: compute
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:bdd9cf9d56fffc0c123626b8218a0099d8cb87fc8d1ef759f6e792755a07cb1c
+- symbol: default_base
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:f79d83cad1890f1701e5e8c48881dc413506945c4564c21a3d90b21eb37b7799
+- symbol: landed_under
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b2dee65c23954037f89e86d41d458838c520a0ad6b56ebe7a1e0dbc4fd7da38a
+- symbol: position
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:de590bbb9da2f95d86a20680acf6d90ca062d73553b74d967fea7872a02a0e94
+- symbol: unknown
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1d4af8cc9b298bccfe42ea3503e7a4f6442af08c16d71664a58f8053de4530e2
+- symbol: before
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:19b9ebce26b476e7c4a2e65b74511badef2ca0d4232c329b51af0bbefc6569bf
+- symbol: not_after
+  file: ledger-core/src/landing.rs
+  before: absent
+  after: sha256:09bc38a4500837ab2521de2aff43b050d4f5f2a7a66b626edd329506e579a04a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3797eb4a3f200e0cc71d395693f176c10b2c6057cc33d9a2ed7448b1cb5226db

@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-history-rs
+boundary: contract surface of ledger-core/src/verify/history.rs
+verdict_knowledge: "Callers learn the history rules L007 enforces: a landed role file never changes, and a namespace that had a policy keeps one."
+contract_location: ledger-core/src/verify/history.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: findings
+  file: ledger-core/src/verify/history.rs
+  before: absent
+  after: sha256:b5ccfac89287cc9acc0c9ccb76b4a2ca95a856071b7856f9c120ddbc8c7072f1
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:89d7f40b02da92c16a4a3c49376dd12f4927e9746fd3eaa4406a6ab8f1ef6246

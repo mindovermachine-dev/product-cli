@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-mod-rs
 boundary: contract surface of ledger-core/src/authority/mod.rs
-verdict_knowledge: "Consumers learn the authority module's re-exported surface: records, the role check, the view, and that a namespace without policy is pre-v2."
+verdict_knowledge: 'Consumers learn the authority module''s re-exported surface: records, the role check, the view, and that a namespace without policy is pre-v2.'
 contract_location: ledger-core/src/authority/mod.rs
 obligations: []
 metadata: {}
@@ -78,3 +78,15 @@ bindings:
   after: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:11bd741251c51c6d1b493bf5d12ce3db33338fe69a0f853449dbf0079b857121
+- symbol: choice
+  file: ledger-core/src/authority/mod.rs
+  before: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  after: sha256:044cd036549a6ff7526562e0f8b596cd789ffa73081ac443bef87bd2fc900674
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:af890791c105e43654b15c026837b48c51eed536c727a619305961dddfc6f3a5
+- symbol: filing
+  file: ledger-core/src/authority/mod.rs
+  before: sha256:dd0c05d9707d884dff60ff0e7d9c8d2ad99dc193d7bea36cc45b73959c9f9503
+  after: sha256:044cd036549a6ff7526562e0f8b596cd789ffa73081ac443bef87bd2fc900674
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:895ad55297b4391e7a28564bcec07561c4396e0d420189e1b3feeb471d27da63

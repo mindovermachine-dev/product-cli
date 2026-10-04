@@ -1,0 +1,80 @@
+format: 2
+id: seam/rust/ledger-core-src-signing-check-rs
+boundary: contract surface of ledger-core/src/signing/check.rs
+verdict_knowledge: "Callers learn the signature gate: which schemes the policy in force requires, which key bindings are trusted for allowed_signers, L011 for an absent or invalid signature, and L012 or a review item for an acceptance under a since-closed key."
+contract_location: ledger-core/src/signing/check.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: check
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:e4603d0d391daca43c74455c0c57cc144a66b36a172ecf98caf501c4d8e84d01
+- symbol: trusted_bindings
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:768ad6101c6567c5439ee1adcc5ced8d50cc44da9caaa795fef8528c518c75c5
+- symbol: Outcome
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b2ee69decba71fa4deb3fadcca4ee647b40409b41d6dd731a3b16acfe2fdadba
+- symbol: Reaccept
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:e565e9fa8b0929f5de9ce477fcd11b95e75fbd4f5a7e549724f9daedbac0951f
+- symbol: findings
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:042e0919850858dc988ede1342baa5a3d063c33469d77e1ee4a5c6cafb915ab2
+- symbol: reaccept
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:02d89e13a0fc7106c9e3304dbb025e76725f773f482a3fbc78b8e76b94b9d803
+- symbol: trusted
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d43680b8494a7fff0eb29c1cea74897061ad32f9d8ce7d51fd6517d829a4ea88
+- symbol: acceptance
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:2860263e8cadc8a932e848263e22195eb354bd528ce0b811cd5c187a504ccf7a
+- symbol: actor
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:509df4c5bfef30ae7cd227414ea157ef02df6546b40aa44e34a344222b61cd4e
+- symbol: closed_by
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:2f3afd92f863ab5e4fe2734efa91bd07f17eb5a78f61926bbf5342ae15ced940
+- symbol: deadline
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:a942b99e5f7c894d5790565c8ddafdede7f95d920687993b3b07dd1f0def530a
+- symbol: key
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d19b17aba4b6a871b765a748628a7a00dfd5be024e047f4e979c6e05c938b092

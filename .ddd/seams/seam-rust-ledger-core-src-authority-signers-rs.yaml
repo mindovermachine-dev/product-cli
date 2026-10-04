@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-signers-rs
 boundary: contract surface of ledger-core/src/authority/signers.rs
-verdict_knowledge: "Consumers learn allowed_signers is derived from key bindings in OpenSSH form, written by the identity verbs, and held byte-identical by verify's [SIGNERS] stage."
+verdict_knowledge: Consumers learn allowed_signers is derived from key bindings in OpenSSH form, written by the identity verbs, and held byte-identical by verify's [SIGNERS] stage.
 contract_location: ledger-core/src/authority/signers.rs
 obligations: []
 metadata: {}
@@ -36,3 +36,27 @@ bindings:
   after: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:ad4a7b609fad5fce0b4ca42b4bbec5caf1b6a108126cda88e09bbad0a41e4218
+- symbol: HEADER
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  after: sha256:ab237eed42ab3e57177d5689adaa7264c8fc95c542dc75b347ea205cafed346f
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3ca05026bebd762dda779404f81a6ed4f76425ddc6fc9bd687322092162784ca
+- symbol: check
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  after: sha256:ab237eed42ab3e57177d5689adaa7264c8fc95c542dc75b347ea205cafed346f
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:8b04c9425b8ab2b325e6d666279877ae5e06cb999518e4f138a2d1e06b03448a
+- symbol: derive
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  after: sha256:ab237eed42ab3e57177d5689adaa7264c8fc95c542dc75b347ea205cafed346f
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:6f2dba3b4c36786996247709ef9672ac2a9acb632875bc85f44fb5d2a63b59eb
+- symbol: derive_from
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:158b94ab0dbb241f68e368c1241ffde42c932bbc66efdc27f69fec8faf1ad1f2
+  after: sha256:ab237eed42ab3e57177d5689adaa7264c8fc95c542dc75b347ea205cafed346f
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:5c90c8e2be9aaf8f99ed30e2018b86e18dd975dfaf3b45eae8578db70db34c57

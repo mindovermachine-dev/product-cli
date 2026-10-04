@@ -150,3 +150,39 @@ bindings:
   after: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
   base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
   hash: sha256:85cc76b224f6fc803b5d8b7c18fe921f86b91a07c0cc1b44df56972b7b842358
+- symbol: export_only
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
+  after: sha256:3a4828d68356ad4027e5a5b45edcceca1224c6a6f7677662eaf11390c79cc396
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:6278d10bbe4cc9e2f0567fd07cac5c385c5665550787b3c70418614f377f46c4
+- symbol: hand
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
+  after: sha256:3a4828d68356ad4027e5a5b45edcceca1224c6a6f7677662eaf11390c79cc396
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:a9daa2be06142a4d41d38a16d061a647cedcfa522253e2deca2ee3932e9cdd6c
+- symbol: bind_own_key
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
+  after: sha256:3a4828d68356ad4027e5a5b45edcceca1224c6a6f7677662eaf11390c79cc396
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:5f3fa9a218590cceeacb595623cd5200f157bbff7832d6dbf9f36466fc10d670
+- symbol: keygen
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
+  after: sha256:3a4828d68356ad4027e5a5b45edcceca1224c6a6f7677662eaf11390c79cc396
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:af96025a2b17723dc76b0838cdb13b50c3255d47474bd1d1335d3e3e43314659
+- symbol: use_key
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
+  after: sha256:3a4828d68356ad4027e5a5b45edcceca1224c6a6f7677662eaf11390c79cc396
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:c0bb4ae9acb0ff9d6a7c0a1d2f35acbd07904b6a33feb5cc6a8eeee4c1834a69
+- symbol: vouch_for
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:9a1df26b5b3f0f401646a199cc247d83bb1e1235efc09c7c778e9847ac40fee5
+  after: sha256:3a4828d68356ad4027e5a5b45edcceca1224c6a6f7677662eaf11390c79cc396
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b3d24f2ad18976db7025c7f442dc3a7e2e3e03f99683cb0ba2a8ee1ccb6bd9b0

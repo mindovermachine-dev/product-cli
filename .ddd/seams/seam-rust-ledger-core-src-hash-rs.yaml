@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-hash-rs
 boundary: contract surface of ledger-core/src/hash.rs
-verdict_knowledge: 'Dependent crates learn the digest shape is shared (prefix, newline, bytes) via domain_hash, with CANONICAL_FORM reserved for the version payload alone.'
+verdict_knowledge: Dependent crates learn the digest shape is shared (prefix, newline, bytes) via domain_hash, with CANONICAL_FORM reserved for the version payload alone.
 contract_location: ledger-core/src/hash.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,9 @@ bindings:
   after: sha256:1de1b351b998be55708a19e184425e9fb80bf8c527b81c3aec316439d3fd7703
   base_revision: 6d3dff57e80514b7b4665ef38b364730c53201a3
   hash: sha256:b1081a328e4b394f45f7411b977bede0fdf6df484d8c6d84969bd7bd230a58fc
+- symbol: signed_bytes
+  file: ledger-core/src/hash.rs
+  before: sha256:1de1b351b998be55708a19e184425e9fb80bf8c527b81c3aec316439d3fd7703
+  after: sha256:e479a4ae3c8e481c30e23c43fec7ed9a7ab7bc3dfde8a862fb652014c5d1a60e
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:02f38561fd35b698425e723d84024db0cd70255022e9408627fd6dff60190d0f

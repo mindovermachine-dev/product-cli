@@ -1,0 +1,62 @@
+format: 2
+id: seam/rust/ledger-cli-tests-common-export-only-rs
+boundary: contract surface of ledger-cli/tests/common/export_only.rs
+verdict_knowledge: "Test suites learn the export-only verifier: it rebuilds signed bytes and allowed_signers from one namespace's N-Triples export plus the sidecars, and verifies with ssh-keygen, reading no .decisions/ file and no git."
+contract_location: ledger-cli/tests/common/export_only.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: Term
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:288e0c8a25fb8aac7cff9bfb7698281b2effff788244de7d52ef603bd0bbe0e1
+- symbol: allowed_signers
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d7150955f125c8c31d611b204e05b53d00ceff3d26c7612ace78c5b269627f71
+- symbol: parse
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b235ea40f4c22a2eed138fd90084324952439b3710e450c2e0ff4069652a757c
+- symbol: rebuild
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:5379a9ef52737d9a50522705cf832f79eae03f4e1e6f4667bdf072394b99b429
+- symbol: verify_all
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b8bed2afe2778fe9ba0fd4ca7bc362ee1e616df1a0abe73bceea73ce30c13d49
+- symbol: impl Term
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:6de8cf9c628f843ba4201a0c81f1757e64b7ef8f54d66acf04ac1b74ddd7fb66
+- symbol: Graph
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1a03ea5eddaf1851c2e56dad7d7c2ace0dd5f3354b80be332c9e1abfdf03143c
+- symbol: Iri
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:65bc482416bc2d6a53109da38d4b7012a9df60344d0e5cff9c6f12ad7df6a647
+- symbol: Literal
+  file: ledger-cli/tests/common/export_only.rs
+  before: absent
+  after: sha256:b5f825c067b40908ca6ebd0e553afe5bb8e1e0d85fb828b2a15d0474f1704eae
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:cf3c15d91de74c397ebbfc112c0ad8b876fffab126dec93522dbc2f7932ae97b

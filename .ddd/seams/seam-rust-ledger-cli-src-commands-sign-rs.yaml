@@ -54,3 +54,15 @@ bindings:
   after: sha256:b442eb694d24f6e4a87b02dcc52200ec5bfe0b744fcc291d81817787bcaf54ad
   base_revision: 576efaf12b38c16ff6e5600064ed15f4000b9fed
   hash: sha256:a1e7324daebd6af80075a197d42464480703ad7cfe65785266ed63fe83f30f0b
+- symbol: revoke
+  file: ledger-cli/src/commands/sign.rs
+  before: sha256:96da214c91be3bc93363c91d3f29f3676a88e9adb5cd6210d6c8b2dffc2f62ed
+  after: sha256:29be987ad19bab9159583ac958102d853e9879b2c6db58723a3601cf7a3c3b8a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:efdddb5323678935ae5581ebb4dff5ebcb0ea447d5f237a8be75140c516ecca9
+- symbol: as_role
+  file: ledger-cli/src/commands/sign.rs
+  before: sha256:96da214c91be3bc93363c91d3f29f3676a88e9adb5cd6210d6c8b2dffc2f62ed
+  after: sha256:29be987ad19bab9159583ac958102d853e9879b2c6db58723a3601cf7a3c3b8a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1a14c9aa7e1e4ad4a6be88005edaee7ba6b495840498a7bf2412af10340bcbae
