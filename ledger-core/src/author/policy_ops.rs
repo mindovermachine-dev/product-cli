@@ -58,10 +58,20 @@ impl Author {
         };
         next.hash = policy_hash(&next);
         let line = format!("{} replaces {} for `{}`", next.id, current.id, next.namespace);
+        // Signed under the policy in force before it (D1), by the genesis
+        // holder, with its own `at` the verify-time (D8).
+        let ulid = next.id.ulid().to_string();
+        let what = super::sign_ops::ToSign {
+            namespace: &next.namespace,
+            ulid: &ulid,
+            bytes: crate::authority::payload::policy_bytes(&next),
+            own_key: None,
+        };
+        self.sign_under(&store, Some(&current), what)?;
         let mut candidate = self.shell(None)?;
         candidate.policies.push(next);
         self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
+        let path = self.append_signed(&candidate)?;
         Ok(Applied { path, lines: vec![line] })
     }
 }

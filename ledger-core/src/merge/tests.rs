@@ -139,7 +139,7 @@ mod acts {
         let store = crate::store::load(dir);
         verify::verify(
             &store,
-            &Options { gate: None, today: testkit::date("2026-08-11"), blame: false },
+            &Options::offline(testkit::date("2026-08-11")),
         )
     }
 

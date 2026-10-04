@@ -130,9 +130,10 @@ fn governed() -> Governed {
     repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
     let grant = word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{NS}")]), "grant:");
     repo.ok(&["grant", "accept", &grant]);
-    let key_file = repo.path().join("owner.pub").display().to_string();
-    std::fs::write(&key_file, "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIowner owner@laptop\n").expect("key");
-    let binding = word(&repo.ok(&["identity", "add", "--namespace", NS, "--key-file", &key_file]), "key:");
+    let owner = repo.keygen("owner");
+    repo.use_key(&owner);
+    let binding = word(&repo.ok(&["identity", "add", "--namespace", NS, "--key-file", &format!("{owner}.pub")]), "key:");
+    let key_file = format!("{}.pub", repo.keygen("spare"));
     let interval = word(&repo.ok(&["unavailable", &grant, "--from", "2030-01-01T00:00:00Z", "--reason", "leave"]), "unav:");
     Governed { repo, grant, interval, binding, key_file }
 }

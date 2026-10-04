@@ -94,10 +94,19 @@ impl Author {
             under: held.as_ref().map(super::authority_ops::under_of).transpose()?,
             signature: String::new(),
         };
+        let policy = Authority::build(&store).policy(args.decision.namespace()).cloned();
+        let what = super::sign_ops::ToSign {
+            namespace: args.decision.namespace(),
+            ulid: acceptance.id.ulid(),
+            bytes: crate::authority::payload::acceptance_bytes(&acceptance),
+            own_key: None,
+        };
+        self.sign_under(&store, policy.as_ref(), what)?;
+        let signed = self.pending_sidecars.iter().map(|s| format!("signed — sig/{}", s.file)).collect::<Vec<_>>();
         let mut candidate = self.shell(None)?;
         candidate.acceptances.push(acceptance);
         self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
+        let path = self.append_signed(&candidate)?;
         let mut lines = vec![format!(
             "{} accepted {} of {} — the signature names this exact state",
             self.who,
@@ -107,6 +116,7 @@ impl Author {
         if let Some(by) = held {
             lines.push(format!("under {} (`{}`)", by.grant, by.role));
         }
+        lines.extend(signed);
         Ok(Applied { path, lines })
     }
 
@@ -155,10 +165,22 @@ impl Author {
         let under = held.as_ref().map(super::authority_ops::under_of).transpose()?;
         let revocation = self.revocation(Revocable::Acceptance(args.acceptance.clone()), args.reason.clone(), under)?;
         let id = revocation.id.as_ref().map(ToString::to_string).unwrap_or_default();
+        if let Some(acceptance) = revoked {
+            let ns = acceptance.decision.namespace();
+            let policy = Authority::build(&store).policy(ns).cloned();
+            let ulid = revocation.id.as_ref().map(|i| i.ulid().to_string()).unwrap_or_default();
+            let what = super::sign_ops::ToSign {
+                namespace: ns,
+                ulid: &ulid,
+                bytes: crate::authority::payload::revocation_bytes(&revocation),
+                own_key: None,
+            };
+            self.sign_under(&store, policy.as_ref(), what)?;
+        }
         let mut candidate = self.shell(None)?;
         candidate.revocations.push(revocation);
         self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
+        let path = self.append_signed(&candidate)?;
         Ok(Applied {
             path,
             lines: vec![format!("revoked {} by {id} — {}", args.acceptance, args.reason)],

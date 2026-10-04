@@ -31,6 +31,8 @@ pub struct Store {
     /// Role files (`roles/<id>.yml`, format 6) — declared scope, like sets.
     pub roles: Vec<crate::authority::Role>,
     pub log: Vec<LoggedChangeSet>,
+    /// Signature sidecars (`sig/<ulid>.<scheme>.sig`, spec v1.8).
+    pub sidecars: Vec<crate::signing::Sidecar>,
     pub schema_findings: Vec<Finding>,
 }
 
@@ -76,6 +78,9 @@ pub fn load(repo_root: &Path) -> Store {
     load_sets(&dir.join("sets"), &mut store);
     load_roles(&dir.join("roles"), &mut store);
     load_log(&dir.join("log"), &mut store);
+    let (sidecars, faults) = crate::signing::load(&dir.join(crate::signing::SIG_DIR));
+    store.sidecars = sidecars;
+    store.schema_findings.extend(faults);
     store.sets.sort_by(|a, b| a.id.cmp(&b.id));
     store.roles.sort_by(|a, b| a.id.cmp(&b.id));
     store.log.sort_by(|a, b| a.file.id.cmp(&b.file.id));

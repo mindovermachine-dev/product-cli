@@ -7,7 +7,7 @@ use crate::version::VersionRaw;
 use crate::verify::{verify, Options};
 
 fn opts() -> Options {
-    Options { gate: None, today: testkit::date("2026-08-10"), blame: false }
+    Options::offline(testkit::date("2026-08-10"))
 }
 
 fn classes(versions: Vec<VersionRaw>) -> Vec<VerifyClass> {

@@ -23,6 +23,7 @@ mod group_accept;
 mod identity_ops;
 mod policy_ops;
 mod report;
+mod sign_ops;
 mod version_ops;
 
 #[cfg(test)]
@@ -107,12 +108,15 @@ pub struct Author {
     /// `--as <role>` (D9 (b)): the role the actor says this act is made
     /// under. Required only when more than one grant qualifies.
     pub as_role: Option<String>,
+    /// Signatures a verb has made for the change-set it is about to append:
+    /// gated with it, written beside it.
+    pub(crate) pending_sidecars: Vec<crate::signing::Sidecar>,
 }
 
 impl Author {
     /// An author acting as `who` at `now`, minting from `mint`.
     pub fn new(root: &Path, who: Identity, now: DateTime<Utc>, mint: UlidMint) -> Self {
-        Self { root: root.to_path_buf(), who, now, mint, as_role: None }
+        Self { root: root.to_path_buf(), who, now, mint, as_role: None, pending_sidecars: Vec::new() }
     }
 
     /// The wall-clock author: identity from git config (OD-3), system mint.
@@ -135,7 +139,7 @@ impl Author {
     /// blame pass (an uncommitted acceptance is always skipped by `L009`,
     /// so consulting git here could never produce a finding).
     pub(crate) fn gate(&self, store: &Store) -> Vec<Finding> {
-        verify::verify(store, &Options { gate: None, today: self.today(), blame: false }).findings
+        verify::verify(store, &Options::offline(self.today())).findings
     }
 
     /// Refuse `candidate` if appending it would introduce findings the
@@ -168,6 +172,7 @@ impl Author {
             sets: current.sets.clone(),
             roles: current.roles.clone(),
             log: current.log.to_vec(),
+            sidecars: current.sidecars.iter().chain(self.pending_for(candidate)).cloned().collect(),
             schema_findings: current.schema_findings.clone(),
         };
         with.log.push(LoggedChangeSet {
@@ -185,6 +190,20 @@ impl Author {
         } else {
             Err(AuthorError::Refused(fresh))
         }
+    }
+
+    /// The pending signatures over entities `candidate` files — a batched
+    /// verb gates each member with its own signature only.
+    fn pending_for<'s>(&'s self, candidate: &ChangeSet) -> impl Iterator<Item = &'s crate::signing::Sidecar> + 's {
+        let ulids: std::collections::BTreeSet<String> = candidate
+            .acceptances
+            .iter()
+            .map(|a| a.id.ulid().to_string())
+            .chain(candidate.revocations.iter().filter_map(|r| r.id.as_ref().map(|i| i.ulid().to_string())))
+            .chain(candidate.key_bindings.iter().map(|b| b.id.ulid().to_string()))
+            .chain(candidate.policies.iter().map(|p| p.id.ulid().to_string()))
+            .collect();
+        self.pending_sidecars.iter().filter(move |s| ulids.contains(&s.ulid))
     }
 
     /// Append a change-set as a brand-new log file. Never overwrites: the

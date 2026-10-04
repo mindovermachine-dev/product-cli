@@ -204,6 +204,7 @@ fn graph_delta_check(current: &Store, candidate: &ChangeSet) -> Result<(), Autho
         sets: current.sets.clone(),
         roles: current.roles.clone(),
         log: current.log.to_vec(),
+        sidecars: current.sidecars.clone(),
         schema_findings: current.schema_findings.clone(),
     };
     with.log.push(LoggedChangeSet {

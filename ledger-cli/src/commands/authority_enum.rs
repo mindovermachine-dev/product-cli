@@ -69,13 +69,17 @@ pub enum GrantCmd {
 /// `ledger identity …`
 #[derive(Subcommand)]
 pub enum IdentityCmd {
-    /// Bind one of your own public keys in a namespace
+    /// Bind a public key in a namespace: your own, or (as the genesis
+    /// holder) a principal's first key with --for (D7)
     Add {
         #[arg(long, value_name = "NS")]
         namespace: String,
         /// An OpenSSH public key file (`<type> <base64> [comment]`)
         #[arg(long, value_name = "PATH")]
         key_file: std::path::PathBuf,
+        /// The principal whose first key this is (the genesis holder's act)
+        #[arg(long = "for", value_name = "IDENTITY")]
+        principal: Option<String>,
     },
     /// Close a key binding's window: yours, or any, as the genesis holder
     Revoke {

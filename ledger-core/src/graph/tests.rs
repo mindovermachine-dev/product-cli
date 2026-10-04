@@ -8,7 +8,7 @@ use super::turtle::emit;
 use super::GraphClass;
 
 fn opts() -> Options {
-    Options { gate: None, today: testkit::date("2026-08-10"), blame: false }
+    Options::offline(testkit::date("2026-08-10"))
 }
 
 #[test]

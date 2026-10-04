@@ -127,6 +127,7 @@ pub fn store(changeset: ChangeSet) -> Store {
         dir: std::path::PathBuf::from("/fixture/.decisions"),
         sets: vec![set()],
         roles: Vec::new(),
+        sidecars: Vec::new(),
         log: vec![LoggedChangeSet {
             path: std::path::PathBuf::from(format!("/fixture/.decisions/log/{CS_ULID}.yml")),
             file: changeset,

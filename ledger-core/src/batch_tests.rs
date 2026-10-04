@@ -57,6 +57,7 @@ fn store(changesets: Vec<ChangeSet>) -> Store {
         dir: std::path::PathBuf::from("/fixture/.decisions"),
         sets: vec![testkit::set()],
         roles: Vec::new(),
+        sidecars: Vec::new(),
         log: changesets
             .into_iter()
             .map(|file| LoggedChangeSet {

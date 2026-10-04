@@ -18,16 +18,30 @@ pub struct Args {
     pub blame: bool,
     /// Run the export stage: committed exports against the log.
     pub export: bool,
+    /// The base landing is computed against (D6); default `origin/HEAD`
+    /// when the clone has it.
+    pub base: Option<String>,
 }
 
 pub fn run(root: Option<PathBuf>, args: Args) -> Result<i32, String> {
     let repo_root = resolve_root(root)?;
+    let base = args.base.or_else(|| ledger_core::landing::Landing::default_base(&repo_root));
     let options = Options {
         gate: args.gate.as_deref().map(parse_gate).transpose()?,
         today: parse_today(args.today.as_deref())?,
         blame: args.blame,
+        history: true,
+        base: base.clone(),
     };
-    let loaded = store::load(&repo_root);
+    let mut loaded = store::load(&repo_root);
+    if let Some(base) = &base {
+        // The merge's store: the base's log files (and signatures) a branch
+        // checkout lacks, so a local verify judges what the merge would.
+        let added = ledger_core::revision::overlay_base(&mut loaded, base)?;
+        if added > 0 && !args.json {
+            println!("verifying as merged into {base}: {added} change-set(s) from the base");
+        }
+    }
     let mut report = verify(&loaded, &options);
     if args.export {
         report.export = Some(ledger_core::graph::export::check(&repo_root, &loaded));

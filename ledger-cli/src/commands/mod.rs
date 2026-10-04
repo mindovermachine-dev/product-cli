@@ -130,8 +130,8 @@ fn dispatch_read(command: Commands, root: Option<PathBuf>) -> Result<i32, String
             inspect::show(root, inspect::ShowFlags { decision, set, group, json, today })
         }
         Commands::Status { today } => inspect::status(root, today.as_deref()),
-        Commands::Verify { gate, json, today, no_blame, export } => {
-            verify::run(root, verify::Args { gate, json, today, blame: !no_blame, export })
+        Commands::Verify { gate, json, today, no_blame, export, base } => {
+            verify::run(root, verify::Args { gate, json, today, blame: !no_blame, export, base })
         }
         // Every writing verb is handled by `dispatch`, which routes here
         // only for what is left. Reaching this arm means a variant was

@@ -16,6 +16,7 @@ pub mod availability;
 pub mod binding;
 pub mod check;
 pub mod choice;
+pub mod filing;
 #[cfg(test)]
 pub(crate) mod fixture;
 pub mod grant;

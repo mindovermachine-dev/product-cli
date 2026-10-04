@@ -64,6 +64,37 @@ pub fn load_at(root: &Path, rev: &str) -> Result<Store, String> {
     Ok(store)
 }
 
+/// Add to `store` the log files `base` carries that the working tree does
+/// not (D6): the log is append-only, so the union is what the merge into
+/// `base` would hold, and `verify --base` then judges the merge's store.
+/// Returns how many change-sets came from the base.
+pub fn overlay_base(store: &mut Store, base: &str) -> Result<usize, String> {
+    let at_base = load_at(&store.root, base)?;
+    let have: std::collections::BTreeSet<String> = store.log.iter().map(|l| l.file.id.to_string()).collect();
+    let mut added = 0;
+    for logged in at_base.log.into_iter().filter(|l| !have.contains(&l.file.id.to_string())) {
+        let path = store.dir.join("log").join(logged.file.file_name());
+        store.log.push(crate::store::LoggedChangeSet { path, file: logged.file });
+        added += 1;
+    }
+    store.log.sort_by(|a, b| a.file.id.cmp(&b.file.id));
+    let commit = resolve(&store.root, base)?;
+    let sig_dir = format!("{STORE_DIR}/{}/", crate::signing::SIG_DIR);
+    let listing = git(&store.root, &["ls-tree", "-r", "--name-only", &commit, "--", &sig_dir]).unwrap_or_default();
+    for path in listing.lines().map(str::trim).filter(|p| !p.is_empty()) {
+        let name = path.rsplit('/').next().unwrap_or_default().to_string();
+        if store.sidecars.iter().any(|c| c.file == name) {
+            continue;
+        }
+        let Ok((ulid, scheme)) = crate::signing::Sidecar::parse_name(&name) else { continue };
+        let Ok(out) = Command::new("git").arg("-C").arg(&store.root).args(["show", &format!("{commit}:{path}")]).output() else { continue };
+        if out.status.success() {
+            store.sidecars.push(crate::signing::Sidecar { ulid, scheme, file: name, bytes: out.stdout });
+        }
+    }
+    Ok(added)
+}
+
 /// Every `.yml`/`.yaml` path under `.decisions/` in the revision's tree.
 /// A revision with no store at all is an empty store, not an error — a
 /// branch that predates `ledger init` diffs as "everything was added".

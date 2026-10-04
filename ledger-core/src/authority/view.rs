@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 
+use crate::landing::{relative, Landing, Position};
 use crate::store::Store;
 
 use super::availability::{Availability, Unavailability};
@@ -48,6 +49,34 @@ impl<'a> Authority<'a> {
             a.revocations.extend(&cs.revocations);
             a.bindings.extend(&cs.key_bindings);
             a.policies.extend(&cs.policies);
+        }
+        a
+    }
+
+    /// The records as they stood at `pos` (D6): enabling entries (grants,
+    /// grant acceptances, key bindings, policies) that are not after it,
+    /// terminating ones (revocations) that are before it, and the
+    /// availability intervals landed no later (their clock decides). This
+    /// is what `verify` judges a historic act against (`A006`, D7).
+    pub fn as_of(store: &'a Store, landing: &Landing, pos: Position) -> Self {
+        let mut a = Self::default();
+        for role in &store.roles {
+            a.roles.insert(role.id.clone(), role);
+        }
+        for logged in &store.log {
+            let path = relative(&store.root, &logged.path);
+            let at = |t| landing.position(&path, t);
+            let landed = landing.index(&path) <= pos.index;
+            let cs = &logged.file;
+            a.grants.extend(cs.grants.iter().filter(|g| at(g.at).not_after(&pos)).map(|g| (g.id.to_string(), g)));
+            a.grant_acceptances.extend(cs.grant_acceptances.iter().filter(|ga| at(ga.at).not_after(&pos)));
+            if landed {
+                a.unavailabilities.extend(cs.unavailabilities.iter().map(|u| (u.id.to_string(), u)));
+                a.availabilities.extend(&cs.availabilities);
+            }
+            a.revocations.extend(cs.revocations.iter().filter(|r| at(r.at).before(&pos)));
+            a.bindings.extend(cs.key_bindings.iter().filter(|b| at(b.at).not_after(&pos)));
+            a.policies.extend(cs.policies.iter().filter(|p| at(p.at).not_after(&pos)));
         }
         a
     }

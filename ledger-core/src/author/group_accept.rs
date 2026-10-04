@@ -89,9 +89,9 @@ impl Author {
             // The grant each member is accepted under (D9): resolved per
             // row, under the one `--as` the whole selection is made as.
             let held = self.decision_authority(store, &view, &decision, crate::authority::Act::Accept)?;
-            candidate.acceptances.push(Acceptance {
+            let acceptance = Acceptance {
                 id: self.mint.mint_id("acc").map_err(AuthorError::Io)?,
-                decision,
+                decision: decision.clone(),
                 version: m.version.parse().map_err(AuthorError::Usage)?,
                 actor: self.who.clone(),
                 at: self.now,
@@ -99,7 +99,17 @@ impl Author {
                 expires_at,
                 under: held.as_ref().map(super::authority_ops::under_of).transpose()?,
                 signature: String::new(),
-            });
+            };
+            // One signature per acceptance, never one over the selection.
+            let policy = crate::authority::Authority::build(store).policy(decision.namespace()).cloned();
+            let what = super::sign_ops::ToSign {
+                namespace: decision.namespace(),
+                ulid: acceptance.id.ulid(),
+                bytes: crate::authority::payload::acceptance_bytes(&acceptance),
+                own_key: None,
+            };
+            self.sign_under(store, policy.as_ref(), what)?;
+            candidate.acceptances.push(acceptance);
             signed.push(m.decision.clone());
         }
         if signed.is_empty() {
@@ -117,7 +127,7 @@ impl Author {
             }
             Err(other) => return Err(other),
         }
-        let path = self.append(&candidate)?;
+        let path = self.append_signed(&candidate)?;
         Ok(Outcome { plan, dry_run: false, signed, filed: Some(path), refusal: None })
     }
 

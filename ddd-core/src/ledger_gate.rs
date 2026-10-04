@@ -81,7 +81,7 @@ pub fn ledger_section(
     let ledger = ledger_core::store::load(repo_root);
     let full = ledger_core::verify::verify(
         &ledger,
-        &ledger_core::verify::Options { gate: None, today, blame: false },
+        &ledger_core::verify::Options::offline(today),
     );
     let readiness = gate_passes(&ledger, today, ledger_core::finding::Gate::Readiness);
     let completeness = gate_passes(&ledger, today, ledger_core::finding::Gate::Completeness);
@@ -165,7 +165,7 @@ fn gate_passes(
 ) -> bool {
     ledger_core::verify::verify(
         ledger,
-        &ledger_core::verify::Options { gate: Some(gate), today, blame: false },
+        &ledger_core::verify::Options { gate: Some(gate), ..ledger_core::verify::Options::offline(today) },
     )
     .is_conformant()
 }

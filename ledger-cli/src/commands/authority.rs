@@ -59,7 +59,7 @@ fn key_file(path: &Path, namespace: String) -> Result<KeyArgs, String> {
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let mut parts = text.split_whitespace();
     match (parts.next(), parts.next()) {
-        (Some(key_type), Some(key)) => Ok(KeyArgs { namespace, key_type: key_type.into(), key: key.into() }),
+        (Some(key_type), Some(key)) => Ok(KeyArgs { namespace, key_type: key_type.into(), key: key.into(), principal: None }),
         _ => Err(format!("{} is not an OpenSSH public key (`<type> <base64>`)", path.display())),
     }
 }
@@ -73,7 +73,11 @@ pub fn identity(root: Option<PathBuf>, cmd: IdentityCmd) -> Result<i32, String> 
     }
     let mut author = open_author(root)?;
     match cmd {
-        IdentityCmd::Add { namespace, key_file: path } => finish(author.identity_add(key_file(&path, namespace)?)),
+        IdentityCmd::Add { namespace, key_file: path, principal } => {
+            let mut args = key_file(&path, namespace)?;
+            args.principal = principal.as_deref().map(str::parse).transpose()?;
+            finish(author.identity_add(args))
+        }
         IdentityCmd::Revoke { binding } => finish(author.identity_revoke(&binding.parse()?)),
         IdentityCmd::Rotate { binding, key_file: path } => {
             let closes = binding.parse()?;

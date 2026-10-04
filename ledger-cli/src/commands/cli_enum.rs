@@ -329,6 +329,10 @@ pub enum Commands {
         /// to the log's export
         #[arg(long)]
         export: bool,
+        /// Compute landing order against this base (D6), so a branch
+        /// verifies as its merge would; default `origin/HEAD` when present
+        #[arg(long, value_name = "REF")]
+        base: Option<String>,
     },
 }
 

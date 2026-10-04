@@ -602,7 +602,7 @@ Derived, one line per key window, in OpenSSH's `allowed_signers` form so
 `ssh-keygen -Y verify -f .decisions/allowed_signers` reads it:
 
 ```
-<principal> namespaces="ledger-accept@<ns>" valid-after="<YYYYMMDDhhmmssZ>"[ valid-before="<…>"] <key_type> <key>
+<principal> namespaces="ledger-accept@<ns>",valid-after="<YYYYMMDDhhmmssZ>"[,valid-before="<…>"] <key_type> <key>
 ```
 
 `valid-after` is the opening binding's `at`; `valid-before` the `at` of the

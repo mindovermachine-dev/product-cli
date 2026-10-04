@@ -35,12 +35,23 @@ pub struct Options {
     pub today: NaiveDate,
     /// Whether to consult git for blame consistency (class `L009`).
     pub blame: bool,
+    /// Whether to read landing order from git (D6). Without it every
+    /// entity is at the tip and `at` alone orders acts — the reading a
+    /// write-time gate and the export-only verifier both have.
+    pub history: bool,
+    /// The base the landing is computed against (`verify --base`).
+    pub base: Option<String>,
 }
 
 impl Options {
-    /// Every class, as of `today`, with blame consulted.
+    /// Every class, as of `today`, with blame and landing consulted.
     pub fn full(today: NaiveDate) -> Self {
-        Self { gate: None, today, blame: true }
+        Self { gate: None, today, blame: true, history: true, base: None }
+    }
+
+    /// Every class as of `today`, without git: the write-time gate.
+    pub fn offline(today: NaiveDate) -> Self {
+        Self { gate: None, today, blame: false, history: false, base: None }
     }
 }
 
@@ -71,6 +82,15 @@ pub struct Report {
     /// a key and no file is committed.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub signers: Vec<crate::graph::export::ExportFinding>,
+    /// Acceptances under a since-closed key, dated and landed before the
+    /// close, awaiting re-acceptance — a review item until the policy's
+    /// deadline, `L012` after it.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub reaccept: Vec<crate::signing::check::Reaccept>,
+    /// Namespaces the log speaks with no policy: nothing in them is
+    /// role-checked or signature-checked (a notice, not a failure, D5 (c)).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub unchecked: Vec<String>,
 }
 
 impl Report {
@@ -104,11 +124,19 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     findings.extend(keys::key_changed(&view));
     findings.extend(keys::key_collision(&view));
     findings.extend(authority::findings(store));
+    let landing = match opts.history {
+        true => crate::landing::Landing::compute(&store.root, opts.base.as_deref()).unwrap_or_default(),
+        false => crate::landing::Landing::unknown(),
+    };
+    let signing = crate::signing::check::check(store, &landing, opts.today);
+    findings.extend(signing.findings.iter().cloned());
 
     let mut report = Report {
         entries: store.entry_count(),
         decisions: view.latest.len(),
         awaiting_acceptance: awaiting(&view),
+        reaccept: signing.reaccept.clone(),
+        unchecked: unchecked(store),
         ..Report::default()
     };
     if opts.blame {
@@ -125,8 +153,23 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     report.findings = findings;
     // The graph stage: structural integrity, so it runs under both gates.
     report.graph = crate::graph::shapes::graph_findings(store);
-    report.signers = crate::authority::signers::check(store);
+    report.signers = crate::authority::signers::check(store, &signing.trusted);
     report
+}
+
+/// Every namespace a decision is filed in whose log carries no policy.
+fn unchecked(store: &Store) -> Vec<String> {
+    let auth = crate::authority::Authority::build(store);
+    let mut out: Vec<String> = store
+        .log
+        .iter()
+        .flat_map(|l| l.file.versions.iter())
+        .map(|v| v.decision.namespace().to_string())
+        .filter(|ns| auth.policy(ns).is_none())
+        .collect();
+    out.sort();
+    out.dedup();
+    out
 }
 
 /// Decisions that are allocated but carry no live acceptance of their

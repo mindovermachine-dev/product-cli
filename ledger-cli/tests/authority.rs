@@ -14,12 +14,29 @@ const OWNER: &str = "owner@customer.example";
 const ARCHITECT: &str = "architect@customer.example";
 const NS: &str = "fixture.ledger";
 
-fn governed() -> Repo {
+/// A namespace under policy, before any key is bound.
+fn initialised() -> Repo {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
     let out = repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
     assert!(out.contains("genesis grant:"), "{out}");
     repo
+}
+
+/// [`initialised`], with the genesis holder's key bound and configured:
+/// the policy requires `ssh`, so every later act is signed.
+fn governed() -> Repo {
+    let repo = initialised();
+    repo.bind_own_key(NS, "owner");
+    repo
+}
+
+/// The architect's first key, vouched for by the genesis holder (D7); the
+/// repo then acts and signs as the architect.
+fn as_architect(repo: &Repo) {
+    let key = repo.vouch_for(NS, ARCHITECT, "architect");
+    repo.act_as(ARCHITECT);
+    repo.use_key(&key);
 }
 
 /// [`governed`], with the genesis holder also granted the accept role: the
@@ -91,7 +108,7 @@ fn a_grant_is_live_only_once_its_holder_accepts_it() {
     let id = repo.add("Money is decimal.", &[]);
     let out = repo.ok(&["grant", "new", "acceptor", "--to", ARCHITECT, "--scope", &format!("ns:{NS}")]);
     let grant = grant_id(&out);
-    repo.act_as(ARCHITECT);
+    as_architect(&repo);
     let refused = repo.refused(&["accept", &id]);
     assert!(refused.contains("has not accepted it"), "{refused}");
     repo.ok(&["grant", "accept", &grant]);
@@ -128,21 +145,27 @@ fn grant_revocation_needs_a_terminal_and_files_its_own_entity() {
 
 #[test]
 fn key_bindings_derive_allowed_signers_and_verify_holds_it() {
-    let repo = governed();
-    let first = repo.ok(&["identity", "add", "--namespace", NS, "--key-file", &key_file(&repo, "owner", "ssh-ed25519")]);
+    let repo = initialised();
+    let owner = repo.keygen("owner");
+    repo.use_key(&owner);
+    let first = repo.ok(&["identity", "add", "--namespace", NS, "--key-file", &format!("{owner}.pub")]);
     let binding = first.split_whitespace().find(|w| w.starts_with("key:")).expect("binding id").to_string();
     let log = repo.log_files().pop().expect("log");
     let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(log)).expect("read");
     assert!(text.contains("self_bound: true") && text.contains("mandate: contract 2026/117"), "{text}");
+    let ulid = binding.trim_start_matches("key:");
+    assert!(repo.path().join(format!(".decisions/sig/{ulid}.ssh.sig")).is_file(), "self-signed by the key it binds");
     let signers = repo.path().join(".decisions/allowed_signers");
     let derived = std::fs::read_to_string(&signers).expect("allowed_signers");
-    assert!(derived.contains(&format!("{OWNER} namespaces=\"ledger-accept@{NS}\" valid-after=")), "{derived}");
+    assert!(derived.contains(&format!("{OWNER} namespaces=\"ledger-accept@{NS}\",valid-after=")), "{derived}");
     repo.ok(&["verify", "--no-blame"]);
 
-    repo.ok(&["identity", "rotate", &binding, "--key-file", &key_file(&repo, "owner2", "ssh-ed25519")]);
+    let next = repo.keygen("owner2");
+    repo.ok(&["identity", "rotate", &binding, "--key-file", &format!("{next}.pub")]);
     let rotated = std::fs::read_to_string(&signers).expect("allowed_signers");
     assert_eq!(rotated.matches("valid-before=").count(), 1, "the old window closed: {rotated}");
     assert_eq!(rotated.lines().filter(|l| !l.starts_with('#')).count(), 2, "{rotated}");
+    repo.ok(&["verify", "--no-blame"]);
 
     std::fs::write(&signers, format!("{rotated}{ARCHITECT} ssh-ed25519 AAAAforged\n")).expect("tamper");
     let out = repo.ledger(&["verify", "--no-blame"]);
@@ -156,7 +179,11 @@ fn a_software_key_is_refused_under_an_sk_policy() {
     repo.ok(&["policy", "set", "--namespace", NS, "--require-sk", "true"]);
     let refused = repo.refused(&["identity", "add", "--namespace", NS, "--key-file", &key_file(&repo, "soft", "ssh-ed25519")]);
     assert!(refused.contains("hardware-backed"), "{refused}");
-    repo.ok(&["identity", "add", "--namespace", NS, "--key-file", &key_file(&repo, "hard", "sk-ssh-ed25519@openssh.com")]);
+    // The signer's own key is a software key too: every signed act now
+    // waits on a hardware-backed key, which this suite cannot touch.
+    let hard = key_file(&repo, "hard", "sk-ssh-ed25519@openssh.com");
+    let refused = repo.refused(&["identity", "add", "--namespace", NS, "--key-file", &hard]);
+    assert!(refused.contains("hardware-backed") && refused.contains("software key"), "{refused}");
     repo.ok(&["verify", "--no-blame"]);
 }
 

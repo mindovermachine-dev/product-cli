@@ -59,6 +59,7 @@ fn truncated(store: &Store, k: usize) -> Store {
         sets: store.sets.clone(),
         roles: store.roles.clone(),
         log: store.log.iter().take(k).cloned().collect(),
+        sidecars: store.sidecars.clone(),
         schema_findings: Vec::new(),
     }
 }
