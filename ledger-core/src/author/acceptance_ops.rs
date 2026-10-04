@@ -128,8 +128,16 @@ impl Author {
         decision: &DecisionId,
         hash: &crate::hash::VersionHash,
     ) -> Result<(), AuthorError> {
+        // An acceptance under a since-closed key awaits affirmation: a new
+        // acceptance by the holder with a live key is how it is given.
+        let review: Vec<String> = crate::signing::check::check(&self.load(), &crate::landing::Landing::unknown(), self.today())
+            .reaccept
+            .into_iter()
+            .map(|r| r.acceptance)
+            .collect();
         let already = view.acceptances.iter().map(|a| a.acceptance).any(|a| {
-            !view.is_revoked(a)
+            !review.contains(&a.id.to_string())
+                && !view.is_revoked(a)
                 && a.decision == *decision
                 && a.version == *hash
                 && a.actor == self.who

@@ -280,3 +280,7 @@ fn review_closed(
         }
     }
 }
+
+#[path = "check_tests.rs"]
+#[cfg(test)]
+mod tests;

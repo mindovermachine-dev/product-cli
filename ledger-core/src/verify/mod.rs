@@ -10,8 +10,10 @@
 //! reported as status, never as a failure, because a gate that fires on
 //! ordinary work is a gate people learn to ignore.
 
+pub mod acts;
 pub mod authority;
 pub mod disposition;
+pub mod history;
 pub mod integrity;
 pub mod keys;
 pub mod state;
@@ -130,6 +132,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     };
     let signing = crate::signing::check::check(store, &landing, opts.today);
     findings.extend(signing.findings.iter().cloned());
+    findings.extend(history::findings(store, &landing));
 
     let mut report = Report {
         entries: store.entry_count(),
@@ -153,6 +156,8 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     report.findings = findings;
     // The graph stage: structural integrity, so it runs under both gates.
     report.graph = crate::graph::shapes::graph_findings(store);
+    report.graph.extend(acts::unauthorised(store, &landing));
+    report.graph.sort_by(|a, b| (a.class, &a.subject).cmp(&(b.class, &b.subject)));
     report.signers = crate::authority::signers::check(store, &signing.trusted);
     report
 }

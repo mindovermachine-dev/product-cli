@@ -61,6 +61,18 @@ fn status_lines(report: &Report) -> Vec<String> {
             out.push(format!("  - {id}"));
         }
     }
+    if !report.reaccept.is_empty() {
+        out.push(format!("{} acceptance(s) under a since-closed key need re-acceptance (L012 after the deadline):", report.reaccept.len()));
+        for r in &report.reaccept {
+            let by = r.deadline.map(|d| format!(" by {d}")).unwrap_or_default();
+            out.push(format!("  - {} ({}): key {} closed by {} — re-accept or affirm{by}", r.acceptance, r.actor, r.key, r.closed_by));
+        }
+    }
+    for ns in &report.unchecked {
+        out.push(format!(
+            "notice: namespace `{ns}` has no policy — nothing in it is role-checked or signature-checked (`ledger init --namespace {ns}` opts it in)"
+        ));
+    }
     if report.export.as_ref().is_some_and(Vec::is_empty) {
         out.push("export: every committed export matches the log byte for byte".to_string());
     }

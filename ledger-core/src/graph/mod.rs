@@ -68,6 +68,11 @@ pub enum GraphClass {
     A003,
     /// More than one live genesis grant (spec v1.7).
     A005,
+    /// An acceptance or revocation by an actor whose named grant (`under`)
+    /// did not, as of the act (D6), let them do it — or a governed act that
+    /// names none (spec v1.8, D5 (a), D9 (d)). Computed by the role check
+    /// itself, never materialised.
+    A006,
 }
 
 /// Every graph class, in report order.
@@ -80,6 +85,7 @@ pub const ALL_GRAPH_CLASSES: &[GraphClass] = &[
     GraphClass::G006,
     GraphClass::A003,
     GraphClass::A005,
+    GraphClass::A006,
 ];
 
 impl GraphClass {
@@ -93,6 +99,7 @@ impl GraphClass {
             Self::G006 => "G006",
             Self::A003 => "A003",
             Self::A005 => "A005",
+            Self::A006 => "A006",
         }
     }
 
@@ -106,6 +113,7 @@ impl GraphClass {
             Self::G006 => "two live decisions of one namespace share a key",
             Self::A003 => "two live grants share role, scope and order",
             Self::A005 => "more than one live genesis grant",
+            Self::A006 => "act not authorised by the grant it names, as of the act",
         }
     }
 }

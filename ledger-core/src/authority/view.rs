@@ -55,7 +55,7 @@ impl<'a> Authority<'a> {
 
     /// The records as they stood at `pos` (D6): enabling entries (grants,
     /// grant acceptances, key bindings, policies) that are not after it,
-    /// terminating ones (revocations) that are before it, and the
+    /// terminating ones (revocations) unless the act is before them, and the
     /// availability intervals landed no later (their clock decides). This
     /// is what `verify` judges a historic act against (`A006`, D7).
     pub fn as_of(store: &'a Store, landing: &Landing, pos: Position) -> Self {
@@ -74,7 +74,10 @@ impl<'a> Authority<'a> {
                 a.unavailabilities.extend(cs.unavailabilities.iter().map(|u| (u.id.to_string(), u)));
                 a.availabilities.extend(&cs.availabilities);
             }
-            a.revocations.extend(cs.revocations.iter().filter(|r| at(r.at).before(&pos)));
+            // A terminating entry applies unless the act is before it (D6):
+            // landed earlier but backdated, or landed later and dated
+            // earlier — either way the act is not before it, so it holds.
+            a.revocations.extend(cs.revocations.iter().filter(|r| !pos.before(&at(r.at))));
             a.bindings.extend(cs.key_bindings.iter().filter(|b| at(b.at).not_after(&pos)));
             a.policies.extend(cs.policies.iter().filter(|p| at(p.at).not_after(&pos)));
         }

@@ -127,6 +127,30 @@ impl Landing {
     }
 }
 
+/// The tracked paths git says changed or vanished after they were added:
+/// modified or deleted on the first-parent line, or in the working tree.
+/// The write-once checks read only these, not every landed file.
+pub fn touched_after_landing(root: &Path) -> std::collections::BTreeSet<String> {
+    let mut out = std::collections::BTreeSet::new();
+    let history = Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["log", "--first-parent", "--diff-merges=first-parent", "--relative", "--name-only"])
+        .args(["--diff-filter=DM", "--format=", "HEAD", "--"])
+        .args(TRACKED)
+        .output();
+    let worktree = Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["diff", "--relative", "--name-only", "--diff-filter=DM", "HEAD", "--"])
+        .args(TRACKED)
+        .output();
+    for out_put in [history, worktree].into_iter().flatten().filter(|o| o.status.success()) {
+        out.extend(String::from_utf8_lossy(&out_put.stdout).lines().map(str::trim).filter(|l| !l.is_empty()).map(str::to_string));
+    }
+    out
+}
+
 /// A path's text at a commit, for the write-once checks.
 pub fn content_at(root: &Path, commit: &str, path: &str) -> Option<String> {
     let out = Command::new("git").arg("-C").arg(root).args(["show", &format!("{commit}:{path}")]).output().ok()?;

@@ -9,6 +9,8 @@
 
 #![allow(dead_code)]
 
+pub mod hand;
+
 use std::path::Path;
 use std::process::Output;
 
