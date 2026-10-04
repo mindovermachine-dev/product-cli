@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-filing-rs
 boundary: contract surface of ledger-core/src/authority/filing.rs
-verdict_knowledge: "Callers learn D7's rule for who may file a key binding \u2014 the genesis holder's self-bound first, a principal's first key vouched by the genesis holder, further keys and rotations the principal's own, revocations the principal's or the genesis holder's \u2014 as one function the verbs and verify both call."
+verdict_knowledge: "Callers learn D7's rule for who may file a key binding — the genesis holder self-bound once per store, their first key in a later namespace signed by a key of theirs already trusted, a principal's first key vouched by the genesis holder, further keys and rotations the principal's own, revocations the principal's or the genesis holder's — as one function the verbs and verify both call."
 contract_location: ledger-core/src/authority/filing.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,9 @@ bindings:
   after: sha256:9be77c71f24b530412fc0e38bc980170777364c831515a1aa0f6e839e7caa0a3
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:8bedeca0c5bf336ac40b948662ce1138dcc749a110e6b136aa6fa274f8fc55e8
+- symbol: may_file
+  file: ledger-core/src/authority/filing.rs
+  before: absent
+  after: sha256:654490aa78b6b423a4f7e94cb4191a3ef8e0d73f683d5afca1c4d82c4edec746
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:466cbf23bf38d338db5fc17ada66b61832387b1d9255a3fe218bf5000195eb55

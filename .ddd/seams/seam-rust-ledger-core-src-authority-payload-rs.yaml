@@ -102,3 +102,45 @@ bindings:
   after: sha256:dd92e7000cf93867a20e0450454f6fcc4b6d24a6ad956aca6ee14827e6ef16ae
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:0a334e705a319f04d3b720addc8cd07e559009754e9e789a7d85c972b4d73a5e
+- symbol: ACCEPTANCE_FORM
+  file: ledger-core/src/authority/payload.rs
+  before: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  after: sha256:9c3c10dfbf3980950cdcb5c04f5736ce2206f0c95383b3499a3b37a9826120f0
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:142905496a59a92186021bbab69e7ed4f3bb8e0945f0f5cef1e25445179bb506
+- symbol: acceptance_bytes
+  file: ledger-core/src/authority/payload.rs
+  before: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  after: sha256:9c3c10dfbf3980950cdcb5c04f5736ce2206f0c95383b3499a3b37a9826120f0
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1c6f9b75bb03fc8fa5c07f9ba6132b43ddfb86328a4d785f0f7d2b06583c8523
+- symbol: acceptance_hash
+  file: ledger-core/src/authority/payload.rs
+  before: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  after: sha256:9c3c10dfbf3980950cdcb5c04f5736ce2206f0c95383b3499a3b37a9826120f0
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3d6e8c48e00be26404f6faa3c403c8375de1cb617136042e36d364e222dca75b
+- symbol: binding_bytes
+  file: ledger-core/src/authority/payload.rs
+  before: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  after: sha256:9c3c10dfbf3980950cdcb5c04f5736ce2206f0c95383b3499a3b37a9826120f0
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:78c2cf02d57033b6d03087090ed8d90e00a694aae8d7e264132117921218ecc3
+- symbol: policy_bytes
+  file: ledger-core/src/authority/payload.rs
+  before: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  after: sha256:9c3c10dfbf3980950cdcb5c04f5736ce2206f0c95383b3499a3b37a9826120f0
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:93f776c16b8fe0d125f1973e335af4f4dc18336893e1dbe4fb2dedede219340b
+- symbol: revocation_bytes
+  file: ledger-core/src/authority/payload.rs
+  before: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  after: sha256:9c3c10dfbf3980950cdcb5c04f5736ce2206f0c95383b3499a3b37a9826120f0
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:a357db51443135f085750c2f5cb9eaab0b1159c93f64875562306336a60c0a8f
+- symbol: stamp
+  file: ledger-core/src/authority/payload.rs
+  before: sha256:d14fe74d4c53618a395eca06c7cba1c22201efca3713c887edb26838cf490ca5
+  after: sha256:9c3c10dfbf3980950cdcb5c04f5736ce2206f0c95383b3499a3b37a9826120f0
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:ef6640453bab7444702733400bc96c4a6e5d173f7067de54de37a761e94b63d0

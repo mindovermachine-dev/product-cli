@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-choice-rs
 boundary: contract surface of ledger-core/src/authority/choice.rs
-verdict_knowledge: "Callers learn which grant an act is made under (D9): one candidate is used, several need --as, the narrowest covering scope then the lowest rank wins within the role, and a broader role is refused when one with fewer claims qualifies."
+verdict_knowledge: "Callers learn which grant an act is made under (D9): one candidate is used, several need --as, the narrowest covering scope then the lowest rank wins, a role whose may set strictly contains another candidate's is refused, and for grant new only the genesis grant or a grant in the role being granted is a candidate."
 contract_location: ledger-core/src/authority/choice.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,15 @@ bindings:
   after: sha256:9d127ba6619d05d279b47f3eda59b89ac3861d225df9b94e8f247709643c7bc7
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:881fffd37e9669e998654ab70d648ee7fdc915839a01e721f70ccad4ca9789fc
+- symbol: choose
+  file: ledger-core/src/authority/choice.rs
+  before: absent
+  after: sha256:9829ba040aadd34849c724a6b3f97d630ca319fea1da4500193ed3dec84ac206
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:7b94114942eff98a5d88ff0d93078c82ee7631c813414a75ef459f6717c79489
+- symbol: grantor
+  file: ledger-core/src/authority/choice.rs
+  before: absent
+  after: sha256:9829ba040aadd34849c724a6b3f97d630ca319fea1da4500193ed3dec84ac206
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:2ff7bde39f30e7e4a745ad18b5994899697fcc7ddb2eb04b4e2cfc5f5299f53b

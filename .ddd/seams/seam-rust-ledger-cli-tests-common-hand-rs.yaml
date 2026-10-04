@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-tests-common-hand-rs
 boundary: contract surface of ledger-cli/tests/common/hand.rs
-verdict_knowledge: "Test suites learn how to write ledger entities by hand \u2014 acceptances, bindings and policies with any at, under or signer \u2014 so verify is exercised on files no verb made."
+verdict_knowledge: Test suites learn how to write ledger entities by hand — acceptances, bindings and policies with any at, under or signer — so verify is exercised on files no verb made.
 contract_location: ledger-cli/tests/common/hand.rs
 obligations: []
 metadata: {}
@@ -90,3 +90,99 @@ bindings:
   after: sha256:fdd773b474476ce84f95a28cc4bcd5fd38a8c43924622fc75a6f8b5969c4460e
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:ab9a41d80ddd96776dd9cb885a2dc1157218db3076aa444a361067b32b751fa7
+- symbol: accept
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:8927ce186bdb2eb8db590dba38f04fc6132b8df30c347f1501f92c3d878f24ba
+- symbol: append_into
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:6b3d2fdaaebffddd5b93851e796be7d864db8f42790077631808003d84c863a4
+- symbol: binding
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:0b7e75e7925e313ded7eddd979baba30a7044ad26b706a068a4e345aedd0a4df
+- symbol: commit
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1213fdd199c20c001f4f472a319a1ef78a126d7e4eab13584c3d78e43797006d
+- symbol: file
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:f3bfca88b320644c6e3f5f63aa39fbf3dc8a1dd803c39e43c423c5a2e9791f31
+- symbol: file_holding
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:0bd94ded89a0db08c9404f51dca2851dc05eca467e02516b88fcd64bca67b145
+- symbol: last_binding_at
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:fffe31c3d13ac8b456492240e5d1661a661a765c2023c3a56581a0634493a134
+- symbol: ssh_sign
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:c023e97ff66fa7c24cc7ccbd33a296f0f8f65eca00df7047a20c4116e6b7354f
+- symbol: tip
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:e61244a218810cca2f9ffa92a5b4244ef0dd39e1cf12d4020f0f68ab25971638
+- symbol: word
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:c80b4e5a48564d7ea20a7d00011c1739c8e7cd14fdb6abd18022304d431ae65c
+- symbol: HandAccept
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b0bf6f4d06004a33e4c9028bdeca7d0478e88a9964c4078b5ebaa8982b3612a5
+- symbol: actor
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:f056617e04c05cdad29eb1ce6631ef9b2a62cb8f1a8ce3d5c0724b69382107a1
+- symbol: at
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:4c56d3a00b01ff8cdf54ee129dd2d8e21c6c6217db893b12ece1a56cd58c1363
+- symbol: decision
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:15a7d3ddf322e62a38fae1c43c87abf2d0eed31d347e0e3d38f8165ae965577e
+- symbol: key
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:c82747132dec721826ae27a64912c116eda35645e8066e1d68c6f14b91583424
+- symbol: under
+  file: ledger-cli/tests/common/hand.rs
+  before: absent
+  after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3fe513692e074586bd1e3d50e6123c7db9f90d76d2619ac108de67879c7bdee7
