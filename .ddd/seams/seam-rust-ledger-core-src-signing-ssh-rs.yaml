@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-signing-ssh-rs
 boundary: contract surface of ledger-core/src/signing/ssh.rs
-verdict_knowledge: "Callers learn the ssh scheme: ssh-keygen -Y sign in ledger-accept@<ns>, verify against allowed-signers text at the act's own at, and the fingerprint of the key that signed."
+verdict_knowledge: 'Callers learn the ssh scheme: ssh-keygen -Y sign in ledger-accept@<ns>, verify against allowed-signers text at the act''s own at, and the fingerprint of the key that signed.'
 contract_location: ledger-core/src/signing/ssh.rs
 obligations: []
 metadata: {}
@@ -60,3 +60,57 @@ bindings:
   after: sha256:f2bb6ecfbf33c5ce24af2d4b101836d4a872f27ba03e3751bf4b4eda1855b46c
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:88f95f1c9b1002cdd924963f8fb6f0f2094a11507f79d6d61edacc0278cd1332
+- symbol: configured_key
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3636f4c22e4be4111d00d973b47fc24ca94ac28041ba0f433b728f69055f1821
+- symbol: fingerprint
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:88096a496904fcc885c42f0da45db3a91bf1a499ae4e3666c0b987fd90ba3a09
+- symbol: keygen_time
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1f1cd9f31be9cc7fa6bf885835fbe719272e8bd702ef6502c832926991369030
+- symbol: preflight
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:ae8f4d76b839e488f8fd95b344da27795d17c001f189d8132b6ca58090d0c089
+- symbol: public_half
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:eb53cab9e4c53755454c015a70be40e862f2c34d154d21e94e33572bc40aa074
+- symbol: sig_namespace
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:2383245e6787c88b4b0e3a922db6e41fac409efca5dba58bac2a62f0f06fef5e
+- symbol: sign
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:10fa18fe08317a1ffeae95500d6864ab48929f466666120b16f75066fdfcc176
+- symbol: signer_fingerprint
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:57764dac1d50e3a109e379c744a23689cc5051435500fecf2cc3f24fd7b426c5
+- symbol: verify
+  file: ledger-core/src/signing/ssh.rs
+  before: absent
+  after: sha256:6033215fd77cea5305bbe1914e7060ea90f54169ea9dd829fb155532904ad783
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:796eff68942db5e374e1f00196c3c6273e9b731b5411ea848af49193d7255f6e

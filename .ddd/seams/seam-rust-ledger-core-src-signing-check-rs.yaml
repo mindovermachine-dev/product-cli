@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-signing-check-rs
 boundary: contract surface of ledger-core/src/signing/check.rs
-verdict_knowledge: "Callers learn the signature gate: which schemes the policy in force requires, which key bindings are trusted for allowed_signers, L011 for an absent or invalid signature, and L012 or a review item for an acceptance under a since-closed key."
+verdict_knowledge: 'Callers learn the signature gate: which schemes the policy in force requires, which key bindings are trusted for allowed_signers, L011 for an absent or invalid signature, and L012 or a review item for an acceptance under a since-closed key.'
 contract_location: ledger-core/src/signing/check.rs
 obligations: []
 metadata: {}
@@ -78,3 +78,75 @@ bindings:
   after: sha256:04ab350e432c476d9619a4126b97588332e1725cad0c90a23a937ceb431e9917
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:d19b17aba4b6a871b765a748628a7a00dfd5be024e047f4e979c6e05c938b092
+- symbol: check
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:b8a031eddbe7ead4d12fc4e98d4445ecb2f5889a44a48f03685e02c8855ecead
+- symbol: trusted_bindings
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:699399bf63b858a235aac0413c769003df484b4a4bd730c35b33116d10db627a
+- symbol: Outcome
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:81dfc281130f1dad811d086b7d15f4648b2404a713132ee56cf53110463513e8
+- symbol: Reaccept
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:0cedadb908c17798c88bdd20ba3368ec1286a267078e8e03939eb9e35d1a2f4d
+- symbol: findings
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:79b195bd5b79d0e5aa36a55a5c7812bb8baf2480e359a6d1fde4fc1b8aa5e11a
+- symbol: reaccept
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1644b7acd86b3ae20adb3ab30a46f8e02168e980af338935f49f1dbdbfcfa830
+- symbol: trusted
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d4694a12ab5cf1580f7ddc358ea7cd4d9a6e4e9abb13e125f9f8a188b55ca0f1
+- symbol: acceptance
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:5dd873879db44aeab9f4ee2789c941263454b8718c889534ce9afa3eed7154a4
+- symbol: actor
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:ddd0e57f3a1f4822bd61c95e31db841e766a42560e2e2a137a8f0a8fdb70016b
+- symbol: closed_by
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:bba9aa3731f5a3bd68bcdddfd7a0dea214f422799b6bbfa463c69585cc65edfa
+- symbol: deadline
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3fb8a2e038c981547f86a2db428d91820fbad5da4a99ee36a2dd27e2de081671
+- symbol: key
+  file: ledger-core/src/signing/check.rs
+  before: absent
+  after: sha256:2ed8317fbb34d5726e20dec6514866674f92e32ec4c5f87e0323ed950c78d3d2
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:7be592aaa673520c5476816d6f7da4903cb51b47ef8b4e7ec5dc9d77c4916da1
