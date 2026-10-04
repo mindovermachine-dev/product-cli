@@ -643,6 +643,20 @@ this CLI) and `none` (D4).
 | `under` | acceptance, `rev:` revocation, grant, policy, key binding | the id of the grant the act is made under (D9 (a)). Absent on the genesis grant, a self-bound binding, a principal's acts on its own keys, and a pre-policy act. A key binding carries it only when filed by someone other than its principal (the genesis holder, D7). |
 | `at` in the policy payload | policy | hashed when the policy is filed in a format-7 file (D8): every policy filed from v1.8 on. A format-6 policy keeps the payload it was hashed under. |
 
+Only these five carry `under`, because only their payloads are hashed.
+`role declare` and `unavailable` (filed for another holder's grant) are
+also role-checked, but a role file and an unavailability have no hashed
+payload, so they record no `under`: the grant they were made under is
+checked when they are filed and is not on the record. A grant acceptance
+records none either: it is the holder's own act (D9 (a)).
+
+**Which grants authorise `accept`.** In a namespace under policy, accepting
+and revoking an acceptance count only grants of the policy's `accept_role`
+(§3.9.4), so their candidates are always in one role: with several, `--as`
+names it and the narrowest covering scope wins, then the lowest rank. Roles
+compete — and the fewest-claims rule (D9 (c)) applies — on the grant verbs,
+which count any role that `may` the act.
+
 A change-set carrying `under` anywhere, or a policy, declares `format: 7`;
 `under` in a lower-format file is a schema fault. The inline acceptance
 field `signature` is **retired**: required empty in every format, and any

@@ -27,9 +27,34 @@ pub fn keygen_time(at: &DateTime<Utc>) -> String {
     at.format("%Y%m%d%H%M%SZ").to_string()
 }
 
-/// Whether `ssh-keygen` is on the PATH.
-pub fn available() -> bool {
-    Command::new("ssh-keygen").arg("-?").output().is_ok()
+/// Whether `ssh-keygen` can verify the way the gate needs: present, with
+/// `-Y verify` and its `-Overify-time` option (OpenSSH 8.9 or later).
+/// Probed once per process with an empty signature: a capable tool fails on
+/// the empty input, an incapable one on the option itself. `Err` names
+/// what is missing; the gate reports it and never skips a check.
+pub fn preflight() -> Result<(), String> {
+    static PROBE: std::sync::OnceLock<Result<(), String>> = std::sync::OnceLock::new();
+    PROBE.get_or_init(probe).clone()
+}
+
+fn probe() -> Result<(), String> {
+    let scratch = Scratch::new()?;
+    let sig = scratch.file("probe.sig", b"")?;
+    let mut cmd = Command::new("ssh-keygen");
+    cmd.args(["-Y", "verify", "-f", "/dev/null", "-I", "probe", "-n", "probe", "-s"])
+        .arg(&sig)
+        .arg("-Overify-time=20260101000000Z");
+    let (_, text, _) = run(cmd, b"").map_err(|_| {
+        "`ssh-keygen` is not on the PATH — signatures cannot be verified; install OpenSSH 8.9 or later".to_string()
+    })?;
+    let lower = text.to_lowercase();
+    if lower.contains("invalid option") || lower.contains("unknown option") || lower.contains("illegal option") || lower.contains("usage:") {
+        return Err(format!(
+            "`ssh-keygen` does not support `-Y verify -Overify-time` — signatures cannot be verified at their own time; install OpenSSH 8.9 or later ({})",
+            text.lines().next().unwrap_or_default().trim()
+        ));
+    }
+    Ok(())
 }
 
 /// A scratch directory removed on drop.

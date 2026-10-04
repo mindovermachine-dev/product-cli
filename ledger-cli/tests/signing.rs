@@ -266,3 +266,29 @@ fn a_revocation_ends_the_grant_for_acts_not_before_it() {
     assert_eq!(text.matches("[A006]").count(), 1, "the earlier acceptance stands: {text}");
     assert!(text.contains("revoked"), "{text}");
 }
+
+#[test]
+fn a_missing_ssh_keygen_is_a_named_finding_never_a_skipped_check() {
+    let (repo, _) = governed();
+    let id = repo.add("Money is decimal.", &[]);
+    repo.ok_tty(&["accept", &id]);
+    green(&repo);
+    // A PATH with git and nothing else: no `ssh-keygen` to verify with.
+    let bin = repo.path().join("bin-without-ssh");
+    std::fs::create_dir_all(&bin).expect("bin");
+    let git = std::process::Command::new("sh").args(["-c", "command -v git"]).output().expect("which git");
+    let git = String::from_utf8_lossy(&git.stdout).trim().to_string();
+    std::os::unix::fs::symlink(&git, bin.join("git")).expect("link git");
+    let out = assert_cmd::Command::cargo_bin("ledger")
+        .expect("binary")
+        .env("PATH", &bin)
+        .args(["--root"])
+        .arg(repo.path())
+        .args(["verify", "--no-blame"])
+        .output()
+        .expect("run");
+    let text = common::both(&out);
+    assert_eq!(out.status.code(), Some(1), "{text}");
+    assert!(text.contains("[L011] ssh-keygen:") && text.contains("not on the PATH"), "the named finding: {text}");
+    assert!(text.contains("could not be checked"), "each signature it needed fails too: {text}");
+}

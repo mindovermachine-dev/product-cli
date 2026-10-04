@@ -96,6 +96,12 @@ jobs:
           printf 'ci@probe namespaces="ledger-accept@ci.probe",valid-after="20260101" %s\n' "$(cat "$dir/k.pub")" > "$dir/allowed"
           ssh-keygen -Y verify -f "$dir/allowed" -I ci@probe -n ledger-accept@ci.probe \
             -s "$dir/m.sig" -Overify-time=20260601 < "$dir/m"
+          # -Overify-time must be honoured, not ignored: past valid-before fails.
+          printf 'ci@probe namespaces="ledger-accept@ci.probe",valid-after="20260101",valid-before="20260301" %s\n' "$(cat "$dir/k.pub")" > "$dir/closed"
+          if ssh-keygen -Y verify -f "$dir/closed" -I ci@probe -n ledger-accept@ci.probe \
+            -s "$dir/m.sig" -Overify-time=20260601 < "$dir/m"; then
+            echo "ssh-keygen ignored -Overify-time" >&2; exit 1
+          fi
 
       - name: Build
         run: cargo build --workspace

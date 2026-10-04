@@ -81,6 +81,11 @@ pub fn check<'a>(store: &'a Store, landing: &Landing, today: NaiveDate) -> Outco
         out.findings.push(Finding::schema(&format!("sig/{}", orphan.file), "signs no signable entity in the log"));
     }
     let all = ordered(subjects(store, landing));
+    if needs_ssh(store, landing, &all) {
+        if let Err(why) = ssh::preflight() {
+            out.findings.push(Finding::new(VerifyClass::L011, "ssh-keygen", why));
+        }
+    }
     trust_bindings(store, landing, &all, &mut out);
     let positions: BTreeMap<String, Position> = all.iter().map(|s| (s.id.clone(), s.position)).collect();
     let mut verdicts: BTreeMap<String, bool> = BTreeMap::new();
@@ -103,6 +108,13 @@ pub fn check<'a>(store: &'a Store, landing: &Landing, today: NaiveDate) -> Outco
     }
     review_closed(store, &closed, &verdicts, today, &mut out);
     out
+}
+
+/// Whether any check in this store needs `ssh-keygen`: an `ssh` sidecar,
+/// or an entity whose policy requires `ssh`.
+fn needs_ssh(store: &Store, landing: &Landing, all: &[Subject<'_>]) -> bool {
+    store.sidecars.iter().any(|c| c.scheme == Scheme::Ssh)
+        || all.iter().any(|s| governing(store, landing, s).is_some_and(|p| p.schemes.contains(&Scheme::Ssh)))
 }
 
 fn ordered(mut all: Vec<Subject<'_>>) -> Vec<Subject<'_>> {
@@ -209,6 +221,7 @@ fn verify_one<'a>(
 }
 
 fn ssh_key<'a>(s: &Subject<'_>, sidecar: &Sidecar, keys: &[&'a KeyBinding], mine: &[&'a KeyBinding]) -> Result<&'a KeyBinding, String> {
+    ssh::preflight().map_err(|why| format!("could not be checked — {why}"))?;
     let fp = ssh::signer_fingerprint(&s.namespace, &sidecar.bytes, &s.bytes)?;
     let key = mine
         .iter()
