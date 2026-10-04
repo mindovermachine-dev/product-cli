@@ -51,8 +51,10 @@ impl Author {
             reaccept_within_days: args.reaccept_within_days.unwrap_or(current.reaccept_within_days),
             replaces: Some(current.hash.clone()),
             by: self.who.clone(),
+            under: auth.genesis().map(|g| g.id.clone()),
             at: self.now,
             hash: crate::hash::VersionHash::zero(),
+            at_hashed: true,
         };
         next.hash = policy_hash(&next);
         let line = format!("{} replaces {} for `{}`", next.id, current.id, next.namespace);

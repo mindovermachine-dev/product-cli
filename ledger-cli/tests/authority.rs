@@ -122,7 +122,7 @@ fn grant_revocation_needs_a_terminal_and_files_its_own_entity() {
     assert!(revoked.contains("revoked grant:"), "{revoked}");
     let log = repo.log_files().pop().expect("log");
     let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(log)).expect("read");
-    assert!(text.contains("format: 6") && text.contains("id: rev:") && text.contains("revokes: grant:"), "{text}");
+    assert!(text.contains("format: 7") && text.contains("under: grant:") && text.contains("id: rev:") && text.contains("revokes: grant:"), "{text}");
     repo.ok(&["verify", "--no-blame"]);
 }
 
@@ -210,7 +210,7 @@ fn revoke_files_a_revocation_entity_and_leaves_the_acceptance_untouched() {
     }
     let log = repo.log_files().pop().expect("log");
     let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(log)).expect("read");
-    assert!(text.contains("format: 6") && text.contains(&format!("revokes: {acc}")) && text.contains("hash: sha256:"), "{text}");
+    assert!(text.contains("format: 7") && text.contains("under: grant:") && text.contains(&format!("revokes: {acc}")) && text.contains("hash: sha256:"), "{text}");
     repo.ok(&["verify", "--no-blame"]);
 }
 

@@ -33,7 +33,7 @@ pub fn role(root: Option<PathBuf>, cmd: RoleCmd) -> Result<i32, String> {
 pub fn grant(root: Option<PathBuf>, cmd: GrantCmd) -> Result<i32, String> {
     match cmd {
         GrantCmd::Accept { grant } => finish(open_author(root)?.accept_grant(&grant.parse()?)),
-        GrantCmd::New { role, to, scope, order, limits, supersedes } => {
+        GrantCmd::New { role, to, scope, order, limits, supersedes, as_role } => {
             let args = GrantArgs {
                 role,
                 holder: to.parse()?,
@@ -42,10 +42,14 @@ pub fn grant(root: Option<PathBuf>, cmd: GrantCmd) -> Result<i32, String> {
                 limits: parse_all(&limits)?,
                 supersedes: supersedes.as_deref().map(str::parse).transpose()?,
             };
-            finish(open_author(root)?.grant(args))
+            let mut author = open_author(root)?;
+            author.as_role = as_role;
+            finish(author.grant(args))
         }
-        GrantCmd::Revoke { grant, reason } => {
-            finish(open_author(root)?.revoke_grant(&grant.parse()?, reason))
+        GrantCmd::Revoke { grant, reason, as_role } => {
+            let mut author = open_author(root)?;
+            author.as_role = as_role;
+            finish(author.revoke_grant(&grant.parse()?, reason))
         }
     }
 }

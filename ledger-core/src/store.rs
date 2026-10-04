@@ -151,8 +151,12 @@ pub(crate) fn take_set(store: &mut Store, label: &str, stem: &str, text: &str) {
 /// Parse one change-set file's text into the store. Shared like [`take_set`].
 pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str, text: &str) {
     match serde_yaml::from_str::<ChangeSet>(text) {
-        Ok(file) => {
+        Ok(mut file) => {
             check_format(label, file.format, store);
+            let at_hashed = file.format >= format::SIGNING_FORMAT;
+            for p in &mut file.policies {
+                p.at_hashed = at_hashed;
+            }
             if stem != file.id.ulid() {
                 store.schema_findings.push(Finding::schema(
                     label,
@@ -184,7 +188,11 @@ pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str
 fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
     let uses = |pred: &dyn Fn(&crate::version::VersionRaw) -> bool| file.versions.iter().any(pred);
     let authority = file.authority_count() > 0;
-    let rules: [(u32, bool, &str); 4] = [
+    let under = file.acceptances.iter().any(|a| a.under.is_some())
+        || file.revocations.iter().any(|r| r.under.is_some())
+        || file.grants.iter().any(|g| g.under.is_some())
+        || file.key_bindings.iter().any(|b| b.under.is_some());
+    let rules: [(u32, bool, &str); 5] = [
         (
             format::MERGE_FORMAT,
             uses(&|v| v.merged_from.is_some()),
@@ -204,6 +212,11 @@ fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
             format::AUTHORITY_FORMAT,
             authority,
             "carries authority records (grants, bindings, policy …), format 6 entries — declare `format: 6`",
+        ),
+        (
+            format::SIGNING_FORMAT,
+            under,
+            "carries `under`, a format 7 field — declare `format: 7`",
         ),
     ];
     rules

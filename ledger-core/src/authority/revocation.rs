@@ -86,6 +86,9 @@ pub struct Revocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub by: Option<Identity>,
     pub reason: String,
+    /// The grant the revoker acts under (format 7, D9 (a)).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub under: Option<crate::id::GrantId>,
     /// `ledger.revocation.v1` over the closed payload — format 6.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hash: Option<VersionHash>,
@@ -127,7 +130,11 @@ impl Revocation {
     /// Shape faults for a file declaring `format`: exactly one shape, and
     /// the one that format defines.
     pub fn shape_faults(&self, format: u32) -> Vec<String> {
-        let entity = self.id.is_some() || self.revokes.is_some() || self.actor.is_some() || self.hash.is_some();
+        let entity = self.id.is_some()
+            || self.revokes.is_some()
+            || self.actor.is_some()
+            || self.hash.is_some()
+            || self.under.is_some();
         let legacy = self.acceptance.is_some() || self.by.is_some();
         let mut out = Vec::new();
         if entity && legacy {

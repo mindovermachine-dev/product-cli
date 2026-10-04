@@ -93,7 +93,15 @@ pub struct Policy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replaces: Option<VersionHash>,
     pub by: Identity,
+    /// The genesis grant the change is made under (format 7, D9 (a)).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub under: Option<crate::id::GrantId>,
     pub at: DateTime<Utc>,
     /// `ledger.namespace-policy.v1` over the closed payload; `L007`.
     pub hash: VersionHash,
+    /// Whether `at` is in the payload (D8): true for a policy filed in a
+    /// format-7 file, false before, so no format-6 digest moves. Set by the
+    /// loader from the file's declared format, never read from the file.
+    #[serde(skip)]
+    pub at_hashed: bool,
 }

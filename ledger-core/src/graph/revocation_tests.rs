@@ -23,6 +23,7 @@ fn entity() -> Revocation {
         actor: Some(testkit::identity("fixture-human@example")),
         by: None,
         reason: "filed against the wrong version".into(),
+        under: None,
         hash: None,
     };
     r.hash = Some(revocation_hash(&r));

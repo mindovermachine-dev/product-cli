@@ -91,6 +91,7 @@ impl Author {
             at: self.now,
             scope: AcceptanceScope::Version,
             expires_at: args.expires_at,
+            under: held.as_ref().map(super::authority_ops::under_of).transpose()?,
             signature: String::new(),
         };
         let mut candidate = self.shell(None)?;
@@ -147,10 +148,12 @@ impl Author {
             )));
         }
         let revoked = view.acceptances.iter().map(|a| a.acceptance).find(|a| a.id == args.acceptance);
-        if let Some(acceptance) = revoked {
-            self.decision_authority(&store, &view, &acceptance.decision, Act::RevokeAcceptance)?;
-        }
-        let revocation = self.revocation(Revocable::Acceptance(args.acceptance.clone()), args.reason.clone())?;
+        let held = match revoked {
+            Some(acceptance) => self.decision_authority(&store, &view, &acceptance.decision, Act::RevokeAcceptance)?,
+            None => None,
+        };
+        let under = held.as_ref().map(super::authority_ops::under_of).transpose()?;
+        let revocation = self.revocation(Revocable::Acceptance(args.acceptance.clone()), args.reason.clone(), under)?;
         let id = revocation.id.as_ref().map(ToString::to_string).unwrap_or_default();
         let mut candidate = self.shell(None)?;
         candidate.revocations.push(revocation);

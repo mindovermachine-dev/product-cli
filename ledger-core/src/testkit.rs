@@ -93,6 +93,7 @@ pub fn acceptance(version: &VersionRaw) -> Acceptance {
         at: stamp("2026-08-10T09:20:00Z"),
         scope: AcceptanceScope::Version,
         expires_at: Some(date("2027-08-10")),
+        under: None,
         signature: String::new(),
     }
 }
@@ -144,6 +145,7 @@ pub fn legacy_revocation(at: &str, reason: &str) -> crate::acceptance::Revocatio
         actor: None,
         by: Some(identity("fixture-human@example")),
         reason: reason.into(),
+        under: None,
         hash: None,
     }
 }

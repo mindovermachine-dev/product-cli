@@ -104,12 +104,15 @@ pub struct Author {
     pub who: Identity,
     pub now: DateTime<Utc>,
     pub(crate) mint: UlidMint,
+    /// `--as <role>` (D9 (b)): the role the actor says this act is made
+    /// under. Required only when more than one grant qualifies.
+    pub as_role: Option<String>,
 }
 
 impl Author {
     /// An author acting as `who` at `now`, minting from `mint`.
     pub fn new(root: &Path, who: Identity, now: DateTime<Utc>, mint: UlidMint) -> Self {
-        Self { root: root.to_path_buf(), who, now, mint }
+        Self { root: root.to_path_buf(), who, now, mint, as_role: None }
     }
 
     /// The wall-clock author: identity from git config (OD-3), system mint.

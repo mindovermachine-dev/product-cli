@@ -49,12 +49,20 @@ pub enum GrantCmd {
         /// The grant this one replaces
         #[arg(long, value_name = "GRANT")]
         supersedes: Option<String>,
+        /// The role this act is made under (D9): required only when more
+        /// than one of your grants qualifies
+        #[arg(long = "as", value_name = "ROLE")]
+        as_role: Option<String>,
     },
     /// Revoke a grant, with the reason on record (needs revoke-grant)
     Revoke {
         grant: String,
         #[arg(long)]
         reason: String,
+        /// The role this act is made under (D9): required only when more
+        /// than one of your grants qualifies
+        #[arg(long = "as", value_name = "ROLE")]
+        as_role: Option<String>,
     },
 }
 

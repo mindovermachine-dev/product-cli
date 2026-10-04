@@ -88,9 +88,13 @@ pub struct Acceptance {
     /// exactly the risk OD-6 has to settle.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expires_at: Option<NaiveDate>,
-    /// Reserved for the cryptographic upgrade; format unspecified and empty
-    /// in L0. Reserving it now keeps the upgrade additive rather than a
-    /// migration (OD-3).
+    /// The grant this acceptance is made under (format 7, D9 (a)); absent
+    /// on a pre-policy acceptance. Hashed when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub under: Option<crate::id::GrantId>,
+    /// Retired (#65, D2): permanently empty. A signature lives in a sidecar
+    /// at `.decisions/sig/<ulid>.<scheme>.sig`, and the gate refuses any
+    /// value here, so there is one place a signature can be.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub signature: String,
 }
@@ -109,7 +113,7 @@ impl Acceptance {
         if !self.signature.is_empty() {
             out.push(Finding::schema(
                 &subject,
-                "`signature` is reserved and empty in format 1 — a signed acceptance is a later format",
+                "`signature` is retired and permanently empty — a signature lives in a sidecar at `.decisions/sig/<ulid>.<scheme>.sig`",
             ));
         }
         out

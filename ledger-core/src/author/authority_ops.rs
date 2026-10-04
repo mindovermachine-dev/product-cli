@@ -73,7 +73,8 @@ impl Author {
         target: Target<'_>,
         role: Option<&str>,
     ) -> Result<Authorized, AuthorError> {
-        authorize(&Authority::build(store), &self.who, act, target, self.now, role).map_err(|d| {
+        let as_role = self.as_role.as_deref();
+        authorize(&Authority::build(store), &self.who, act, target, self.now, role, as_role).map_err(|d| {
             AuthorError::Unauthorized(format!("{} may not {}: {d}", self.who, act.as_str()))
         })
     }
@@ -90,6 +91,7 @@ impl Author {
             )));
         }
         let genesis = auth.genesis().cloned();
+        let joined = genesis.as_ref().map(|g| g.id.clone());
         let mut candidate = self.shell(Some(format!("init namespace {}", args.namespace)))?;
         let (mut new_roles, root_role, mut lines) = match genesis {
             None => self.bootstrap(&store, &args, &mut candidate)?,
@@ -106,7 +108,8 @@ impl Author {
             new_roles.push(self.new_role(&accept_role, "Accepts decisions", &[Capability::AcceptDecision]));
             lines.push(format!("declared role `{accept_role}` — may accept-decision; held by nobody until granted"));
         }
-        let policy = self.first_policy(&args.namespace, &accept_role)?;
+        let under = joined.or_else(|| candidate.grants.first().map(|g| g.id.clone()));
+        let policy = self.first_policy(&args.namespace, &accept_role, under)?;
         lines.push(format!("namespace `{}` under policy {} (accept role `{accept_role}`)", args.namespace, policy.id));
         candidate.policies.push(policy);
         store.roles.extend(new_roles.iter().cloned());
@@ -164,7 +167,7 @@ impl Author {
             order: Order::PRIMARY,
             limits: Vec::new(),
             supersedes: None,
-        }, Some(mandate))?;
+        }, Some(mandate), None)?;
         let line = format!("genesis {} — {} holds `{}` over *", grant.id, self.who, args.role);
         candidate.grant_acceptances.push(self.grant_acceptance(&grant)?);
         candidate.grants.push(grant);
@@ -186,7 +189,13 @@ impl Author {
         Ok((Vec::new(), genesis.role.clone(), Vec::new()))
     }
 
-    fn first_policy(&mut self, namespace: &str, accept_role: &str) -> Result<Policy, AuthorError> {
+    /// The namespace's first policy, made under the genesis grant (D9 (a)).
+    fn first_policy(
+        &mut self,
+        namespace: &str,
+        accept_role: &str,
+        under: Option<GrantId>,
+    ) -> Result<Policy, AuthorError> {
         let mut policy = Policy {
             id: self.mint.mint_id("pol").map_err(AuthorError::Io)?,
             namespace: namespace.to_string(),
@@ -196,14 +205,23 @@ impl Author {
             reaccept_within_days: None,
             replaces: None,
             by: self.who.clone(),
+            under,
             at: self.now,
             hash: crate::hash::VersionHash::zero(),
+            at_hashed: true,
         };
         policy.hash = crate::authority::payload::policy_hash(&policy);
         Ok(policy)
     }
 
-    pub(crate) fn seal_grant(&mut self, args: &GrantArgs, mandate: Option<String>) -> Result<Grant, AuthorError> {
+    /// A sealed grant. `under` is the grantor's grant (D9 (a)); absent on
+    /// the genesis grant.
+    pub(crate) fn seal_grant(
+        &mut self,
+        args: &GrantArgs,
+        mandate: Option<String>,
+        under: Option<GrantId>,
+    ) -> Result<Grant, AuthorError> {
         let mut grant = Grant {
             id: self.mint.mint_id("grant").map_err(AuthorError::Io)?,
             role: args.role.clone(),
@@ -215,6 +233,7 @@ impl Author {
             genesis: mandate.is_some(),
             external_ref: mandate,
             supersedes: args.supersedes.clone(),
+            under,
             at: self.now,
             hash: crate::hash::VersionHash::zero(),
         };
@@ -281,7 +300,7 @@ impl Author {
                 self.who, by.role, by.grant
             )));
         }
-        let grant = self.seal_grant(&args, None)?;
+        let grant = self.seal_grant(&args, None, Some(under_of(&by)?))?;
         let line = format!("{} granted `{}` over {} to {} ({})", self.who, grant.role, grant.scope, grant.holder, grant.order);
         let note = format!("grant {}", grant.id);
         let id = grant.id.clone();
@@ -323,8 +342,8 @@ impl Author {
         if auth.is_revoked(&Revocable::Grant(id.clone())) {
             return Err(AuthorError::Conflict(format!("{id} is already revoked — one revocation is enough")));
         }
-        self.authorized(&store, Act::RevokeGrant, Target::Scope(&grant.scope), None)?;
-        let revocation = self.revocation(Revocable::Grant(id.clone()), reason)?;
+        let by = self.authorized(&store, Act::RevokeGrant, Target::Scope(&grant.scope), None)?;
+        let revocation = self.revocation(Revocable::Grant(id.clone()), reason, Some(under_of(&by)?))?;
         let line = format!("revoked {id} — {}", revocation.reason);
         let mut candidate = self.shell(None)?;
         candidate.revocations.push(revocation);
@@ -334,7 +353,12 @@ impl Author {
     }
 
     /// A sealed `rev:` entity for `target` (spec v1.7).
-    pub(crate) fn revocation(&mut self, target: Revocable, reason: String) -> Result<Revocation, AuthorError> {
+    pub(crate) fn revocation(
+        &mut self,
+        target: Revocable,
+        reason: String,
+        under: Option<GrantId>,
+    ) -> Result<Revocation, AuthorError> {
         if reason.trim().is_empty() {
             return Err(AuthorError::Usage("a revocation carries its reason".to_string()));
         }
@@ -346,9 +370,15 @@ impl Author {
             actor: Some(self.who.clone()),
             by: None,
             reason,
+            under,
             hash: None,
         };
         r.hash = Some(revocation_hash(&r));
         Ok(r)
     }
+}
+
+/// The grant id an authorised act records as its `under`.
+pub(crate) fn under_of(by: &Authorized) -> Result<GrantId, AuthorError> {
+    by.grant.parse().map_err(AuthorError::Io)
 }

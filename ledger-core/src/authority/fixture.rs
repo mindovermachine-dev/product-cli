@@ -43,6 +43,7 @@ pub fn grant(tail: &str, role: &str, holder: &str, scope: &str, order: u32) -> G
         genesis: false,
         external_ref: None,
         supersedes: None,
+        under: None,
         at: testkit::stamp("2026-10-01T09:00:00Z"),
         hash: crate::hash::VersionHash::zero(),
     };

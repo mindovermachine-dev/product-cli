@@ -104,6 +104,10 @@ pub struct KeyBinding {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mandate: Option<String>,
     pub by: Identity,
+    /// The grant `by` acts under when it is not the principal (format 7,
+    /// D9 (a)): the genesis holder vouching for a first key (D7).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub under: Option<crate::id::GrantId>,
     pub at: DateTime<Utc>,
     /// `ledger.identity-binding.v1` over the closed payload; `L007`.
     pub hash: VersionHash,

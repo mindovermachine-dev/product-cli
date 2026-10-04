@@ -27,6 +27,10 @@ pub enum Commands {
         /// Emit the selection as JSON
         #[arg(long)]
         json: bool,
+        /// The role this act is made under (D9): required only when more
+        /// than one of your grants qualifies
+        #[arg(long = "as", value_name = "ROLE")]
+        as_role: Option<String>,
     },
     /// Mint a decision and file its first version into a set
     Add {
@@ -255,6 +259,10 @@ pub enum Commands {
         acceptance: String,
         #[arg(long)]
         reason: String,
+        /// The role this act is made under (D9): required only when more
+        /// than one of your grants qualifies
+        #[arg(long = "as", value_name = "ROLE")]
+        as_role: Option<String>,
     },
     /// Decisions on screen: content, edges with their arguments, filing,
     /// acceptance. One id, or a whole set or group in one pass.

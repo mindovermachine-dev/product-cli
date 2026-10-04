@@ -102,12 +102,12 @@ fn a_set_filed_under_the_wrong_name_is_a_fault() {
 fn an_unknown_format_is_named_rather_than_assumed() {
     let repo = Repo::new();
     let mut set = testkit::set();
-    set.format = 7;
+    set.format = 9;
     let text = serde_yaml::to_string(&set).expect("serialize");
     repo.write("sets/ledger-design.yml", &text);
     let store = repo.load();
     assert!(
-        store.schema_findings.iter().any(|f| f.message.contains("declares format 7")),
+        store.schema_findings.iter().any(|f| f.message.contains("declares format 9")),
         "{:?}",
         store.schema_findings
     );
@@ -124,7 +124,7 @@ fn a_reserved_signature_in_a_log_file_is_caught_at_load() {
     let text = serde_yaml::to_string(&cs).expect("serialize");
     repo.write(&format!("log/{}.yml", testkit::CS_ULID), &text);
     let store = repo.load();
-    assert!(store.schema_findings.iter().any(|f| f.message.contains("reserved")));
+    assert!(store.schema_findings.iter().any(|f| f.message.contains("retired")));
 }
 
 #[test]

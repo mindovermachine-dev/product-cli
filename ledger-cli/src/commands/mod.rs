@@ -51,8 +51,8 @@ pub fn run(command: Commands, root: Option<PathBuf>) -> i32 {
 /// that append to the log, and reads that never touch it.
 fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
     match command {
-        Commands::Accept { decision, set, group, expires, confirm, json } => {
-            sign::accept(root, sign::AcceptFlags { decision, set, group, expires, confirm, json })
+        Commands::Accept { decision, set, group, expires, confirm, json, as_role } => {
+            sign::accept(root, sign::AcceptFlags { decision, set, group, expires, confirm, json, as_role })
         }
         Commands::Add {
             set, statement, namespace, store, discharge, stage, expectation, actor,
@@ -91,7 +91,7 @@ fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
             };
             evolve::revise(root, &decision, statement, edges, parent.as_deref())
         }
-        Commands::Revoke { acceptance, reason } => sign::revoke(root, &acceptance, reason),
+        Commands::Revoke { acceptance, reason, as_role } => sign::revoke(root, &acceptance, reason, as_role),
         Commands::Supersede { decision, by, reason } => {
             evolve::supersede(root, &decision, &by, reason)
         }

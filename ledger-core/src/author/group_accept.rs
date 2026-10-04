@@ -83,15 +83,21 @@ impl Author {
         }
         let mut candidate = self.shell(Some(note(&plan)))?;
         let mut signed: Vec<String> = Vec::new();
+        let view = crate::verify::view::View::build(store);
         for m in plan.signable() {
+            let decision: crate::id::DecisionId = m.decision.parse().map_err(AuthorError::Usage)?;
+            // The grant each member is accepted under (D9): resolved per
+            // row, under the one `--as` the whole selection is made as.
+            let held = self.decision_authority(store, &view, &decision, crate::authority::Act::Accept)?;
             candidate.acceptances.push(Acceptance {
                 id: self.mint.mint_id("acc").map_err(AuthorError::Io)?,
-                decision: m.decision.parse().map_err(AuthorError::Usage)?,
+                decision,
                 version: m.version.parse().map_err(AuthorError::Usage)?,
                 actor: self.who.clone(),
                 at: self.now,
                 scope: AcceptanceScope::Version,
                 expires_at,
+                under: held.as_ref().map(super::authority_ops::under_of).transpose()?,
                 signature: String::new(),
             });
             signed.push(m.decision.clone());

@@ -62,6 +62,9 @@ impl Author {
             }
         }
         let (self_bound, mandate) = self.bootstrap_or_grant(&auth, &namespace, act)?;
+        // Filed by someone other than its principal: the genesis holder,
+        // acting under the genesis grant (D7, D9 (a)).
+        let under = (principal != self.who).then(|| auth.genesis().map(|g| g.id.clone())).flatten();
         let mut binding = KeyBinding {
             id: self.mint.mint_id("key").map_err(AuthorError::Io)?,
             act,
@@ -73,6 +76,7 @@ impl Author {
             self_bound,
             mandate,
             by: self.who.clone(),
+            under,
             at: self.now,
             hash: crate::hash::VersionHash::zero(),
         };
