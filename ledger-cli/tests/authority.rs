@@ -22,6 +22,17 @@ fn governed() -> Repo {
     repo
 }
 
+/// [`governed`], with the genesis holder also granted the accept role: the
+/// genesis role carries no decision capability (D9 (f)), so a genesis
+/// holder who accepts holds a second grant.
+fn governed_accepting() -> (Repo, String) {
+    let repo = governed();
+    let out = repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{NS}")]);
+    let grant = grant_id(&out);
+    repo.ok(&["grant", "accept", &grant]);
+    (repo, grant)
+}
+
 fn grant_id(out: &str) -> String {
     out.split_whitespace()
         .map(|w| w.trim_matches(|c: char| c == '(' || c == ')' || c == '`'))
@@ -39,9 +50,17 @@ fn key_file(repo: &Repo, name: &str, key_type: &str) -> String {
 #[test]
 fn init_namespace_bootstraps_the_genesis_and_the_gate_stays_green() {
     let repo = governed();
-    assert!(repo.path().join(".decisions/roles/steward.yml").is_file());
+    let root = std::fs::read_to_string(repo.path().join(".decisions/roles/steward.yml")).expect("root role");
+    for cap in ["grant-role", "revoke-grant", "declare-unavailability", "rotate-genesis"] {
+        assert!(root.contains(cap), "the root role carries {cap}: {root}");
+    }
+    for cap in ["accept-decision", "sign-off-pattern", "waive-invalidation"] {
+        assert!(!root.contains(cap), "the root role carries no decision capability: {root}");
+    }
+    let accept = std::fs::read_to_string(repo.path().join(".decisions/roles/acceptor.yml")).expect("accept role");
+    assert!(accept.contains("accept-decision"), "{accept}");
     let shown = repo.ok(&["policy", "show", "--namespace", NS]);
-    assert!(shown.contains("accept-decision role: steward"), "{shown}");
+    assert!(shown.contains("accept-decision role: acceptor"), "{shown}");
     repo.ok(&["verify", "--no-blame"]);
     let again = repo.refused(&["init", "--namespace", NS, "--external-ref", "x"]);
     assert!(again.contains("already under policy"), "{again}");
@@ -51,6 +70,10 @@ fn init_namespace_bootstraps_the_genesis_and_the_gate_stays_green() {
 fn only_a_holder_of_the_accept_role_accepts_in_a_governed_namespace() {
     let repo = governed();
     let id = repo.add("Money is decimal.", &[]);
+    let genesis_only = repo.refused(&["accept", &id]);
+    assert!(genesis_only.contains("holds no grant"), "the genesis role does not accept: {genesis_only}");
+    let out = repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{NS}")]);
+    repo.ok(&["grant", "accept", &grant_id(&out)]);
     repo.act_as(ARCHITECT);
     let before = repo.log_files();
     let refused = repo.refused(&["accept", &id]);
@@ -66,7 +89,7 @@ fn only_a_holder_of_the_accept_role_accepts_in_a_governed_namespace() {
 fn a_grant_is_live_only_once_its_holder_accepts_it() {
     let repo = governed();
     let id = repo.add("Money is decimal.", &[]);
-    let out = repo.ok(&["grant", "new", "steward", "--to", ARCHITECT, "--scope", &format!("ns:{NS}")]);
+    let out = repo.ok(&["grant", "new", "acceptor", "--to", ARCHITECT, "--scope", &format!("ns:{NS}")]);
     let grant = grant_id(&out);
     repo.act_as(ARCHITECT);
     let refused = repo.refused(&["accept", &id]);
@@ -78,16 +101,9 @@ fn a_grant_is_live_only_once_its_holder_accepts_it() {
 
 #[test]
 fn an_unavailable_holder_cannot_accept_until_available_again() {
-    let repo = governed();
+    let (repo, acceptor) = governed_accepting();
     let id = repo.add("Money is decimal.", &[]);
-    let genesis = repo
-        .log_files()
-        .iter()
-        .map(|f| std::fs::read_to_string(repo.path().join(".decisions/log").join(f)).expect("log"))
-        .find(|text| text.contains("genesis: true"))
-        .map(|text| grant_id(&text))
-        .expect("the genesis grant");
-    let out = repo.ok(&["unavailable", &genesis, "--from", "2020-01-01T00:00:00Z", "--reason", "leave"]);
+    let out = repo.ok(&["unavailable", &acceptor, "--from", "2020-01-01T00:00:00Z", "--reason", "leave"]);
     let refused = repo.refused(&["accept", &id]);
     assert!(refused.contains("unavailable now"), "{refused}");
     let interval = out.split_whitespace().find(|w| w.starts_with("unav:")).expect("interval id");
@@ -177,7 +193,7 @@ fn acceptance_of(repo: &Repo) -> String {
 
 #[test]
 fn revoke_files_a_revocation_entity_and_leaves_the_acceptance_untouched() {
-    let repo = governed();
+    let (repo, _) = governed_accepting();
     let id = repo.add("Money is decimal.", &[]);
     repo.ok_tty(&["accept", &id]);
     let acc = acceptance_of(&repo);
@@ -200,7 +216,7 @@ fn revoke_files_a_revocation_entity_and_leaves_the_acceptance_untouched() {
 
 #[test]
 fn revoking_in_a_governed_namespace_needs_the_accept_role() {
-    let repo = governed();
+    let (repo, _) = governed_accepting();
     let id = repo.add("Money is decimal.", &[]);
     repo.ok_tty(&["accept", &id]);
     let acc = acceptance_of(&repo);
@@ -219,4 +235,47 @@ fn a_model_identity_cannot_revoke_a_persons_acceptance() {
     repo.act_as("noreply@anthropic.com");
     let refused = repo.refused(&["revoke", &acc, "--reason", "an agent tidying up"]);
     assert!(refused.contains("[L006]") && refused.contains("revoker"), "{refused}");
+}
+
+#[test]
+fn the_accept_role_is_never_the_genesis_role() {
+    let repo = Repo::with_identity(OWNER);
+    let refused = repo.ledger(&["init", "--namespace", NS, "--external-ref", "m", "--accept-role", "steward"]);
+    assert_eq!(refused.status.code(), Some(2), "{}", common::both(&refused));
+    assert!(common::both(&refused).contains("must differ from the genesis role"), "{}", common::both(&refused));
+    assert!(repo.log_files().is_empty(), "a refused init files nothing");
+    let repo = governed();
+    let out = repo.ledger(&["policy", "set", "--namespace", NS, "--accept-role", "steward"]);
+    assert_eq!(out.status.code(), Some(2), "{}", common::both(&out));
+    assert!(common::both(&out).contains("must differ from the genesis role"), "{}", common::both(&out));
+}
+
+#[test]
+fn bootstrap_refuses_an_existing_root_role_without_the_root_capabilities() {
+    let repo = Repo::with_identity(OWNER);
+    let role = "format: 6\nid: steward\nowner: owner@customer.example\nmay: [accept-decision, grant-role]\ncreated_at: 2026-10-02\n";
+    std::fs::create_dir_all(repo.path().join(".decisions/roles")).expect("roles dir");
+    std::fs::write(repo.path().join(".decisions/roles/steward.yml"), role).expect("role");
+    let refused = repo.refused(&["init", "--namespace", NS, "--external-ref", "m"]);
+    assert!(refused.contains("cannot be the genesis role") && refused.contains("revoke-grant"), "{refused}");
+    assert!(repo.log_files().is_empty(), "a refused init files nothing");
+}
+
+#[test]
+fn a_grantor_below_star_is_refused_a_grant_over_another_scope() {
+    let repo = governed();
+    let out = repo.ok(&["grant", "new", "acceptor", "--to", ARCHITECT, "--scope", &format!("ns:{NS}")]);
+    let grant = grant_id(&out);
+    repo.ok(&["role", "declare", "delegate", "--may", "grant-role"]);
+    let out = repo.ok(&["grant", "new", "delegate", "--to", ARCHITECT, "--scope", &format!("ns:{NS}")]);
+    let delegate = grant_id(&out);
+    repo.act_as(ARCHITECT);
+    repo.ok(&["grant", "accept", &grant]);
+    repo.ok(&["grant", "accept", &delegate]);
+    for scope in ["*", "ns:fixture.other", "set:ledger-design"] {
+        let refused = repo.refused(&["grant", "new", "delegate", "--to", "third@customer.example", "--scope", scope]);
+        assert!(refused.contains("does not cover this"), "{scope}: {refused}");
+    }
+    repo.ok(&["grant", "new", "delegate", "--to", "third@customer.example", "--scope", &format!("ns:{NS}")]);
+    repo.ok(&["verify", "--no-blame"]);
 }

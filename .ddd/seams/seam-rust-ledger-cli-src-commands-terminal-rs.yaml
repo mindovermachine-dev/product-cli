@@ -1,0 +1,38 @@
+format: 2
+id: seam/rust/ledger-cli-src-commands-terminal-rs
+boundary: contract surface of ledger-cli/src/commands/terminal.rs
+verdict_knowledge: A caller learns which ledger invocations run only at a terminal (signing, and every authority record) and which stay scriptable; the classification is exhaustive over the command enum and checked before dispatch.
+contract_location: ledger-cli/src/commands/terminal.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: Mode
+  file: ledger-cli/src/commands/terminal.rs
+  before: absent
+  after: sha256:e89b5455152b1b3da01cf5df2d5ec621c477a5233ebec00698583d55cc5aac73
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:2b5fe7f26413727c2d8d5353f2b5f3d3767706a890bee0d487083499bf82d893
+- symbol: gate
+  file: ledger-cli/src/commands/terminal.rs
+  before: absent
+  after: sha256:e89b5455152b1b3da01cf5df2d5ec621c477a5233ebec00698583d55cc5aac73
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:e4985d44853b45c904f59c4219a7263a0bafd91bad9670174412da31bb199dc1
+- symbol: mode
+  file: ledger-cli/src/commands/terminal.rs
+  before: absent
+  after: sha256:e89b5455152b1b3da01cf5df2d5ec621c477a5233ebec00698583d55cc5aac73
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:645645998827b3f4a1b8b349586ce1bbef20d659eee881609ab6c17d061fe277
+- symbol: Scriptable
+  file: ledger-cli/src/commands/terminal.rs
+  before: absent
+  after: sha256:e89b5455152b1b3da01cf5df2d5ec621c477a5233ebec00698583d55cc5aac73
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:aa13515679e78a6a48604ea1775052bc9833611deb74cb00bd26c94043402fdd
+- symbol: Terminal
+  file: ledger-cli/src/commands/terminal.rs
+  before: absent
+  after: sha256:e89b5455152b1b3da01cf5df2d5ec621c477a5233ebec00698583d55cc5aac73
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:a2455223082a51a479a659f0605220738bbc4f6ca363cdddd064f15f5c8de495

@@ -36,6 +36,12 @@ impl Author {
                 "a policy change is the live, available genesis holder's act".to_string(),
             ));
         }
+        if let Some(g) = auth.genesis().filter(|g| args.accept_role.as_deref() == Some(g.role.as_str())) {
+            return Err(AuthorError::Usage(format!(
+                "the accept role must differ from the genesis role `{}` (D9 (f))",
+                g.role
+            )));
+        }
         let mut next = Policy {
             id: self.mint.mint_id("pol").map_err(AuthorError::Io)?,
             namespace: current.namespace.clone(),

@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-role-rs
 boundary: contract surface of ledger-core/src/authority/role.rs
-verdict_knowledge: "Consumers learn the role file shape, the closed seven-capability vocabulary, and the Act → capability / limit mapping."
+verdict_knowledge: Consumers learn the role file shape, the closed seven-capability vocabulary, and the Act → capability / limit mapping.
 contract_location: ledger-core/src/authority/role.rs
 obligations: []
 metadata: {}
@@ -204,3 +204,9 @@ bindings:
   after: sha256:61552fe31e5daf0111e3f39e0e04ce136f079ecbc37ca2266cc44b14bd0b54d3
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:f616ce79006245c6be890beaae4e088b48286282c15adba091ab1417b345fbdd
+- symbol: ROOT
+  file: ledger-core/src/authority/role.rs
+  before: sha256:61552fe31e5daf0111e3f39e0e04ce136f079ecbc37ca2266cc44b14bd0b54d3
+  after: sha256:61df9ee805408da061d3a42cb09177ecc8fc91acb54ff6d6d245729f7fedf3d1
+  base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
+  hash: sha256:a35670bfe95cb273054e4d7741d8881adc2655f4c9aefb1c821ec3ca07c40cf8

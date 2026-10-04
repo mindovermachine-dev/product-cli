@@ -584,9 +584,14 @@ force* is the tip of its `replaces` chain.
 holds a live, accepted, available grant of a role that `may` the act, over
 a scope covering it (`*`; a namespace scope its own namespace; a set scope
 its own set; namespaces match exactly), and — for a fallback — one not
-limited from the act while no live, available grant of the same role and
-scope at a lower rank exists. In a namespace with a policy, accepting and
-revoking an acceptance count only grants of the policy's `accept_role`. A
+limited from the act while no live, available grant of the same role at a
+lower rank covers the act's target (fallback order by covering scope, D9
+(e): a `fallback-1` over a set waits on a primary over `*` in its role;
+another role never outranks; equal rank acts concurrently). In a namespace
+with a policy, accepting and revoking an acceptance count only grants of
+the policy's `accept_role`, which is never the genesis role: the genesis
+(root) role carries `grant-role`, `revoke-grant`, `declare-unavailability`
+and `rotate-genesis` and none of the decision capabilities (D9 (f)). A
 namespace without a policy is a pre-v2 namespace: nothing is role-checked
 there. The gate-time counterpart over history — an acceptance whose actor
 held no such grant (`A006`) — waits on the decision-class → role mapping.

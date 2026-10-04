@@ -81,6 +81,22 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: SSH signing tools
+        # Ledger signing (#70) signs with `ssh-keygen -Y sign` and verifies
+        # with `ssh-keygen -Y verify -Overify-time`; the PTY driver behind
+        # the interactive-verb tests is `script(1)`. Prove both are on the
+        # runner before any test depends on them.
+        run: |
+          ssh -V
+          command -v script
+          dir=$(mktemp -d)
+          ssh-keygen -q -t ed25519 -N '' -f "$dir/k"
+          printf 'probe\n' > "$dir/m"
+          ssh-keygen -Y sign -f "$dir/k" -n ledger-accept@ci.probe "$dir/m"
+          printf 'ci@probe namespaces="ledger-accept@ci.probe",valid-after="20260101" %s\n' "$(cat "$dir/k.pub")" > "$dir/allowed"
+          ssh-keygen -Y verify -f "$dir/allowed" -I ci@probe -n ledger-accept@ci.probe \
+            -s "$dir/m.sig" -Overify-time=20260601 < "$dir/m"
+
       - name: Build
         run: cargo build --workspace
 
