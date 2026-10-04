@@ -78,8 +78,13 @@ impl Author {
             )));
         }
         let genesis = auth.genesis().filter(|g| g.holder == self.who);
-        let first_in_ns = auth.bindings.iter().all(|b| b.namespace != namespace);
-        let self_bound = act == BindingAct::Add && principal == self.who && first_in_ns && genesis.is_some();
+        // D7: the genesis holder self-binds once per store; in a later
+        // namespace their first key is signed by a key of theirs already
+        // bound elsewhere.
+        let first_in_store = auth.bindings.iter().all(|b| b.principal != principal);
+        let first_in_ns = auth.bindings.iter().all(|b| b.namespace != namespace || b.principal != principal);
+        let self_bound = act == BindingAct::Add && principal == self.who && first_in_store && genesis.is_some();
+        let any_namespace = act == BindingAct::Add && principal == self.who && first_in_ns && !self_bound;
         let mut binding = KeyBinding {
             id: self.mint.mint_id("key").map_err(AuthorError::Io)?,
             act,
@@ -104,6 +109,7 @@ impl Author {
             ulid: &ulid,
             bytes: crate::authority::payload::binding_bytes(&binding),
             own_key: own.as_ref().filter(|_| self_bound).map(|(t, k)| (t.as_str(), k.as_str())),
+            any_namespace,
         };
         self.sign_under(&store, Some(&policy), what)?;
         let line = format!("identity {act}: {} in `{}` — {}", binding.principal, binding.namespace, binding.id);

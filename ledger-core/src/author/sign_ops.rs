@@ -33,6 +33,9 @@ pub(crate) struct ToSign<'a> {
     pub bytes: Vec<u8>,
     /// The key a self-bound binding binds — it signs itself.
     pub own_key: Option<(&'a str, &'a str)>,
+    /// The genesis holder's first key in a later namespace (D7): signed by
+    /// a live key of theirs bound in any namespace.
+    pub any_namespace: bool,
 }
 
 impl Author {
@@ -85,7 +88,7 @@ impl Author {
         }
         let bound = match what.own_key {
             Some((t, k)) => t == key_type && k == blob,
-            None => self.live_key(store, what.namespace, &key_type, &blob),
+            None => self.live_key(store, (!what.any_namespace).then_some(what.namespace), &key_type, &blob),
         };
         if !bound {
             return Err(AuthorError::Unauthorized(format!(
@@ -98,12 +101,13 @@ impl Author {
         Ok(())
     }
 
-    /// Whether `(key_type, blob)` is an open window of this author's in `ns`.
-    fn live_key(&self, store: &Store, ns: &str, key_type: &str, blob: &str) -> bool {
+    /// Whether `(key_type, blob)` is an open window of this author's in
+    /// `ns`, or in any namespace when `ns` is `None`.
+    fn live_key(&self, store: &Store, ns: Option<&str>, key_type: &str, blob: &str) -> bool {
         let auth = Authority::build(store);
         auth.bindings.iter().any(|b| {
             b.act.opens()
-                && b.namespace == ns
+                && ns.is_none_or(|ns| b.namespace == ns)
                 && b.principal == self.who
                 && b.key_type.as_deref() == Some(key_type)
                 && b.key.as_deref() == Some(blob)

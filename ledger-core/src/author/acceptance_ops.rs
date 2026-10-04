@@ -100,6 +100,7 @@ impl Author {
             ulid: acceptance.id.ulid(),
             bytes: crate::authority::payload::acceptance_bytes(&acceptance),
             own_key: None,
+            any_namespace: false,
         };
         self.sign_under(&store, policy.as_ref(), what)?;
         let signed = self.pending_sidecars.iter().map(|s| format!("signed — sig/{}", s.file)).collect::<Vec<_>>();
@@ -113,9 +114,7 @@ impl Author {
             hash.short(),
             args.decision
         )];
-        if let Some(by) = held {
-            lines.push(format!("under {} (`{}`)", by.grant, by.role));
-        }
+        lines.extend(held.map(|by| by.line()));
         lines.extend(signed);
         Ok(Applied { path, lines })
     }
@@ -182,6 +181,7 @@ impl Author {
                 ulid: &ulid,
                 bytes: crate::authority::payload::revocation_bytes(&revocation),
                 own_key: None,
+                any_namespace: false,
             };
             self.sign_under(&store, policy.as_ref(), what)?;
         }
@@ -189,9 +189,8 @@ impl Author {
         candidate.revocations.push(revocation);
         self.refusal_check(&store, &candidate, |_| false)?;
         let path = self.append_signed(&candidate)?;
-        Ok(Applied {
-            path,
-            lines: vec![format!("revoked {} by {id} — {}", args.acceptance, args.reason)],
-        })
+        let mut lines = vec![format!("revoked {} by {id} — {}", args.acceptance, args.reason)];
+        lines.extend(held.as_ref().map(|by| by.line()));
+        Ok(Applied { path, lines })
     }
 }

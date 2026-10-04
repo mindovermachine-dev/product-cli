@@ -1,10 +1,14 @@
 //! Landing — when an entity entered the record (D6, ruled 2026-10-02).
 //!
 //! An entity's landing commit is the first commit on the first-parent
-//! history of the verified commit whose tree contains it. A log file is
-//! written once and never edited, so an entity lands with its file; this
-//! module resolves files. Not `git log -S`: a pickaxe matches an id wherever
-//! the string appears, and this asks when a *file* first existed.
+//! history of the verified commit whose version of its file contains it.
+//! For a file never touched after it was added, that is the file's adding
+//! commit. For a file git reports modified or deleted since
+//! ([`touched_after_landing`]), that file's own first-parent history is
+//! walked and each entity lands at the first version that holds it
+//! ([`crate::landed`]); an entity no commit holds — appended in the working
+//! tree — lands at the tip. Not `git log -S`: a pickaxe matches an id
+//! wherever the string appears.
 //!
 //! **Order.** A landing is a first-parent index. Entities on an unmerged
 //! branch land at the tip, after everything on the base, all at once — the
@@ -40,6 +44,11 @@ pub struct Landing {
     pub available: bool,
     /// Repo-relative path → (first-parent index, landing commit).
     landed: BTreeMap<String, (usize, String)>,
+    /// For touched files only: (path, entity key) → first-parent index of
+    /// the first version that holds the entity.
+    entities: BTreeMap<(String, String), usize>,
+    /// The files whose entities land one by one.
+    touched: std::collections::BTreeSet<String>,
     /// The index of the tip: one past the last landed commit.
     tip: usize,
 }
@@ -79,9 +88,11 @@ impl Landing {
             return Ok(Self::unknown());
         }
         let head = first_parent_adds(root, "HEAD")?;
+        let touched = touched_after_landing(root);
         let Some(base) = base else {
             let tip = head.commits;
-            return Ok(Self { available: true, landed: head.adds, tip });
+            let entities = entity_landings(root, "HEAD", &touched)?;
+            return Ok(Self { available: true, landed: head.adds, entities, touched, tip });
         };
         if !git_ok(root, &["rev-parse", "--verify", "-q", &format!("{base}^{{commit}}")]) {
             return Err(format!("`{base}` does not name a commit — landing is computed against the base"));
@@ -95,7 +106,10 @@ impl Landing {
         for (path, (_, commit)) in head.adds {
             landed.entry(path).or_insert((tip, commit));
         }
-        Ok(Self { available: true, landed, tip })
+        // Entities of a touched file land where the base's line first holds
+        // them; one only the branch holds lands at the tip, as the merge would.
+        let entities = entity_landings(root, base, &touched)?;
+        Ok(Self { available: true, landed, entities, touched, tip })
     }
 
     /// The base the clone points its default branch at, if it has one.
@@ -108,22 +122,19 @@ impl Landing {
         self.landed.get(path).map_or(self.tip, |(i, _)| *i)
     }
 
-    /// The commit a path landed in, when it has landed.
-    pub fn commit(&self, path: &str) -> Option<&str> {
-        self.landed.get(path).map(|(_, c)| c.as_str())
+    /// A position for the entity keyed `key` ([`crate::landed::key`]) filed
+    /// in `path` at `at`.
+    pub fn position(&self, path: &str, key: &str, at: DateTime<Utc>) -> Position {
+        Position { index: self.entity_index(path, key), at }
     }
 
-    /// Every landed path under `dir` (repo-relative), with its commit.
-    pub fn landed_under<'a>(&'a self, dir: &'a str) -> impl Iterator<Item = (&'a str, &'a str)> + 'a {
-        self.landed
-            .iter()
-            .filter(move |(p, _)| p.starts_with(dir))
-            .map(|(p, (_, c))| (p.as_str(), c.as_str()))
-    }
-
-    /// A position for an entity filed in `path` at `at`.
-    pub fn position(&self, path: &str, at: DateTime<Utc>) -> Position {
-        Position { index: self.index(path), at }
+    /// The landing index of one entity: its file's, unless the file was
+    /// touched after it landed, then the first version holding the entity.
+    pub fn entity_index(&self, path: &str, key: &str) -> usize {
+        if !self.touched.contains(path) {
+            return self.index(path);
+        }
+        self.entities.get(&(path.to_string(), key.to_string())).copied().unwrap_or(self.tip)
     }
 }
 
@@ -195,6 +206,44 @@ fn first_parent_adds(root: &Path, rev: &str) -> Result<Adds, String> {
         }
     }
     Ok(Adds { adds, commits })
+}
+
+/// For each touched log file, where each entity first appears on `rev`'s
+/// first-parent line.
+fn entity_landings(
+    root: &Path,
+    rev: &str,
+    touched: &std::collections::BTreeSet<String>,
+) -> Result<BTreeMap<(String, String), usize>, String> {
+    let mut out = BTreeMap::new();
+    let logs: Vec<&String> = touched.iter().filter(|p| p.starts_with(".decisions/log/")).collect();
+    if logs.is_empty() {
+        return Ok(out);
+    }
+    let order = first_parent_order(root, rev)?;
+    for path in logs {
+        for commit in file_versions(root, rev, path) {
+            let Some(index) = order.get(&commit).copied() else { continue };
+            let Some(text) = content_at(root, &commit, path) else { continue };
+            for key in crate::landed::entities(&text).unwrap_or_default().into_keys() {
+                out.entry((path.clone(), key)).or_insert(index);
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// The first-parent commits of `rev` that changed `path`, oldest first.
+pub fn file_versions(root: &Path, rev: &str, path: &str) -> Vec<String> {
+    Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["log", "--first-parent", "--diff-merges=first-parent", "--reverse", "--format=%H", rev, "--", path])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).collect())
+        .unwrap_or_default()
 }
 
 /// Every first-parent commit of `rev`, oldest = 0.

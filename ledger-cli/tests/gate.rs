@@ -246,14 +246,17 @@ mod blame {
     #[test]
     fn an_uncommitted_acceptance_is_skipped_with_the_skip_reported() {
         let repo = Repo::with_acceptance_committed_by("fixture-human@example");
-        // Re-file the acceptance under a new id, uncommitted.
+        // File a second acceptance under a new id, uncommitted. It is
+        // appended: the landed one stays as it landed (landed entities are
+        // immutable, `L007`).
         let log = repo.path().join(".decisions/log/01K2C4YQJ3F8M0PT5W7NZ9RDXW.yml");
         let text = std::fs::read_to_string(&log).expect("read");
-        std::fs::write(
-            &log,
-            text.replace("acc:01K2C4YQJ3F8M0PT5W7NZ9RDXX", "acc:01K2C4YQJ3F8M0PT5W7NZ9RDXY"),
-        )
-        .expect("write");
+        let mut file: serde_yaml::Value = serde_yaml::from_str(&text).expect("yaml");
+        let list = file.get_mut("acceptances").and_then(serde_yaml::Value::as_sequence_mut).expect("acceptances");
+        let mut again = list.first().cloned().expect("an acceptance");
+        again["id"] = "acc:01K2C4YQJ3F8M0PT5W7NZ9RDXY".into();
+        list.push(again);
+        std::fs::write(&log, serde_yaml::to_string(&file).expect("yaml")).expect("write");
         let out = repo.verify();
         assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
         assert!(

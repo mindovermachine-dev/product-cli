@@ -84,6 +84,9 @@ pub enum Denial {
     Broader { grant: String, role: String, narrower: String },
     /// The grant an act names is not filed, or is not the actor's.
     NotTheirs(String),
+    /// `grant new` below the genesis gives only the grantor's own role;
+    /// these are the grants held that could grant, none in that role.
+    OwnRoleOnly(Vec<String>),
 }
 
 impl fmt::Display for Denial {
@@ -104,9 +107,12 @@ impl fmt::Display for Denial {
             Self::NotInRole(r) => write!(f, "holds no grant of `{r}` that may do this here"),
             Self::Broader { grant, role, narrower } => write!(
                 f,
-                "would act under {grant} (`{role}`), but `{narrower}` also qualifies with fewer claims — act as `{narrower}`"
+                "would act under {grant} (`{role}`), but `{narrower}` also qualifies and claims a subset of it — act as `{narrower}`"
             ),
             Self::NotTheirs(g) => write!(f, "names {g}, which is not a filed grant of theirs"),
+            Self::OwnRoleOnly(held) => {
+                write!(f, "acts under {} and may grant only that role — the genesis grants others", held.join(", "))
+            }
         }
     }
 }
@@ -122,6 +128,11 @@ pub struct Authorized {
 impl Authorized {
     fn of(grant: &Grant) -> Self {
         Self { grant: grant.id.to_string(), role: grant.role.clone(), genesis: grant.genesis }
+    }
+
+    /// The confirmation line every governed verb prints (D9 (b)).
+    pub fn line(&self) -> String {
+        format!("under {} (`{}`)", self.grant, self.role)
     }
 }
 

@@ -152,7 +152,7 @@ pub fn binding_bytes(b: &KeyBinding) -> Vec<u8> {
 fn policy_map(p: &Policy) -> Map<String, Value> {
     let Policy {
         id, namespace, schemes, require_sk, accept_role, reaccept_within_days, replaces, by,
-        under, at, hash: _, at_hashed,
+        under, at, hash: _,
     } = p;
     let mut m = Map::new();
     put(&mut m, "id", Some(id.to_string()));
@@ -164,9 +164,9 @@ fn policy_map(p: &Policy) -> Map<String, Value> {
     put(&mut m, "replaces", replaces.as_ref().map(ToString::to_string));
     put(&mut m, "by", Some(by.to_string()));
     put(&mut m, "under", under.as_ref().map(ToString::to_string));
-    // D8: the change's time is its `-Overify-time`, so from format 7 it is
-    // content. A format-6 policy keeps the payload it was hashed under.
-    put(&mut m, "at", at_hashed.then(|| stamp(at)));
+    // D8: the change's time is its `-Overify-time`, so it is content. A
+    // policy is a format-7 entry; none in a lower format is accepted.
+    put(&mut m, "at", Some(stamp(at)));
     m
 }
 

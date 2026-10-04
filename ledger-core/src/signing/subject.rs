@@ -58,19 +58,20 @@ pub fn subjects<'a>(store: &'a Store, landing: &Landing) -> Vec<Subject<'a>> {
     for logged in &store.log {
         let path = relative(&store.root, &logged.path);
         let cs = &logged.file;
-        out.extend(cs.acceptances.iter().map(|a| acceptance(a, landing.position(&path, a.at))));
+        let k = crate::landed::key;
+        out.extend(cs.acceptances.iter().map(|a| acceptance(a, landing.position(&path, &k("acceptances", &a.id.to_string()), a.at))));
         out.extend(
             cs.revocations
                 .iter()
                 .filter(|r| r.is_entity())
-                .filter_map(|r| revocation(store, r, landing.position(&path, r.at))),
+                .filter_map(|r| revocation(store, r, landing.position(&path, &crate::landed::revocation_key(r), r.at))),
         );
-        out.extend(cs.key_bindings.iter().map(|b| binding(b, landing.position(&path, b.at))));
+        out.extend(cs.key_bindings.iter().map(|b| binding(b, landing.position(&path, &k("key_bindings", &b.id.to_string()), b.at))));
         out.extend(
             cs.policies
                 .iter()
-                .filter(|p| p.at_hashed && p.replaces.is_some())
-                .map(|p| policy(p, landing.position(&path, p.at))),
+                .filter(|p| p.replaces.is_some())
+                .map(|p| policy(p, landing.position(&path, &k("policies", &p.id.to_string()), p.at))),
         );
     }
     out

@@ -95,6 +95,27 @@ fn none_is_valid_only_where_policy_lists_it() {
     assert_eq!(text.matches("[L011]").count(), 1, "only the pre-change one: {text}");
 }
 
+#[test]
+fn none_is_exclusive() {
+    let (repo, _) = governed();
+    let refused = repo.refused(&["policy", "set", "--namespace", NS, "--scheme", "ssh", "--scheme", "none"]);
+    assert!(refused.contains("`none` is exclusive"), "{refused}");
+    // The same policy written by hand is a schema fault at `verify`.
+    let store = ledger_core::store::load(repo.path());
+    let current = ledger_core::authority::Authority::build(&store).policy(NS).cloned().expect("policy");
+    let mut mixed = current.clone();
+    mixed.id = ledger_core::mint::UlidMint::system().mint_id("pol").expect("id");
+    mixed.replaces = Some(current.hash.clone());
+    mixed.schemes = vec![ledger_core::authority::Scheme::Ssh, ledger_core::authority::Scheme::None];
+    mixed.at = chrono::Utc::now();
+    mixed.hash = ledger_core::authority::payload::policy_hash(&mixed);
+    let id = mixed.id.to_string();
+    hand::file(&repo, Vec::new(), vec![mixed], &[]);
+    let (code, text) = verify(&repo, &[]);
+    assert_eq!(code, 1, "{text}");
+    assert!(text.contains(&format!("[SCHEMA] {id}")) && text.contains("`none` is exclusive"), "{text}");
+}
+
 /// The id of `who`'s live acceptor grant.
 fn acceptor_grant(repo: &Repo, who: &str) -> String {
     let store = ledger_core::store::load(repo.path());
@@ -172,10 +193,11 @@ fn a_backdated_acceptance_landed_after_the_close_fails_l011_not_l012() {
     let (repo, key) = governed();
     let id = repo.add("Money is decimal.", &[]);
     hand::commit(&repo, "filed");
-    let bound = hand::last_binding_at(&repo);
     let binding = first_binding(&repo);
     let spare = repo.keygen("owner-next");
     repo.ok(&["identity", "add", "--namespace", NS, "--key-file", &format!("{spare}.pub")]);
+    // After every enabling entry, before the close two seconds later.
+    let bound = hand::last_binding_at(&repo);
     std::thread::sleep(std::time::Duration::from_millis(2100));
     repo.use_key(&spare);
     repo.ok(&["identity", "revoke", &binding]);
@@ -195,10 +217,12 @@ fn a_backdated_acceptance_landed_after_the_close_fails_l011_not_l012() {
 fn a_branch_verified_against_its_base_agrees_with_the_merge_ref() {
     let (repo, key) = governed();
     let id = repo.add("Money is decimal.", &[]);
-    let bound = hand::last_binding_at(&repo);
     let binding = first_binding(&repo);
     let spare = repo.keygen("owner-next");
     repo.ok(&["identity", "add", "--namespace", NS, "--key-file", &format!("{spare}.pub")]);
+    // Dated after every enabling entry (the grant's acceptance included) and
+    // still before the close, which comes two seconds later.
+    let bound = hand::last_binding_at(&repo);
     hand::commit(&repo, "base");
     repo.git(&["checkout", "-q", "-b", "topic"]);
     let grant = acceptor_grant(&repo, OWNER);
@@ -210,8 +234,8 @@ fn a_branch_verified_against_its_base_agrees_with_the_merge_ref() {
     repo.ok(&["identity", "revoke", &binding]);
     hand::commit(&repo, "closed on main");
     repo.git(&["checkout", "-q", "topic"]);
-    let (naive, _) = verify(&repo, &["--base", "topic"]);
-    assert_eq!(naive, 0, "without the base the close is not even in the store");
+    let (naive, naive_text) = verify(&repo, &["--base", "topic"]);
+    assert_eq!(naive, 0, "without the base the close is not even in the store: {naive_text}");
     let (local, local_text) = verify(&repo, &["--base", "main"]);
     repo.git(&["checkout", "-q", "main"]);
     repo.git(&["merge", "-q", "--no-ff", "-m", "merge topic", "topic"]);

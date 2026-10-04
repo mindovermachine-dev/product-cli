@@ -107,6 +107,7 @@ impl Author {
                 ulid: acceptance.id.ulid(),
                 bytes: crate::authority::payload::acceptance_bytes(&acceptance),
                 own_key: None,
+                any_namespace: false,
             };
             self.sign_under(store, policy.as_ref(), what)?;
             candidate.acceptances.push(acceptance);

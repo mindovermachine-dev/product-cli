@@ -23,10 +23,13 @@ only adds an unhashed field.
 
 **New fields.** `under` (the grant an act is made under, D9 (a)) on
 acceptances, `rev:` revocations, grants, policies and key bindings — hashed
-when present, omitted when absent. `at` joins the policy payload for a
-policy filed in a format-7 file (D8); a format-6 policy keeps the payload
-it was hashed under. A change-set with `under` anywhere, or with a policy,
-declares `format: 7`. The inline acceptance `signature` field is retired:
+when present, omitted when absent. `at` joins the policy payload, always
+(D8), and a policy becomes a format-7 entry: a policy in a file below
+format 7 is a schema fault. No committed store carried a format-6 policy
+(namespace policy arrived with format 6 in the same release train, #80), so
+none needs rewriting; a store that has one re-files it with `ledger policy
+set`. A change-set with `under` anywhere, or with a policy, declares
+`format: 7`. The inline acceptance `signature` field is retired:
 permanently empty in every format.
 
 **New payload.** `ledger.acceptance.v1` over `{decision, version, actor, at,
@@ -35,7 +38,8 @@ moves; the digest is computed, never stored.
 
 **No existing digest moves.** `CANONICAL_FORM` is unchanged; every
 version digest re-derives unchanged (`ledger-cli/tests/digests.rs`), and the
-four authority payloads are pinned against `main` at 88b3de1
+grant, binding and revocation payloads are pinned against `main` at 88b3de1
+(the policy's pin is dropped: its payload now always carries `at`)
 (`ledger-core/src/authority/payload_tests.rs`).
 
 **Signatures** are sidecars at `.decisions/sig/<ulid>.<scheme>.sig`

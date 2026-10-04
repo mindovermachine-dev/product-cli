@@ -138,7 +138,6 @@ fn a_policy_change_is_signed_under_the_policy_it_replaces() {
     next.replaces = Some(current.hash.clone());
     next.require_sk = true;
     next.at = chrono::Utc::now();
-    next.at_hashed = true;
     next.hash = ledger_core::authority::payload::policy_hash(&next);
     let id = next.id.to_string();
     hand::file(&repo, Vec::new(), vec![next], &[]);
@@ -221,27 +220,102 @@ fn with_two_qualifying_grants_as_is_required_and_the_narrowest_scope_wins() {
 }
 
 #[test]
-fn the_escalation_guard_compares_the_role_the_act_names() {
+fn the_escalation_guard_decides_candidacy_for_grant_new() {
     let (repo, _) = governed();
     repo.ok(&["role", "declare", "delegate", "--may", "grant-role"]);
     repo.ok(&["role", "declare", "lead", "--may", "grant-role", "--may", "accept-decision"]);
+    let scope = format!("ns:{NS}");
+    // The genesis holder also holds a one-capability granting role.
+    let own = hand::word(&repo.ok(&["grant", "new", "delegate", "--to", OWNER, "--scope", &scope]), "grant:");
+    repo.ok(&["grant", "accept", &own]);
+    // Granting `acceptor`: `delegate` grants only `delegate`, so the genesis
+    // is the one candidate, and it is not refused for claiming more.
+    let out = repo.ok(&["grant", "new", "acceptor", "--to", ARCHITECT, "--scope", &scope]);
+    assert!(out.contains(&format!("under {}", genesis(&repo))), "{out}");
+    // Granting `delegate`: both qualify; `--as` is required, and the genesis
+    // role — a superset of `delegate` — is refused for the narrower one.
+    let third = "third@customer.example";
+    let ambiguous = repo.refused(&["grant", "new", "delegate", "--to", third, "--scope", &scope]);
+    assert!(ambiguous.contains("--as <role>"), "{ambiguous}");
+    let broader = repo.refused(&["grant", "new", "delegate", "--to", third, "--scope", &scope, "--as", "steward"]);
+    assert!(broader.contains("claims a subset of it"), "the broader role is refused: {broader}");
+    let out = repo.ok(&["grant", "new", "delegate", "--to", third, "--scope", &scope, "--as", "delegate"]);
+    assert!(out.contains(&format!("under {own} (`delegate`)")), "{out}");
+    let thirds = hand::word(&out, "grant:");
+    let out = repo.ok_tty(&["grant", "revoke", &thirds, "--reason", "not needed"]);
+    assert!(out.contains(&format!("under {} (`steward`)", genesis(&repo))), "grant revoke shows its grant: {out}");
+    // Below the genesis: a holder of `lead` and `delegate` grants each role
+    // under its own grant, and no other.
     let arch = repo.vouch_for(NS, ARCHITECT, "architect");
-    let mut grants = Vec::new();
-    for role in ["lead", "delegate"] {
-        grants.push(hand::word(&repo.ok(&["grant", "new", role, "--to", ARCHITECT, "--scope", &format!("ns:{NS}")]), "grant:"));
+    let mut held = Vec::new();
+    for (role, as_role) in [("lead", "steward"), ("delegate", "delegate")] {
+        let out = repo.ok(&["grant", "new", role, "--to", ARCHITECT, "--scope", &scope, "--as", as_role]);
+        held.push(hand::word(&out, "grant:"));
     }
     repo.act_as(ARCHITECT);
     repo.use_key(&arch);
-    for g in &grants {
+    for g in &held {
         repo.ok(&["grant", "accept", g]);
     }
-    let third = "third@customer.example";
-    let ambiguous = repo.refused(&["grant", "new", "delegate", "--to", third, "--scope", &format!("ns:{NS}")]);
-    assert!(ambiguous.contains("--as <role>"), "{ambiguous}");
-    let broader = repo.refused(&["grant", "new", "delegate", "--to", third, "--scope", &format!("ns:{NS}"), "--as", "lead"]);
-    assert!(broader.contains("fewer claims"), "the broader role is refused: {broader}");
-    // As `delegate`, granting `delegate` is the role the act names.
-    repo.ok(&["grant", "new", "delegate", "--to", third, "--scope", &format!("ns:{NS}"), "--as", "delegate"]);
-    let refused = repo.refused(&["grant", "new", "lead", "--to", third, "--scope", &format!("ns:{NS}"), "--as", "delegate"]);
+    let out = repo.ok(&["grant", "new", "delegate", "--to", third, "--scope", &scope]);
+    assert!(out.contains(&format!("under {} (`delegate`)", held[1])), "the one candidate, no `--as`: {out}");
+    let refused = repo.refused(&["grant", "new", "acceptor", "--to", third, "--scope", &scope]);
     assert!(refused.contains("may grant only that role"), "{refused}");
+}
+
+#[test]
+fn a_policy_change_in_a_format_6_file_is_a_schema_fault() {
+    let (repo, _) = governed();
+    let store = ledger_core::store::load(repo.path());
+    let current = ledger_core::authority::Authority::build(&store).policy(NS).cloned().expect("policy");
+    let mut next = current.clone();
+    next.id = ledger_core::mint::UlidMint::system().mint_id("pol").expect("id");
+    next.replaces = Some(current.hash.clone());
+    next.at = chrono::Utc::now();
+    next.hash = ledger_core::authority::payload::policy_hash(&next);
+    let id = next.id.to_string();
+    hand::file(&repo, Vec::new(), vec![next], &[]);
+    let file = hand::file_holding(&repo, &id);
+    let text = std::fs::read_to_string(&file).expect("read");
+    std::fs::write(&file, text.replace("format: 7", "format: 6")).expect("write");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 1, "{text}");
+    assert!(text.contains("[SCHEMA]") && text.contains("carries a namespace policy, a format 7 entry"), "{text}");
+}
+
+const SECOND: &str = "second.ledger";
+
+#[test]
+fn the_genesis_holder_self_binds_once_per_store_and_signs_later_namespaces_with_a_trusted_key() {
+    let (repo, _) = governed();
+    repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
+    // Their first key in the second namespace: their own add, signed by the
+    // key already trusted in the first.
+    let next = repo.keygen("owner-second");
+    let out = repo.ok(&["identity", "add", "--namespace", SECOND, "--key-file", &format!("{next}.pub")]);
+    assert!(out.contains(&format!("in `{SECOND}`")), "{out}");
+    let store = ledger_core::store::load(repo.path());
+    let second = store.log.iter().flat_map(|l| l.file.key_bindings.iter()).find(|b| b.namespace == SECOND).expect("binding");
+    assert!(!second.self_bound && second.mandate.is_none(), "not self-bound: {second:?}");
+    hand::commit(&repo, "second namespace");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 0, "{text}");
+}
+
+#[test]
+fn a_hand_written_self_bound_binding_in_a_second_namespace_fails() {
+    let (repo, _) = governed();
+    repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
+    hand::commit(&repo, "second namespace opted in");
+    let forged_key = repo.keygen("owner-forged");
+    let mut forged = hand::binding(BindingAct::Add, OWNER, OWNER, SECOND, Some(&format!("{forged_key}.pub")), None, None);
+    forged.self_bound = true;
+    forged.mandate = Some("contract 2026/117".into());
+    forged.hash = ledger_core::authority::payload::binding_hash(&forged);
+    let id = forged.id.to_string();
+    let ulid = forged.id.ulid().to_string();
+    hand::file(&repo, vec![forged], Vec::new(), &[(&ulid, &forged_key)]);
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 1, "{text}");
+    assert!(text.contains(&id) && text.contains("D7") && text.contains("first in the store"), "{text}");
 }

@@ -46,7 +46,6 @@ fn policy(g: &crate::authority::Grant) -> Policy {
         under: Some(g.id.clone()),
         at: testkit::stamp("2026-10-01T09:00:00Z"),
         hash: VersionHash::zero(),
-        at_hashed: true,
     };
     policy.hash = policy_hash(&policy);
     policy

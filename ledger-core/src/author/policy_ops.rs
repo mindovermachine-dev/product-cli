@@ -61,7 +61,6 @@ impl Author {
             under: auth.genesis().map(|g| g.id.clone()),
             at: self.now,
             hash: crate::hash::VersionHash::zero(),
-            at_hashed: true,
         };
         next.hash = policy_hash(&next);
         let line = format!("{} replaces {} for `{}`", next.id, current.id, next.namespace);
@@ -73,6 +72,7 @@ impl Author {
             ulid: &ulid,
             bytes: crate::authority::payload::policy_bytes(&next),
             own_key: None,
+            any_namespace: false,
         };
         self.sign_under(&store, Some(&current), what)?;
         let mut candidate = self.shell(None)?;

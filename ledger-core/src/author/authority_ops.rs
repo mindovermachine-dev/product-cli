@@ -208,7 +208,6 @@ impl Author {
             under,
             at: self.now,
             hash: crate::hash::VersionHash::zero(),
-            at_hashed: true,
         };
         policy.hash = crate::authority::payload::policy_hash(&policy);
         Ok(policy)
@@ -293,13 +292,10 @@ impl Author {
         if store.role(&args.role).is_none() {
             return Err(AuthorError::Usage(format!("role `{}` is not declared — `ledger role declare` it", args.role)));
         }
-        let by = self.authorized(&store, Act::Grant, Target::Scope(&args.scope), None)?;
-        if !by.genesis && by.role != args.role {
-            return Err(AuthorError::Unauthorized(format!(
-                "{} acts under `{}` ({}) and may grant only that role — the genesis grants others",
-                self.who, by.role, by.grant
-            )));
-        }
+        let auth = Authority::build(&store);
+        let as_role = self.as_role.as_deref();
+        let by = crate::authority::choice::grantor(&auth, &self.who, &args.scope, &args.role, self.now, as_role)
+            .map_err(|d| AuthorError::Unauthorized(format!("{} may not {}: {d}", self.who, Act::Grant.as_str())))?;
         let grant = self.seal_grant(&args, None, Some(under_of(&by)?))?;
         let line = format!("{} granted `{}` over {} to {} ({})", self.who, grant.role, grant.scope, grant.holder, grant.order);
         let note = format!("grant {}", grant.id);
@@ -308,7 +304,7 @@ impl Author {
         candidate.grants.push(grant);
         self.refusal_check(&store, &candidate, |_| false)?;
         let path = self.append(&candidate)?;
-        Ok(Applied { path, lines: vec![line, format!("{id} is live once its holder runs `ledger grant accept {id}`")] })
+        Ok(Applied { path, lines: vec![line, format!("{id} is live once its holder runs `ledger grant accept {id}`"), by.line()] })
     }
 
     /// The holder accepts a grant: it signs the grant's hash.
@@ -349,7 +345,7 @@ impl Author {
         candidate.revocations.push(revocation);
         self.refusal_check(&store, &candidate, |_| false)?;
         let path = self.append(&candidate)?;
-        Ok(Applied { path, lines: vec![line] })
+        Ok(Applied { path, lines: vec![line, by.line()] })
     }
 
     /// A sealed `rev:` entity for `target` (spec v1.7).

@@ -34,13 +34,20 @@ pub fn run(root: Option<PathBuf>, args: Args) -> Result<i32, String> {
         base: base.clone(),
     };
     let mut loaded = store::load(&repo_root);
-    if let Some(base) = &base {
-        // The merge's store: the base's log files (and signatures) a branch
-        // checkout lacks, so a local verify judges what the merge would.
-        let added = ledger_core::revision::overlay_base(&mut loaded, base)?;
-        if added > 0 && !args.json {
-            println!("verifying as merged into {base}: {added} change-set(s) from the base");
+    match &base {
+        Some(base) => {
+            // The merge's store: the base's log files (and signatures) a
+            // branch checkout lacks, so a local verify judges what the merge
+            // would.
+            let added = ledger_core::revision::overlay_base(&mut loaded, base)?;
+            if !args.json {
+                println!("landing computed against base `{base}` — {added} change-set(s) read from the base");
+            }
         }
+        None if !args.json => {
+            println!("landing computed on HEAD's own first-parent line — no base (no `--base`, and no `origin/HEAD` in this clone)");
+        }
+        None => {}
     }
     let mut report = verify(&loaded, &options);
     if args.export {

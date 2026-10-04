@@ -147,6 +147,8 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
         if b.self_bound {
             keys.push(b);
         }
+        let elsewhere = carried_over(&out.trusted, b);
+        keys.extend(elsewhere.iter());
         match judge(store, s, &policy, &keys, &positions) {
             Ok(_) => out.trusted.push(b),
             Err(message) => out.findings.push(Finding::new(
@@ -158,6 +160,24 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
     }
 }
 
+/// The genesis holder's first key in a later namespace is their own `add`,
+/// signed by a key of theirs already trusted in another namespace (D7). For
+/// that check alone, those keys stand in this namespace: the signature is
+/// made in `ledger-accept@<this namespace>`, and `allowed_signers` scopes
+/// each line to its own. `may_file` has already ruled who may file it.
+fn carried_over(trusted: &[&KeyBinding], b: &KeyBinding) -> Vec<KeyBinding> {
+    let own_add = b.act == crate::authority::BindingAct::Add && !b.self_bound && b.by == b.principal;
+    let here = trusted.iter().any(|k| k.principal == b.by && k.namespace == b.namespace && k.act.opens());
+    if !own_add || here {
+        return Vec::new();
+    }
+    trusted
+        .iter()
+        .filter(|k| k.principal == b.by && k.act.opens())
+        .map(|k| KeyBinding { namespace: b.namespace.clone(), ..(*k).clone() })
+        .collect()
+}
+
 /// Judge one subject's sidecars against its policy. `Ok(Some(close))`: valid
 /// but under a key closed after it.
 fn judge<'a>(
@@ -167,11 +187,13 @@ fn judge<'a>(
     keys: &[&'a KeyBinding],
     positions: &BTreeMap<String, Position>,
 ) -> Result<Option<&'a KeyBinding>, String> {
-    let none_ok = policy.schemes.contains(&Scheme::None);
+    // `none` is exclusive: a `[none]` policy requires nothing, any other
+    // requires every scheme it lists. A sidecar that is present is always
+    // verified.
     let sidecars: Vec<&Sidecar> = store.sidecars.iter().filter(|c| c.ulid == s.ulid).collect();
     let mut close = None;
     for scheme in policy.schemes.iter().filter(|sc| **sc != Scheme::None) {
-        if !sidecars.iter().any(|c| c.scheme == *scheme) && !none_ok {
+        if !sidecars.iter().any(|c| c.scheme == *scheme) {
             return Err(format!("`{}`'s policy requires a `{scheme}` signature; none is filed", s.namespace));
         }
     }

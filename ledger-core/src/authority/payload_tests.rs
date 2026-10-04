@@ -1,5 +1,7 @@
 //! The payloads' digests: pinned against the code before spec v1.8, so no
-//! format-6 digest moves, and each format-7 field moves only its own.
+//! format-6 digest moves, and each format-7 field moves only its own. The
+//! policy has no format-6 pin: a policy is a format-7 entry (its `at` is
+//! always hashed, D8), and one in a lower-format file is a schema fault.
 
 use crate::authority::fixture::{self, genesis, grant};
 use crate::authority::{BindingAct, KeyBinding, Policy, Revocable, Revocation, Scheme};
@@ -12,7 +14,6 @@ use super::*;
 // over exactly these records.
 const PIN_GRANT: &str = "sha256:fe78d33b3b80a9e3d4d93a271881736f34240586becd8448d1613cea260c316e";
 const PIN_GENESIS: &str = "sha256:72b02e659b9bb331bd4cdc8e509b547e57bf84093058e2f2832076a821b3cc46";
-const PIN_POLICY: &str = "sha256:15acaafd3955bfdc55dcbdfdfc8f644189b64f19556be86b136e18171e6e6fff";
 const PIN_BINDING: &str = "sha256:79c8cedb7a884f74805e829fecd9874223e6f2ad3009f5d5194effa3ff1d436a";
 const PIN_REVOCATION: &str = "sha256:60bf0b25a02a61cd0dac4accdb2e942224d4a3cee9e3e039a566e4b13f5f3666";
 
@@ -29,7 +30,6 @@ fn policy() -> Policy {
         under: None,
         at: testkit::stamp("2026-10-01T09:00:00Z"),
         hash: VersionHash::zero(),
-        at_hashed: false,
     }
 }
 
@@ -73,7 +73,6 @@ fn under() -> crate::id::GrantId {
 fn no_format_6_digest_moves() {
     assert_eq!(grant_hash(&grant("1", "architect", "architect@customer.example", "ns:hafeok.ledger", 1)).to_string(), PIN_GRANT);
     assert_eq!(grant_hash(&genesis("2", "steward")).to_string(), PIN_GENESIS);
-    assert_eq!(policy_hash(&policy()).to_string(), PIN_POLICY);
     assert_eq!(binding_hash(&binding()).to_string(), PIN_BINDING);
     assert_eq!(revocation_hash(&revocation()).to_string(), PIN_REVOCATION);
 }
@@ -85,7 +84,7 @@ fn under_moves_the_digest_of_every_payload_that_names_it() {
     assert_ne!(grant_hash(&g).to_string(), PIN_GRANT);
     let mut p = policy();
     p.under = Some(under());
-    assert_ne!(policy_hash(&p).to_string(), PIN_POLICY);
+    assert_ne!(policy_hash(&p), policy_hash(&policy()));
     let mut b = binding();
     b.under = Some(under());
     assert_ne!(binding_hash(&b).to_string(), PIN_BINDING);
@@ -95,15 +94,12 @@ fn under_moves_the_digest_of_every_payload_that_names_it() {
 }
 
 #[test]
-fn a_format_7_policy_hashes_its_at_and_a_format_6_one_does_not() {
+fn a_policy_always_hashes_its_at() {
     let mut p = policy();
     p.at = testkit::stamp("2026-10-03T00:00:00Z");
-    assert_eq!(policy_hash(&p).to_string(), PIN_POLICY, "format 6: `at` is outside the payload");
-    p.at_hashed = true;
     let first = policy_hash(&p);
-    assert_ne!(first.to_string(), PIN_POLICY);
     p.at = testkit::stamp("2026-10-04T00:00:00Z");
-    assert_ne!(policy_hash(&p), first, "format 7: re-dating a policy moves its hash");
+    assert_ne!(policy_hash(&p), first, "re-dating a policy moves its hash");
     let text = String::from_utf8(policy_bytes(&p)).expect("utf-8");
     assert!(text.contains("\"at\":\"2026-10-04T00:00:00Z\""), "{text}");
 }

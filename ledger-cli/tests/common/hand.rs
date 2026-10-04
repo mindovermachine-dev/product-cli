@@ -159,3 +159,32 @@ pub fn binding(
     b.hash = ledger_core::authority::payload::binding_hash(&b);
     b
 }
+
+/// The log file holding the entity `id`, by its text.
+pub fn file_holding(repo: &Repo, id: &str) -> std::path::PathBuf {
+    std::fs::read_dir(repo.path().join(".decisions/log"))
+        .expect("log")
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| std::fs::read_to_string(p).is_ok_and(|t| t.contains(&format!("id: {id}"))))
+        .unwrap_or_else(|| panic!("no log file holds {id}"))
+}
+
+/// Move the acceptance `id` out of its own change-set and append it to the
+/// landed file `into` — as a hand editing a landed file would. The target's
+/// `format:` is raised to 7 when lower, which by itself changes no entity.
+pub fn append_into(repo: &Repo, id: &str, into: &std::path::Path) {
+    use serde_yaml::Value;
+    let from = file_holding(repo, id);
+    let source: Value = serde_yaml::from_str(&std::fs::read_to_string(&from).expect("read")).expect("yaml");
+    let item = source.get("acceptances").and_then(Value::as_sequence).and_then(|s| s.first()).cloned().expect("acceptance");
+    let mut target: Value = serde_yaml::from_str(&std::fs::read_to_string(into).expect("read")).expect("yaml");
+    let map = target.as_mapping_mut().expect("mapping");
+    if map.get("format").and_then(Value::as_u64).unwrap_or(0) < 7 {
+        map.insert("format".into(), 7.into());
+    }
+    let list = map.entry("acceptances".into()).or_insert_with(|| Value::Sequence(Vec::new()));
+    list.as_sequence_mut().expect("list").push(item);
+    std::fs::write(into, serde_yaml::to_string(&target).expect("yaml")).expect("write");
+    std::fs::remove_file(from).expect("remove");
+}

@@ -521,7 +521,7 @@ key_bindings:
 policies:
   - id: pol:<ulid>
     namespace: hafeok.ledger
-    schemes: [ssh]             # ssh | dsse | none; ≥ 1
+    schemes: [ssh]             # ssh | dsse, ≥ 1 — or [none] alone
     require_sk: true           # optional; absent is false
     accept_role: steward       # the role whose grants carry accept-decision here
     reaccept_within_days: 30   # optional (ruling 12)
@@ -641,7 +641,7 @@ this CLI) and `none` (D4).
 | Field | On | Meaning |
 |---|---|---|
 | `under` | acceptance, `rev:` revocation, grant, policy, key binding | the id of the grant the act is made under (D9 (a)). Absent on the genesis grant, a self-bound binding, a principal's acts on its own keys, and a pre-policy act. A key binding carries it only when filed by someone other than its principal (the genesis holder, D7). |
-| `at` in the policy payload | policy | hashed when the policy is filed in a format-7 file (D8): every policy filed from v1.8 on. A format-6 policy keeps the payload it was hashed under. |
+| `at` in the policy payload | policy | always hashed (D8). A policy is a format-7 entry: one in a file below format 7 is a schema fault. |
 
 Only these five carry `under`, because only their payloads are hashed.
 `role declare` and `unavailable` (filed for another holder's grant) are
@@ -654,8 +654,14 @@ records none either: it is the holder's own act (D9 (a)).
 and revoking an acceptance count only grants of the policy's `accept_role`
 (§3.9.4), so their candidates are always in one role: with several, `--as`
 names it and the narrowest covering scope wins, then the lowest rank. Roles
-compete — and the fewest-claims rule (D9 (c)) applies — on the grant verbs,
-which count any role that `may` the act.
+compete on the other governed verbs, which count any role that `may` the
+act. **Fewest claims** (D9 (c)): the chosen grant is refused when another
+candidate's role `may` do a proper subset of what the chosen role may.
+Roles whose `may` sets are not nested are not ordered, whatever their
+counts. **The escalation guard decides candidacy for `grant new`**: only
+the genesis grant, or a grant in the role being granted, is a candidate —
+below the genesis a grantor gives only its own role. Every governed verb
+prints the grant it acted under: `under <grant> (<role>)`.
 
 A change-set carrying `under` anywhere, or a policy, declares `format: 7`;
 `under` in a lower-format file is a schema fault. The inline acceptance
@@ -672,7 +678,7 @@ value is a schema fault.
 | `ledger.revocation.v1` | `revokes`, `actor`, `at`, `reason`, `under` |
 | `ledger.authority-grant.v1` | §3.9.3's keys, `under` |
 | `ledger.identity-binding.v1` | §3.9.3's keys, `under` |
-| `ledger.namespace-policy.v1` | §3.9.3's keys, `under`, `at` (format 7) |
+| `ledger.namespace-policy.v1` | §3.9.3's keys, `under`, `at` |
 
 Every instant is RFC 3339 UTC in whole seconds with `Z`
 (`2026-10-04T09:00:00Z`). An acceptance's digest is computed, never stored:
@@ -709,7 +715,7 @@ revocation of an acceptance (a grant's revocation is signed with the grant,
 | acceptance | its `actor` | the decision's namespace |
 | revocation of an acceptance | its `actor` | the revoked acceptance's namespace |
 | key binding | its `by` (§3.10.5) | its `namespace` |
-| policy change (`replaces` present, format 7) | its `by` | its `namespace` |
+| policy change (`replaces` present) | its `by` | its `namespace` |
 
 `<ns>` is the ledger namespace of the store that holds the entity, never a
 flag and never derived from the principal.
@@ -724,13 +730,16 @@ flag and never derived from the principal.
   signed bytes; a signature verifies when it is ed25519 over DSSE's PAE by
   an `ssh-ed25519` key the signer has bound in the namespace, open at the
   entity's `at`. The open CLI verifies DSSE and never produces it.
-- **`none`.** No sidecar. Valid only where policy lists it.
+- **`none`.** No sidecar. Exclusive: a policy lists `none` alone or not at
+  all (ruled 2026-10-04, amending D4). `none` means governed and unsigned —
+  role-checked (`A006`), not signature-checked.
 
 **Requirement.** The policy in force for the namespace at the entity's
 position (§3.10.6) — for a policy change, the policy it replaces (D1) —
-lists the required schemes. With `none` listed, an entity may carry no
-sidecar; otherwise each listed scheme needs a sidecar. A sidecar that is
-present always has to verify. An entity before its namespace's first policy
+lists the required schemes. Under `[none]` an entity needs no sidecar;
+under any other policy each listed scheme needs one. A policy listing
+`none` with another scheme is a schema fault, and `ledger policy set`
+refuses it. A sidecar that is present always has to verify. An entity before its namespace's first policy
 is not checked. A namespace's first policy replaces nothing and is
 unsigned.
 
@@ -740,8 +749,12 @@ Key bindings are judged first, in order (§3.10.6). A binding is **trusted**
 when its filer is one D7 allows and, where the policy in force requires a
 signature, its signature verifies against the bindings already trusted:
 
-- the genesis holder's **self-bound** first binding in a namespace, carrying
-  the genesis grant's `external_ref` as `mandate`, signed by the key it binds;
+- the genesis holder's **self-bound** first binding in the store, carrying
+  the genesis grant's `external_ref` as `mandate`, signed by the key it
+  binds. Once per store: in any later namespace the genesis holder's first
+  binding is their own `add`, signed by a key of theirs already trusted in
+  another namespace (for that check alone, that key stands in the new
+  namespace);
 - a principal's **first key** (no open window in the namespace) is filed and
   signed by the genesis holder: `by` the genesis holder, `principal` the new
   holder, `under` the genesis grant;
@@ -757,10 +770,19 @@ bindings reach `allowed_signers`.
 #### 3.10.6 Order: landing and `at` (D6)
 
 An entity's **landing commit** is the first commit on the first-parent
-history of the verified commit whose tree contains the file the entity is
-filed in (a log file is written once, so an entity lands with its file).
-Its **position** is (landing index, `at`). Uncommitted files land at the
-tip.
+history of the verified commit whose version of the entity's file contains
+the entity. For a file never modified after it was added, that is the
+commit that added it. For a file modified since, its first-parent history
+is walked and each entity lands at the first version holding it, so an
+entry appended to a landed file lands where it was appended, never with the
+file. Its **position** is (landing index, `at`). An entity no commit holds
+(uncommitted) lands at the tip.
+
+An entity of a change-set file is one item of one entity list, keyed by its
+list and its `id` (a version by its `hash`, a legacy revocation by the
+acceptance it revokes), or the file's header fields (`id`, `created_at`,
+`created_by`, `parents`, `note`) taken together. `format:` is not an
+entity: changing a file's format declaration alone changes no entity.
 
 - **Before.** An act is before a terminating entry (a key's close, a grant's
   revocation) when it landed no later and its `at` is earlier. In one
@@ -798,10 +820,19 @@ of a version.
   a grant's revocation is checked once the store has a genesis.
 - **Unchecked namespaces.** `verify` names each namespace the log speaks
   that has no policy, as a notice, not a failure.
-- **Opting in is one-way.** A namespace that had a policy when a log file
-  landed and has none at the verified commit fails `L007`.
-- **Roles are write-once.** A landed role file whose content differs from
-  its content at its landing commit fails `L007`.
+- **Landed entities are immutable.** Every entity a landed log file has
+  held on the verified commit's first-parent line must be present, and
+  identical to what landed, at the verified commit (the working tree
+  included); otherwise `L007`. A role file and a sidecar are each one
+  entity. These are the cases:
+  - a removed policy — **opting in is one-way**: a namespace under policy
+    cannot return to unchecked;
+  - a removed revocation or key close, which would revive what it ended;
+  - an edited role file — **roles are write-once**: a new role and new
+    grants supersede.
+
+  Appending a new entity to a landed file changes no other entity; the new
+  one lands where it was appended (§3.10.6).
 
 #### 3.10.8 The export and the export-only verifier
 

@@ -96,3 +96,64 @@ fn as_naming_a_role_with_no_qualifying_grant_is_refused() {
     let g = grant("1", "delegate", WHO, "ns:hafeok.ledger", 0);
     assert_eq!(grant_over_ns(&store_of(vec![g]), Some("lead")), Err(Denial::NotInRole("lead".into())));
 }
+
+fn store_with(roles: Vec<crate::authority::Role>, grants: Vec<crate::authority::Grant>) -> crate::store::Store {
+    let acc = grants.iter().enumerate().map(|(i, g)| accepted(&format!("8{i}"), g)).collect();
+    fixture::store(roles, fixture::changeset(grants, acc))
+}
+
+#[test]
+fn roles_whose_may_sets_are_not_nested_are_not_ordered() {
+    // Equal counts, different sets: neither claims a subset of the other.
+    let a = role("granter-a", &[Capability::GrantRole, Capability::AcceptDecision]);
+    let b = role("granter-b", &[Capability::GrantRole, Capability::RevokeGrant]);
+    // Fewer capabilities, but not a subset: a count would order it.
+    let c = role("granter-c", &[Capability::GrantRole, Capability::SignOffPattern, Capability::WaiveInvalidation]);
+    let ga = grant("1", "granter-a", WHO, "ns:hafeok.ledger", 0);
+    let gb = grant("2", "granter-b", WHO, "ns:hafeok.ledger", 0);
+    let gc = grant("3", "granter-c", WHO, "ns:hafeok.ledger", 0);
+    let store = store_with(vec![a, b, c], vec![ga.clone(), gb.clone(), gc.clone()]);
+    assert_eq!(grant_over_ns(&store, Some("granter-a")), Ok(ga.id.to_string()));
+    assert_eq!(grant_over_ns(&store, Some("granter-b")), Ok(gb.id.to_string()));
+    assert_eq!(grant_over_ns(&store, Some("granter-c")), Ok(gc.id.to_string()), "two claims fewer is no subset");
+}
+
+#[test]
+fn the_genesis_holder_with_a_one_capability_granting_role_can_grant_another_role() {
+    let steward = role(
+        "steward",
+        &[Capability::GrantRole, Capability::RevokeGrant, Capability::DeclareUnavailability, Capability::RotateGenesis],
+    );
+    let delegate = role("delegate", &[Capability::GrantRole]);
+    let acceptor = role("acceptor", &[Capability::AcceptDecision]);
+    let holder = fixture::GENESIS_HOLDER;
+    let genesis = fixture::genesis("1", "steward");
+    let narrow = grant("2", "delegate", holder, "ns:hafeok.ledger", 0);
+    let store = store_with(vec![steward, delegate, acceptor], vec![genesis.clone(), narrow.clone()]);
+    let auth = Authority::build(&store);
+    let scope = GrantScope::Namespace("hafeok.ledger".into());
+    let who = testkit::identity(holder);
+    // `delegate` grants only `delegate`, so for `acceptor` the genesis is
+    // the one candidate — not refused for claiming more than `delegate`.
+    let by = super::grantor(&auth, &who, &scope, "acceptor", at(), None).map(|a| a.grant);
+    assert_eq!(by, Ok(genesis.id.to_string()));
+    // Granting `delegate` itself, both are candidates: `--as` is required,
+    // and the genesis role, a superset, is refused for the narrower one.
+    assert_eq!(
+        super::grantor(&auth, &who, &scope, "delegate", at(), None).map(|a| a.grant),
+        Err(Denial::Ambiguous(vec!["delegate".into(), "steward".into()]))
+    );
+    assert_eq!(super::grantor(&auth, &who, &scope, "delegate", at(), Some("delegate")).map(|a| a.grant), Ok(narrow.id.to_string()));
+    assert!(matches!(super::grantor(&auth, &who, &scope, "delegate", at(), Some("steward")), Err(Denial::Broader { .. })));
+}
+
+#[test]
+fn below_the_genesis_a_grantor_holding_no_grant_in_the_role_is_refused() {
+    let delegate = role("delegate", &[Capability::GrantRole]);
+    let acceptor = role("acceptor", &[Capability::AcceptDecision]);
+    let g = grant("1", "delegate", WHO, "ns:hafeok.ledger", 0);
+    let store = store_with(vec![delegate, acceptor], vec![g]);
+    let scope = GrantScope::Namespace("hafeok.ledger".into());
+    let out = super::grantor(&Authority::build(&store), &testkit::identity(WHO), &scope, "acceptor", at(), None);
+    assert!(matches!(out, Err(Denial::OwnRoleOnly(_))), "{out:?}");
+}

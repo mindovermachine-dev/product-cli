@@ -29,7 +29,7 @@ pub fn unauthorised(store: &Store, landing: &Landing) -> Vec<GraphFinding> {
     for logged in &store.log {
         let path = relative(&store.root, &logged.path);
         for a in &logged.file.acceptances {
-            let pos = landing.position(&path, a.at);
+            let pos = landing.position(&path, &crate::landed::key("acceptances", &a.id.to_string()), a.at);
             let auth = Authority::as_of(store, landing, pos);
             let ns = a.decision.namespace();
             let Some(policy) = auth.policy(ns) else { continue };
@@ -43,7 +43,7 @@ pub fn unauthorised(store: &Store, landing: &Landing) -> Vec<GraphFinding> {
             let (Some(target), Some(actor)) = (r.target(), r.actor()) else { continue };
             let id = r.subject();
             let act = |kind| ActRef { subject: &id, actor, under: r.under.as_ref(), act: kind, at: r.at };
-            let pos = landing.position(&path, r.at);
+            let pos = landing.position(&path, &crate::landed::revocation_key(r), r.at);
             let auth = Authority::as_of(store, landing, pos);
             let verdict = match &target {
                 Revocable::Acceptance(acc) => {
