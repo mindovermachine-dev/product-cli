@@ -1,0 +1,62 @@
+format: 2
+id: seam/rust/ledger-core-src-inbox-config-rs
+boundary: contract surface of ledger-core/src/inbox/config.rs
+verdict_knowledge: "Callers learn the inbox configuration: the clones a holder reviews over, by name, path, remote and default branch."
+contract_location: ledger-core/src/inbox/config.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: default_path
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:f16f13af4010a2027b42d4c21c9ce2dd8e6e22e96c91d58cc9fcfe4a2fd8ddfd
+- symbol: load
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:cf50b397e51a46126ffa0d28b3f79613ea15c0e0872f22767bd2242326262762
+- symbol: Config
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:c278d2ab932f10478e9d9cb1bd6a4b5be0cdccb227811c616121833ecf60aaf3
+- symbol: Repository
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:4509fdd5a7c772e924a3cf7f7d126512b665314755a5b69a881b9d0c1afbf2bd
+- symbol: repositories
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:4bbcadbf84f4041e1d21d4224b626d286c594454e41b884cceefbcf36c6833b4
+- symbol: default_branch
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:49298de921cbbc1a84ff43bd656a26fddd6e019163b7c142c437e003310815ac
+- symbol: name
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:ffc3b6974643b6502ebeab3f8de6ccee659ba412a3f9f29f9fc02493a47d219e
+- symbol: path
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:08038a7753ab3c6a8c339223a922a07e945b6a8228c1ffdfd49d9539b8f44af9
+- symbol: remote
+  file: ledger-core/src/inbox/config.rs
+  before: absent
+  after: sha256:e93abf33b63399622f1aa00c7c788795aec9c36313d25b058b7028f7bd2960cd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:4b3c7a7899eaee4f7ab75df3ab545b1b5137094a3f13114db25d8ef7154b98d6

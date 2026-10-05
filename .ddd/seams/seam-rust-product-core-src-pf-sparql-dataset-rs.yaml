@@ -1,0 +1,44 @@
+format: 2
+id: seam/rust/product-core-src-pf-sparql-dataset-rs
+boundary: contract surface of product-core/src/pf/sparql_dataset.rs
+verdict_knowledge: "Callers learn the in-memory dataset of named graphs, loaded from N-Triples and queried with exactly one named graph as the default graph."
+contract_location: product-core/src/pf/sparql_dataset.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: impl Dataset
+  file: product-core/src/pf/sparql_dataset.rs
+  before: absent
+  after: sha256:a85c7dbc5968865fe8b0e640e1c10531257ee9c2247f4310c03b2bc4d2a6fb97
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:54cc823725a0ff0959b94f32ff4187add795389d51d9fa3cae2c14d3a686aa3f
+- symbol: Dataset
+  file: product-core/src/pf/sparql_dataset.rs
+  before: absent
+  after: sha256:a85c7dbc5968865fe8b0e640e1c10531257ee9c2247f4310c03b2bc4d2a6fb97
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:22e5e4b08bcb1fba0b57005c7c822abfbbee443ba79e166668aeb6a59cff0e43
+- symbol: graphs
+  file: product-core/src/pf/sparql_dataset.rs
+  before: absent
+  after: sha256:a85c7dbc5968865fe8b0e640e1c10531257ee9c2247f4310c03b2bc4d2a6fb97
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:a44122de9be7dfb48ba5172e4848cd5895e7426ac3d2b8c02093a3548187af6e
+- symbol: load_graph
+  file: product-core/src/pf/sparql_dataset.rs
+  before: absent
+  after: sha256:a85c7dbc5968865fe8b0e640e1c10531257ee9c2247f4310c03b2bc4d2a6fb97
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:8848a981a02672b4ec9d728f313259e9a9ba4fc00ed44f1534408e560d439a30
+- symbol: new
+  file: product-core/src/pf/sparql_dataset.rs
+  before: absent
+  after: sha256:a85c7dbc5968865fe8b0e640e1c10531257ee9c2247f4310c03b2bc4d2a6fb97
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:6ba5d9b45d1a37f6da1192f4e84d08cd1d4a808df12ff114ec16cad0d3520b83
+- symbol: select_in
+  file: product-core/src/pf/sparql_dataset.rs
+  before: absent
+  after: sha256:a85c7dbc5968865fe8b0e640e1c10531257ee9c2247f4310c03b2bc4d2a6fb97
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:244747bca80289c89aac94501bc5c2bfc9a25c13fa8d20cc45d9d8a31767d547

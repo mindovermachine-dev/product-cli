@@ -256,9 +256,22 @@ fn short_hash(term: &str) -> String {
 /// a shape that cannot run must never read as a passing one.
 pub fn graph_findings(store: &Store) -> Vec<GraphFinding> {
     let ttl = emit(store);
+    run(|query| product_core::pf::sparql_rules::select(&ttl, query))
+}
+
+/// Every shape over one named graph of a dataset — that graph alone, never
+/// the union: the shapes hold per store (one genesis per store, `A005`), and
+/// a graph is one store's committed export (the inbox index, #79).
+pub fn graph_findings_in(dataset: &product_core::pf::sparql_dataset::Dataset, graph: &str) -> Vec<GraphFinding> {
+    run(|query| dataset.select_in(graph, query))
+}
+
+type Rows = Vec<std::collections::BTreeMap<String, String>>;
+
+fn run(select: impl Fn(&str) -> Result<Rows, String>) -> Vec<GraphFinding> {
     let mut out = Vec::new();
     for shape in SHAPES {
-        match product_core::pf::sparql_rules::select(&ttl, shape.select) {
+        match select(shape.select) {
             Ok(rows) => {
                 for row in rows {
                     let (subject, message) = (shape.message)(&row);

@@ -34,6 +34,7 @@ pub mod id;
 pub mod identity;
 pub mod init;
 pub mod key;
+pub mod inbox;
 pub mod landed;
 pub mod landing;
 pub mod merge;

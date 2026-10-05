@@ -17,6 +17,10 @@ mod diff_cmd;
 mod evolve;
 mod export;
 mod graph_cmds;
+mod inbox;
+mod inbox_accept;
+mod inbox_findings;
+mod inbox_render;
 mod init;
 mod inspect;
 mod merge_cmd;
@@ -105,6 +109,7 @@ fn dispatch_authority(command: Commands, root: Option<PathBuf>) -> Result<i32, S
     match command {
         Commands::Available { interval, at } => authority::available(root, &interval, at.as_deref()),
         Commands::Grant { cmd } => authority::grant(root, cmd),
+        Commands::Inbox { cmd } => inbox::run(cmd),
         Commands::Identity { cmd } => authority::identity(root, cmd),
         Commands::Policy { cmd } => authority::policy(root, cmd),
         Commands::Role { cmd } => authority::role(root, cmd),

@@ -27,7 +27,7 @@ fn file() -> BatchFile {
 }
 
 #[test]
-fn the_manifest_covers_every_row_and_its_grant() {
+fn the_manifest_covers_every_row_its_branch_and_its_grant() {
     let base = manifest(&file());
     let mut moved = file();
     moved.rows[1].version = "sha256:cc".into();
@@ -38,6 +38,12 @@ fn the_manifest_covers_every_row_and_its_grant() {
     let mut fewer = file();
     fewer.rows.pop();
     assert_ne!(manifest(&fewer), base, "a missing row");
+    let mut other_branch = file();
+    other_branch.rows[0].branch = Some("agent/13".into());
+    assert_ne!(manifest(&other_branch), base, "another branch");
+    let mut no_branch = file();
+    no_branch.rows[0].branch = None;
+    assert_ne!(manifest(&no_branch), base, "a branch dropped");
     let mut other_role = file();
     other_role.as_role = Some("acceptor".into());
     assert_ne!(manifest(&other_role), base, "`--as`");

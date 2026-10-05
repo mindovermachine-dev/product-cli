@@ -1,0 +1,38 @@
+format: 2
+id: seam/rust/ledger-core-src-inbox-mod-rs
+boundary: contract surface of ledger-core/src/inbox/mod.rs
+verdict_knowledge: "Callers learn the R0 registry's parts: configuration, git, index, list and term reading."
+contract_location: ledger-core/src/inbox/mod.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: config
+  file: ledger-core/src/inbox/mod.rs
+  before: absent
+  after: sha256:492671dde71f85cf70c96173b774f65355d156e2fbcf80a4d42d6053bca4e36e
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:2ccd8337f849c745e114a68d725ccdc178e7c00473f6a09ce8bb5c4e1051ca37
+- symbol: git
+  file: ledger-core/src/inbox/mod.rs
+  before: absent
+  after: sha256:492671dde71f85cf70c96173b774f65355d156e2fbcf80a4d42d6053bca4e36e
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:1646fe276692ab16ce6e49904a790799e34e72419542422ca888bc031ec7ca2f
+- symbol: index
+  file: ledger-core/src/inbox/mod.rs
+  before: absent
+  after: sha256:492671dde71f85cf70c96173b774f65355d156e2fbcf80a4d42d6053bca4e36e
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:eb10c8c1af29cb8033283e695caa2de12cfb6f9ceab41aac899f8ad32727a4f2
+- symbol: list
+  file: ledger-core/src/inbox/mod.rs
+  before: absent
+  after: sha256:492671dde71f85cf70c96173b774f65355d156e2fbcf80a4d42d6053bca4e36e
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:a2ba3bc2bb5b8ee12c082e643a7b3d540e6733f75d0c5c4afef65d6af48a653e
+- symbol: terms
+  file: ledger-core/src/inbox/mod.rs
+  before: absent
+  after: sha256:492671dde71f85cf70c96173b774f65355d156e2fbcf80a4d42d6053bca4e36e
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:af9fa2f7f806cf42e53cedb6b897ae3484cd2e68ab73bb38b894789e8a329cbf

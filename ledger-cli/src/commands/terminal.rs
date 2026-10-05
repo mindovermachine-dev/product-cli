@@ -51,6 +51,10 @@ pub fn mode(command: &Commands) -> Mode {
         Commands::Available { .. } => Mode::Terminal("available"),
         Commands::Unavailable { .. } => Mode::Terminal("unavailable"),
         Commands::Grant { cmd } => grant(cmd),
+        Commands::Inbox { cmd } => match cmd {
+            super::inbox::InboxCmd::Accept { confirm: Some(_), .. } => Mode::Terminal("inbox accept --confirm"),
+            super::inbox::InboxCmd::Accept { .. } | super::inbox::InboxCmd::List { .. } => Mode::Scriptable,
+        },
         Commands::Identity { cmd } => identity(cmd),
         Commands::Policy { cmd } => policy(cmd),
         Commands::Role { cmd } => role(cmd),
@@ -114,3 +118,7 @@ fn role(cmd: &RoleCmd) -> Mode {
 #[path = "terminal_tests.rs"]
 #[cfg(test)]
 mod tests;
+
+#[path = "terminal_callers_tests.rs"]
+#[cfg(test)]
+mod callers;

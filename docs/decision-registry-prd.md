@@ -91,8 +91,10 @@ Rules:
 
 ## 8. Index and freshness
 
-- Source: each repository's committed export (`ledger export`) on every branch with an open PR, plus `main`. Local: read from clones. Hosted: fetched on push via the GitHub App.
-- Index: an RDF dataset, one named graph per (repository, branch), rebuilt from exports; queries are SPARQL. Local: in-memory Oxigraph via the CLI's existing dependency; hosted: Varve when durable storage lands, Oxigraph until then.
+- Source: each repository's committed export (`ledger export`). Local (R0, as built): read from clones, on the default branch plus every remote-tracking branch whose committed export differs from the default branch's. The default branch is the configured one, else the remote's `HEAD` symref, else `main`. Git does not record whether a PR is open, so a PR number is a label only: it is read from `refs/pull/<n>/head` when the clone has fetched that ref and its head matches the branch, and grouping falls back to the branch otherwise. No forge API is called (§10.3). Hosted: fetched on push via the GitHub App, which does know which PRs are open.
+
+  > **Amended 2026-10-05, as built in R0 (#92)**, on the principal's ruling of Session B close-out §3 question 3. The earlier text read "on every branch with an open PR, plus `main`".
+- Index: an RDF dataset, one named graph per (repository, branch), rebuilt from exports; queries are SPARQL. Graph-stage shapes run per named graph, never over the union. R0 rebuilds the index on every invocation. Local: in-memory Oxigraph via the CLI's existing dependency; hosted: Varve when durable storage lands, Oxigraph until then.
 - Freshness: the inbox shows the index time per branch; an action on a stale item re-reads the branch before signing and refuses if the version hash moved.
 
 ## 9. Phases
