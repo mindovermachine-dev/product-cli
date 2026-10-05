@@ -23,11 +23,17 @@ only adds an unhashed field.
 
 **What changed.**
 - **`init --namespace`** files the genesis holder's self-bound binding in
-  the same change-set as the genesis grant and the first policy, when
-  `git config user.signingkey` names a usable key. The binding is signed by
-  the key it binds, and the same key signs the first policy. With no
-  usable key the namespace is initialised unbound, as before, and `init`
-  prints a warning.
+  the same change-set as the genesis grant and the first policy, whenever
+  the genesis holder has no key in the store. The key is the one
+  `git config user.signingkey` names. The binding is signed by the key it
+  binds, and the same key signs the first policy. **With no usable key it
+  refuses** (ruled 2026-10-05), naming what is missing. `--without-key`
+  initialises unbound, as before, with a warning.
+- **`verify`** says, as a notice, while the genesis holder has no trusted
+  key (`genesis_unbound` in `--json`).
+- **Callers moved.** 16 test call sites in 12 files bootstrap a namespace
+  with no key configured. They now pass `--without-key`. Later-namespace
+  calls, made after a key is bound, are unchanged.
 - **A namespace's first policy is a signing subject** (`signing/subject.rs`
   `subjects`), judged under its own schemes when its `by` held a live
   trusted key at its position (`signing/check.rs` `judge_first_policy`). In

@@ -37,7 +37,7 @@ pub fn repository(root: &Path, i: usize) -> Repo {
     let holder = Repo::with_identity(OWNER);
     holder.git(&["remote", "add", "origin", &bare.display().to_string()]);
     holder.declare();
-    holder.ok(&["init", "--namespace", &ns, "--external-ref", &format!("contract {i}")]);
+    holder.ok(&["init", "--namespace", &ns, "--external-ref", &format!("contract {i}"), "--without-key"]);
     holder.bind_own_key(&ns, "owner");
     let grant = common::hand::word(&holder.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{ns}")]), "grant:");
     holder.ok(&["grant", "accept", &grant]);

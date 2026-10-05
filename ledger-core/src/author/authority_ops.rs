@@ -40,6 +40,9 @@ pub struct InitNamespaceArgs {
     /// The role whose grants carry `accept-decision` here; defaults to
     /// [`DEFAULT_ACCEPT_ROLE`], and never the genesis role.
     pub accept_role: Option<String>,
+    /// Proceed with no key to bind (#96): without it, `init` refuses when
+    /// the genesis holder has no key in the store and none is configured.
+    pub without_key: bool,
 }
 
 /// The accept role `init --namespace` names when none is given. Declared
@@ -93,7 +96,7 @@ impl Author {
         let genesis = auth.genesis().cloned();
         let joined = genesis.as_ref().map(|g| g.id.clone());
         let mut candidate = self.shell(Some(format!("init namespace {}", args.namespace)))?;
-        let (mut new_roles, root_role, mut lines) = match genesis {
+        let (mut new_roles, root_role, mut lines) = match genesis.clone() {
             None => self.bootstrap(&store, &args, &mut candidate)?,
             Some(g) => self.join_genesis(&auth, &g)?,
         };
@@ -108,14 +111,11 @@ impl Author {
             new_roles.push(self.new_role(&accept_role, "Accepts decisions", &[Capability::AcceptDecision]));
             lines.push(format!("declared role `{accept_role}` — may accept-decision; held by nobody until granted"));
         }
-        let bootstrapped = candidate.grants.first().cloned();
-        let under = joined.or_else(|| bootstrapped.as_ref().map(|g| g.id.clone()));
+        let root = candidate.grants.first().cloned().or(genesis).ok_or_else(|| AuthorError::Io("no genesis grant".into()))?;
+        let under = joined.or_else(|| Some(root.id.clone()));
         let policy = self.first_policy(&args.namespace, &accept_role, under)?;
         lines.push(format!("namespace `{}` under policy {} (accept role `{accept_role}`)", args.namespace, policy.id));
-        lines.extend(match &bootstrapped {
-            Some(g) => self.bind_genesis_key(&store, &mut candidate, g, &policy)?,
-            None => self.sign_first_policy(&store, &policy)?,
-        });
+        lines.extend(self.genesis_key(&store, &mut candidate, &root, &policy, args.without_key)?);
         candidate.policies.push(policy);
         store.roles.extend(new_roles.iter().cloned());
         self.refusal_check(&store, &candidate, |_| false)?;

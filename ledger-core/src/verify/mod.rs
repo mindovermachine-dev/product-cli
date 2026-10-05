@@ -89,14 +89,52 @@ pub struct Report {
     /// deadline, `L012` after it.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub reaccept: Vec<crate::signing::check::Reaccept>,
+    /// What the run notices about the store's governance — never a failure.
+    #[serde(flatten)]
+    pub notices: Notices,
+}
+
+/// The notices `verify` prints: what holds and what does not, by namespace.
+#[derive(Debug, Default, serde::Serialize)]
+pub struct Notices {
     /// Namespaces the log speaks with no policy: nothing in them is
-    /// role-checked or signature-checked (a notice, not a failure, D5 (c)).
+    /// role-checked or signature-checked (D5 (c)).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub unchecked: Vec<String>,
     /// Namespaces whose policy in force is `[none]`: governed and
-    /// role-checked, but no signature is required (a notice, not a failure).
+    /// role-checked, but no signature is required.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub unsigned: Vec<String>,
+    /// The genesis holder, while they have no trusted key: until one is
+    /// bound, the first self-bound binding to land for the address is the
+    /// one trusted (D7, #96). With the governed namespaces it bears on.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub genesis_unbound: Option<GenesisUnbound>,
+}
+
+/// A genesis holder with no trusted key, and the governed namespaces.
+#[derive(Debug, Default, serde::Serialize)]
+pub struct GenesisUnbound {
+    pub holder: String,
+    pub namespaces: Vec<String>,
+}
+
+fn notices(store: &Store, trusted: &[&crate::authority::KeyBinding]) -> Notices {
+    Notices { unchecked: unchecked(store), unsigned: unsigned(store), genesis_unbound: genesis_unbound(store, trusted) }
+}
+
+/// The genesis holder, when no key of theirs is trusted, with every
+/// namespace under policy.
+fn genesis_unbound(store: &Store, trusted: &[&crate::authority::KeyBinding]) -> Option<GenesisUnbound> {
+    let auth = crate::authority::Authority::build(store);
+    let genesis = auth.genesis()?;
+    if trusted.iter().any(|k| k.principal == genesis.holder && k.act.opens()) {
+        return None;
+    }
+    let mut namespaces: Vec<String> = auth.policies.iter().map(|p| p.namespace.clone()).collect();
+    namespaces.sort();
+    namespaces.dedup();
+    Some(GenesisUnbound { holder: genesis.holder.to_string(), namespaces })
 }
 
 impl Report {
@@ -139,8 +177,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
         decisions: view.latest.len(),
         awaiting_acceptance: awaiting(&view),
         reaccept: signing.reaccept.clone(),
-        unchecked: unchecked(store),
-        unsigned: unsigned(store),
+        notices: notices(store, &signing.trusted),
         ..Report::default()
     };
     if opts.blame {

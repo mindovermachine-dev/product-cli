@@ -341,8 +341,9 @@ store (`.decisions/`), separate ontology.
   re-runs the role check over history as of each act; key bindings follow
   D7 (`authority/filing.rs`, called by the verbs and by `verify`).
   `init --namespace` binds the genesis holder's configured key in the same
-  act, and a first policy is signed when its author holds a trusted key
-  (#96); `verify` names `[none]` namespaces in a notice.
+  act (refused with no usable key; `--without-key` proceeds unbound), and a
+  first policy is signed when its author holds a trusted key (#96); `verify`
+  names `[none]` namespaces and an unbound genesis holder in notices.
   Integration suites need `ssh-keygen` (OpenSSH) as well as `script(1)`.
 - **Authority verbs and signing verbs refuse a non-interactive caller**
   (#71, #85). `accept <dec>`, `accept … --confirm`, `revoke`, and every verb

@@ -28,14 +28,29 @@ fn keyed() -> (Repo, String, String) {
     (repo, key, out)
 }
 
-/// A store initialised with no usable key configured (the path names no
-/// key, so a global `user.signingkey` cannot leak in).
+/// A store with no usable key configured (the path names no key, so a
+/// global `user.signingkey` cannot leak in), initialised with
+/// `--without-key`.
 fn unkeyed() -> (Repo, String) {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
     repo.use_key("/nonexistent/owner-key");
-    let out = repo.ok(&["init", "--namespace", NS, "--external-ref", MANDATE]);
+    let out = repo.ok(&["init", "--namespace", NS, "--external-ref", MANDATE, "--without-key"]);
     (repo, out)
+}
+
+#[test]
+fn with_no_usable_key_init_refuses_and_names_what_is_missing() {
+    let repo = Repo::with_identity(OWNER);
+    repo.declare();
+    repo.use_key("/nonexistent/owner-key");
+    let out = repo.ledger(&["init", "--namespace", NS, "--external-ref", MANDATE]);
+    let refused = common::both(&out);
+    assert_eq!(out.status.code(), Some(2), "a usage refusal: {refused}");
+    assert!(refused.contains("no usable key") && refused.contains("/nonexistent/owner-key"), "{refused}");
+    assert!(refused.contains("--without-key"), "the way to proceed is named: {refused}");
+    let store = ledger_core::store::load(repo.path());
+    assert!(store.log.iter().all(|l| l.file.policies.is_empty() && l.file.grants.is_empty()), "nothing written");
 }
 
 fn policy_of(repo: &Repo, ns: &str) -> ledger_core::authority::Policy {
@@ -81,6 +96,7 @@ fn init_binds_the_configured_key_self_bound_and_it_signs_the_first_policy() {
     hand::commit(&repo, "governed");
     let (code, text) = verify(&repo);
     assert_eq!(code, 0, "{text}");
+    assert!(!text.contains("has no trusted key"), "bound at init, the window is closed: {text}");
 }
 
 #[test]
@@ -96,8 +112,14 @@ fn bound_at_init_a_forged_self_bound_binding_is_never_trusted() {
 #[test]
 fn unbound_at_init_the_window_stays_open_and_init_says_so() {
     let (repo, out) = unkeyed();
-    assert!(out.contains("warning: no key bound") && out.contains("unusable"), "{out}");
+    assert!(out.contains("warning: no key bound") && out.contains("--without-key"), "{out}");
     hand::commit(&repo, "governed");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 0, "{text}");
+    assert!(
+        text.contains(&format!("notice: the genesis holder {OWNER} has no trusted key")) && text.contains(&format!("`{NS}`")),
+        "verify says the window is open: {text}"
+    );
     // The window #96 closes: the first self-bound binding to land for the
     // address — here a forged one — is the one trusted.
     let id = forge_self_bound(&repo, NS);
@@ -108,6 +130,7 @@ fn unbound_at_init_the_window_stays_open_and_init_says_so() {
     let store = ledger_core::store::load(repo.path());
     let forged = store.log.iter().flat_map(|l| l.file.key_bindings.iter()).find(|b| b.id.to_string() == id).expect("forged");
     assert!(signers.contains(forged.key.as_deref().unwrap_or("?")), "and it reaches allowed_signers: {signers}");
+    assert!(!text.contains("has no trusted key"), "the notice goes once a key is trusted — here the forged one: {text}");
 }
 
 #[test]

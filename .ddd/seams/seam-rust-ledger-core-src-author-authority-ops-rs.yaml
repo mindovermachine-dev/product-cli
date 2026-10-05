@@ -144,3 +144,9 @@ bindings:
   after: sha256:076c9f377fd4fe315c83939e86e5f9d8b8ee906501fd93933d37700a394197d7
   base_revision: 7c9c749d9e29afb970be830bdc8db38a6fbbe823
   hash: sha256:7f2841c9f365166acc461ab4feee70e6622b858b8f9a59749e0bebfe38014528
+- symbol: without_key
+  file: ledger-core/src/author/authority_ops.rs
+  before: sha256:a96248fff3c3c52b3e249b0dd696a01917e13f1dd1c15e84e74e7e6b5cb52891
+  after: sha256:caa27c39eb0eb41790e5eaba4b7a637a9f7d9f582b93c0f393fd3ed74f09d819
+  base_revision: c4b9c904c0389a9e3b484e92436dd01637346118
+  hash: sha256:31c40fcd2a7b523f89a9d4127f1e4faa58a0e867f3f8d67a8323fb9cf83d3d2f

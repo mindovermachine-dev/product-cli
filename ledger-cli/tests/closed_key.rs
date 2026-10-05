@@ -22,7 +22,7 @@ const SECOND: &str = "second.ledger";
 fn closed() -> (Repo, String, DateTime<Utc>) {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     let key = repo.bind_own_key(NS, "owner");
     let grant = hand::word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{NS}")]), "grant:");
     repo.ok(&["grant", "accept", &grant]);
@@ -186,7 +186,7 @@ const ARCHITECT: &str = "architect@customer.example";
 fn governed() -> (Repo, String) {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     let key = repo.bind_own_key(NS, "owner");
     hand::commit(&repo, "governed");
     (repo, key)

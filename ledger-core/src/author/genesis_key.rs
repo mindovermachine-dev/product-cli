@@ -6,12 +6,15 @@
 //! mandate, dated with the policy and signed by the key it binds. That
 //! closes the window in which the first self-bound binding to land for the
 //! address — anyone's — would be the one trusted. The same key signs the
-//! first policy. With no usable key configured the namespace is still
-//! initialised, unbound, and the output says what that leaves open.
+//! first policy. The same holds in a later namespace while the genesis
+//! holder has no key anywhere in the store.
 //!
-//! **In a later namespace** the first policy is signed when the genesis
-//! holder holds a live key anywhere in the store — the signature `verify`
-//! then requires of it.
+//! **No usable key** (ruled 2026-10-05): `init --namespace` refuses, naming
+//! what is missing, unless `--without-key` says to proceed unbound — and
+//! then `verify` keeps saying the window is open until a key is bound.
+//!
+//! **Once the genesis holder has a key**, a later namespace's first policy
+//! is signed with their live key — the signature `verify` then requires.
 
 use crate::authority::payload::{binding_bytes, binding_hash, policy_bytes};
 use crate::authority::{Authority, BindingAct, Grant, KeyBinding, Policy};
@@ -23,32 +26,43 @@ use super::sign_ops::ToSign;
 use super::{Author, AuthorError};
 
 impl Author {
-    /// Bind the configured key as the genesis holder's first binding, and
-    /// sign the first policy with it. Returns the lines to print.
-    pub(super) fn bind_genesis_key(
+    /// The genesis holder's key at `init`: bind it while they have none in
+    /// the store, else sign the first policy with their live key. Returns
+    /// the lines to print.
+    pub(super) fn genesis_key(
         &mut self,
         store: &Store,
         candidate: &mut ChangeSet,
         genesis: &Grant,
         policy: &Policy,
+        without_key: bool,
     ) -> Result<Vec<String>, AuthorError> {
-        let Some(key) = ssh::configured_key(&self.root) else {
-            return Ok(vec![format!(
-                "warning: no key bound — `git config user.signingkey` is unset, so until `ledger identity add --namespace {}` the first self-bound binding to land for {} is the one trusted (D7)",
+        if Authority::build(store).bindings.iter().any(|b| b.principal == self.who) {
+            return self.sign_first_policy(store, policy);
+        }
+        match configured(&self.root) {
+            Ok((key, key_type, blob)) => self.bind_genesis_key(store, candidate, genesis, policy, (&key, key_type, blob)),
+            Err(missing) if without_key => Ok(vec![format!(
+                "warning: no key bound ({missing}; --without-key) — until `ledger identity add --namespace {}`, the first self-bound binding to land for {} is the one trusted (D7)",
                 policy.namespace, self.who
-            )]);
-        };
-        let (key_type, blob, _) = match ssh::public_half(&key) {
-            Ok(half) => half,
-            Err(why) => {
-                return Ok(vec![format!(
-                    "warning: no key bound — `git config user.signingkey` names {}, which is unusable ({why}); until `ledger identity add --namespace {}` the first self-bound binding to land for {} is the one trusted (D7)",
-                    key.display(),
-                    policy.namespace,
-                    self.who
-                )])
-            }
-        };
+            )]),
+            Err(missing) => Err(AuthorError::Usage(format!(
+                "refused — {missing}. `init --namespace` binds the genesis holder's key in the same act, so the first self-bound binding for {} is theirs (#96): set `git config user.signingkey` to your SSH key, or pass `--without-key` to initialise unbound",
+                self.who
+            ))),
+        }
+    }
+
+    /// Bind the configured key as the genesis holder's first binding, and
+    /// sign the first policy with it.
+    fn bind_genesis_key(
+        &mut self,
+        store: &Store,
+        candidate: &mut ChangeSet,
+        genesis: &Grant,
+        policy: &Policy,
+        (key, key_type, blob): (&std::path::Path, String, String),
+    ) -> Result<Vec<String>, AuthorError> {
         let mut binding = KeyBinding {
             id: self.mint.mint_id("key").map_err(AuthorError::Io)?,
             act: BindingAct::Add,
@@ -79,7 +93,7 @@ impl Author {
 
     /// In a later namespace: sign the first policy when the genesis holder
     /// holds a live key in the store.
-    pub(super) fn sign_first_policy(&mut self, store: &Store, policy: &Policy) -> Result<Vec<String>, AuthorError> {
+    fn sign_first_policy(&mut self, store: &Store, policy: &Policy) -> Result<Vec<String>, AuthorError> {
         let auth = Authority::build(store);
         let closed = |b: &KeyBinding| auth.bindings.iter().any(|c| c.closes.as_ref() == Some(&b.id));
         if !auth.bindings.iter().any(|b| b.act.opens() && b.principal == self.who && !closed(b)) {
@@ -89,5 +103,14 @@ impl Author {
         let what = ToSign { namespace: &policy.namespace, ulid: &ulid, bytes: policy_bytes(policy), own_key: None, any_namespace: true };
         self.sign_under(store, Some(policy), what)?;
         Ok(vec![format!("signed {} with {}'s live key", policy.id, self.who)])
+    }
+}
+
+/// The configured key and its public half, or what is missing.
+fn configured(root: &std::path::Path) -> Result<(std::path::PathBuf, String, String), String> {
+    let key = ssh::configured_key(root).ok_or_else(|| "no key: `git config user.signingkey` is unset".to_string())?;
+    match ssh::public_half(&key) {
+        Ok((key_type, blob, _)) => Ok((key, key_type, blob)),
+        Err(why) => Err(format!("no usable key: `git config user.signingkey` names {}, which is unusable ({why})", key.display())),
     }
 }

@@ -68,16 +68,7 @@ fn status_lines(report: &Report) -> Vec<String> {
             out.push(format!("  - {} ({}): key {} closed by {} — re-accept or affirm{by}", r.acceptance, r.actor, r.key, r.closed_by));
         }
     }
-    for ns in &report.unchecked {
-        out.push(format!(
-            "notice: namespace `{ns}` has no policy — nothing in it is role-checked or signature-checked (`ledger init --namespace {ns}` opts it in)"
-        ));
-    }
-    for ns in &report.unsigned {
-        out.push(format!(
-            "notice: namespace `{ns}` is under policy `[none]` — governed and role-checked (D7, `A006`), but no signature is required: an absent signature is no finding, `L012` cannot arise, key bindings are trusted unsigned, a policy change is unsigned, and `ssh-keygen` is not consulted unless an `ssh` sidecar exists; a sidecar that is present is still verified"
-        ));
-    }
+    notices(&report.notices, &mut out);
     if report.export.as_ref().is_some_and(Vec::is_empty) {
         out.push("export: every committed export matches the log byte for byte".to_string());
     }
@@ -93,6 +84,28 @@ fn status_lines(report: &Report) -> Vec<String> {
         ));
     }
     out
+}
+
+/// The governance notices: unchecked and unsigned namespaces, and an
+/// unbound genesis holder. Never a failure.
+fn notices(n: &crate::verify::Notices, out: &mut Vec<String>) {
+    for ns in &n.unchecked {
+        out.push(format!(
+            "notice: namespace `{ns}` has no policy — nothing in it is role-checked or signature-checked (`ledger init --namespace {ns}` opts it in)"
+        ));
+    }
+    for ns in &n.unsigned {
+        out.push(format!(
+            "notice: namespace `{ns}` is under policy `[none]` — governed and role-checked (D7, `A006`), but no signature is required: an absent signature is no finding, `L012` cannot arise, key bindings are trusted unsigned, a policy change is unsigned, and `ssh-keygen` is not consulted unless an `ssh` sidecar exists; a sidecar that is present is still verified"
+        ));
+    }
+    if let Some(u) = &n.genesis_unbound {
+        out.push(format!(
+            "notice: the genesis holder {} has no trusted key — governed namespace(s) {}: the first self-bound binding to land for that address will be the one trusted (D7); bind one with `ledger identity add --namespace <ns>`",
+            u.holder,
+            u.namespaces.iter().map(|n| format!("`{n}`")).collect::<Vec<_>>().join(", ")
+        ));
+    }
 }
 
 #[cfg(test)]

@@ -203,6 +203,11 @@ pub enum Commands {
         /// role (default: acceptor, declared if absent)
         #[arg(long, value_name = "ROLE")]
         accept_role: Option<String>,
+        /// Initialise without binding the genesis holder's key: until one is
+        /// bound, the first self-bound binding to land for the address is
+        /// the one trusted (D7)
+        #[arg(long, requires = "namespace")]
+        without_key: bool,
     },
     /// Walk the change-sets in creation order
     Log {

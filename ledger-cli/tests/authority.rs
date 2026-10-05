@@ -18,7 +18,7 @@ const NS: &str = "fixture.ledger";
 fn initialised() -> Repo {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    let out = repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    let out = repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     assert!(out.contains("genesis grant:"), "{out}");
     repo
 }

@@ -75,9 +75,9 @@ fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
         Commands::Escape { decision, exposure, review_by } => {
             evolve::escape(root, &decision, exposure, &review_by)
         }
-        Commands::Init { namespace, external_ref, role, accept_role } => {
+        Commands::Init { namespace, external_ref, role, accept_role, without_key } => {
             init::run(root, namespace.map(|namespace| ledger_core::author::InitNamespaceArgs {
-                namespace, external_ref, role, accept_role,
+                namespace, external_ref, role, accept_role, without_key,
             }))
         }
 

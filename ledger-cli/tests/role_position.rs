@@ -22,7 +22,7 @@ fn verify(repo: &Repo) -> (i32, String) {
 fn an_act_that_landed_before_the_role_its_grant_names_fails_a006() {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     repo.bind_own_key(NS, "owner");
     let grant = hand::word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{NS}")]), "grant:");
     repo.ok(&["grant", "accept", &grant]);
@@ -47,7 +47,7 @@ fn a_role_and_an_act_landed_in_the_same_commit_pass_whatever_the_role_is_dated()
     for created_at in ["2099-12-31", "2000-01-01"] {
         let repo = Repo::with_identity(OWNER);
         repo.declare();
-        repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+        repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
         let role = repo.path().join(".decisions/roles/acceptor.yml");
         let text = std::fs::read_to_string(&role).expect("role");
         let dated: String = text

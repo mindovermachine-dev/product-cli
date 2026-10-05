@@ -781,9 +781,13 @@ first policy — is never trusted.
 `ledger init --namespace` (2026-10-05, #96) files the genesis holder's
 self-bound binding in the same change-set as the genesis grant and the
 first policy, dated with the policy (so the policy is in force at it),
-when `git config user.signingkey` names a usable key. The window in which
-the first self-bound binding to land for the address — anyone's — is the
-one trusted is then closed by the act that opens the namespace.
+whenever the genesis holder has no key in the store — the key `git config
+user.signingkey` names. The window in which the first self-bound binding to
+land for the address — anyone's — is the one trusted is then closed by the
+act that opens the namespace. With no usable key, `init --namespace`
+refuses and names what is missing; `--without-key` is the explicit way to
+proceed unbound (ruled 2026-10-05), and `verify` then says the window is
+open (§3.10.7).
 
 - the genesis holder's **self-bound** first binding in the store, carrying
   the genesis grant's `external_ref` as `mandate`, signed by the key it
@@ -901,6 +905,11 @@ of a version.
   and `ssh-keygen` is not consulted unless an `ssh` sidecar exists. A
   sidecar that is present is still verified. `--json` carries the list as
   `unsigned`.
+- **An unbound genesis holder** (2026-10-05, #96). While the genesis
+  holder has no trusted key, `verify` says so as a notice, naming the
+  governed namespaces: the first self-bound binding to land for that
+  address will be the one trusted (D7). `--json` carries it as
+  `genesis_unbound` (`holder`, `namespaces`).
 - **Landed entities are immutable.** Every entity a landed log file has
   held on the verified commit's first-parent line must be present, and
   identical to what landed, at the verified commit (the working tree
