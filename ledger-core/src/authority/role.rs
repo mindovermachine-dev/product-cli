@@ -132,9 +132,9 @@ pub enum Act {
     /// Declare a new role file.
     DeclareRole,
     /// File a namespace policy, first or change — the genesis holder's act,
-    /// made under the genesis grant. It needs `grant-role`, which every
-    /// genesis role carries (`Capability::ROOT`); `verify` additionally
-    /// requires the grant named to be the genesis grant.
+    /// authorised by the genesis grant only. It maps to `grant-role`, which
+    /// every genesis role carries (`Capability::ROOT`); that mapping does
+    /// not widen it — `verify` refuses any grant but the genesis grant.
     SetPolicy,
 }
 

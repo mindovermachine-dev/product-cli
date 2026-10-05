@@ -810,9 +810,9 @@ entity: changing a file's format declaration alone changes no entity.
 - A terminating entry applies to every act that is not before it — so a
   close filed with `at` set to the time of compromise invalidates what
   landed in between.
-- **A role file is an enabling entry.** It is positioned at its file's
-  landing, dated at the start of its `created_at` day, and counts only for
-  acts it is not after (2026-10-05).
+- **A role file is an enabling entry, placed by landing alone.** It has
+  no signed `at`, so where D6 would compare times, landing decides: it
+  counts for an act that landed no earlier than it (2026-10-05).
 - **A policy governs every act that is not before it.** An act that landed
   after a namespace's policy is under that policy whatever its `at`; only an
   act both landed no later and dated earlier is before it (a pre-policy act,
@@ -848,18 +848,25 @@ of a version.
   a namespace's first or a change, is judged like any other act as of its
   own position: the grant it names (`under`) must be the genesis grant as
   of the policy, held by its `by`, live and available at its `at`, through
-  the same role check (`A006`). The position rule does not exempt it: a
+  the same role check (`A006`). **The genesis grant only:** in the
+  reference implementation the act is `Act::SetPolicy`, which the role check
+  maps to the `grant-role` capability every genesis role carries — that
+  mapping does not widen who may file a policy. A grant of `grant-role`
+  over `*` that is not the genesis grant authorises no policy, signed or
+  not. The position rule does not exempt it: a
   policy defines a namespace's governance, so even the first one is
   checked. A signature on a policy change says who filed it, not that they
   were the one who may. Until this rule a policy by anyone with a bound key
   — or, under `[none]` or for a namespace's first policy, by anyone at all
   — passed the gate and governed the namespace.
-- **A role takes effect from its own position** (2026-10-05). A role file
-  is an enabling entry: it counts for an act only when it is not after it
-  (§3.10.6) — its file landed no later, and its `created_at` day began no
-  later than the act's `at`. An act made under a grant whose role landed
-  after it fails `A006`. Until this rule every role file counted for every
-  act, whenever it landed.
+- **A role takes effect from its own landing** (2026-10-05). A role file
+  is an enabling entry, and it carries no signed `at` (`created_at` is a
+  date in no payload), so landing alone places it (D6): it counts for an
+  act whose position landed no earlier than the role file. Its
+  `created_at` plays no part. An act made under a grant whose role landed
+  after it fails `A006`; a role and an act landed in the same commit stand
+  together. Until this rule every role file counted for every act,
+  whenever it landed.
 - **An old-style revocation is a pre-policy act** (2026-10-05). A legacy
   revocation (`acceptance`, `by`; formats 1–5) of an acceptance is judged
   like a `rev:` revocation: before its namespace's first policy it stands

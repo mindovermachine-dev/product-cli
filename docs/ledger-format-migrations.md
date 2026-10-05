@@ -36,14 +36,17 @@ by anyone passed.
 through `policy_verdict`: its `under` must name the genesis grant as of the
 policy, held by its `by`, live and available at its `at`, through
 `authorize_named` (as `Act::SetPolicy`, which needs `grant-role`, carried
-by every genesis role). A policy that fails is `A006`.
+by every genesis role). Only the genesis grant authorises a policy: a
+holder of `grant-role` over `*` under any other grant does not, signed or
+not. A policy that fails is `A006`.
 
 **Roles — what the gate did before.** `Authority::as_of` admitted every
 role file whatever its landing, so a role landed after an act still counted
-for it. **Now** a role counts only for acts it is not after: its file
-landed no later, and its `created_at` day began no later (`role_position`
-in `authority/view.rs`). An act made under a grant whose role landed later
-fails `A006`.
+for it. **Now** a role counts only for acts that landed no earlier than
+its file — landing alone, because a role file carries no signed `at` and
+its `created_at` is in no payload (`role_landing` in `authority/view.rs`).
+An act made under a grant whose role landed later fails `A006`; a role and
+an act landed in one commit stand together, whatever the role is dated.
 
 No new class, no format change, no digest moves: both are extensions of
 `A006` by the `L010` mechanism. This repository's store has no policy and

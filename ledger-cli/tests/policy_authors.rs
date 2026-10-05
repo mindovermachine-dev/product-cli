@@ -99,6 +99,27 @@ fn a_first_policy_for_an_ungoverned_namespace_by_a_non_genesis_author_fails_a006
 }
 
 #[test]
+fn a_policy_change_under_a_non_genesis_grant_role_over_star_fails_a006() {
+    let (repo, arch) = governed_with_a_bound_architect();
+    repo.ok(&["role", "declare", "delegate", "--may", "grant-role"]);
+    let grant = hand::word(&repo.ok(&["grant", "new", "delegate", "--to", ARCHITECT, "--scope", "*"]), "grant:");
+    repo.act_as(ARCHITECT);
+    repo.use_key(&arch);
+    repo.ok(&["grant", "accept", &grant]);
+    hand::commit(&repo, "the architect holds grant-role over *, not the genesis grant");
+    let mut next = next_policy(&repo, ARCHITECT);
+    next.under = Some(grant.parse().expect("grant id"));
+    next.hash = ledger_core::authority::payload::policy_hash(&next);
+    let (id, ulid) = (next.id.to_string(), next.id.ulid().to_string());
+    hand::file(&repo, Vec::new(), vec![next], &[(&ulid, &arch)]);
+    hand::commit(&repo, "a policy change under the architect's own grant, signed");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 1, "{text}");
+    assert!(text.contains(&format!("[A006] {id}")) && text.contains("not the genesis grant"), "{text}");
+    assert!(!text.contains("[L011]"), "the signature is good: {text}");
+}
+
+#[test]
 fn the_genesis_holders_own_policy_change_still_passes() {
     let (repo, _) = governed_with_a_bound_architect();
     repo.ok(&["policy", "set", "--namespace", NS, "--reaccept-within-days", "30"]);
