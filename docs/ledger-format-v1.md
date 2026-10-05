@@ -373,10 +373,12 @@ Rules:
   finding — the tripwire fired and the decision is due a fresh look. These
   are different facts about a decision and a report that merges them tells
   the reader neither. Neither finding is a gate class (see below).
-- **Same declare-what-you-need rule as formats 2 and 3.** A change-set
-  declares `format: 4` only when one of its versions actually carries a
-  `revisit_if`; a store that never states one stays a pure format-1/2/3
-  store, and a lower-format file carrying the field is a schema fault.
+- **Declare what you need.** A writer declares the lowest format its
+  content needs (`format::needed_for` in the reference implementation), so
+  a store that never states a `revisit_if` stays a format-1/2/3 store. A
+  file that declares less than its content needs — here, a file below
+  format 4 carrying `revisit_if` — is a schema fault. A file that declares
+  more than its content needs is not (ruled 2026-10-05).
 
   > **Enforced 2026-10-05 (#81).** Until then the reference
   > implementation's loader did not check this rule, and three of its own
