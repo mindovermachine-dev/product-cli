@@ -10,7 +10,7 @@ step 3 (#79). One pull request per step.
 | 0 | #85 | #88 (merged) | Session A's carry-overs: the non-interactive refusal on every verb that writes an authority record, the D9 root role and fallback order, and the grant-scope test. The PR description is the record. |
 | 1 | #70 | #89 (merged) | Spec v1.8 / format 7: signed bytes, `ledger.acceptance.v1`, `under`, `at` in the policy payload, sidecars, `ssh` sign/verify, `dsse` verify, exclusive `none`, `L011`, `L012`, `A006`, landing per entity (D6), immutable landed entities (`L007`), D7 in one function, `--as` (D9), and the export-only verifier. |
 | 2 | #86 | #90 | `accept --batch <file> [--repository] [--branch]` and the `ledger.acceptance-batch.v1` selection file (format §3.10.9). |
-| 3 | #79 | this branch's PR | `ledger inbox list|accept`, the named-graph dataset (`product_core::pf::sparql_dataset`), and graph shapes run per named graph. |
+| 3 | #79 | #92 (stacked on #90) | `ledger inbox list|accept`, the named-graph dataset (`product_core::pf::sparql_dataset`), and graph shapes run per named graph. |
 
 **Issue text amended.** #82 now also covers signing grant revocations (4
 October). No other issue body was edited.
