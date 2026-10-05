@@ -176,6 +176,12 @@ pub enum Commands {
         #[command(subcommand)]
         cmd: super::authority_enum::GrantCmd,
     },
+    /// The decision registry over local clones: list, then accept in one
+    /// sitting (R0)
+    Inbox {
+        #[command(subcommand)]
+        cmd: super::inbox::InboxCmd,
+    },
     /// Bind, rotate or revoke your signing keys (regenerates allowed_signers)
     Identity {
         #[command(subcommand)]

@@ -173,6 +173,7 @@ pub fn needs_terminal(args: &[&str]) -> bool {
         Some("grant") => true,
         Some("identity") => sub != Some("sync"),
         Some("policy") => sub == Some("set"),
+        Some("inbox") => sub == Some("accept") && args.contains(&"--confirm"),
         _ => false,
     }
 }

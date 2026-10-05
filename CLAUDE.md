@@ -360,6 +360,20 @@ store (`.decisions/`), separate ontology.
   acceptance record per decision — each signing its own version hash,
   through the same per-member gate. A member whose ground is filed
   `indeterminate:` is *held* and stops the whole run by name.
+- **Batch and inbox (#86, #79)** — `ledger accept --batch <file>
+  [--repository <label>] [--branch <name>]` signs exactly the rows of a
+  selection file (`ledger.acceptance-batch.v1`, format §3.10.9; `batch_file`),
+  pinned by one manifest digest over every row of every repository: one
+  confirmation, one acceptance and one sidecar per row. `ledger inbox list`
+  indexes each configured clone's committed exports (`docs/decisions/*.nt`)
+  as one named graph per (repository, branch) in an in-memory Oxigraph
+  dataset (`product_core::pf::sparql_dataset`; shapes run per graph, never
+  the union) and lists the holder's proposed decisions; the role check and
+  the grant shown come from `authority::authorize` over the branch's store.
+  `ledger inbox accept --all|--decision … [--confirm]` writes the batch file
+  and signs each branch in a worktree, commits as the holder, pushes, and
+  runs `ledger verify --base <default>` — the base is always named. R0
+  rebuilds the index every invocation.
 - **Authoring (L1)** — every verb is a thin shell over the gate: `declare`,
   `add`, `allocate`, `escape`, `revise`, `supersede`, `accept`, `revoke`,
   `status`, `log`, `blame`. A verb builds its change-set, runs the same

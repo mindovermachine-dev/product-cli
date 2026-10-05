@@ -1,0 +1,266 @@
+//! `ledger inbox` (#79): three repositories, twelve agent branches with
+//! proposed decisions, one holder, one sitting.
+//!
+//! Each repository is a bare remote with two clones: the holder's, which
+//! opts the namespace in with its own genesis (`init --namespace`), binds a
+//! key and grants itself the accept role; and an agent's, which proposes
+//! decisions on branches and pushes them with their exports.
+
+mod common;
+
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+use common::Repo;
+
+const OWNER: &str = "owner@customer.example";
+const AGENT: &str = "claude-agent@anthropic.invalid";
+
+struct Fixture {
+    root: tempfile::TempDir,
+    holders: Vec<Repo>,
+    config: PathBuf,
+}
+
+fn git(dir: &Path, args: &[&str]) -> String {
+    let out = Command::new("git").arg("-C").arg(dir).args(args).output().expect("git");
+    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    String::from_utf8_lossy(&out.stdout).into_owned()
+}
+
+fn ledger_ok(dir: &Path, args: &[&str]) -> String {
+    let out = common::invoke(dir, args);
+    assert_eq!(out.status.code(), Some(0), "ledger {args:?}: {}", common::both(&out));
+    common::both(&out)
+}
+
+/// One repository: a governed holder clone pushed to a bare remote.
+fn repository(root: &Path, i: usize) -> Repo {
+    let ns = format!("repo{i}.ledger");
+    let bare = root.join(format!("remote{i}.git"));
+    git(root, &["init", "-q", "--bare", "--initial-branch=main", &bare.display().to_string()]);
+    let holder = Repo::with_identity(OWNER);
+    holder.git(&["remote", "add", "origin", &bare.display().to_string()]);
+    holder.declare();
+    holder.ok(&["init", "--namespace", &ns, "--external-ref", &format!("contract {i}")]);
+    holder.bind_own_key(&ns, "owner");
+    let grant = common::hand::word(&holder.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{ns}")]), "grant:");
+    holder.ok(&["grant", "accept", &grant]);
+    common::hand::commit(&holder, "governed");
+    holder.git(&["push", "-q", "-u", "origin", "main"]);
+    holder
+}
+
+/// An agent proposes `decisions` decisions on each of `branches` branches.
+fn propose(root: &Path, i: usize, per_branch: &[usize]) {
+    let ns = format!("repo{i}.ledger");
+    let agent = root.join(format!("agent{i}"));
+    git(root, &["clone", "-q", &root.join(format!("remote{i}.git")).display().to_string(), &agent.display().to_string()]);
+    git(&agent, &["config", "user.email", AGENT]);
+    git(&agent, &["config", "user.name", "Agent"]);
+    for (b, n) in per_branch.iter().enumerate() {
+        git(&agent, &["checkout", "-q", "-b", &format!("agent/{b}"), "origin/main"]);
+        for d in 0..*n {
+            let statement = format!("Repository {i}, branch {b}, decision {d}.");
+            ledger_ok(&agent, &[
+                "add", "--set", "ledger-design", "--namespace", &ns, "--statement", &statement,
+                "--store", "constraint", "--discharge", "analyzer:DEC001",
+                "--based-on", "rule:DD042", "--based-on", "symbol:Billing.Invoice.Total",
+            ]);
+        }
+        ledger_ok(&agent, &["export", "--format", "ntriples"]);
+        git(&agent, &["add", "-A"]);
+        git(&agent, &["commit", "-q", "-m", "proposed"]);
+        git(&agent, &["push", "-q", "origin", &format!("agent/{b}")]);
+    }
+}
+
+/// Three repositories; twelve branches; twenty proposed decisions.
+fn fixture() -> Fixture {
+    fixture_with(|_| {})
+}
+
+/// The fixture, with `before` run on the first holder's clone (pushed to
+/// main) before the agents cut their branches.
+fn fixture_with(before: impl Fn(&Repo)) -> Fixture {
+    let root = tempfile::tempdir().expect("tempdir");
+    let mut holders = Vec::new();
+    let shape: [&[usize]; 3] = [&[2, 2, 2, 1], &[2, 2, 1, 1], &[2, 2, 2, 1]];
+    for (i, per_branch) in shape.iter().enumerate() {
+        holders.push(repository(root.path(), i));
+        if i == 0 {
+            before(&holders[0]);
+        }
+        propose(root.path(), i, per_branch);
+    }
+    for h in &holders {
+        h.git(&["fetch", "-q", "origin"]);
+    }
+    let config = root.path().join("inbox.yml");
+    let mut text = String::from("repositories:\n");
+    for (i, h) in holders.iter().enumerate() {
+        text.push_str(&format!("  - name: repo{i}\n    path: {}\n    default_branch: main\n", h.path().display()));
+    }
+    std::fs::write(&config, text).expect("config");
+    Fixture { root, holders, config }
+}
+
+fn inbox(f: &Fixture, args: &[&str]) -> std::process::Output {
+    let mut full = vec!["inbox"];
+    full.extend_from_slice(args);
+    full.extend_from_slice(&["--config", f.config.to_str().expect("utf-8")]);
+    common::invoke(f.holders[0].path(), &full)
+}
+
+fn manifest(out: &str) -> String {
+    out.lines().find_map(|l| l.strip_prefix("manifest")).map(|m| m.trim().to_string()).unwrap_or_else(|| panic!("no manifest: {out}"))
+}
+
+#[test]
+fn three_repositories_twelve_branches_one_sitting_every_branch_green() {
+    let f = fixture();
+    let list = inbox(&f, &["list", "--json"]);
+    let text = common::both(&list);
+    assert_eq!(list.status.code(), Some(0), "{text}");
+    let json: serde_json::Value = serde_json::from_str(&String::from_utf8_lossy(&list.stdout)).expect("json");
+    let items = json["items"].as_array().expect("items");
+    assert_eq!(items.len(), 20, "every proposed decision in one list: {text}");
+    assert!(items.iter().all(|i| i["identity_class"] == "agent" && i["grant"].as_str().is_some_and(|g| g.starts_with("grant:"))), "{text}");
+    assert!(items.iter().all(|i| i["rule"] == "rule:DD042" && i["citing"][0] == "symbol:Billing.Invoice.Total"), "{text}");
+    let branches: std::collections::BTreeSet<(String, String)> =
+        items.iter().map(|i| (i["repository"].to_string(), i["branch"].to_string())).collect();
+    assert_eq!(branches.len(), 12, "twelve branches: {text}");
+
+    let dry = common::both(&inbox(&f, &["accept", "--all"]));
+    let m = manifest(&dry);
+    let started = std::time::Instant::now();
+    let signed = inbox(&f, &["accept", "--all", "--confirm", &m]);
+    let elapsed = started.elapsed();
+    let out = common::both(&signed);
+    assert_eq!(signed.status.code(), Some(0), "{out}");
+    assert_eq!(out.matches("green").count(), 12, "every branch's verify --base green: {out}");
+    assert!(!out.contains("NOT green"), "{out}");
+    println!("TIMING: 20 acceptances, 12 branches, 1 confirmation: {:.2}s", elapsed.as_secs_f64());
+
+    // Independently: fetch, and verify every branch against its base.
+    let mut sidecars = 0;
+    for (i, h) in f.holders.iter().enumerate() {
+        h.git(&["fetch", "-q", "origin"]);
+        let on_main = git(h.path(), &["ls-tree", "--name-only", "origin/main", ".decisions/sig/"]).lines().count();
+        let branches = git(h.path(), &["for-each-ref", "--format=%(refname:strip=3)", "refs/remotes/origin/agent/"]);
+        for b in branches.lines() {
+            let wt = f.root.path().join(format!("check-{i}-{}", b.replace('/', "-")));
+            h.git(&["worktree", "add", "-q", "--detach", &wt.display().to_string(), &format!("origin/{b}")]);
+            let v = common::invoke(&wt, &["verify", "--base", "origin/main", "--export"]);
+            assert_eq!(v.status.code(), Some(0), "repo{i} {b}: {}", common::both(&v));
+            sidecars += std::fs::read_dir(wt.join(".decisions/sig")).map(|d| d.count()).unwrap_or(0) - on_main;
+        }
+    }
+    assert_eq!(sidecars, 20, "one signature per acceptance, beyond the sidecars main already holds");
+}
+
+#[test]
+fn a_namespace_with_no_policy_is_named_unchecked_not_omitted() {
+    let f = fixture();
+    let h = &f.holders[0];
+    // A second namespace, never opted in, proposed on main.
+    let out = h.ok(&["add", "--set", "ledger-design", "--namespace", "loose.ledger", "--statement", "Unchecked."]);
+    assert!(out.contains("dec:loose.ledger/"), "{out}");
+    h.ok(&["export", "--format", "ntriples"]);
+    common::hand::commit(h, "a loose decision");
+    h.git(&["push", "-q", "origin", "main"]);
+    h.git(&["fetch", "-q", "origin"]);
+    let list = common::both(&inbox(&f, &["list"]));
+    assert!(list.contains("unchecked: `loose.ledger` in repo0 @ main has no policy"), "{list}");
+    assert!(!list.contains("Unchecked."), "its proposed decisions are in nobody's list: {list}");
+}
+
+#[test]
+fn the_inbox_refuses_an_agent_a_pipe_and_another_principals_clone() {
+    let f = fixture();
+    // Piped stdin: the confirming run needs a terminal.
+    let dry = common::both(&inbox(&f, &["accept", "--all"]));
+    let m = manifest(&dry);
+    let mut args = vec!["inbox", "accept", "--all", "--confirm", &m, "--config"];
+    let cfg = f.config.display().to_string();
+    args.push(&cfg);
+    let piped = common::piped(f.holders[0].path(), &args);
+    assert_ne!(piped.status.code(), Some(0), "{}", common::both(&piped));
+    assert!(common::both(&piped).contains("terminal"), "{}", common::both(&piped));
+    // A clone configured as another person: a sitting is one principal's.
+    f.holders[2].git(&["config", "user.email", "someone-else@customer.example"]);
+    let mixed = common::both(&inbox(&f, &["list"]));
+    assert!(mixed.contains("a sitting is one principal's"), "{mixed}");
+    // An agent identity on every clone: refused before anything is written.
+    for h in &f.holders {
+        h.git(&["config", "user.email", AGENT]);
+    }
+    let agent = inbox(&f, &["accept", "--all"]);
+    assert_eq!(agent.status.code(), Some(1), "{}", common::both(&agent));
+    assert!(common::both(&agent).contains("is not a principal who can accept"), "{}", common::both(&agent));
+}
+
+#[test]
+fn a_branch_the_remote_will_not_take_is_listed_read_only() {
+    let f = fixture();
+    f.holders[1].git(&["config", "remote.origin.pushurl", "/nonexistent/remote.git"]);
+    let list = common::both(&inbox(&f, &["list"]));
+    assert!(list.contains("repo1 — agent/0") && list.contains("read-only:"), "{list}");
+    let refused = inbox(&f, &["accept", "--all"]);
+    assert_eq!(refused.status.code(), Some(1));
+    assert!(common::both(&refused).contains("repo1 @ agent/0 is read-only"), "{}", common::both(&refused));
+}
+
+#[test]
+fn a_stale_item_is_re_read_before_signing_and_refused_when_its_hash_moved() {
+    let f = fixture();
+    let dry = common::both(&inbox(&f, &["accept", "--all"]));
+    let m = manifest(&dry);
+    // The agent revises a decision on repo0 agent/0 after the holder read it.
+    let agent = f.root.path().join("agent0");
+    git(&agent, &["checkout", "-q", "agent/0"]);
+    let store = ledger_core::store::load(&agent);
+    let decision = store.log.iter().flat_map(|l| l.file.decisions.iter()).map(|d| d.id.to_string()).next_back().expect("decision");
+    ledger_ok(&agent, &["revise", &decision, "--statement", "Revised after it was read."]);
+    ledger_ok(&agent, &["export", "--format", "ntriples"]);
+    git(&agent, &["add", "-A"]);
+    git(&agent, &["commit", "-q", "-m", "revised"]);
+    git(&agent, &["push", "-q", "origin", "agent/0"]);
+    let out = common::both(&inbox(&f, &["accept", "--all", "--confirm", &m]));
+    assert!(out.contains("repo0 @ agent/0: not signed"), "{out}");
+    assert!(out.contains("moved"), "the drift is named: {out}");
+    assert!(out.contains("11 branch(es) signed and pushed, 1 not"), "{out}");
+}
+
+#[test]
+fn an_acceptance_under_a_since_closed_key_is_affirmed_in_the_same_batch() {
+    let accepted = std::cell::RefCell::new(String::new());
+    let f = fixture_with(|h| {
+        let ns = "repo0.ledger";
+        let id = common::decision_id(&h.ok(&[
+            "add", "--set", "ledger-design", "--namespace", ns, "--statement", "Accepted before the close.",
+            "--store", "constraint", "--discharge", "analyzer:DEC001",
+        ]));
+        h.ok_tty(&["accept", &id]);
+        let store = ledger_core::store::load(h.path());
+        let first = store.log.iter().flat_map(|l| l.file.key_bindings.iter()).map(|b| b.id.to_string()).next().expect("binding");
+        let next = h.keygen("owner-next");
+        h.ok(&["identity", "add", "--namespace", ns, "--key-file", &format!("{next}.pub")]);
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        h.use_key(&next);
+        h.ok(&["identity", "revoke", &first]);
+        h.ok(&["export", "--format", "ntriples"]);
+        common::hand::commit(h, "accepted, then the key closed");
+        h.git(&["push", "-q", "origin", "main"]);
+        *accepted.borrow_mut() = id;
+    });
+    let id = accepted.borrow().clone();
+    let list = common::both(&inbox(&f, &["list"]));
+    assert_eq!(list.matches("needs re-acceptance (key-closed)").count(), 1, "listed once, on main: {list}");
+    assert!(list.contains(&id), "{list}");
+    let dry = common::both(&inbox(&f, &["accept", "--all"]));
+    assert!(dry.contains(&format!("repo0 @ main  {id}")), "the affirmation rides the same batch: {dry}");
+    let out = common::both(&inbox(&f, &["accept", "--all", "--confirm", &manifest(&dry)]));
+    assert!(out.contains("13 branch(es) signed and pushed, 0 not"), "{out}");
+    assert!(!out.contains("NOT green"), "{out}");
+}
