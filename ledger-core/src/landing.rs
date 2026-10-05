@@ -112,6 +112,20 @@ impl Landing {
         Ok(Self { available: true, landed, entities, touched, tip })
     }
 
+    /// A landing with every listed entity of one file, and every listed
+    /// whole file (a role file, say), at a fixed index: positions without
+    /// git, for tests over the order rules alone.
+    #[cfg(test)]
+    pub(crate) fn fixed(path: &str, entities: &[(String, usize)], files: &[(String, usize)], tip: usize) -> Self {
+        Self {
+            available: true,
+            landed: files.iter().map(|(f, i)| (f.clone(), (*i, String::new()))).collect(),
+            entities: entities.iter().map(|(key, i)| ((path.to_string(), key.clone()), *i)).collect(),
+            touched: [path.to_string()].into(),
+            tip,
+        }
+    }
+
     /// The base the clone points its default branch at, if it has one.
     pub fn default_base(root: &Path) -> Option<String> {
         git_ok(root, &["rev-parse", "--verify", "-q", "refs/remotes/origin/HEAD"]).then(|| "origin/HEAD".to_string())

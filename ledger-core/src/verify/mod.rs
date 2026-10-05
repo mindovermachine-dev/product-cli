@@ -260,6 +260,10 @@ fn awaiting(view: &View) -> Vec<String> {
         .collect()
 }
 
+#[path = "order_tests.rs"]
+#[cfg(test)]
+mod order_tests;
+
 #[path = "mod_tests.rs"]
 #[cfg(test)]
 mod tests;
