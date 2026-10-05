@@ -142,3 +142,35 @@ fn the_root_is_found_by_walking_up() {
     std::fs::create_dir_all(&nested).expect("mkdir");
     assert_eq!(find_root(&nested).as_deref(), Some(repo.path()));
 }
+
+/// A change-set holding one sealed version with a reopen edge, declaring `format`.
+fn write_reopening_log(repo: &Repo, format: u32) {
+    let mut reopening = testkit::version();
+    reopening.revisit_if = vec!["claim:DDD-x-01@sha256:abc".parse().expect("token")];
+    let mut cs = testkit::changeset(vec![testkit::sealed(reopening)], Vec::new());
+    cs.format = format;
+    let text = serde_yaml::to_string(&cs).expect("serialize");
+    repo.write(&format!("log/{}.yml", testkit::CS_ULID), &text);
+}
+
+#[test]
+fn a_lower_format_change_set_carrying_revisit_if_is_a_fault() {
+    for declared in 1..format::REVISIT_FORMAT {
+        let repo = Repo::new();
+        repo.write_set();
+        write_reopening_log(&repo, declared);
+        let store = repo.load();
+        let faults: Vec<&str> = store.schema_findings.iter().map(|f| f.message.as_str()).collect();
+        assert_eq!(faults, ["carries `revisit_if`, a format 4 field — declare `format: 4`"], "format {declared}");
+    }
+}
+
+#[test]
+fn a_format_4_change_set_carrying_revisit_if_parses() {
+    let repo = Repo::new();
+    repo.write_set();
+    write_reopening_log(&repo, format::REVISIT_FORMAT);
+    let store = repo.load();
+    assert!(store.schema_findings.is_empty(), "{:?}", store.schema_findings);
+    assert_eq!(store.log[0].file.versions[0].revisit_if.len(), 1);
+}

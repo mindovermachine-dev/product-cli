@@ -117,3 +117,9 @@ The gate fails on it rather than reporting it as status for a reason. Leaving a 
 4. **Rule a new, named state.** For example, "allocation pending" declared by set policy, which would be a format amendment to `L001` itself.
 
 `ground: uncharacterised` on a set does not exempt it. `L001` judges every latest version.
+
+## Correcting a landed file's `format:` declaration (ruled 2026-10-05, #81)
+
+> **Ruled 2026-10-05 (principal), option 1 of #81.** A landed log file's `format:` declaration may be corrected. It may only be raised, only to the lowest format the file's content needs, and nothing else in the file may change.
+
+The case: spec §3.7 makes a lower-format file carrying `revisit_if` a schema fault, the loader had no row for it, and three of this repository's change-sets carried the field under `format: 1` (#81 listed four; the fourth, `01KZX70S86QGXVCA5GW5WSY6XA`, names `revisit_if` only in its text and needs format 1). `format` is not hashed (it is a `ChangeSet` field, not a `VersionRaw` one) and is not an entity under the landed-entity rule (`ledger-core/src/landed.rs`), so raising it moves no digest and touches no acceptance. Options 2 (strike the fault from §3.7) and 3 (a pinned exemption in the gate) were not taken. The rule is in spec §3.10.7; the record of the three corrected files is in `docs/ledger-format-migrations.md`.

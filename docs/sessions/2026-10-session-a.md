@@ -188,6 +188,13 @@ wrong):
 Adding the check would fail this repository's gate, so it needs a
 migration decision first.
 
+> **Resolved 2026-10-05 (#81).** Three files, not four:
+> `01KZX70S86QGXVCA5GW5WSY6XA` names `revisit_if` only inside its `note`
+> and `statement` text and needs format 1. The principal ruled that a
+> landed file's `format:` may be raised to the lowest format its content
+> needs; the other three now declare `format: 4` and the loader checks the
+> rule (`docs/ledger-format-migrations.md`).
+
 ## 4. Session B TODOs deferred here
 
 - **A policy change is signed under the policy in force before it** (#65).

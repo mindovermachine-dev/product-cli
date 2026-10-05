@@ -377,6 +377,12 @@ Rules:
   declares `format: 4` only when one of its versions actually carries a
   `revisit_if`; a store that never states one stays a pure format-1/2/3
   store, and a lower-format file carrying the field is a schema fault.
+
+  > **Enforced 2026-10-05 (#81).** Until then the reference
+  > implementation's loader did not check this rule, and three of its own
+  > change-sets carried `revisit_if` under `format: 1`. Their declarations
+  > were raised to `format: 4` under the correction rule in §3.10.7; no
+  > hashed byte moved and no acceptance was touched.
 - **The vocabulary is open**, exactly as `based_on`'s is: L0 dereferences
   no pointer. Open is not shared — the pointer types stay distinct.
 - **Hashing.** `revisit_if` joins the hashed field set as a list (a *set*,
@@ -838,6 +844,14 @@ of a version.
 
   Appending a new entity to a landed file changes no other entity; the new
   one lands where it was appended (§3.10.6).
+- **A landed file's `format:` may be corrected** (ruled 2026-10-05, #81).
+  `format` is not an entity and not hashed content, so changing it alone
+  changes nothing the record fixed. A correction may only **raise** the
+  declaration, only **to the lowest format the file's content needs**
+  (the declare-what-you-need rule of §3.6–§3.10), and nothing else in the
+  file may change in the same edit — any other change is judged entity by
+  entity as above. Lowering a declaration, or raising it past what the
+  content needs, is not a correction.
 
 #### 3.10.8 The export and the export-only verifier
 
