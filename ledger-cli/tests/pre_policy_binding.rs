@@ -51,7 +51,7 @@ fn bind_behind(repo: &Repo, ns: &str, behind: Duration, key_type: String, blob: 
 fn in_a_fresh_store_d7_refuses_a_binding_dated_before_the_first_policy() {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     let key = repo.keygen("owner");
     repo.use_key(&key);
     let (key_type, blob) = public(&key);
@@ -63,7 +63,7 @@ fn in_a_fresh_store_d7_refuses_a_binding_dated_before_the_first_policy() {
 fn in_a_later_namespace_a_binding_dated_before_its_first_policy_is_never_trusted_and_nothing_names_it() {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     repo.bind_own_key(NS, "owner");
     hand::commit(&repo, "governed");
     // The clock behind is still after everything else the store holds.
@@ -110,7 +110,7 @@ fn in_a_later_namespace_a_binding_dated_before_its_first_policy_is_never_trusted
 fn a_hand_filed_unsigned_binding_before_the_first_policy_is_not_trusted_today() {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     repo.bind_own_key(NS, "owner");
     hand::commit(&repo, "governed");
     let forged = repo.keygen("forged");
