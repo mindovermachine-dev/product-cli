@@ -216,3 +216,9 @@ bindings:
   after: sha256:e4daa82914dceb93a5c7a011630e6cc64b6d32200e91d703cbeaf2f82288788d
   base_revision: b2e166ca3fc8d53dc52e1852172a42abd80dd8a2
   hash: sha256:b35220aed4f27a55ff589a60615253ff485e158a30ed79a80190df507a0cbac7
+- symbol: SetPolicy
+  file: ledger-core/src/authority/role.rs
+  before: sha256:61df9ee805408da061d3a42cb09177ecc8fc91acb54ff6d6d245729f7fedf3d1
+  after: sha256:d3389671f033bdfd184eafcc064ce345e2e3f311f80ed0a57d603f748ef5782d
+  base_revision: b2e166ca3fc8d53dc52e1852172a42abd80dd8a2
+  hash: sha256:a7395323c4e3ba8eeff5d1c08520c2950d3d6b2c2776beae3e07c8567bb3cfee
