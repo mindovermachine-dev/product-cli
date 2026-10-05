@@ -179,3 +179,68 @@ fn the_genesis_holders_first_binding_in_a_second_namespace_vouched_by_the_closed
     let signers = derived_signers(&repo);
     assert!(!signers.contains(&public(&fresh)), "{signers}");
 }
+
+const ARCHITECT: &str = "architect@customer.example";
+
+/// A governed namespace with the owner's key bound; committed.
+fn governed() -> (Repo, String) {
+    let repo = Repo::with_identity(OWNER);
+    repo.declare();
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    let key = repo.bind_own_key(NS, "owner");
+    hand::commit(&repo, "governed");
+    (repo, key)
+}
+
+#[test]
+fn an_act_dated_before_the_first_policy_but_landed_after_it_is_checked() {
+    let (repo, _) = governed();
+    let id = repo.add("Money is decimal.", &[]);
+    hand::commit(&repo, "filed");
+    let policy_at = Authority::build(&store(&repo)).policy(NS).expect("policy").at;
+    // Unsigned, by a principal holding no grant, dated before the policy.
+    let acc = hand::accept(
+        &repo,
+        &hand::HandAccept { decision: &id, actor: ARCHITECT, at: policy_at - Duration::hours(1), under: None, key: None },
+    );
+    hand::commit(&repo, "landed after the policy");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 1, "{text}");
+    assert!(text.contains(&format!("[L011] {acc}")), "unsigned under `ssh`: {text}");
+    assert!(text.contains(&format!("[A006] {acc}")), "no grant: {text}");
+}
+
+#[test]
+fn a_principals_own_add_dated_before_the_close_of_their_only_key_is_a_d7_fault() {
+    let (repo, _) = governed();
+    let arch = repo.vouch_for(NS, ARCHITECT, "architect");
+    let first = store(&repo)
+        .log
+        .iter()
+        .flat_map(|l| l.file.key_bindings.iter())
+        .find(|b| b.principal.as_str() == ARCHITECT)
+        .map(|b| (b.id.to_string(), b.at))
+        .expect("architect's key");
+    let inside = first.1.duration_trunc(Duration::seconds(1)).unwrap_or(first.1) + Duration::seconds(1);
+    std::thread::sleep(std::time::Duration::from_millis(2100));
+    // The genesis holder closes the architect's only key.
+    repo.ok(&["identity", "revoke", &first.0]);
+    hand::commit(&repo, "closed the architect's key");
+    // The architect's own `add`, dated inside the closed window, signed by
+    // the closed key, landed after the close.
+    let next = repo.keygen("architect-next");
+    let mut b = hand::binding(BindingAct::Add, ARCHITECT, ARCHITECT, NS, Some(&format!("{next}.pub")), None, None);
+    b.at = inside;
+    b.hash = binding_hash(&b);
+    let id = b.id.to_string();
+    let signed = vec![(b.id.ulid().to_string(), NS.to_string(), binding_bytes(&b))];
+    let mut cs = change_set(inside);
+    cs.created_by = ARCHITECT.parse().expect("id");
+    cs.key_bindings.push(b);
+    file_signed(&repo, cs, &signed, &arch);
+    // The close is terminating: as of the add, the architect has no live key,
+    // so D7 refuses the filer before any signature is read.
+    let text = fails_with(&repo, &id, "SCHEMA");
+    assert!(text.contains("D7") && text.contains("has no live key"), "{text}");
+    assert!(!derived_signers(&repo).contains(&public(&next)));
+}
