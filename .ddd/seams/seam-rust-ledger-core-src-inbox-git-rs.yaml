@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-inbox-git-rs
 boundary: contract surface of ledger-core/src/inbox/git.rs
-verdict_knowledge: "Callers learn the git the inbox runs in a clone: default and remote-tracking branches, committed exports at a revision, pull-request labels from refs/pull, a forced push dry run, worktrees, fetch."
+verdict_knowledge: 'Callers learn the git the inbox runs in a clone: default and remote-tracking branches, committed exports at a revision, pull-request labels from refs/pull, a forced push dry run, worktrees, fetch.'
 contract_location: ledger-core/src/inbox/git.rs
 obligations: []
 metadata: {}
@@ -60,3 +60,63 @@ bindings:
   after: sha256:039bb954e8bff8a751ae6040f356eec1e54f6fd1f18ca9c53492b5d516348ad0
   base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
   hash: sha256:7c19832d554aae666f5c8f6d47d56ed7ae62eb1183ccb5866dae09c285d3b3d4
+- symbol: commit_of
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:d30809e017dfc58c7d71d28c58bc8ff54df5e85281bb38717c09c65b4b3426f8
+- symbol: default_branch
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:000ac81e81f2cef40b4268d713c9813e606e5d592d4e7052efb4d19c8d106bb3
+- symbol: discard_worktree
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:6abf27ee14680094c6c674f53273ec19116f8bf8ea93c5b230103ff305915403
+- symbol: exports_at
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:8d4f8d2a7b4a9e3d2147771bb900c8aa1ceb7e86ec87bb5ab7a22b0fbabcb0ed
+- symbol: fetch
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:8ea8b46750f27334af9ca805802a1ee42262b2aa5fc4a66f5d6ab0e84f4c6e05
+- symbol: git
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:3a344fb3012bae07793bc7e3f555553368bc0fc540bd8c07d7d1b578f1bed64a
+- symbol: pull_requests
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:29d354ac2bb20d1c4a27b6d410f4ebe360d1bb6520a96214800934f31d212307
+- symbol: push_refusal
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:0ea8c83cbbb9827f2a7e2b563dc4651de2ebd82de2e85728a9185cc8127e5478
+- symbol: remote_branches
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:8f7f752fa572ed8c55f112046848beab51d8f7e94423b12cb2566dc526c52e7b
+- symbol: worktree
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:60cf8d1a6107eb17314b520292dfb36f8ed6115776a3755eb53a711cda644c07
