@@ -1,0 +1,32 @@
+format: 2
+id: seam/rust/ledger-cli-src-commands-inbox-findings-rs
+boundary: contract surface of ledger-cli/src/commands/inbox_findings.rs
+verdict_knowledge: 'Callers learn a branch''s findings across every verify stage, compared whole, and which of them a write introduced: the inbox pushes only when none was.'
+contract_location: ledger-cli/src/commands/inbox_findings.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: introduced
+  file: ledger-cli/src/commands/inbox_findings.rs
+  before: absent
+  after: sha256:c96e3029c8259c4a5faa61f46dbc79da289dd87105f5c490ebadae23a190f4c5
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:b5559f7263c2a22e271818b19d826740ebdfbfda113a0dd8cc312b1b6fbff01a
+- symbol: lines
+  file: ledger-cli/src/commands/inbox_findings.rs
+  before: absent
+  after: sha256:c96e3029c8259c4a5faa61f46dbc79da289dd87105f5c490ebadae23a190f4c5
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:6c35b09aba787bc87887f2a5ae562f7e77cca59c7950d15ed040da6ca30ba762
+- symbol: read
+  file: ledger-cli/src/commands/inbox_findings.rs
+  before: absent
+  after: sha256:c96e3029c8259c4a5faa61f46dbc79da289dd87105f5c490ebadae23a190f4c5
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:c03e64ea135935cb84c95b3afb5b01047a941eeecca21b9f55d92bac2abde39f
+- symbol: Findings
+  file: ledger-cli/src/commands/inbox_findings.rs
+  before: absent
+  after: sha256:c96e3029c8259c4a5faa61f46dbc79da289dd87105f5c490ebadae23a190f4c5
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:025fba0fabd669f20332ecf387811172f9cf320f7c98070a6a81d705673a7ded

@@ -19,6 +19,7 @@ mod export;
 mod graph_cmds;
 mod inbox;
 mod inbox_accept;
+mod inbox_findings;
 mod inbox_render;
 mod init;
 mod inspect;

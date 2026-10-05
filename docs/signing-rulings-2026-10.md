@@ -95,7 +95,7 @@ The questions and options are in `docs/sessions/2026-10-session-b.md` §1 ("Inte
 | Q2, DSSE | The DSSE key is one of the signer's own key bindings. The payload type stays `application/vnd.ledger.signed-bytes.v1`. Key types are deferred to the hosted hand-off. | The first two as built; key types later. |
 | Q3, registry PRD §8 | **Amend as built.** | `docs/decision-registry-prd.md` §8, in #92. |
 | Q4, citing symbols and the rule | **R1, as derived predicates in the export only.** No file format change. | R1. |
-| Q5, `fails-on-base` acceptances | **Revocation is the remedy.** A validly revoked acceptance raises no `L011`, `L012` or `A006` of its own. | #95, with the inbox offering revoke and re-accept. |
+| Q5, `fails-on-base` acceptances | **Revocation is the remedy.** A validly revoked acceptance raises no `L011`, `L012` or `A006` of its own. **Widened the same day:** a valid revocation by the genesis holder may retire any landed entity that fails `L011` or `A006`, not only an acceptance. | #95, with the inbox offering revoke and re-accept. #95 states per kind what retiring means, and lists the open questions. |
 | Q6, a key rotated on the default branch | **Yes.** `accept`, `accept --batch` and the inbox read keys, grants and policy from the union of branch and base, as `verify --base` does. | #94. |
 | `L009` and a server-written commit | **Accepted, for R1.5.** `L009` stands down for an acceptance whose required signature verifies. | R1.5. |
 

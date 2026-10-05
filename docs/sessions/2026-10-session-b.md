@@ -101,6 +101,8 @@ Each is stated in its PR.
 5. **An acceptance that fails `L011` against the base cannot be affirmed by re-accepting it.** The failing acceptance stays in the log. The inbox lists it (`fails-on-base`) but leaves it out of the batch. Should the remedy be a revocation, or is it R1's?
 
    > **Ruled 5 October 2026: revocation is the remedy.** A validly revoked acceptance raises no `L011`, `L012` or `A006` of its own. Issue #95, which also has the inbox offer revoke and re-accept for `fails-on-base` items. Not implemented in #92.
+   >
+   > **Widened the same day:** a valid revocation by the genesis holder may retire *any* landed entity that fails `L011` or `A006`, not only an acceptance. #95 states, for each kind (an acceptance, either revocation shape, a key binding, a policy change), what retiring means and whether a revocation is enough, and lists as questions the kinds where it is not. Not implemented in #92.
 6. **A holder who rotates keys on the default branch cannot sign on branches cut before the rotation.** Those branches don't know the new key, so `accept --batch` refuses there until the branch merges the default branch. The inbox reports this per branch. Should `accept --batch` read the base's bindings (`--base`), as `verify` does?
 
    > **Ruled 5 October 2026: yes.** `accept`, `accept --batch` and the inbox read keys, grants and policy from the union of branch and base, as `verify --base` does. Issue #94. Not implemented in #92: the behaviour is unchanged until then.
@@ -137,7 +139,7 @@ Opened on the principal's instruction, 5 October 2026: proposal 1 as #97; propos
 **Time for twenty acceptances through the inbox.** On the fixture (three repositories, twelve branches, twenty proposed decisions; `ledger-cli/tests/inbox.rs`):
 - 11.0 to 11.5 s from the confirming `ledger inbox accept --all --confirm` to the end;
 - **one confirmation** and **twenty signatures**, one sidecar per acceptance;
-- per branch: a fetch, a worktree, `accept --batch`, the export, a commit, `verify --base`, and a push only when that is green.
+- per branch: a fetch, a worktree, `verify --base`, `accept --batch`, the export, a commit, `verify --base` again, and a push when signing introduced no finding.
 
 That leaves the five-minute target for reading time. The listing run before it takes a few seconds more, because it creates a worktree and runs `verify --base … --json` per branch to find re-acceptance items.
 

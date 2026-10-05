@@ -7,8 +7,8 @@
 //! each branch in turn: fetch (an item is re-read before it is signed),
 //! a fresh worktree at the remote branch, `ledger accept --batch … --confirm`
 //! there (which refuses if a version hash moved), the exports regenerated,
-//! a commit as the holder, `ledger verify --base <default>`, and — only when
-//! that is green — a push.
+//! a commit as the holder, and — when signing introduced no finding on
+//! `ledger verify --base <default>` — a push.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -19,6 +19,7 @@ use ledger_core::batch_file::{self, BatchFile, Row, BATCH_FORM};
 use ledger_core::inbox::git;
 
 use super::inbox::{self, Sitting};
+use super::inbox_findings as findings;
 use super::{EXIT_OK, EXIT_VIOLATIONS};
 
 /// What the holder chose from the list.
@@ -128,9 +129,11 @@ fn flags(sel: &Selection) -> String {
     }
 }
 
-/// Each branch in turn: re-read, sign, export, commit, verify, push. A
-/// branch that fails stops only itself; the others proceed, and the sitting
-/// exits non-zero when any branch failed.
+/// Each branch in turn: re-read, read its findings, sign, export, commit,
+/// read them again, push. A branch that fails stops only itself; the others
+/// proceed. The sitting exits non-zero when a branch was not signed, when
+/// signing introduced a finding, or when a push failed — never for a finding
+/// the branch already carried.
 fn sign(s: &Sitting, file: &BatchFile, path: &std::path::Path, manifest: &str) -> Result<i32, String> {
     let mut groups: BTreeMap<(String, String), usize> = BTreeMap::new();
     for r in &file.rows {
@@ -150,43 +153,60 @@ fn sign(s: &Sitting, file: &BatchFile, path: &std::path::Path, manifest: &str) -
     Ok(if failed == 0 { EXIT_OK } else { EXIT_VIOLATIONS })
 }
 
-/// One branch. `Err` says whether the branch was signed and what became of
-/// a signed commit: one that is not pushed is discarded with its worktree.
-/// Nothing is pushed unless `verify --base` is green on the commit first.
+/// One branch. Its findings are read before signing and after the commit;
+/// it is pushed when signing introduced none, and the findings it already
+/// carried are reported as remaining. `Err` says whether the branch was
+/// signed and what became of a signed commit: one that is not pushed is
+/// discarded with its worktree.
 fn sign_branch(s: &Sitting, repository: &str, branch: &str, count: usize, path: &std::path::Path, manifest: &str) -> Result<String, String> {
     let repo = s.index.repository(repository).ok_or("not signed — unknown repository")?;
     let indexed = s.index.branches.iter().find(|b| b.repository == repository && b.name == branch).ok_or("not signed — not indexed")?;
     let unsigned = |e: String| format!("not signed — {e}");
     git::fetch(repo).map_err(unsigned)?;
     let wt = git::worktree(repo, branch, &indexed.rev).map_err(unsigned)?;
-    let signed_on = git::commit_of(&wt, "HEAD").map_err(unsigned)?;
-    let exe = std::env::current_exe().map_err(|e| unsigned(e.to_string()))?;
-    let p = path.display().to_string();
-    let status = Command::new(&exe)
-        .arg("--root")
-        .arg(&wt)
-        .args(["accept", "--batch", &p, "--repository", repository, "--branch", branch, "--confirm", manifest])
-        .status()
-        .map_err(|e| unsigned(e.to_string()));
-    if !matches!(status, Ok(s) if s.success()) {
+    let unsigned_discarding = |e: String| {
         git::discard_worktree(repo, &wt);
-        return Err(status.err().unwrap_or_else(|| unsigned("`ledger accept --batch` refused — see above".to_string())));
-    }
+        unsigned(e)
+    };
+    let signed_on = git::commit_of(&wt, "HEAD").map_err(unsigned_discarding)?;
+    let before = findings::read(&wt, &indexed.base).map_err(unsigned_discarding)?;
+    accept_batch(&wt, path, repository, branch, manifest).map_err(unsigned_discarding)?;
     let not_pushed = |why: String| {
         let commit = git::commit_of(&wt, "HEAD").unwrap_or_default();
         git::discard_worktree(repo, &wt);
         format!("signed, not pushed — {why}. The signed commit {} was discarded with its worktree; the item stays in your list", short(&commit))
     };
+    let exe = std::env::current_exe().map_err(|e| not_pushed(e.to_string()))?;
     commit(&wt, &exe, count).map_err(not_pushed)?;
-    let (stdout, stderr, code) = inbox::verify(&wt, &indexed.base, &["--export"]).map_err(not_pushed)?;
-    if code != 0 {
-        let report = format!("{stdout}{stderr}");
-        let findings: Vec<&str> = report.lines().filter(|l| l.trim_start().starts_with("- [")).collect();
-        return Err(not_pushed(format!("verify --base {} is NOT green, so nothing was pushed:\n{}", indexed.base, findings.join("\n"))));
+    let after = findings::read(&wt, &indexed.base).map_err(not_pushed)?;
+    let introduced = findings::introduced(&before, &after);
+    if !introduced.is_empty() {
+        return Err(not_pushed(format!("signing introduced finding(s) on verify --base {}, so nothing was pushed:{}", indexed.base, findings::lines(introduced))));
     }
     push(repo, &wt, branch, &indexed.rev, &signed_on).map_err(not_pushed)?;
     git::discard_worktree(repo, &wt);
-    Ok(format!("{repository} @ {branch}: {count} accepted, committed as {}, verify --base {} green, pushed", s.holder, indexed.base))
+    let remaining = match after.is_empty() {
+        true => format!("verify --base {} green", indexed.base),
+        false => format!("no finding introduced; {} already on the branch remain:{}", after.len(), findings::lines(&after)),
+    };
+    Ok(format!("{repository} @ {branch}: {count} accepted, committed as {}, pushed — {remaining}", s.holder))
+}
+
+/// `ledger accept --batch … --confirm` in the worktree: the child gates
+/// itself at the holder's terminal and refuses if a version hash moved.
+fn accept_batch(wt: &std::path::Path, path: &std::path::Path, repository: &str, branch: &str, manifest: &str) -> Result<(), String> {
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    let p = path.display().to_string();
+    let status = Command::new(&exe)
+        .arg("--root")
+        .arg(wt)
+        .args(["accept", "--batch", &p, "--repository", repository, "--branch", branch, "--confirm", manifest])
+        .status()
+        .map_err(|e| e.to_string())?;
+    match status.success() {
+        true => Ok(()),
+        false => Err("`ledger accept --batch` refused — see above".to_string()),
+    }
 }
 
 /// Push the signed commit, never forced. When the remote refuses it, say

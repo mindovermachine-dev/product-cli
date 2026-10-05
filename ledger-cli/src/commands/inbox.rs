@@ -6,8 +6,10 @@
 //! in their own state; and every namespace with no policy, named as
 //! unchecked. `inbox accept` writes the batch selection file, prints its
 //! manifest, and — confirmed at a terminal — signs each branch with `ledger
-//! accept --batch` in a worktree, commits as the holder, runs `ledger verify
-//! --base <default branch>`, and pushes only when that is green. Every
+//! accept --batch` in a worktree, commits as the holder, and pushes when
+//! signing introduced no finding on `ledger verify --base <default branch>`
+//! (read before signing and after; a finding already there is reported,
+//! not a failure). Every
 //! `verify` the inbox runs names its base explicitly; none relies on
 //! `origin/HEAD`. Every run first sweeps the worktrees an earlier one left.
 
