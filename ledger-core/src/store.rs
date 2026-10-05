@@ -187,8 +187,22 @@ pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str
 /// A file must declare the format that defines every field it uses —
 /// a lower-format file carrying a later field is a schema fault.
 fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
+    version_field_rules(file)
+        .into_iter()
+        .chain(entity_rules(file))
+        .filter(|(needed, used, _)| *used && file.format < *needed)
+        .map(|(_, _, message)| Finding::schema(label, message))
+        .collect()
+}
+
+/// One declare-what-you-need row: the format a use needs, whether the file
+/// makes it, and the fault when it declares less.
+type FormatRule = (u32, bool, &'static str);
+
+/// The rows for fields a version carries (formats 2–5).
+fn version_field_rules(file: &ChangeSet) -> [FormatRule; 4] {
     let uses = |pred: &dyn Fn(&crate::version::VersionRaw) -> bool| file.versions.iter().any(pred);
-    let rules: [(u32, bool, &str); 6] = [
+    [
         (
             format::MERGE_FORMAT,
             uses(&|v| v.merged_from.is_some()),
@@ -200,10 +214,21 @@ fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
             "carries a `contract:` discharge pointer, a format 3 scheme — declare `format: 3`",
         ),
         (
+            format::REVISIT_FORMAT,
+            uses(&|v| !v.revisit_if.is_empty()),
+            "carries `revisit_if`, a format 4 field — declare `format: 4`",
+        ),
+        (
             format::KEY_FORMAT,
             uses(&|v| v.key.is_some() || v.exported),
             "carries a version `key` or `exported`, format 5 fields — declare `format: 5`",
         ),
+    ]
+}
+
+/// The rows for entities beside the versions (formats 6–7).
+fn entity_rules(file: &ChangeSet) -> [FormatRule; 3] {
+    [
         (
             format::AUTHORITY_FORMAT,
             file.authority_count() > 0,
@@ -219,12 +244,7 @@ fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
             !file.policies.is_empty(),
             "carries a namespace policy, a format 7 entry (its `at` is hashed, D8) — declare `format: 7`",
         ),
-    ];
-    rules
-        .into_iter()
-        .filter(|(needed, used, _)| *used && file.format < *needed)
-        .map(|(_, _, message)| Finding::schema(label, message))
-        .collect()
+    ]
 }
 
 /// Whether any entity in the file names the grant it was made under.

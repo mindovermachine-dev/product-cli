@@ -19,6 +19,54 @@ only adds an unhashed field.
 
 ---
 
+## Three format 1 declarations corrected to format 4 (2026-10-05, #81, no format change)
+
+**What was wrong.** Spec §3.7 makes a lower-format file carrying
+`revisit_if` a schema fault, but the loader had no row for it
+(`ledger-core/src/store.rs` `format_faults` checked formats 2, 3, 5, 6 and
+7). Three change-sets in this repository's own store carried `revisit_if`
+under `format: 1`:
+
+- `.decisions/log/01KZX70EMPA47TBR0PFKX4M32Z.yml`
+- `.decisions/log/01KZX70EQGQCB1B190TS9FZ1A2.yml`
+- `.decisions/log/01KZX70ET1GMR2012XKEP5EWDW.yml`
+
+They are the three re-decisions the format 4 note below describes, filed by
+`ledger revise` on 2026-08-13 (`ecd1ce2`). At that commit only `add`
+stamped `format::needed_for` (`author/decision.rs`). Every verb that files
+the next version of a decision — `revise`, `allocate`, `escape`,
+`supersede`, through `next_version` in `author/version_ops.rs`, each
+inheriting the parent's `revisit_if` — built its change-set from
+`Author::shell` at `CURRENT_FORMAT`, and `Author::append` wrote it as-is.
+Since #67 (`4800589`) `Author::append` raises every verb's change-set to
+`needed_for`, so no verb can write such a file now.
+
+`.decisions/log/01KZX70S86QGXVCA5GW5WSY6XA.yml`, listed beside them in #81,
+carries no `revisit_if` field: the word appears only inside its `note` and
+`statement` text. It needs format 1 and still declares it.
+
+**The ruling** (principal, 2026-10-05): a landed log file's `format:`
+declaration may be corrected — raised only, only to the lowest format the
+file's content needs, and nothing else in the file changed (spec
+§3.10.7). Recorded in `docs/signing-rulings-2026-10.md`.
+
+**What changed.** The three files' first line, `format: 1` → `format: 4`,
+and nothing else. `format` is a `ChangeSet` field, not a `VersionRaw` one,
+so no version hash moves (`ledger-cli/tests/digests.rs`); the three
+acceptances still sign their versions; the landed-entity rule
+(`ledger-core/src/verify/history.rs`) reads `format` as no entity
+(`ledger-core/src/landed.rs` `entities`), so it does not fire; and the
+graph and the committed exports carry no `format`, so `docs/decisions/*.nt`
+is byte-identical. The loader gains the `REVISIT_FORMAT` row, so a
+lower-format file carrying `revisit_if` is now a `SCHEMA` fault, as §3.7
+always said.
+
+**For another store.** A store that filed a version carrying `revisit_if`
+with any verb but `add` before #67 may hold the same fault and will now fail `verify` with
+``carries `revisit_if`, a format 4 field — declare `format: 4` ``. The
+migration is the same edit: raise that file's declaration to `format: 4`
+(or to the higher format its other content needs) and change nothing else.
+
 ## Format 7 / Spec v1.8 — signing; `L011`, `L012`, `A006` (2026-10-04, #70)
 
 **New fields.** `under` (the grant an act is made under, D9 (a)) on
