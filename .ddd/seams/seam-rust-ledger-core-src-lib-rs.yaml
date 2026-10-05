@@ -78,3 +78,15 @@ bindings:
   after: sha256:1269b7ce54d04fb307ee389326185082f215a3b4c466c020171e95a7de4e1cec
   base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
   hash: sha256:0924febb5ac63b2e2da39751edf1a94ad181b54d443c3e66f33f3b7650b3c39c
+- symbol: batch_file
+  file: ledger-core/src/lib.rs
+  before: sha256:8dba7ee2150c572b9d713c9c7dcf0f3a550837ac41a322da0ddec95fabff6c4c
+  after: sha256:6ce01384853de72d2656e128c947a1057e7e45da161033d4ef402110af63b6a7
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:e15b02cee49639782d9f1a92bcc3aa02dc26fc5780403fce08ed6c324eb64ec5
+- symbol: inbox
+  file: ledger-core/src/lib.rs
+  before: sha256:8dba7ee2150c572b9d713c9c7dcf0f3a550837ac41a322da0ddec95fabff6c4c
+  after: sha256:6ce01384853de72d2656e128c947a1057e7e45da161033d4ef402110af63b6a7
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:296e8fa2287cd3a8d1d5c25df97a554ceff480af8b55593bd7a3887413c91ab6

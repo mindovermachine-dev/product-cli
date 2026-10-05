@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-inbox-terms-rs
+boundary: contract surface of ledger-core/src/inbox/terms.rs
+verdict_knowledge: "Callers learn how query rows read back: IRIs (mailto stripped) and unescaped literal lexical forms."
+contract_location: ledger-core/src/inbox/terms.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: iri
+  file: ledger-core/src/inbox/terms.rs
+  before: absent
+  after: sha256:239e33791d686509a59634e1d99740505a513fd44bffcded809819f4a366d94f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:d02c6d7ab8d5af7c393f26b934fcb40f5a75858f9de60406bb7e55a3465f8440
+- symbol: literal
+  file: ledger-core/src/inbox/terms.rs
+  before: absent
+  after: sha256:239e33791d686509a59634e1d99740505a513fd44bffcded809819f4a366d94f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:cebc5640bb7f5a5ee76d61b5bc33c506cb8c72f8dcc73da5d537c74b8e14d62e

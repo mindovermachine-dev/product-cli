@@ -30,3 +30,9 @@ bindings:
   after: sha256:9a5ee756de43cbd64569571dc9870bfeb64082d87e5c3b40649936d57be47273
   base_revision: a712cccd5f6f84ae450b0e14046d255366bd85a8
   hash: sha256:5aea607a205224b7dbbfc77a292028b4fbe7b255380efb4a35606dd303bfa52e
+- symbol: sparql_dataset
+  file: product-core/src/pf/mod.rs
+  before: sha256:9a5ee756de43cbd64569571dc9870bfeb64082d87e5c3b40649936d57be47273
+  after: sha256:9e0c88dc316ee18821d4f590b4078e4c931765c52986e3fd239b0df7080facdd
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:29c475a311a0a3a481c59b2348c8f13d0c1ded5204c4dde1f470cb282826032c

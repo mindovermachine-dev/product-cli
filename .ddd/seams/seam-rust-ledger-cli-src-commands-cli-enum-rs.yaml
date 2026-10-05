@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-src-commands-cli-enum-rs
 boundary: contract surface of ledger-cli/src/commands/cli_enum.rs
-verdict_knowledge: "CLI users learn the full `ledger` subcommand surface, sorted, including `init --namespace` for genesis, the authority groups, `add --key/--exported` and `revise --key`."
+verdict_knowledge: CLI users learn the full `ledger` subcommand surface, sorted, including `init --namespace` for genesis, the authority groups, `add --key/--exported` and `revise --key`.
 contract_location: ledger-cli/src/commands/cli_enum.rs
 obligations: []
 metadata: {}
@@ -168,3 +168,9 @@ bindings:
   after: sha256:f631171064418cdfd48951d4d5c2ddf7dba449d9aad3b587306e51a5c98dc7b1
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:1746cdff0b5c6ef5c270c4fbe0dabb95fb0ce3591bd13ee3b606617713f9d48d
+- symbol: Inbox
+  file: ledger-cli/src/commands/cli_enum.rs
+  before: sha256:1a22f95c6381d8717446c17614084d48d18450fb2c519d6329158c0e297ce11f
+  after: sha256:cd603b4d833d94dc8d1aa4928ac60be258e59e3934a2806b88d8520b0b54f267
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:f4420fbf0c178d3da86b50e44a5055134273de6e50b5ac5e2cf7f76529308a3c
