@@ -137,7 +137,7 @@ Opened on the principal's instruction, 5 October 2026: proposal 1 as #97; propos
 ## 4. Items the session prompt asks for
 
 **Time for twenty acceptances through the inbox.** On the fixture (three repositories, twelve branches, twenty proposed decisions; `ledger-cli/tests/inbox.rs`):
-- 11.0 to 11.5 s from the confirming `ledger inbox accept --all --confirm` to the end;
+- 12.2 s from the confirming `ledger inbox accept --all --confirm` to the end (11.0 to 11.5 s before the inbox read each branch's findings before signing as well as after);
 - **one confirmation** and **twenty signatures**, one sidecar per acceptance;
 - per branch: a fetch, a worktree, `verify --base`, `accept --batch`, the export, a commit, `verify --base` again, and a push when signing introduced no finding.
 
@@ -176,7 +176,7 @@ That leaves the five-minute target for reading time. The listing run before it t
 | `main` after #88 | 1,933 passed |
 | #89 merged | 1,999 passed |
 | #90 (step 2) | 2,010 passed |
-| step 3 | 2,026 passed, 0 failed |
+| step 3 | 2,029 passed, 0 failed |
 
 - **New suites:**
   - `signing.rs`, `trust.rs`, `immutability.rs`, `closed_key.rs`, `export_verifier.rs` (#89);
