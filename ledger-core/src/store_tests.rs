@@ -174,3 +174,37 @@ fn a_format_4_change_set_carrying_revisit_if_parses() {
     assert!(store.schema_findings.is_empty(), "{:?}", store.schema_findings);
     assert_eq!(store.log[0].file.versions[0].revisit_if.len(), 1);
 }
+
+/// A change-set holding a sealed version, its acceptance and a legacy-shape
+/// revocation of that acceptance, declaring `format`.
+fn write_legacy_revocation_log(repo: &Repo, format: u32) {
+    let sealed = testkit::sealed(testkit::version());
+    let acceptance = testkit::acceptance(&sealed);
+    let mut cs = testkit::changeset(vec![sealed], vec![acceptance]);
+    cs.revocations = vec![testkit::legacy_revocation("2026-08-11T09:00:00Z", "filed against the wrong version")];
+    cs.format = format;
+    let text = serde_yaml::to_string(&cs).expect("serialize");
+    repo.write(&format!("log/{}.yml", testkit::CS_ULID), &text);
+}
+
+/// Format 6 retired the legacy revocation shape: declaring it, or anything
+/// above it, over a file that uses the shape is a fault even though the
+/// content alone needs format 1 (ruled 2026-10-05).
+#[test]
+fn a_legacy_revocation_in_a_file_declaring_format_6_or_above_is_a_fault() {
+    for declared in [format::AUTHORITY_FORMAT, format::SIGNING_FORMAT] {
+        let repo = Repo::new();
+        repo.write_set();
+        write_legacy_revocation_log(&repo, declared);
+        let store = repo.load();
+        assert!(
+            store.schema_findings.iter().any(|f| f.message == "a format-6 revocation carries id, revokes, actor and hash"),
+            "format {declared}: {:?}",
+            store.schema_findings
+        );
+    }
+    let repo = Repo::new();
+    repo.write_set();
+    write_legacy_revocation_log(&repo, format::KEY_FORMAT);
+    assert!(repo.load().schema_findings.is_empty(), "format 5 still takes the legacy shape");
+}

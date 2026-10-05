@@ -373,12 +373,19 @@ Rules:
   finding — the tripwire fired and the decision is due a fresh look. These
   are different facts about a decision and a report that merges them tells
   the reader neither. Neither finding is a gate class (see below).
-- **Declare what you need.** A writer declares the lowest format its
-  content needs (`format::needed_for` in the reference implementation), so
-  a store that never states a `revisit_if` stays a format-1/2/3 store. A
-  file that declares less than its content needs — here, a file below
-  format 4 carrying `revisit_if` — is a schema fault. A file that declares
-  more than its content needs is not (ruled 2026-10-05).
+- **Declare a format all of the content is valid in** (ruled 2026-10-05).
+  A file declares a format in which every field and shape it holds is
+  valid, and a writer declares the lowest such format
+  (`format::needed_for` in the reference implementation), so a store that
+  never states a `revisit_if` stays a format-1/2/3 store. Two declarations
+  are schema faults:
+  - **below what a field needs** — here, a file below format 4 carrying
+    `revisit_if`;
+  - **at or above the format that retired a shape the file uses** — for
+    example, a legacy revocation (`acceptance`, `by`) in a file declaring
+    format 6 or above, the format that retired that shape (§3.9.2).
+
+  A higher declaration is otherwise not a fault.
 
   > **Enforced 2026-10-05 (#81).** Until then the reference
   > implementation's loader did not check this rule, and three of its own
