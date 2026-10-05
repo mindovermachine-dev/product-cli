@@ -31,7 +31,7 @@ only adds an unhashed field.
   initialises unbound, as before, with a warning.
 - **`verify`** says, as a notice, while the genesis holder has no trusted
   key (`genesis_unbound` in `--json`).
-- **Callers moved.** 16 test call sites in 12 files bootstrap a namespace
+- **Callers moved.** 19 test call sites in 13 files bootstrap a namespace
   with no key configured. They now pass `--without-key`. Later-namespace
   calls, made after a key is bound, are unchanged.
 - **A namespace's first policy is a signing subject** (`signing/subject.rs`
