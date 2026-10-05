@@ -182,5 +182,9 @@ fn a_clone_signs_only_its_own_rows_on_its_own_branch() {
     ledger_core::batch_file::write(&path, &file).expect("write");
     let wrong = repo.ledger(&["accept", "--batch", &p, "--repository", "here"]);
     assert_ne!(wrong.status.code(), Some(0));
-    assert!(common::both(&wrong).contains("is checked out"), "{}", common::both(&wrong));
+    assert!(common::both(&wrong).contains("lists no row for `here` on branch"), "{}", common::both(&wrong));
+    // Named explicitly — as the inbox does from a detached worktree — the
+    // rows on that branch are this checkout's.
+    let named = repo.ok(&["accept", "--batch", &p, "--repository", "here", "--branch", "not-checked-out"]);
+    assert_eq!(named.matches("under grant:").count(), 3, "{named}");
 }

@@ -64,7 +64,7 @@ pub fn accept(root: Option<PathBuf>, flags: AcceptFlags) -> Result<i32, String> 
 
 /// `accept --batch <file>`: this clone's rows of a selection file, pinned
 /// by the file's manifest; signing takes `--confirm` with that digest.
-pub fn batch(root: Option<PathBuf>, file: PathBuf, repository: Option<String>, flags: AcceptFlags) -> Result<i32, String> {
+pub fn batch(root: Option<PathBuf>, file: PathBuf, (repository, branch): (Option<String>, Option<String>), flags: AcceptFlags) -> Result<i32, String> {
     let started = Instant::now();
     let mut author = open_author(root)?;
     author.as_role = flags.as_role.clone();
@@ -72,7 +72,7 @@ pub fn batch(root: Option<PathBuf>, file: PathBuf, repository: Option<String>, f
         file: ledger_core::batch_file::read(&file)?,
         path: file.display().to_string(),
         repository,
-        branch: current_branch(&author.root),
+        branch: branch.or_else(|| current_branch(&author.root)),
         expires_at: flags.expires.as_deref().map(parse_date).transpose()?,
         confirm: flags.confirm,
     };

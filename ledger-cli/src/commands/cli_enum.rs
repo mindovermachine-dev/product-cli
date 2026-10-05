@@ -25,6 +25,10 @@ pub enum Commands {
         /// With --batch: this clone's repository label in the file
         #[arg(long, value_name = "LABEL", requires = "batch")]
         repository: Option<String>,
+        /// With --batch: the branch these rows are signed on (default: the
+        /// branch checked out)
+        #[arg(long, value_name = "BRANCH", requires = "batch")]
+        branch: Option<String>,
         /// When this signature goes stale (YYYY-MM-DD)
         #[arg(long, value_name = "DATE")]
         expires: Option<String>,

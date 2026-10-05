@@ -29,7 +29,8 @@ pub struct AcceptBatchArgs {
     pub path: String,
     /// The rows this clone signs: the file's single repository when absent.
     pub repository: Option<String>,
-    /// The branch checked out here, when there is one.
+    /// The branch these rows are signed on: named (`--branch`, as the inbox
+    /// does from a detached worktree), else the one checked out.
     pub branch: Option<String>,
     pub expires_at: Option<NaiveDate>,
     pub confirm: Option<String>,
@@ -42,10 +43,11 @@ impl Author {
         let repository = self.admit(&args)?;
         let store = self.load();
         let today = self.today();
-        let mine: Vec<&Row> = args.file.rows.iter().filter(|r| r.is_for(&repository, None)).collect();
+        let here = |r: &Row| r.repository == repository && (r.branch.is_none() || args.branch.is_none() || r.branch == args.branch);
+        let mine: Vec<&Row> = args.file.rows.iter().filter(|r| here(r)).collect();
         let (members, problems) = self.resolve(&store, &mine, today);
         let mut resolved = args.file.clone();
-        for row in resolved.rows.iter_mut().filter(|r| r.is_for(&repository, None)) {
+        for row in resolved.rows.iter_mut().filter(|r| here(r)) {
             if let Some(m) = members.iter().find(|m| m.decision == row.decision) {
                 row.grant = m.grant.clone().filter(|g| g != NO_GRANT);
             }
@@ -94,12 +96,12 @@ impl Author {
             )));
         }
         self.as_role = args.file.as_role.clone();
-        let mine = args.file.rows.iter().filter(|r| r.is_for(&repository, None));
-        if let Some(wrong) = mine.into_iter().find(|r| r.branch.is_some() && args.branch.is_some() && r.branch != args.branch) {
+        // Rows on other branches are other checkouts' to sign; a checkout
+        // that matches none of the file's rows is a misread hand-off.
+        let any = args.file.rows.iter().any(|r| r.repository == repository && (r.branch.is_none() || args.branch.is_none() || r.branch == args.branch));
+        if !any {
             return Err(AuthorError::Usage(format!(
-                "{} is on branch `{}`, but `{}` is checked out — sign each branch's rows on that branch",
-                wrong.decision,
-                wrong.branch.clone().unwrap_or_default(),
+                "the batch lists no row for `{repository}` on branch `{}` — sign each branch's rows on that branch",
                 args.branch.clone().unwrap_or_default()
             )));
         }
