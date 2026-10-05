@@ -101,6 +101,12 @@ The questions and options are in `docs/sessions/2026-10-session-b.md` §1 ("Inte
 
 **The principal's proposals of the same day**, opened as issues: #97, the property test that an earlier `at` never improves a verdict at a fixed landing position; and #96, binding the genesis key in `init --namespace`, signing a first policy when the genesis holder has a trusted key, and a `verify` notice for a `[none]` namespace. #96 must land before the Varve import (#73).
 
+**Narrowing D5 (c): key bindings before the first policy (ruled 2026-10-05).**
+
+> A key binding is never exempt as a pre-policy act. A binding that is before its namespace's first policy (D6) is judged by D7 and by the signature requirement of that first policy. The pre-policy exemption covers acceptances and revocations only.
+
+Implemented in `signing/check.rs` `trust_bindings`. A signed binding before the first policy is trusted. An unsigned one fails `L011` where that policy requires a signature, and is never trusted. Under a `[none]` first policy, D7 alone decides it: an unsigned binding the genesis holder may file is trusted. A binding in a namespace no policy governs at all stays the schema fault it was. Every filed binding is either trusted or named by a finding. In the same change, `init --namespace` in a later namespace binds the genesis holder's live key there, signed by a key of theirs already trusted, dated with the policy. No new class, no format change; see `docs/ledger-format-migrations.md`.
+
 **A note for the principal (Session B close-out §3, item 7).** The terminal check and the typed manifest are passable by any process that allocates a pseudo-terminal. The control that requires a person is the key: its passphrase, or a touch under `require_sk`.
 
 ## Two further differences the side-by-side surfaces

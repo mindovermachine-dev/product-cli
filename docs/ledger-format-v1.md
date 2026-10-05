@@ -758,8 +758,11 @@ position (§3.10.6) — for a policy change, the policy it replaces (D1) —
 lists the required schemes. Under `[none]` an entity needs no sidecar;
 under any other policy each listed scheme needs one. A policy listing
 `none` with another scheme is a schema fault, and `ledger policy set`
-refuses it. A sidecar that is present always has to verify. An entity before its namespace's first policy
-is not checked.
+refuses it. A sidecar that is present always has to verify. An
+acceptance or revocation before its namespace's first policy is not
+checked (D5 (c)). **A key binding is never exempt** (ruled 2026-10-05,
+narrowing D5 (c)): one before its namespace's first policy is judged by D7
+and by **that first policy's** requirement (§3.10.5).
 
 **A namespace's first policy** (2026-10-05, #96) replaces nothing, so no
 policy is in force before it. It is judged under **its own** schemes, and
@@ -774,9 +777,16 @@ any trusted key needs none, and stands unsigned.
 
 Key bindings are judged first, in order (§3.10.6). A binding is **trusted**
 when its filer is one D7 allows and, where the policy in force requires a
-signature, its signature verifies against the bindings already trusted. A
-binding with no policy in force at its position — before its namespace's
-first policy — is never trusted.
+signature, its signature verifies against the bindings already trusted.
+
+**Before the first policy** (ruled 2026-10-05). A binding before its
+namespace's first policy (D6: landed no later, dated earlier) is judged by
+D7 and by the requirement of that first policy, as if it were in force:
+signed, it is trusted; unsigned where that policy requires a signature, it
+is `L011` and never trusted; under a `[none]` first policy, D7 alone decides
+it. A binding in a namespace no policy governs at all is a schema fault.
+**Every filed binding is trusted or named by a finding** — none is left
+silently untrusted.
 
 `ledger init --namespace` (2026-10-05, #96) files the genesis holder's
 self-bound binding in the same change-set as the genesis grant and the
@@ -787,7 +797,10 @@ land for the address — anyone's — is the one trusted is then closed by the
 act that opens the namespace. With no usable key, `init --namespace`
 refuses and names what is missing; `--without-key` is the explicit way to
 proceed unbound (ruled 2026-10-05), and `verify` then says the window is
-open (§3.10.7).
+open (§3.10.7). In a **later namespace**, while the genesis holder holds a
+live key, `init --namespace` binds that key there in the same change-set —
+their own `add`, signed by a key of theirs already trusted, dated with the
+policy — so they sign in the new namespace with no separate `identity add`.
 
 - the genesis holder's **self-bound** first binding in the store, carrying
   the genesis grant's `external_ref` as `mandate`, signed by the key it
@@ -864,8 +877,9 @@ of a version.
   namespace, the policy's `accept_role`), over a scope covering the target,
   live, accepted and available at its `at`, and not outranked (D9 (e)). The
   check never searches for another grant; a governed act with no `under`
-  fails. An act before its namespace's first policy is not checked (D5 (c));
-  a grant's revocation is checked once the store has a genesis.
+  fails. An acceptance or revocation before its namespace's first policy is
+  not checked (D5 (c)) — the exemption covers those two and no key binding
+  (§3.10.5); a grant's revocation is checked once the store has a genesis.
 - **A policy is the genesis holder's act** (2026-10-05). Every policy,
   a namespace's first or a change, is judged like any other act as of its
   own position: the grant it names (`under`) must be the genesis grant as

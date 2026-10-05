@@ -3,7 +3,9 @@
 //! **Requirement.** The policy in force for the entity's namespace at the
 //! entity's position (D6) says which schemes are required; a policy change
 //! is judged under the policy it replaces. An entity before its namespace's
-//! first policy is not checked (D5 (c)). With `none` listed, an entity may
+//! first policy is not checked (D5 (c)) — except a key binding, which is
+//! never exempt: it is judged under that first policy (ruled 2026-10-05).
+//! With `none` listed, an entity may
 //! carry no sidecar; otherwise every listed scheme needs a sidecar that
 //! verifies. A sidecar that is present always has to verify.
 //!
@@ -13,6 +15,9 @@
 //! already trusted (a self-bound binding against the key it binds). The
 //! trusted bindings are what `allowed_signers` is derived from, so an
 //! unsigned binding for an existing holder never reaches the trust root.
+//! A binding before its namespace's first policy is judged under that
+//! policy; one in a namespace no policy governs is a schema fault. Every
+//! filed binding ends trusted or with a finding — none is left silent.
 //!
 //! **Closed keys** (ruling 12, D6). An entity signed by a key whose window
 //! a later binding closed is judged by order: dated after the close fails
@@ -185,7 +190,13 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
             out.findings.push(Finding::schema(&s.id, format!("D7: {rule}")));
             continue;
         }
-        let Some(policy) = auth.policy(&s.namespace).cloned() else { continue };
+        // A binding is never exempt as a pre-policy act (ruled 2026-10-05):
+        // before its namespace's first policy it is judged under that first
+        // policy's requirement. In a namespace no policy governs at all it is
+        // already a schema fault (`authority/references.rs`) and stays
+        // untrusted.
+        let policy = auth.policy(&s.namespace).cloned().or_else(|| first_policy_of(store, &s.namespace));
+        let Some(policy) = policy else { continue };
         let mut keys = out.trusted.clone();
         if b.self_bound {
             keys.push(b);
@@ -201,6 +212,11 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
             )),
         }
     }
+}
+
+/// A namespace's first policy (it replaces none), wherever it landed.
+fn first_policy_of(store: &Store, namespace: &str) -> Option<Policy> {
+    Authority::build(store).policies.iter().find(|p| p.namespace == namespace && p.replaces.is_none()).map(|p| (*p).clone())
 }
 
 /// The genesis holder's first key in a later namespace is their own `add`,

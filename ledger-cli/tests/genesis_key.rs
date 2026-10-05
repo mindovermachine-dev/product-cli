@@ -173,3 +173,30 @@ fn verify_names_a_none_namespace_in_a_notice_and_passes() {
     let report: serde_json::Value = serde_json::from_slice(&json.stdout).expect("json");
     assert_eq!(report["unsigned"][0], NS);
 }
+
+#[test]
+fn init_in_a_later_namespace_binds_the_holders_key_there_and_they_sign_with_no_identity_add() {
+    let (repo, key, _) = keyed();
+    let out = repo.ok(&["init", "--namespace", SECOND, "--external-ref", MANDATE]);
+    assert!(out.contains(&format!("in `{SECOND}`, signed by their key trusted elsewhere")), "{out}");
+    let policy = policy_of(&repo, SECOND);
+    let store = ledger_core::store::load(repo.path());
+    let here: Vec<_> = store.log.iter().flat_map(|l| l.file.key_bindings.iter()).filter(|b| b.namespace == SECOND).collect();
+    assert_eq!(here.len(), 1, "one binding, in the init change-set");
+    let b = here[0];
+    assert!(!b.self_bound && b.mandate.is_none() && b.by.as_str() == OWNER, "their own add: {b:?}");
+    assert_eq!(b.at, policy.at, "dated with the policy");
+    assert!(std::fs::read_to_string(format!("{key}.pub")).expect("pub").contains(b.key.as_deref().unwrap_or("?")), "the existing key");
+    assert!(sidecar(&repo, b.id.ulid()).exists(), "signed by their key trusted in the first namespace");
+    // They sign in the new namespace straight away.
+    let grant = hand::word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{SECOND}")]), "grant:");
+    repo.ok(&["grant", "accept", &grant]);
+    let out = repo.ok(&[
+        "add", "--set", "ledger-design", "--namespace", SECOND, "--statement", "Signed with no separate identity add.",
+        "--store", "constraint", "--discharge", "analyzer:DEC001",
+    ]);
+    repo.ok_tty(&["accept", &common::decision_id(&out)]);
+    hand::commit(&repo, "second namespace, accepted in");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 0, "{text}");
+}
