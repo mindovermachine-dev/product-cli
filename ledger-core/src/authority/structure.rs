@@ -57,6 +57,14 @@ pub fn entry_faults(cs: &ChangeSet) -> Vec<Finding> {
         if p.schemes.is_empty() {
             out.push(Finding::schema(&p.id.to_string(), "a policy names at least one scheme"));
         }
+        // `none` is exclusive (ruled 2026-10-04, amending D4): governed and
+        // unsigned, never "signed, optionally".
+        if p.schemes.contains(&super::Scheme::None) && p.schemes.len() > 1 {
+            out.push(Finding::schema(
+                &p.id.to_string(),
+                "`none` is exclusive — a policy is governed and unsigned (`none` alone), or lists the schemes it requires",
+            ));
+        }
         if p.reaccept_within_days == Some(0) {
             out.push(Finding::schema(&p.id.to_string(), "a re-acceptance deadline is at least one day"));
         }

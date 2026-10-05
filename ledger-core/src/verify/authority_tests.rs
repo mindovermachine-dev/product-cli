@@ -8,7 +8,7 @@ use crate::testkit;
 use crate::verify::{verify, Options, Report};
 
 fn run(store: &crate::store::Store) -> Report {
-    verify(store, &Options { gate: None, today: testkit::date("2026-10-15"), blame: false })
+    verify(store, &Options::offline(testkit::date("2026-10-15")))
 }
 
 fn steward() -> Vec<crate::authority::Role> {

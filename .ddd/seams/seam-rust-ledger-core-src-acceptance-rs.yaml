@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-acceptance-rs
 boundary: contract surface of ledger-core/src/acceptance.rs
-verdict_knowledge: "Callers learn Revocation is re-exported here from authority::revocation: one entity revokes a grant or an acceptance, and the acceptance is never edited."
+verdict_knowledge: 'Callers learn Revocation is re-exported here from authority::revocation: one entity revokes a grant or an acceptance, and the acceptance is never edited.'
 contract_location: ledger-core/src/acceptance.rs
 obligations: []
 metadata: {}
@@ -36,3 +36,9 @@ bindings:
   after: sha256:f48600973798b8766ebfd33e75b102f2ab19535a22065c26a7a3d00447d53dac
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:76a8f5aa62bb47b4307884c7523701cb17fc4c41cbdadbbdcd8b5d06c9f35332
+- symbol: under
+  file: ledger-core/src/acceptance.rs
+  before: sha256:f48600973798b8766ebfd33e75b102f2ab19535a22065c26a7a3d00447d53dac
+  after: sha256:fa1f0cbe9d0f50a6e48c70325f94c8dc3c57ebf88214004dd1957be328af7c3a
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3558504414307ab803b99fbd20a430e133de304a02e2cfebf1147534e4cd2b2c

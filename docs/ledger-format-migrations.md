@@ -19,6 +19,58 @@ only adds an unhashed field.
 
 ---
 
+## Format 7 / Spec v1.8 — signing; `L011`, `L012`, `A006` (2026-10-04, #70)
+
+**New fields.** `under` (the grant an act is made under, D9 (a)) on
+acceptances, `rev:` revocations, grants, policies and key bindings — hashed
+when present, omitted when absent. `at` joins the policy payload, always
+(D8), and a policy becomes a format-7 entry: a policy in a file below
+format 7 is a schema fault. No committed store carried a format-6 policy
+(namespace policy arrived with format 6 in the same release train, #80), so
+none needs rewriting; a store that has one re-files it with `ledger policy
+set`. A change-set with `under` anywhere, or with a policy, declares
+`format: 7`. The inline acceptance `signature` field is retired:
+permanently empty in every format.
+
+**New payload.** `ledger.acceptance.v1` over `{decision, version, actor, at,
+scope, expires_at, under}`. Acceptances had no digest before, so none
+moves; the digest is computed, never stored.
+
+**No existing digest moves.** `CANONICAL_FORM` is unchanged; every
+version digest re-derives unchanged (`ledger-cli/tests/digests.rs`), and the
+grant, binding and revocation payloads are pinned against `main` at 88b3de1
+(the policy's pin is dropped: its payload now always carries `at`)
+(`ledger-core/src/authority/payload_tests.rs`).
+
+**Signatures** are sidecars at `.decisions/sig/<ulid>.<scheme>.sig`
+(`ssh`; `dsse` verified only; `none` is no sidecar). The signed bytes are the
+digest's input, `prefix || 0x0A || canonical JSON` (§3.10.3).
+
+**Two file-gate classes** take their reserved numbers: `L011` (a required
+signature absent or invalid, including one dated or landed after its key's
+close) and `L012` (an acceptance under a since-closed key, not re-accepted by
+the policy's deadline; before it, a review item). The closed count moves
+from twelve to fourteen. `L012` is a release disposition, outside the
+readiness gate. The graph stage gains `A006`, the role check over history.
+`L007` gains two history rules: a landed role file changed (roles are
+write-once), and a namespace's policy removed (opting in is one-way).
+
+**Migration note.** Nothing to migrate mechanically. A namespace with no
+policy is unaffected: nothing in it is signature- or role-checked, and
+`verify` now names it as unchecked. A namespace already under policy (from
+v1.7) now requires its policy's schemes on every act after its first
+policy: its key bindings must be signed (the genesis holder's first by the
+key it binds, a principal's first by the genesis holder, D7), and acts
+must name their grant. A v1.7 store's `allowed_signers` was written with
+space-separated options, which `ssh-keygen` cannot read; `ledger identity
+sync` rewrites it in the corrected comma form. No committed store in this
+repository carried one.
+
+**Out of this format:** signed grants and grant acceptances, and `at` in
+the grant payload (D5 (b)) — #82.
+
+---
+
 ## Format 6 / Spec v1.7 — the authority records; `A003`, `A005` (2026-10-02)
 
 A **`format` bump without a `CANONICAL_FORM` bump** (#69; the revocation

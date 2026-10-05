@@ -1,0 +1,50 @@
+format: 2
+id: seam/rust/ledger-core-src-signing-dsse-rs
+boundary: contract surface of ledger-core/src/signing/dsse.rs
+verdict_knowledge: "Callers learn DSSE verification only: an envelope over an entity's signed bytes, ed25519 over the pre-authentication encoding, by a key bound in the namespace; this crate never produces one."
+contract_location: ledger-core/src/signing/dsse.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: PAYLOAD_TYPE
+  file: ledger-core/src/signing/dsse.rs
+  before: absent
+  after: sha256:e2024acf74fb2000424e7932c722a8ca689cbfd5eb87cc5bc7586eea57f08e03
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:41b13bc4a6e08380107663189f36881e0cda6cfe050b26df4c9e912de7cc82af
+- symbol: base64_decode
+  file: ledger-core/src/signing/dsse.rs
+  before: absent
+  after: sha256:e2024acf74fb2000424e7932c722a8ca689cbfd5eb87cc5bc7586eea57f08e03
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:82dab02eb629b9359eb325631a77c650d546dc365902048be0ef6571b3067fb9
+- symbol: base64_encode
+  file: ledger-core/src/signing/dsse.rs
+  before: absent
+  after: sha256:e2024acf74fb2000424e7932c722a8ca689cbfd5eb87cc5bc7586eea57f08e03
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:10fb687eec6c6a92ac9c55ff83cbf4a627d394806b67c3c6c9bb198ad99707f9
+- symbol: ed25519_blob
+  file: ledger-core/src/signing/dsse.rs
+  before: absent
+  after: sha256:e2024acf74fb2000424e7932c722a8ca689cbfd5eb87cc5bc7586eea57f08e03
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:eae5a6037e4167147a59e4e6d5f9d9cf6c70d24c90cbcfd41e2546d26a932efa
+- symbol: ed25519_key
+  file: ledger-core/src/signing/dsse.rs
+  before: absent
+  after: sha256:e2024acf74fb2000424e7932c722a8ca689cbfd5eb87cc5bc7586eea57f08e03
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d15a0bb5c0b6974f3114ba8ac8bc161bb26d978daeee028d9ac10b1b80c4660b
+- symbol: pae
+  file: ledger-core/src/signing/dsse.rs
+  before: absent
+  after: sha256:e2024acf74fb2000424e7932c722a8ca689cbfd5eb87cc5bc7586eea57f08e03
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:5eb9b384519f7406baa9ff17444f5a8638ae760b1f644c5a9f8450cbfa272cc7
+- symbol: verify
+  file: ledger-core/src/signing/dsse.rs
+  before: absent
+  after: sha256:e2024acf74fb2000424e7932c722a8ca689cbfd5eb87cc5bc7586eea57f08e03
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:6eede66e540ef311729a6d5a64c3c36f0f04f5da7e736949df7dd68eb481ee2e

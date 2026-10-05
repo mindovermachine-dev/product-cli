@@ -91,21 +91,31 @@ impl Author {
             at: self.now,
             scope: AcceptanceScope::Version,
             expires_at: args.expires_at,
+            under: held.as_ref().map(super::authority_ops::under_of).transpose()?,
             signature: String::new(),
         };
+        let policy = Authority::build(&store).policy(args.decision.namespace()).cloned();
+        let what = super::sign_ops::ToSign {
+            namespace: args.decision.namespace(),
+            ulid: acceptance.id.ulid(),
+            bytes: crate::authority::payload::acceptance_bytes(&acceptance),
+            own_key: None,
+            any_namespace: false,
+        };
+        self.sign_under(&store, policy.as_ref(), what)?;
+        let signed = self.pending_sidecars.iter().map(|s| format!("signed — sig/{}", s.file)).collect::<Vec<_>>();
         let mut candidate = self.shell(None)?;
         candidate.acceptances.push(acceptance);
         self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
+        let path = self.append_signed(&candidate)?;
         let mut lines = vec![format!(
             "{} accepted {} of {} — the signature names this exact state",
             self.who,
             hash.short(),
             args.decision
         )];
-        if let Some(by) = held {
-            lines.push(format!("under {} (`{}`)", by.grant, by.role));
-        }
+        lines.extend(held.map(|by| by.line()));
+        lines.extend(signed);
         Ok(Applied { path, lines })
     }
 
@@ -117,8 +127,16 @@ impl Author {
         decision: &DecisionId,
         hash: &crate::hash::VersionHash,
     ) -> Result<(), AuthorError> {
+        // An acceptance under a since-closed key awaits affirmation: a new
+        // acceptance by the holder with a live key is how it is given.
+        let review: Vec<String> = crate::signing::check::check(&self.load(), &crate::landing::Landing::unknown(), self.today())
+            .reaccept
+            .into_iter()
+            .map(|r| r.acceptance)
+            .collect();
         let already = view.acceptances.iter().map(|a| a.acceptance).any(|a| {
-            !view.is_revoked(a)
+            !review.contains(&a.id.to_string())
+                && !view.is_revoked(a)
                 && a.decision == *decision
                 && a.version == *hash
                 && a.actor == self.who
@@ -147,18 +165,32 @@ impl Author {
             )));
         }
         let revoked = view.acceptances.iter().map(|a| a.acceptance).find(|a| a.id == args.acceptance);
-        if let Some(acceptance) = revoked {
-            self.decision_authority(&store, &view, &acceptance.decision, Act::RevokeAcceptance)?;
-        }
-        let revocation = self.revocation(Revocable::Acceptance(args.acceptance.clone()), args.reason.clone())?;
+        let held = match revoked {
+            Some(acceptance) => self.decision_authority(&store, &view, &acceptance.decision, Act::RevokeAcceptance)?,
+            None => None,
+        };
+        let under = held.as_ref().map(super::authority_ops::under_of).transpose()?;
+        let revocation = self.revocation(Revocable::Acceptance(args.acceptance.clone()), args.reason.clone(), under)?;
         let id = revocation.id.as_ref().map(ToString::to_string).unwrap_or_default();
+        if let Some(acceptance) = revoked {
+            let ns = acceptance.decision.namespace();
+            let policy = Authority::build(&store).policy(ns).cloned();
+            let ulid = revocation.id.as_ref().map(|i| i.ulid().to_string()).unwrap_or_default();
+            let what = super::sign_ops::ToSign {
+                namespace: ns,
+                ulid: &ulid,
+                bytes: crate::authority::payload::revocation_bytes(&revocation),
+                own_key: None,
+                any_namespace: false,
+            };
+            self.sign_under(&store, policy.as_ref(), what)?;
+        }
         let mut candidate = self.shell(None)?;
         candidate.revocations.push(revocation);
         self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
-        Ok(Applied {
-            path,
-            lines: vec![format!("revoked {} by {id} — {}", args.acceptance, args.reason)],
-        })
+        let path = self.append_signed(&candidate)?;
+        let mut lines = vec![format!("revoked {} by {id} — {}", args.acceptance, args.reason)];
+        lines.extend(held.as_ref().map(|by| by.line()));
+        Ok(Applied { path, lines })
     }
 }

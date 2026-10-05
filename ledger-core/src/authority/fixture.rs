@@ -43,6 +43,7 @@ pub fn grant(tail: &str, role: &str, holder: &str, scope: &str, order: u32) -> G
         genesis: false,
         external_ref: None,
         supersedes: None,
+        under: None,
         at: testkit::stamp("2026-10-01T09:00:00Z"),
         hash: crate::hash::VersionHash::zero(),
     };
@@ -96,7 +97,8 @@ pub fn away(tail: &str, g: &Grant, from: &str, until: Option<&str>) -> Unavailab
 /// A change-set (format 6) holding the given grants and acceptances.
 pub fn changeset(grants: Vec<Grant>, accepted: Vec<GrantAcceptance>) -> ChangeSet {
     let mut cs = testkit::changeset(Vec::new(), Vec::new());
-    cs.format = 6;
+    // Format 7: tests add policies to it, and a policy is a format-7 entry.
+    cs.format = crate::format::SIGNING_FORMAT;
     cs.grants = grants;
     cs.grant_acceptances = accepted;
     cs

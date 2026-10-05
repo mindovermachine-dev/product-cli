@@ -98,15 +98,34 @@ pub fn version_hash(raw: &VersionRaw) -> VersionHash {
 /// built with [`crate::canon`]'s primitives — the one law, one level up.
 pub fn domain_hash(prefix: &str, canonical_bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(prefix.as_bytes());
-    hasher.update(b"\n");
-    hasher.update(canonical_bytes);
+    hasher.update(signed_bytes(prefix, canonical_bytes));
     format!("sha256:{:x}", hasher.finalize())
+}
+
+/// The exact byte sequence [`domain_hash`] digests and a signature signs
+/// (spec v1.8): the prefix's UTF-8 bytes, one `0x0A`, then the canonical
+/// bytes. One function, so the hashed bytes and the signed bytes cannot
+/// drift apart.
+pub fn signed_bytes(prefix: &str, canonical_bytes: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(prefix.len() + 1 + canonical_bytes.len());
+    out.extend_from_slice(prefix.as_bytes());
+    out.push(b'\n');
+    out.extend_from_slice(canonical_bytes);
+    out
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_signed_bytes_are_prefix_newline_canonical() {
+        let bytes = signed_bytes("ledger.acceptance.v1", b"{\"a\":\"b\"}");
+        assert_eq!(bytes, b"ledger.acceptance.v1\n{\"a\":\"b\"}".to_vec());
+        let mut hasher = Sha256::new();
+        hasher.update(&bytes);
+        assert_eq!(domain_hash("ledger.acceptance.v1", b"{\"a\":\"b\"}"), format!("sha256:{:x}", hasher.finalize()));
+    }
 
     #[test]
     fn a_hash_round_trips_and_exposes_a_short_form() {

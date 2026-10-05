@@ -1,0 +1,98 @@
+format: 2
+id: seam/rust/ledger-core-src-signing-mod-rs
+boundary: contract surface of ledger-core/src/signing/mod.rs
+verdict_knowledge: "Callers learn where signatures live: one sidecar per scheme at .decisions/sig/<ulid>.<scheme>.sig over the entity's signed bytes, never inside a log file."
+contract_location: ledger-core/src/signing/mod.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: SIG_DIR
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:960b8570839150a26e967342dad5589d799413bd352866245562e003d27b51c8
+- symbol: load
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:929a0744aa7ac49c7e7378b349cda984fb344588c45f44d7b3527bf30f49a8ee
+- symbol: write
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:4cf40dbeb68ffa860716c760ed2729d95049cbc7a2a23bb9758cb1233765c07e
+- symbol: impl Sidecar
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:7bc7c299deda15931f81f656520b1912e144c4ea76ba48fa9195a4aa8612b3dc
+- symbol: check
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1ade44838eb7cae795c994c9e26da958bf2bcbd4175f73a2c18971c9b8c01d17
+- symbol: dsse
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:5dcef84a1757e4449ff9b8bc74dbbb9783bdc4423a73ef0ed1dfa49ae0b15f2b
+- symbol: ssh
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:19bbe47ec00c9818a4ef48590131b3fd6711f70f7a363140f6579e6a0fa194d5
+- symbol: subject
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:cbfc4ce5808b4601e4259ce1c03eb2737f10dc09b67f0a297e33d74cf913f8ff
+- symbol: Sidecar
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:7407df8219fbbda8bcbb67f222dab6e7a2a0758e688263003578eaaa58be8e2a
+- symbol: bytes
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:a979e6508e21161bcb15d9da8899eebab2a4fe31db461a400c6eb7f4a1265f75
+- symbol: file
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:88aba2353942502cf39040c91a196070c804037ceb9d1cc7b4ddd9240adcf82d
+- symbol: scheme
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:758f14cee9b7ab3b865b3e205996c809ea4ff6b2f909e63a14e22c8786213db9
+- symbol: ulid
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:3755baf8d55505cbac8e822968a1a54a559ca47d72a3a971cdf3ffb0e3f0752d
+- symbol: file_name
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:bd051b2eda06d75a9fd792b83b3282fcd15f2f2bac43c61dc1cfec4e30bce97c
+- symbol: parse_name
+  file: ledger-core/src/signing/mod.rs
+  before: absent
+  after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:35c44b5c3a8c36b720f456f4e2152b863259a3a938cfd8a0f00cb37c6d63ecb3

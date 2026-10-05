@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-finding-rs
 boundary: contract surface of ledger-core/src/finding.rs
-verdict_knowledge: "Consumers learn the file gate's closed classes grow to twelve with L013 (key immutability) and L014 (key uniqueness among live decisions); L011/L012 stay reserved for signing."
+verdict_knowledge: Consumers learn the file gate's closed classes grow to twelve with L013 (key immutability) and L014 (key uniqueness among live decisions); L011/L012 stay reserved for signing.
 contract_location: ledger-core/src/finding.rs
 obligations: []
 metadata: {}
@@ -18,3 +18,15 @@ bindings:
   after: sha256:9f01fcd85e997a75df60cc2f4c158fffa761f8cf067d293b3ed54160b75e4a01
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:1d5f86c82e4ff63cf1aba60b708bfbd9e5fb4ff1984a0efc85fbbcfcda208c31
+- symbol: L011
+  file: ledger-core/src/finding.rs
+  before: sha256:9f01fcd85e997a75df60cc2f4c158fffa761f8cf067d293b3ed54160b75e4a01
+  after: sha256:990386c6387081542cd697cf397c7be021b31352fc4eae29b985741f977ca677
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:e7b4ade312fb9fb90211da8f997c77ca6ce4d4224bc652dccd7e763898e821a2
+- symbol: L012
+  file: ledger-core/src/finding.rs
+  before: sha256:9f01fcd85e997a75df60cc2f4c158fffa761f8cf067d293b3ed54160b75e4a01
+  after: sha256:990386c6387081542cd697cf397c7be021b31352fc4eae29b985741f977ca677
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:297636d53ae706c9e78f93ccd9c7bc7e26b3454c08a14d9b07d3c281d6eecbbd

@@ -51,8 +51,8 @@ pub fn run(command: Commands, root: Option<PathBuf>) -> i32 {
 /// that append to the log, and reads that never touch it.
 fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
     match command {
-        Commands::Accept { decision, set, group, expires, confirm, json } => {
-            sign::accept(root, sign::AcceptFlags { decision, set, group, expires, confirm, json })
+        Commands::Accept { decision, set, group, expires, confirm, json, as_role } => {
+            sign::accept(root, sign::AcceptFlags { decision, set, group, expires, confirm, json, as_role })
         }
         Commands::Add {
             set, statement, namespace, store, discharge, stage, expectation, actor,
@@ -91,7 +91,7 @@ fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
             };
             evolve::revise(root, &decision, statement, edges, parent.as_deref())
         }
-        Commands::Revoke { acceptance, reason } => sign::revoke(root, &acceptance, reason),
+        Commands::Revoke { acceptance, reason, as_role } => sign::revoke(root, &acceptance, reason, as_role),
         Commands::Supersede { decision, by, reason } => {
             evolve::supersede(root, &decision, &by, reason)
         }
@@ -130,8 +130,8 @@ fn dispatch_read(command: Commands, root: Option<PathBuf>) -> Result<i32, String
             inspect::show(root, inspect::ShowFlags { decision, set, group, json, today })
         }
         Commands::Status { today } => inspect::status(root, today.as_deref()),
-        Commands::Verify { gate, json, today, no_blame, export } => {
-            verify::run(root, verify::Args { gate, json, today, blame: !no_blame, export })
+        Commands::Verify { gate, json, today, no_blame, export, base } => {
+            verify::run(root, verify::Args { gate, json, today, blame: !no_blame, export, base })
         }
         // Every writing verb is handled by `dispatch`, which routes here
         // only for what is left. Reaching this arm means a variant was

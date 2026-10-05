@@ -1,0 +1,32 @@
+format: 2
+id: seam/rust/ledger-core-src-landed-rs
+boundary: contract surface of ledger-core/src/landed.rs
+verdict_knowledge: "Callers learn what a landed change-set file holds entity by entity: each item of each list keyed `<list>/<id>`, the header as one entity, `format:` not an entity — so landing and immutability are judged per entity, not per file."
+contract_location: ledger-core/src/landed.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: HEADER
+  file: ledger-core/src/landed.rs
+  before: absent
+  after: sha256:98dcdad6bc294c393d11d4b75be3e6c2fbcda3ddafbd6279a92731ed805491e9
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:905e8b2f8a876625c6e25fabbb017435e6590558f9c2bc25f88782d2f44b4e61
+- symbol: entities
+  file: ledger-core/src/landed.rs
+  before: absent
+  after: sha256:98dcdad6bc294c393d11d4b75be3e6c2fbcda3ddafbd6279a92731ed805491e9
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:d85fe60fcf96ade67d423bce81fafb350da9df00b256c000251ce3bbb0a26874
+- symbol: key
+  file: ledger-core/src/landed.rs
+  before: absent
+  after: sha256:98dcdad6bc294c393d11d4b75be3e6c2fbcda3ddafbd6279a92731ed805491e9
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:ef32250a6f9a78a57437559abc7e6417da48b5985af55ef48b9d734dbd348348
+- symbol: revocation_key
+  file: ledger-core/src/landed.rs
+  before: absent
+  after: sha256:98dcdad6bc294c393d11d4b75be3e6c2fbcda3ddafbd6279a92731ed805491e9
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:34f0b552b485fe0c3277d4e5e81c1620c4db4efba9ed84c6c882ee128bf33aa3

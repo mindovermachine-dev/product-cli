@@ -17,7 +17,7 @@ fn today() -> NaiveDate {
 /// Options with blame off: these cases build stores in memory, where there
 /// is no repository to consult. `L009` has its own tests over real commits.
 fn opts() -> Options {
-    Options { gate: None, today: today(), blame: false }
+    Options::offline(today())
 }
 
 fn run(cs: ChangeSet) -> Report {
@@ -273,13 +273,14 @@ fn l010_judges_the_latest_version_only() {
 fn every_class_the_enum_declares_is_reachable_here() {
     // A class with no test is a class nobody knows fires. L009 is exercised
     // in the CLI's fixture suite, where a real repository exists; L013 and
-    // L014 in `keys_tests.rs`.
+    // L014 in `keys_tests.rs`; L011 and L012 in the CLI's `signing.rs`,
+    // which needs `ssh-keygen` and real keys.
     let named: Vec<&str> = ALL_CLASSES.iter().map(|c| c.code()).collect();
     assert_eq!(
         named,
         [
             "SCHEMA", "L001", "L002", "L003", "L004", "L005", "L006", "L007", "L008", "L009",
-            "L010", "L013", "L014"
+            "L010", "L011", "L012", "L013", "L014"
         ]
     );
 }

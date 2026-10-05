@@ -72,7 +72,7 @@ fn gate(dir: &Path) -> Vec<VerifyClass> {
     let store = crate::store::load(dir);
     let report = verify::verify(
         &store,
-        &Options { gate: None, today: testkit::date("2026-08-10"), blame: false },
+        &Options::offline(testkit::date("2026-08-10")),
     );
     report.findings.iter().map(|f| f.class).collect()
 }

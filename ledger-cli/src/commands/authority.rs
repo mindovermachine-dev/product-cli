@@ -33,7 +33,7 @@ pub fn role(root: Option<PathBuf>, cmd: RoleCmd) -> Result<i32, String> {
 pub fn grant(root: Option<PathBuf>, cmd: GrantCmd) -> Result<i32, String> {
     match cmd {
         GrantCmd::Accept { grant } => finish(open_author(root)?.accept_grant(&grant.parse()?)),
-        GrantCmd::New { role, to, scope, order, limits, supersedes } => {
+        GrantCmd::New { role, to, scope, order, limits, supersedes, as_role } => {
             let args = GrantArgs {
                 role,
                 holder: to.parse()?,
@@ -42,10 +42,14 @@ pub fn grant(root: Option<PathBuf>, cmd: GrantCmd) -> Result<i32, String> {
                 limits: parse_all(&limits)?,
                 supersedes: supersedes.as_deref().map(str::parse).transpose()?,
             };
-            finish(open_author(root)?.grant(args))
+            let mut author = open_author(root)?;
+            author.as_role = as_role;
+            finish(author.grant(args))
         }
-        GrantCmd::Revoke { grant, reason } => {
-            finish(open_author(root)?.revoke_grant(&grant.parse()?, reason))
+        GrantCmd::Revoke { grant, reason, as_role } => {
+            let mut author = open_author(root)?;
+            author.as_role = as_role;
+            finish(author.revoke_grant(&grant.parse()?, reason))
         }
     }
 }
@@ -55,7 +59,7 @@ fn key_file(path: &Path, namespace: String) -> Result<KeyArgs, String> {
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let mut parts = text.split_whitespace();
     match (parts.next(), parts.next()) {
-        (Some(key_type), Some(key)) => Ok(KeyArgs { namespace, key_type: key_type.into(), key: key.into() }),
+        (Some(key_type), Some(key)) => Ok(KeyArgs { namespace, key_type: key_type.into(), key: key.into(), principal: None }),
         _ => Err(format!("{} is not an OpenSSH public key (`<type> <base64>`)", path.display())),
     }
 }
@@ -69,7 +73,11 @@ pub fn identity(root: Option<PathBuf>, cmd: IdentityCmd) -> Result<i32, String> 
     }
     let mut author = open_author(root)?;
     match cmd {
-        IdentityCmd::Add { namespace, key_file: path } => finish(author.identity_add(key_file(&path, namespace)?)),
+        IdentityCmd::Add { namespace, key_file: path, principal } => {
+            let mut args = key_file(&path, namespace)?;
+            args.principal = principal.as_deref().map(str::parse).transpose()?;
+            finish(author.identity_add(args))
+        }
         IdentityCmd::Revoke { binding } => finish(author.identity_revoke(&binding.parse()?)),
         IdentityCmd::Rotate { binding, key_file: path } => {
             let closes = binding.parse()?;

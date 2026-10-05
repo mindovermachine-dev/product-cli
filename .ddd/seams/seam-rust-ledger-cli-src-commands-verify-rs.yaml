@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-src-commands-verify-rs
 boundary: contract surface of ledger-cli/src/commands/verify.rs
-verdict_knowledge: "CI and users learn `verify --export` adds a third stage to the gate: every committed export must equal the log's byte for byte, and an unrun stage is absent from the report rather than shown as a pass, with exit 1 for findings exactly as the file and graph stages."
+verdict_knowledge: 'CI and users learn `verify --export` adds a third stage to the gate: every committed export must equal the log''s byte for byte, and an unrun stage is absent from the report rather than shown as a pass, with exit 1 for findings exactly as the file and graph stages.'
 contract_location: ledger-cli/src/commands/verify.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,15 @@ bindings:
   after: sha256:941bee563315b3445981b62fd7e5cb5c846f9063cb0bc54b46659ddd617a47ee
   base_revision: 6ac409a5899aef9472e151a9d9615ddd18702d0c
   hash: sha256:3666cead2bc348cfdcb505d1a9db4afe9980c7ba01e8d2a51180e1b8a209a655
+- symbol: base
+  file: ledger-cli/src/commands/verify.rs
+  before: sha256:941bee563315b3445981b62fd7e5cb5c846f9063cb0bc54b46659ddd617a47ee
+  after: sha256:51cc683083f9414d9cd2eaa885626b12358e6d9c9f96675a3ff2ffb0a1c6d593
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:f6a09db61e12cb224c941efb8eed95e8d33aaae5a02a9133ce858fa85a44b7b0
+- symbol: base
+  file: ledger-cli/src/commands/verify.rs
+  before: sha256:941bee563315b3445981b62fd7e5cb5c846f9063cb0bc54b46659ddd617a47ee
+  after: sha256:f6f3e91d7c7a4d62879b72c501f573fe83dcd8e961b5fe6e7aeb5f71fb6f9671
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:2848d2674f2097fb042c05ddd593a86fd580d98ceeb07990822599ebec82cea0

@@ -34,6 +34,7 @@ pub struct AcceptFlags {
     pub expires: Option<String>,
     pub confirm: Option<String>,
     pub json: bool,
+    pub as_role: Option<String>,
 }
 
 pub fn accept(root: Option<PathBuf>, flags: AcceptFlags) -> Result<i32, String> {
@@ -46,6 +47,7 @@ pub fn accept(root: Option<PathBuf>, flags: AcceptFlags) -> Result<i32, String> 
         ),
         Selector::One(decision) => {
             let mut author = open_author(root)?;
+            author.as_role = flags.as_role;
             let expires_at = flags.expires.as_deref().map(parse_date).transpose()?;
             finish(author.accept(AcceptArgs { decision, expires_at }))
         }
@@ -64,6 +66,7 @@ pub fn accept(root: Option<PathBuf>, flags: AcceptFlags) -> Result<i32, String> 
 fn grouped(root: Option<PathBuf>, selector: Selector, flags: AcceptFlags) -> Result<i32, String> {
     let started = Instant::now();
     let mut author = open_author(root)?;
+    author.as_role = flags.as_role.clone();
     let args = AcceptGroupArgs {
         selector,
         expires_at: flags.expires.as_deref().map(parse_date).transpose()?,
@@ -99,8 +102,14 @@ fn json(outcome: &ledger_core::batch::Outcome, elapsed: &str) -> Result<String, 
     serde_json::to_string_pretty(&value).map_err(|e| e.to_string())
 }
 
-pub fn revoke(root: Option<PathBuf>, acceptance: &str, reason: String) -> Result<i32, String> {
+pub fn revoke(
+    root: Option<PathBuf>,
+    acceptance: &str,
+    reason: String,
+    as_role: Option<String>,
+) -> Result<i32, String> {
     let mut author = open_author(root)?;
+    author.as_role = as_role;
     let args = RevokeArgs { acceptance: acceptance.parse()?, reason };
     finish(author.revoke(args))
 }

@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 
+use crate::landing::{relative, Landing, Position};
 use crate::store::Store;
 
 use super::availability::{Availability, Unavailability};
@@ -48,6 +49,50 @@ impl<'a> Authority<'a> {
             a.revocations.extend(&cs.revocations);
             a.bindings.extend(&cs.key_bindings);
             a.policies.extend(&cs.policies);
+        }
+        a
+    }
+
+    /// The records as they stood at `pos` (D6): enabling entries (grants,
+    /// grant acceptances, key bindings that open a key) that are not after
+    /// it; terminating ones (revocations, key closes) and governing ones
+    /// (policies) unless the act is before them; and the
+    /// availability intervals landed no later (their clock decides). This
+    /// is what `verify` judges a historic act against (`A006`, D7).
+    pub fn as_of(store: &'a Store, landing: &Landing, pos: Position) -> Self {
+        let mut a = Self::default();
+        for role in &store.roles {
+            a.roles.insert(role.id.clone(), role);
+        }
+        for logged in &store.log {
+            let path = relative(&store.root, &logged.path);
+            let at = |list: &str, id: String, t| landing.position(&path, &crate::landed::key(list, &id), t);
+            let landed = |list: &str, id: String| landing.entity_index(&path, &crate::landed::key(list, &id)) <= pos.index;
+            let cs = &logged.file;
+            a.grants.extend(
+                cs.grants.iter().filter(|g| at("grants", g.id.to_string(), g.at).not_after(&pos)).map(|g| (g.id.to_string(), g)),
+            );
+            a.grant_acceptances
+                .extend(cs.grant_acceptances.iter().filter(|ga| at("grant_acceptances", ga.id.to_string(), ga.at).not_after(&pos)));
+            a.unavailabilities.extend(
+                cs.unavailabilities.iter().filter(|u| landed("unavailabilities", u.id.to_string())).map(|u| (u.id.to_string(), u)),
+            );
+            a.availabilities.extend(cs.availabilities.iter().filter(|v| landed("availabilities", v.id.to_string())));
+            // A terminating entry applies unless the act is before it (D6):
+            // landed earlier but backdated, or landed later and dated
+            // earlier — either way the act is not before it, so it holds.
+            a.revocations.extend(cs.revocations.iter().filter(|r| {
+                !pos.before(&landing.position(&path, &crate::landed::revocation_key(r), r.at))
+            }));
+            // A key's close is terminating, like a revocation: it applies
+            // unless the act is before it. An opening binding enables.
+            a.bindings.extend(cs.key_bindings.iter().filter(|b| {
+                let here = at("key_bindings", b.id.to_string(), b.at);
+                if b.closes.is_some() { !pos.before(&here) } else { here.not_after(&pos) }
+            }));
+            // A policy governs every act not before it (D5 (c), D6): an act
+            // that landed after a policy is under it, however it is dated.
+            a.policies.extend(cs.policies.iter().filter(|p| !pos.before(&at("policies", p.id.to_string(), p.at))));
         }
         a
     }

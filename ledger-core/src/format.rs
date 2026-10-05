@@ -46,8 +46,15 @@ pub const KEY_FORMAT: u32 = 5;
 /// declares it only when it files one of these.
 pub const AUTHORITY_FORMAT: u32 = 6;
 
+/// The format that carries signing (spec v1.8, #70): `under` — the grant
+/// an act is made under (D9 (a)) — on acceptances, revocations, grants,
+/// policies and key bindings, and `at` in the policy payload (D8). Every
+/// policy filed from now on declares it, because its digest covers `at`.
+/// Signatures themselves live in sidecars outside the change-set.
+pub const SIGNING_FORMAT: u32 = 7;
+
 /// Every format version this tool can validate an entry against.
-pub const SUPPORTED_FORMATS: &[u32] = &[1, 2, 3, 4, 5, 6];
+pub const SUPPORTED_FORMATS: &[u32] = &[1, 2, 3, 4, 5, 6, 7];
 
 /// Whether an entry declaring `format: n` can be validated here.
 pub fn is_supported(n: u32) -> bool {
@@ -74,7 +81,20 @@ pub fn needed_for(cs: &crate::changeset::ChangeSet) -> u32 {
     if cs.authority_count() > 0 || cs.revocations.iter().any(|r| r.is_entity()) {
         needed = needed.max(AUTHORITY_FORMAT);
     }
+    if uses_signing_fields(cs) {
+        needed = needed.max(SIGNING_FORMAT);
+    }
     needed
+}
+
+/// Whether a change-set carries a format-7 field: an `under` anywhere, or a
+/// policy (whose digest now covers its `at`).
+pub fn uses_signing_fields(cs: &crate::changeset::ChangeSet) -> bool {
+    !cs.policies.is_empty()
+        || cs.acceptances.iter().any(|a| a.under.is_some())
+        || cs.revocations.iter().any(|r| r.under.is_some())
+        || cs.grants.iter().any(|g| g.under.is_some())
+        || cs.key_bindings.iter().any(|b| b.under.is_some())
 }
 
 /// The message a file declaring an unknown format fails with.
@@ -97,7 +117,7 @@ mod tests {
         assert!(!is_supported(9));
         assert_eq!(
             unsupported_message(9),
-            "declares format 9; this tool validates format(s) 1, 2, 3, 4, 5, 6"
+            "declares format 9; this tool validates format(s) 1, 2, 3, 4, 5, 6, 7"
         );
     }
 

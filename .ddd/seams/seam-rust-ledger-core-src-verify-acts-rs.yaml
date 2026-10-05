@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-acts-rs
+boundary: contract surface of ledger-core/src/verify/acts.rs
+verdict_knowledge: 'Callers learn A006: every governed acceptance and revocation re-judged by the verbs'' own role check on the grant it names, as of the act, with acts before a namespace''s first policy left unchecked.'
+contract_location: ledger-core/src/verify/acts.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: unauthorised
+  file: ledger-core/src/verify/acts.rs
+  before: absent
+  after: sha256:5477cbff67043d047fce30dffa8cc05bfdf8d7f79daae051e403e14f6ce50a52
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:e47ef3435da2c11fdae119aee4f945b0104174a55a73dbba7eb5c796d26297bb
+- symbol: unauthorised
+  file: ledger-core/src/verify/acts.rs
+  before: absent
+  after: sha256:41e814f822ffb85eded77c25b86e36f1dac8b240e248e5c15c7221d97e254fe3
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:9eee88b260b54f539d3f423c581389fa07c8e35dac2a1cc208a91f00d1e57673

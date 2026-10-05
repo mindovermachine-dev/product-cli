@@ -23,13 +23,9 @@ pub struct PolicyArgs {
 }
 
 impl Author {
-    /// File the namespace's next policy.
-    pub fn policy_set(&mut self, args: PolicyArgs) -> Result<Applied, AuthorError> {
-        let store = self.load();
-        let auth = Authority::build(&store);
-        let current = auth.policy(&args.namespace).cloned().ok_or_else(|| {
-            AuthorError::Usage(format!("namespace `{}` has no policy — `ledger init --namespace` first", args.namespace))
-        })?;
+    /// A policy change is the live, available genesis holder's act, and it
+    /// never maps acceptance to the genesis role (D9 (f)).
+    fn refuse_policy_change(&self, auth: &Authority<'_>, args: &PolicyArgs) -> Result<(), AuthorError> {
         let genesis_now = auth.genesis().is_some_and(|g| g.holder == self.who && auth.is_available(g, self.now));
         if !genesis_now {
             return Err(AuthorError::Unauthorized(
@@ -42,6 +38,17 @@ impl Author {
                 g.role
             )));
         }
+        Ok(())
+    }
+
+    /// File the namespace's next policy.
+    pub fn policy_set(&mut self, args: PolicyArgs) -> Result<Applied, AuthorError> {
+        let store = self.load();
+        let auth = Authority::build(&store);
+        let current = auth.policy(&args.namespace).cloned().ok_or_else(|| {
+            AuthorError::Usage(format!("namespace `{}` has no policy — `ledger init --namespace` first", args.namespace))
+        })?;
+        self.refuse_policy_change(&auth, &args)?;
         let mut next = Policy {
             id: self.mint.mint_id("pol").map_err(AuthorError::Io)?,
             namespace: current.namespace.clone(),
@@ -51,15 +58,27 @@ impl Author {
             reaccept_within_days: args.reaccept_within_days.unwrap_or(current.reaccept_within_days),
             replaces: Some(current.hash.clone()),
             by: self.who.clone(),
+            under: auth.genesis().map(|g| g.id.clone()),
             at: self.now,
             hash: crate::hash::VersionHash::zero(),
         };
         next.hash = policy_hash(&next);
         let line = format!("{} replaces {} for `{}`", next.id, current.id, next.namespace);
+        // Signed under the policy in force before it (D1), by the genesis
+        // holder, with its own `at` the verify-time (D8).
+        let ulid = next.id.ulid().to_string();
+        let what = super::sign_ops::ToSign {
+            namespace: &next.namespace,
+            ulid: &ulid,
+            bytes: crate::authority::payload::policy_bytes(&next),
+            own_key: None,
+            any_namespace: false,
+        };
+        self.sign_under(&store, Some(&current), what)?;
         let mut candidate = self.shell(None)?;
         candidate.policies.push(next);
         self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
+        let path = self.append_signed(&candidate)?;
         Ok(Applied { path, lines: vec![line] })
     }
 }

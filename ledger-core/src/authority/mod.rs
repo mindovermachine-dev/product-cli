@@ -15,6 +15,8 @@
 pub mod availability;
 pub mod binding;
 pub mod check;
+pub mod choice;
+pub mod filing;
 #[cfg(test)]
 pub(crate) mod fixture;
 pub mod grant;
@@ -29,7 +31,7 @@ pub mod view;
 
 pub use availability::{Availability, Basis, Unavailability};
 pub use binding::{BindingAct, KeyBinding};
-pub use check::{authorize, Authorized, Denial, Target};
+pub use check::{authorize, authorize_named, Authorized, Denial, Target};
 pub use grant::{Grant, GrantAcceptance, GrantScope, Limit, Order};
 pub use policy::{Policy, Scheme};
 pub use revocation::{Revocable, Revocation};

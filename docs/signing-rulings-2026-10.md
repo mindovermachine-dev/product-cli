@@ -55,6 +55,8 @@ Each new class is a format-spec amendment by the `L010` mechanism, and the close
 
 The PRD's registry seam can hold all three. The decision is whether `openpgp` and `x509` are in the open-source CLI's v2 or are seams only. The PRD's §9 non-goal ("CA integration… Seams only") puts X.509 outside the v2 scope that ruling 2 included.
 
+> **Amended 2026-10-04 (PR #89 review).** `none` is exclusive. A policy lists `none` alone or not at all; a policy listing `none` with another scheme is a schema fault, and `ledger policy set` refuses it. `none` means governed and unsigned: the namespace is role-checked, and no signature is required. This amends D4's "`none` for pre-v2 stores only" reading, under which `[ssh, none]` could be read as "signed, optionally".
+
 ## D5 to D9 (ruled 2026-10-02)
 
 The positions, reasons and the walk through Session A's twelve questions are in `docs/signing-rulings-2026-10-d5-d9.md`. That page holds the positions and reasons; these notes record what was ruled, and win where the two differ.

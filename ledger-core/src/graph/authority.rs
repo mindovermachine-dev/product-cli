@@ -111,6 +111,7 @@ fn emit_grant(t: &mut Triples, g: &Grant, cs_iri: &str) {
     if let Some(old) = &g.supersedes {
         t.add(&n, "ledger:supersedesGrant", iri(old));
     }
+    under(t, &n, g.under.as_ref());
     t.add(&n, "prov:wasAttributedTo", mailto(&g.granted_by));
     t.add(&n, "prov:generatedAtTime", stamp(&g.at));
 }
@@ -138,6 +139,7 @@ pub(super) fn emit_revocation(t: &mut Triples, r: &Revocation, cs_iri: &str) {
     t.add(&n, "ledger:hash", literal(&hash.to_string()));
     t.add(&n, "ledger:revokes", iri(&target));
     t.add(&n, "ledger:revocationReason", literal(&r.reason));
+    under(t, &n, r.under.as_ref());
     t.add(&n, "prov:wasAttributedTo", mailto(actor));
     t.add(&n, "prov:generatedAtTime", stamp(&r.at));
 }
@@ -164,6 +166,7 @@ fn emit_binding(t: &mut Triples, b: &KeyBinding, cs_iri: &str) {
     if let Some(m) = &b.mandate {
         t.add(&n, "ledger:mandate", literal(m));
     }
+    under(t, &n, b.under.as_ref());
     t.add(&n, "prov:wasAttributedTo", mailto(&b.by));
     t.add(&n, "prov:generatedAtTime", stamp(&b.at));
 }
@@ -186,6 +189,37 @@ fn emit_policy(t: &mut Triples, p: &Policy, cs_iri: &str) {
     if let Some(prior) = &p.replaces {
         t.add(&n, "ledger:replacesPolicy", literal(&prior.to_string()));
     }
+    under(t, &n, p.under.as_ref());
     t.add(&n, "prov:wasAttributedTo", mailto(&p.by));
     t.add(&n, "prov:generatedAtTime", stamp(&p.at));
+}
+
+/// `ledger:under` — the grant an act is made under (D9 (a)).
+fn under(t: &mut Triples, node: &str, grant: Option<&crate::id::GrantId>) {
+    if let Some(g) = grant {
+        t.add(node, "ledger:under", iri(g));
+    }
+}
+
+/// A node per signature sidecar of an entity the store emits, and an edge
+/// from the entity to it (spec v1.8): `ledger:signature <urn:sig:<file>>`,
+/// with the scheme and the sidecar's path under `.decisions/`. With every
+/// payload field already a triple, an export-only verifier rebuilds the
+/// signed bytes and checks them against the named sidecar.
+pub(super) fn emit_signatures(t: &mut Triples, store: &crate::store::Store) {
+    let mut entities: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    for cs in store.log.iter().map(|l| &l.file) {
+        entities.extend(cs.acceptances.iter().map(|a| (a.id.ulid().to_string(), iri(&a.id))));
+        entities.extend(cs.revocations.iter().filter_map(|r| r.id.as_ref().map(|i| (i.ulid().to_string(), iri(i)))));
+        entities.extend(cs.key_bindings.iter().map(|b| (b.id.ulid().to_string(), iri(&b.id))));
+        entities.extend(cs.policies.iter().map(|p| (p.id.ulid().to_string(), iri(&p.id))));
+    }
+    for sidecar in &store.sidecars {
+        let Some(entity) = entities.get(&sidecar.ulid) else { continue };
+        let node = format!("<urn:sig:{}>", sidecar.file);
+        t.add(entity, "ledger:signature", node.clone());
+        t.add(&node, "a", "ledger:Signature".into());
+        t.add(&node, "ledger:signatureScheme", literal(sidecar.scheme.as_str()));
+        t.add(&node, "ledger:signatureFile", literal(&format!("{}/{}", crate::signing::SIG_DIR, sidecar.file)));
+    }
 }

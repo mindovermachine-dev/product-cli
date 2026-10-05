@@ -40,12 +40,12 @@ fn an_acceptance_with_no_expiry_never_goes_stale() {
 }
 
 #[test]
-fn a_non_empty_signature_is_a_schema_fault_under_format_one() {
+fn a_non_empty_inline_signature_is_a_schema_fault_in_every_format() {
     let mut a = acceptance();
     a.signature = "-----BEGIN PGP SIGNATURE-----".into();
     let faults = a.schema_faults();
     assert_eq!(faults.len(), 1);
-    assert!(faults[0].message.contains("reserved"), "{}", faults[0]);
+    assert!(faults[0].message.contains("retired") && faults[0].message.contains("sidecar"), "{}", faults[0]);
 }
 
 #[test]

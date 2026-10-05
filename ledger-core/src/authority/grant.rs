@@ -193,6 +193,10 @@ pub struct Grant {
     pub external_ref: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub supersedes: Option<GrantId>,
+    /// The grant the grantor acts under (format 7, D9 (a)); absent on the
+    /// genesis grant. Hashed when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub under: Option<GrantId>,
     pub at: DateTime<Utc>,
     /// `ledger.authority-grant.v1` over the closed payload; checked by `L007`.
     pub hash: VersionHash,

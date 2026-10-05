@@ -36,3 +36,15 @@ bindings:
   after: sha256:d4d49b35c1452211c58e1b712ced20e7d6efde9eba017a2d3bac61a19d9e2f89
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:326e654cbc5c484da89c2416ae81ff5b164acffd5604ed18b4f56e78b42db89f
+- symbol: SIGNING_FORMAT
+  file: ledger-core/src/format.rs
+  before: sha256:d4d49b35c1452211c58e1b712ced20e7d6efde9eba017a2d3bac61a19d9e2f89
+  after: sha256:83d8fe5ccb803971c902a4bbf601d31ae16ecb7f8f8f94002de5b81c8c72a5ea
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:306df18bc636d3f15f86a291467a07d55242f34ad6260ebe9d4cbf1712fb3481
+- symbol: uses_signing_fields
+  file: ledger-core/src/format.rs
+  before: sha256:d4d49b35c1452211c58e1b712ced20e7d6efde9eba017a2d3bac61a19d9e2f89
+  after: sha256:83d8fe5ccb803971c902a4bbf601d31ae16ecb7f8f8f94002de5b81c8c72a5ea
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:9568757d498a2cfe287e851b43e6f4bf4596b5115f57bea62bea83bb73671b4f

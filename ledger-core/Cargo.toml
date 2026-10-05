@@ -24,6 +24,10 @@ serde_yaml = "0.9"
 sha2       = "0.10"
 chrono     = { version = "0.4", features = ["serde"] }
 unicode-normalization = "0.1"
+# DSSE verification (#70, D4): the open CLI verifies the hosted service's
+# envelopes and never signs them. std has no ed25519; the crate is already
+# in the workspace through spec-core.
+ed25519-dalek = "2"
 
 [dev-dependencies]
 tempfile = "3"

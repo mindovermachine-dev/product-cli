@@ -9,6 +9,9 @@
 
 #![allow(dead_code)]
 
+pub mod export_only;
+pub mod hand;
+
 use std::path::Path;
 use std::process::Output;
 
@@ -99,6 +102,43 @@ impl Repo {
             .unwrap_or_default();
         out.sort();
         out
+    }
+
+    /// A fresh ed25519 key pair (no passphrase) under `keys/`, outside the
+    /// store; returns the private key's path.
+    pub fn keygen(&self, name: &str) -> String {
+        let dir = self.path().join("keys");
+        std::fs::create_dir_all(&dir).expect("keys dir");
+        let private = dir.join(name);
+        let out = std::process::Command::new("ssh-keygen")
+            .args(["-q", "-t", "ed25519", "-N", "", "-C", name, "-f"])
+            .arg(&private)
+            .output()
+            .expect("ssh-keygen (OpenSSH) is required by the signing suites");
+        assert!(out.status.success(), "ssh-keygen: {}", String::from_utf8_lossy(&out.stderr));
+        private.display().to_string()
+    }
+
+    /// Sign with this key from now on, as `git config user.signingkey`.
+    pub fn use_key(&self, private: &str) {
+        self.git(&["config", "user.signingkey", private]);
+    }
+
+    /// Make a key, sign with it, and bind it: the genesis holder's first
+    /// binding in `ns` (self-bound), or a further key of the actor's own.
+    pub fn bind_own_key(&self, ns: &str, name: &str) -> String {
+        let private = self.keygen(name);
+        self.use_key(&private);
+        self.ok(&["identity", "add", "--namespace", ns, "--key-file", &format!("{private}.pub")]);
+        private
+    }
+
+    /// As the genesis holder, bind `who`'s first key in `ns` (D7); returns
+    /// the private key's path for `who` to sign with.
+    pub fn vouch_for(&self, ns: &str, who: &str, name: &str) -> String {
+        let private = self.keygen(name);
+        self.ok(&["identity", "add", "--namespace", ns, "--for", who, "--key-file", &format!("{private}.pub")]);
+        private
     }
 
     /// Declare the default fixture set at floor T1.

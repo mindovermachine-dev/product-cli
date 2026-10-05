@@ -31,6 +31,8 @@ pub struct Store {
     /// Role files (`roles/<id>.yml`, format 6) — declared scope, like sets.
     pub roles: Vec<crate::authority::Role>,
     pub log: Vec<LoggedChangeSet>,
+    /// Signature sidecars (`sig/<ulid>.<scheme>.sig`, spec v1.8).
+    pub sidecars: Vec<crate::signing::Sidecar>,
     pub schema_findings: Vec<Finding>,
 }
 
@@ -76,6 +78,9 @@ pub fn load(repo_root: &Path) -> Store {
     load_sets(&dir.join("sets"), &mut store);
     load_roles(&dir.join("roles"), &mut store);
     load_log(&dir.join("log"), &mut store);
+    let (sidecars, faults) = crate::signing::load(&dir.join(crate::signing::SIG_DIR));
+    store.sidecars = sidecars;
+    store.schema_findings.extend(faults);
     store.sets.sort_by(|a, b| a.id.cmp(&b.id));
     store.roles.sort_by(|a, b| a.id.cmp(&b.id));
     store.log.sort_by(|a, b| a.file.id.cmp(&b.file.id));
@@ -183,8 +188,7 @@ pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str
 /// a lower-format file carrying a later field is a schema fault.
 fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
     let uses = |pred: &dyn Fn(&crate::version::VersionRaw) -> bool| file.versions.iter().any(pred);
-    let authority = file.authority_count() > 0;
-    let rules: [(u32, bool, &str); 4] = [
+    let rules: [(u32, bool, &str); 6] = [
         (
             format::MERGE_FORMAT,
             uses(&|v| v.merged_from.is_some()),
@@ -202,8 +206,18 @@ fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
         ),
         (
             format::AUTHORITY_FORMAT,
-            authority,
+            file.authority_count() > 0,
             "carries authority records (grants, bindings, policy …), format 6 entries — declare `format: 6`",
+        ),
+        (
+            format::SIGNING_FORMAT,
+            carries_under(file),
+            "carries `under`, a format 7 field — declare `format: 7`",
+        ),
+        (
+            format::SIGNING_FORMAT,
+            !file.policies.is_empty(),
+            "carries a namespace policy, a format 7 entry (its `at` is hashed, D8) — declare `format: 7`",
         ),
     ];
     rules
@@ -211,6 +225,15 @@ fn format_faults(label: &str, file: &ChangeSet) -> Vec<Finding> {
         .filter(|(needed, used, _)| *used && file.format < *needed)
         .map(|(_, _, message)| Finding::schema(label, message))
         .collect()
+}
+
+/// Whether any entity in the file names the grant it was made under.
+fn carries_under(file: &ChangeSet) -> bool {
+    file.acceptances.iter().any(|a| a.under.is_some())
+        || file.revocations.iter().any(|r| r.under.is_some())
+        || file.grants.iter().any(|g| g.under.is_some())
+        || file.key_bindings.iter().any(|b| b.under.is_some())
+        || file.policies.iter().any(|p| p.under.is_some())
 }
 
 fn check_format(label: &str, declared: u32, store: &mut Store) {

@@ -93,7 +93,11 @@ pub struct Policy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replaces: Option<VersionHash>,
     pub by: Identity,
+    /// The genesis grant the change is made under (format 7, D9 (a)).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub under: Option<crate::id::GrantId>,
     pub at: DateTime<Utc>,
-    /// `ledger.namespace-policy.v1` over the closed payload; `L007`.
+    /// `ledger.namespace-policy.v1` over the closed payload, `at` included
+    /// (D8); `L007`.
     pub hash: VersionHash,
 }

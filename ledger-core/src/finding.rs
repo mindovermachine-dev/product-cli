@@ -1,12 +1,12 @@
 //! The closed set of reasons `ledger verify` fails.
 //!
 //! This enum *is* the file gate's contract. The gate fails for a schema
-//! fault or one of twelve semantic classes, and for nothing else — a new
+//! fault or one of fourteen semantic classes, and for nothing else — a new
 //! reason is a change to the format specification, not an implementation
-//! detail (`L010` arrived exactly that way, as the spec v1.1 amendment, and
-//! `L013`/`L014` the same way at spec v1.6). `L011` and `L012` are reserved
-//! for the signing classes (#65, ruling D3) and are not yet variants: a
-//! reserved number is not a rule the gate can run.
+//! detail (`L010` arrived exactly that way, as the spec v1.1 amendment,
+//! `L013`/`L014` the same way at spec v1.6, and the signing classes
+//! `L011`/`L012` — numbers reserved for them since #65, ruling D3 — at
+//! spec v1.8).
 //! Adding a variant here without a row in `docs/ledger-format-v1.md` is
 //! caught by the `every_class_is_specified` test.
 //!
@@ -55,6 +55,14 @@ pub enum VerifyClass {
     /// A judgment whose named actor resolves to a model or CI identity
     /// (spec v1.1 — the judgment-actor gap L0 left open).
     L010,
+    /// A signature the namespace's policy requires is absent or invalid —
+    /// including one dated, or landed, after its key's close (spec v1.8,
+    /// D6).
+    L011,
+    /// An acceptance under a key closed after it — dated and landed before
+    /// the close — left unaffirmed past the policy's re-acceptance deadline
+    /// (spec v1.8). Before the deadline it is a review item, not a failure.
+    L012,
     /// A version whose `key` differs from the key its `parent` or
     /// `merged_from` carries (spec v1.6): a key, once given, is immutable
     /// along the decision's chain.
@@ -77,6 +85,8 @@ pub const ALL_CLASSES: &[VerifyClass] = &[
     VerifyClass::L008,
     VerifyClass::L009,
     VerifyClass::L010,
+    VerifyClass::L011,
+    VerifyClass::L012,
     VerifyClass::L013,
     VerifyClass::L014,
 ];
@@ -96,6 +106,8 @@ impl VerifyClass {
             Self::L008 => "L008",
             Self::L009 => "L009",
             Self::L010 => "L010",
+            Self::L011 => "L011",
+            Self::L012 => "L012",
             Self::L013 => "L013",
             Self::L014 => "L014",
         }
@@ -115,6 +127,8 @@ impl VerifyClass {
             Self::L008 => "acceptance signs a hash matching no stored version",
             Self::L009 => "acceptance actor is not the author of its introducing commit",
             Self::L010 => "judgment actor resolves to a model or CI identity",
+            Self::L011 => "required signature absent or invalid",
+            Self::L012 => "acceptance under a since-closed key past its re-acceptance deadline",
             Self::L013 => "key differs from the key its parent version carries",
             Self::L014 => "two live decisions of one namespace share a key",
         }
@@ -123,13 +137,14 @@ impl VerifyClass {
     /// Whether this class runs under the given gate.
     ///
     /// Readiness blocks produce: nothing unallocated, nothing tampered,
-    /// nobody unaccountable. The two classes it leaves out — an unpriced
-    /// escape and a stale acceptance — are dispositions that must hold at
-    /// release, not preconditions for starting work.
+    /// nobody unaccountable. The three classes it leaves out — an unpriced
+    /// escape, a stale acceptance and an unaffirmed acceptance under a
+    /// closed key — are dispositions that must hold at release, not
+    /// preconditions for starting work.
     pub fn in_gate(self, gate: Gate) -> bool {
         match gate {
             Gate::Completeness => true,
-            Gate::Readiness => !matches!(self, Self::L002 | Self::L003),
+            Gate::Readiness => !matches!(self, Self::L002 | Self::L003 | Self::L012),
         }
     }
 }
@@ -201,16 +216,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn there_are_exactly_twelve_semantic_classes_plus_the_parse_gate() {
+    fn there_are_exactly_fourteen_semantic_classes_plus_the_parse_gate() {
         // The gate fails for these reasons and no others. A new class is a
         // format-specification change — L010 shipped as the spec v1.1
         // amendment (nine to ten), L013 and L014 as spec v1.6 (ten to
-        // twelve). L011/L012 stay reserved for signing and are not counted.
-        assert_eq!(ALL_CLASSES.len(), 13);
+        // twelve), L011 and L012 as spec v1.8 (twelve to fourteen).
+        assert_eq!(ALL_CLASSES.len(), 15);
         let semantic = ALL_CLASSES.iter().filter(|c| **c != VerifyClass::Schema).count();
-        assert_eq!(semantic, 12);
-        let codes: Vec<&str> = ALL_CLASSES.iter().map(|c| c.code()).collect();
-        assert!(!codes.contains(&"L011") && !codes.contains(&"L012"), "reserved for signing");
+        assert_eq!(semantic, 14);
     }
 
     #[test]
@@ -226,6 +239,8 @@ mod tests {
     fn readiness_leaves_out_the_two_release_dispositions() {
         assert!(!VerifyClass::L002.in_gate(Gate::Readiness));
         assert!(!VerifyClass::L003.in_gate(Gate::Readiness));
+        assert!(!VerifyClass::L012.in_gate(Gate::Readiness));
+        assert!(VerifyClass::L011.in_gate(Gate::Readiness));
         assert!(VerifyClass::L001.in_gate(Gate::Readiness));
         assert!(ALL_CLASSES.iter().all(|c| c.in_gate(Gate::Completeness)));
     }

@@ -21,7 +21,7 @@ fn may_accept() -> Vec<crate::authority::Role> {
 }
 
 fn check(store: &crate::store::Store, who: &str, act: Act, target: Target<'_>) -> Result<Authorized, Denial> {
-    authorize(&Authority::build(store), &testkit::identity(who), act, target, testkit::stamp(NOW), None)
+    authorize(&Authority::build(store), &testkit::identity(who), act, target, testkit::stamp(NOW), None, None)
 }
 
 #[test]
@@ -66,6 +66,7 @@ fn an_unavailable_holder_is_refused_until_the_interval_ends() {
         Act::Accept,
         decision(),
         testkit::stamp("2026-10-20T00:00:00Z"),
+        None,
         None,
     );
     assert!(later.is_ok(), "the interval is [from, until): {later:?}");
@@ -137,6 +138,7 @@ fn a_revoked_grant_confers_nothing() {
         actor: Some(testkit::identity(fixture::GENESIS_HOLDER)),
         by: None,
         reason: "moved to the platform team".into(),
+        under: None,
         hash: None,
     });
     let store = fixture::store(may_accept(), cs);
@@ -151,8 +153,8 @@ fn a_policy_mapping_counts_only_the_mapped_role() {
     let auth = Authority::build(&store);
     let who = testkit::identity(fixture::GENESIS_HOLDER);
     let at = testkit::stamp(NOW);
-    assert!(authorize(&auth, &who, Act::Accept, decision(), at, Some("steward")).is_ok());
-    assert_eq!(authorize(&auth, &who, Act::Accept, decision(), at, Some("architect")), Err(Denial::NoGrant));
+    assert!(authorize(&auth, &who, Act::Accept, decision(), at, Some("steward"), None).is_ok());
+    assert_eq!(authorize(&auth, &who, Act::Accept, decision(), at, Some("architect"), None), Err(Denial::NoGrant));
 }
 
 /// D9 (e): a `fallback-1` over a set, and a primary over `*` in its role.

@@ -93,6 +93,7 @@ pub fn select(store: &Store, namespace: &str) -> Store {
         sets: store.sets.iter().filter(|s| named.contains(&s.id)).cloned().collect(),
         roles: store.roles.iter().filter(|r| roles.contains(&r.id)).cloned().collect(),
         log,
+        sidecars: store.sidecars.clone(),
         schema_findings: Vec::new(),
     }
 }

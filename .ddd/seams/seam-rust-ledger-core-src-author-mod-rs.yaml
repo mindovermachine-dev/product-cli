@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-author-mod-rs
 boundary: contract surface of ledger-core/src/author/mod.rs
-verdict_knowledge: "Callers learn AuthorError gains Unauthorized — the role check said no — and that append stamps the format a change-set actually needs."
+verdict_knowledge: Callers learn AuthorError gains Unauthorized — the role check said no — and that append stamps the format a change-set actually needs.
 contract_location: ledger-core/src/author/mod.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,9 @@ bindings:
   after: sha256:df86228aeb7f51a03e79abd8ea2a02b16d193e32b62bd08a3c3f7e6f18e0cd09
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:62f6d4a2f032949eee65fbb2490bc2299e4b2420121e9e5f3c7cda071eaa4550
+- symbol: as_role
+  file: ledger-core/src/author/mod.rs
+  before: sha256:df86228aeb7f51a03e79abd8ea2a02b16d193e32b62bd08a3c3f7e6f18e0cd09
+  after: sha256:4714d5d818782951572390176410601c41c0929a2ad5aae31719082332ecbec3
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:4b5d35133515b461d01dc2608377a39831ef791718671abc8ec3b811f55e08de

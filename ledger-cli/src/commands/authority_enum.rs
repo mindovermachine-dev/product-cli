@@ -49,25 +49,37 @@ pub enum GrantCmd {
         /// The grant this one replaces
         #[arg(long, value_name = "GRANT")]
         supersedes: Option<String>,
+        /// The role this act is made under (D9): required only when more
+        /// than one of your grants qualifies
+        #[arg(long = "as", value_name = "ROLE")]
+        as_role: Option<String>,
     },
     /// Revoke a grant, with the reason on record (needs revoke-grant)
     Revoke {
         grant: String,
         #[arg(long)]
         reason: String,
+        /// The role this act is made under (D9): required only when more
+        /// than one of your grants qualifies
+        #[arg(long = "as", value_name = "ROLE")]
+        as_role: Option<String>,
     },
 }
 
 /// `ledger identity …`
 #[derive(Subcommand)]
 pub enum IdentityCmd {
-    /// Bind one of your own public keys in a namespace
+    /// Bind a public key in a namespace: your own, or (as the genesis
+    /// holder) a principal's first key with --for (D7)
     Add {
         #[arg(long, value_name = "NS")]
         namespace: String,
         /// An OpenSSH public key file (`<type> <base64> [comment]`)
         #[arg(long, value_name = "PATH")]
         key_file: std::path::PathBuf,
+        /// The principal whose first key this is (the genesis holder's act)
+        #[arg(long = "for", value_name = "IDENTITY")]
+        principal: Option<String>,
     },
     /// Close a key binding's window: yours, or any, as the genesis holder
     Revoke {

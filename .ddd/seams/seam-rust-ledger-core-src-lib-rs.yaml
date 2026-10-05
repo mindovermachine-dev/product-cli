@@ -42,3 +42,33 @@ bindings:
   after: sha256:3724e8647e114df766770519e3e0030e108d3dcca1d7832d7a6e18838b657621
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:de2879afbb652c00e9a42ac23d75a75e58be6f1c60d3998475784af5a09fa318
+- symbol: landing
+  file: ledger-core/src/lib.rs
+  before: sha256:3724e8647e114df766770519e3e0030e108d3dcca1d7832d7a6e18838b657621
+  after: sha256:25c6c9a9df35d26fac98b0cbde4123a98d1bc28ff58bcac4a76425e9db7a9dcb
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:a97e53d63bf3e0406701ad077676a4054344e3f082ce205f0147cbed4cd4edca
+- symbol: signing
+  file: ledger-core/src/lib.rs
+  before: sha256:3724e8647e114df766770519e3e0030e108d3dcca1d7832d7a6e18838b657621
+  after: sha256:25c6c9a9df35d26fac98b0cbde4123a98d1bc28ff58bcac4a76425e9db7a9dcb
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:9fa3c1eb1e6e79d9b4130c99dbe3b5e9ec8b4152146ca678ad0a41e762acf26e
+- symbol: landed
+  file: ledger-core/src/lib.rs
+  before: sha256:3724e8647e114df766770519e3e0030e108d3dcca1d7832d7a6e18838b657621
+  after: sha256:8dba7ee2150c572b9d713c9c7dcf0f3a550837ac41a322da0ddec95fabff6c4c
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:a5c9ccb2474fd45962b508ced9b6dad1fda8a5660893fed8f36ad9702fd8eb1f
+- symbol: landing
+  file: ledger-core/src/lib.rs
+  before: sha256:3724e8647e114df766770519e3e0030e108d3dcca1d7832d7a6e18838b657621
+  after: sha256:8dba7ee2150c572b9d713c9c7dcf0f3a550837ac41a322da0ddec95fabff6c4c
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:c6dc68a0046b590a9bb2a89c5becef8d8ba562d3fdd4ebccc8ef3c14bd267547
+- symbol: signing
+  file: ledger-core/src/lib.rs
+  before: sha256:3724e8647e114df766770519e3e0030e108d3dcca1d7832d7a6e18838b657621
+  after: sha256:8dba7ee2150c572b9d713c9c7dcf0f3a550837ac41a322da0ddec95fabff6c4c
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:aa214aa2e1b1a24b8f82ed5649b2c184291b08eadc09ccfa9bc65768a317a92d

@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-binding-rs
 boundary: contract surface of ledger-core/src/authority/binding.rs
-verdict_knowledge: "Consumers learn the key-binding record (add | rotate | revoke, closes, self_bound, mandate) that allowed_signers is derived from."
+verdict_knowledge: Consumers learn the key-binding record (add | rotate | revoke, closes, self_bound, mandate) that allowed_signers is derived from.
 contract_location: ledger-core/src/authority/binding.rs
 obligations: []
 metadata: {}
@@ -162,3 +162,9 @@ bindings:
   after: sha256:720a54adb0c53b95d4f1ddcb85747ac33a1c92bb799d4ecdf534c020af757fd7
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:aca75ab86795f9d670177e3a4555db446e72dd516a5e5292d45a261bc532e6ce
+- symbol: under
+  file: ledger-core/src/authority/binding.rs
+  before: sha256:720a54adb0c53b95d4f1ddcb85747ac33a1c92bb799d4ecdf534c020af757fd7
+  after: sha256:735658f5ad604b5fbfc94527b7e168df6e7605427a34524b1713e1e1e0194c2b
+  base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
+  hash: sha256:1a930f3efe83a98fdf5cbda0e98c46b3de95adbf08ce494997da40734ffcf5a3

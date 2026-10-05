@@ -1,17 +1,23 @@
 //! `identity add | rotate | revoke` — filing key bindings, regenerating the trust root.
 //!
-//! Each verb appends one key-binding entry and then rewrites
-//! `.decisions/allowed_signers` from the log, so the derived file always
-//! matches what `verify` re-derives. A principal binds only their own key.
-//! The first binding in a namespace is the genesis holder's, self-bound
-//! under the genesis grant's mandate; every later one needs a live grant
-//! whose scope reaches the namespace. A namespace whose policy requires
-//! `-sk` keys refuses a software key. Signing each binding under the
-//! policy in force is Session B's (`L011`).
+//! Each verb appends one key-binding entry, signed where the namespace's
+//! policy requires it, and then rewrites `.decisions/allowed_signers` from
+//! the log, so the derived file always matches what `verify` re-derives.
+//! Who may file which binding is D7's rule, [`crate::authority::filing::may_file`]
+//! — the one `verify` re-judges every filed binding with: the genesis
+//! holder's self-bound first binding (signed by the key it binds), a
+//! principal's first key filed and signed by the genesis holder
+//! (`identity add --for <principal>`), and every further `add`, `rotate`
+//! and `revoke` the principal's own, signed by a live key — or a `revoke`
+//! by the genesis holder. A namespace whose policy requires `-sk` keys
+//! refuses a software key.
 
-use crate::authority::{Authority, BindingAct, GrantScope, KeyBinding};
+use crate::authority::filing::may_file;
+use crate::authority::{Authority, BindingAct, KeyBinding};
 use crate::id::KeyBindingId;
+use crate::identity::Identity;
 
+use super::sign_ops::ToSign;
 use super::{Applied, Author, AuthorError};
 
 /// A public key, as OpenSSH writes it: type then base64.
@@ -19,10 +25,14 @@ pub struct KeyArgs {
     pub namespace: String,
     pub key_type: String,
     pub key: String,
+    /// Whose key it is, when the genesis holder files a principal's first
+    /// key (D7); absent means the actor's own.
+    pub principal: Option<Identity>,
 }
 
 impl Author {
-    /// Bind a key of the actor's own in a namespace.
+    /// Bind a key in a namespace: the actor's own, or (as the genesis
+    /// holder) a principal's first.
     pub fn identity_add(&mut self, args: KeyArgs) -> Result<Applied, AuthorError> {
         self.bind(BindingAct::Add, None, Some(args))
     }
@@ -47,93 +57,67 @@ impl Author {
         let store = self.load();
         let auth = Authority::build(&store);
         let (namespace, principal) = match &closes {
-            Some(id) => self.closable(&auth, id, act)?,
-            None => (key.as_ref().map(|k| k.namespace.clone()).unwrap_or_default(), self.who.clone()),
+            Some(id) => auth
+                .bindings
+                .iter()
+                .find(|b| b.id == *id && b.act.opens())
+                .map(|b| (b.namespace.clone(), b.principal.clone()))
+                .ok_or_else(|| AuthorError::Usage(format!("{id} opens no key window")))?,
+            None => {
+                let k = key.as_ref().ok_or_else(|| AuthorError::Usage("`add` names a key".into()))?;
+                (k.namespace.clone(), k.principal.clone().unwrap_or_else(|| self.who.clone()))
+            }
         };
-        let policy = auth.policy(&namespace).ok_or_else(|| {
+        let policy = auth.policy(&namespace).cloned().ok_or_else(|| {
             AuthorError::Usage(format!("namespace `{namespace}` has no policy — `ledger init --namespace {namespace}` first"))
         })?;
-        if let Some(k) = &key {
-            if policy.require_sk && !k.key_type.starts_with("sk-") {
-                return Err(AuthorError::Unauthorized(format!(
-                    "`{namespace}`'s policy requires a hardware-backed (`sk-`) key; `{}` is a software key",
-                    k.key_type
-                )));
-            }
+        if let Some(k) = key.as_ref().filter(|k| policy.require_sk && !k.key_type.starts_with("sk-")) {
+            return Err(AuthorError::Unauthorized(format!(
+                "`{namespace}`'s policy requires a hardware-backed (`sk-`) key; `{}` is a software key",
+                k.key_type
+            )));
         }
-        let (self_bound, mandate) = self.bootstrap_or_grant(&auth, &namespace, act)?;
+        let genesis = auth.genesis().filter(|g| g.holder == self.who);
+        // D7: the genesis holder self-binds once per store; in a later
+        // namespace their first key is signed by a key of theirs already
+        // bound elsewhere.
+        let first_in_store = auth.bindings.iter().all(|b| b.principal != principal);
+        let first_in_ns = auth.bindings.iter().all(|b| b.namespace != namespace || b.principal != principal);
+        let self_bound = act == BindingAct::Add && principal == self.who && first_in_store && genesis.is_some();
+        let any_namespace = act == BindingAct::Add && principal == self.who && first_in_ns && !self_bound;
         let mut binding = KeyBinding {
             id: self.mint.mint_id("key").map_err(AuthorError::Io)?,
             act,
+            under: (principal != self.who).then(|| auth.genesis().map(|g| g.id.clone())).flatten(),
             principal,
             namespace,
             key_type: key.as_ref().map(|k| k.key_type.clone()),
-            key: key.map(|k| k.key),
+            key: key.as_ref().map(|k| k.key.clone()),
             closes,
             self_bound,
-            mandate,
+            mandate: if self_bound { genesis.and_then(|g| g.external_ref.clone()) } else { None },
             by: self.who.clone(),
             at: self.now,
             hash: crate::hash::VersionHash::zero(),
         };
         binding.hash = crate::authority::payload::binding_hash(&binding);
+        may_file(&auth, &binding).map_err(|rule| AuthorError::Unauthorized(format!("{rule} (D7)")))?;
+        let ulid = binding.id.ulid().to_string();
+        let own = binding.key_type.clone().zip(binding.key.clone());
+        let what = ToSign {
+            namespace: &binding.namespace,
+            ulid: &ulid,
+            bytes: crate::authority::payload::binding_bytes(&binding),
+            own_key: own.as_ref().filter(|_| self_bound).map(|(t, k)| (t.as_str(), k.as_str())),
+            any_namespace,
+        };
+        self.sign_under(&store, Some(&policy), what)?;
         let line = format!("identity {act}: {} in `{}` — {}", binding.principal, binding.namespace, binding.id);
         let mut candidate = self.shell(None)?;
         candidate.key_bindings.push(binding);
         self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
+        let path = self.append_signed(&candidate)?;
         crate::authority::signers::write(&self.load()).map_err(AuthorError::Io)?;
         Ok(Applied { path, lines: vec![line, format!("regenerated {}", crate::authority::signers::FILE)] })
-    }
-
-    /// The open binding `id` names, if the actor may close it.
-    fn closable(
-        &self,
-        auth: &Authority<'_>,
-        id: &KeyBindingId,
-        act: BindingAct,
-    ) -> Result<(String, crate::identity::Identity), AuthorError> {
-        let open = auth.bindings.iter().find(|b| b.id == *id && b.act.opens()).ok_or_else(|| {
-            AuthorError::Usage(format!("{id} opens no key window"))
-        })?;
-        if auth.bindings.iter().any(|b| b.closes.as_ref() == Some(id)) {
-            return Err(AuthorError::Conflict(format!("{id}'s window is already closed")));
-        }
-        let genesis_holder = auth.genesis().is_some_and(|g| g.holder == self.who);
-        let allowed = open.principal == self.who || (act == BindingAct::Revoke && genesis_holder);
-        if !allowed {
-            return Err(AuthorError::Unauthorized(format!("{id} binds {}'s key", open.principal)));
-        }
-        Ok((open.namespace.clone(), open.principal.clone()))
-    }
-
-    /// Whether this is the namespace's self-bound genesis binding, else
-    /// whether the actor holds a live grant reaching the namespace.
-    fn bootstrap_or_grant(
-        &self,
-        auth: &Authority<'_>,
-        namespace: &str,
-        act: BindingAct,
-    ) -> Result<(bool, Option<String>), AuthorError> {
-        let first = auth.bindings.iter().all(|b| b.namespace != namespace);
-        if let Some(g) = auth.genesis().filter(|g| g.holder == self.who) {
-            return Ok(if first && act == BindingAct::Add { (true, g.external_ref.clone()) } else { (false, None) });
-        }
-        let reaches = auth.grants.values().any(|g| {
-            let scoped = match &g.scope {
-                GrantScope::All | GrantScope::Set(_) => true,
-                GrantScope::Namespace(n) => n == namespace,
-                GrantScope::Pattern(_) => false,
-            };
-            g.holder == self.who && scoped && auth.is_live(g)
-        });
-        if first || !reaches {
-            return Err(AuthorError::Unauthorized(format!(
-                "{} holds no live grant reaching `{namespace}`{}",
-                self.who,
-                if first { ", and the first binding there is the genesis holder's" } else { "" }
-            )));
-        }
-        Ok((false, None))
     }
 }
