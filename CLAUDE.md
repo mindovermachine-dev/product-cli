@@ -371,9 +371,10 @@ store (`.decisions/`), separate ontology.
   the union) and lists the holder's proposed decisions; the role check and
   the grant shown come from `authority::authorize` over the branch's store.
   `ledger inbox accept --all|--decision … [--confirm]` writes the batch file
-  and signs each branch in a worktree, commits as the holder, pushes, and
-  runs `ledger verify --base <default>` — the base is always named. R0
-  rebuilds the index every invocation.
+  and signs each branch in a worktree, commits as the holder, runs `ledger
+  verify --base <default>` — the base is always named — and pushes only when
+  it is green (never forced). R0 rebuilds the index every invocation, and
+  each run first sweeps the worktrees a killed run left.
 - **Authoring (L1)** — every verb is a thin shell over the gate: `declare`,
   `add`, `allocate`, `escape`, `revise`, `supersede`, `accept`, `revoke`,
   `status`, `log`, `blame`. A verb builds its change-set, runs the same

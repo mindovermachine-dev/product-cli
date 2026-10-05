@@ -45,7 +45,11 @@ Each is stated in its PR.
 - **How `accept` is authorised.** Only grants of the policy's `accept_role` count (`decision_authority`, `acceptance_ops.rs`), so on `accept` the candidates are all in one role. Options:
   - (a) keep this;
   - (b) count any role whose `may` holds `accept-decision`, with `accept_role` as a filter only when a policy sets one. Under (b), D9 (c) would apply to `accept` too.
+
+  > **Ruled 5 October 2026: (a).** Only the policy's `accept_role` counts. This is how it is built today, and nothing changes.
 - **The batch file's rows carry an optional `branch`**, beyond #86's (repository, decision, version). One inbox sitting spans several branches of one repository, and each checkout signs only its own rows.
+
+  > **Ruled 5 October 2026: accepted.** Confirmed that the manifest digest covers it: `batch_file::manifest` hashes each row as (repository, branch, decision, version, grant), with an absent branch hashed as the empty string. `batch_file_tests.rs` `the_manifest_covers_every_row_its_branch_and_its_grant` now asserts that changing a row's branch, or dropping it, moves the manifest.
 
 ## 2. Format changes
 
@@ -80,23 +84,38 @@ Each is stated in its PR.
    - (b) refuse a key that `ssh-keygen -y -P "" -f <key>` opens;
    - (c) warn only;
    - (d) refuse every software key for signed acts.
+
+   > **Ruled 5 October 2026: (c), warn only.** Not implemented in #92.
 2. **DSSE.**
    - **Where the key comes from.** Today it is the signer's `ssh-ed25519` key bindings. The alternatives are a key the policy names (a format change) or the hosted service's published key set.
    - **Which key types the verifier accepts.** Only ed25519 is implemented, and the hosted signer's keys may not be ed25519 (for example ECDSA P-256 from a cloud KMS, or RSA).
    - **The payload type.** #89 defines `application/vnd.ledger.signed-bytes.v1`, while the platform PRD describes an in-toto statement. Options: keep signed-bytes; adopt in-toto with the signed-bytes digest as its subject; or accept both.
+
+   > **Ruled 5 October 2026.** The DSSE key is one of the signer's own key bindings, as built. The payload type stays `application/vnd.ledger.signed-bytes.v1`. Key types beyond ed25519 are deferred to the hosted hand-off. Not implemented in #92; the first two are as built.
 3. **Registry PRD §8 needs amending.** It says "every branch with an open PR". Git does not record open PRs, so R0 indexes the default branch plus every remote-tracking branch whose committed export differs from the default branch's. A PR number is only a label, read from `refs/pull/<n>/head` when that ref is fetched and matches.
+
+   > **Ruled 5 October 2026: amend §8 as built, in #92.** Done: `docs/decision-registry-prd.md` §8 now describes what R0 indexes.
 4. **Citing symbols and the firing rule are not in the export.** The inbox reads them from `based_on` pointers by scheme: `symbol:` and `code:` for citations, `rule:` and `analyzer:` for the rule. Should R1 give them their own predicates?
+
+   > **Ruled 5 October 2026: R1, as derived predicates in the export only, with no file format change.** Not implemented in #92.
 5. **An acceptance that fails `L011` against the base cannot be affirmed by re-accepting it.** The failing acceptance stays in the log. The inbox lists it (`fails-on-base`) but leaves it out of the batch. Should the remedy be a revocation, or is it R1's?
+
+   > **Ruled 5 October 2026: revocation is the remedy.** A validly revoked acceptance raises no `L011`, `L012` or `A006` of its own. Issue #95, which also has the inbox offer revoke and re-accept for `fails-on-base` items. Not implemented in #92.
 6. **A holder who rotates keys on the default branch cannot sign on branches cut before the rotation.** Those branches don't know the new key, so `accept --batch` refuses there until the branch merges the default branch. The inbox reports this per branch. Should `accept --batch` read the base's bindings (`--base`), as `verify` does?
+
+   > **Ruled 5 October 2026: yes.** `accept`, `accept --batch` and the inbox read keys, grants and policy from the union of branch and base, as `verify --base` does. Issue #94. Not implemented in #92: the behaviour is unchanged until then.
+7. **For the principal: what the terminal check proves.** `require_terminal` tests whether stdin is a terminal, and the manifest is typed back. Any process that allocates a pseudo-terminal passes both; the integration tests do exactly that with `script(1)`. Neither requires a person. The control that does is the key: its passphrase, or a touch on a security key under `require_sk`. The terminal check keeps casual automation out, and the caller test added in #92 (`commands/terminal_callers_tests.rs`) pins that every signing entry point in `ledger-core` is reached only through it. A process willing to allocate a pseudo-terminal is stopped only by the key. This bears on question 1, now ruled "warn only" for a passphrase-less key: on such a key, nothing in the chain requires a person.
 
 ### Proposals (from the principal, 5 October; not this session's work)
 
-1. **A property test.** For an act at a fixed landing position, an earlier `at` never improves the verdict against key closes, grant revocations or policies.
+Opened on the principal's instruction, 5 October 2026: proposal 1 as #97; proposals 2 and 3 as #96, with the `[none]` notice from proposal 4. #96 must land before the Varve import (#73).
+
+1. **A property test** (#97). For an act at a fixed landing position, an earlier `at` never improves the verdict against key closes, grant revocations or policies.
    - Three review rounds on #89 each found a hole of that shape: an appended entity landing with its file; a policy dated after a backdated act; a key close treated as enabling.
    - Unavailability windows are the known exception.
-2. **`init --namespace` does not bind the genesis holder's key**, so the first self-bound binding to land for that address is the one trusted. Binding the key in the same act as `init` would close that window.
-3. **A namespace's first policy is unsigned**, even in a store where the genesis holder already has a trusted key.
-4. **Under `[none]`, no signature is required.** From the code:
+2. **`init --namespace` does not bind the genesis holder's key** (#96), so the first self-bound binding to land for that address is the one trusted. Binding the key in the same act as `init` would close that window.
+3. **A namespace's first policy is unsigned** (#96), even in a store where the genesis holder already has a trusted key.
+4. **Under `[none]`, no signature is required** (#96 adds a `verify` notice naming what does not hold). From the code:
    - **These checks still hold:**
      - D7 (`may_file` runs before any policy is read, in `trust_bindings`);
      - `A006`;
@@ -118,7 +137,7 @@ Each is stated in its PR.
 **Time for twenty acceptances through the inbox.** On the fixture (three repositories, twelve branches, twenty proposed decisions; `ledger-cli/tests/inbox.rs`):
 - 11.0 to 11.5 s from the confirming `ledger inbox accept --all --confirm` to the end;
 - **one confirmation** and **twenty signatures**, one sidecar per acceptance;
-- per branch: a fetch, a worktree, `accept --batch`, the export, a commit, a push and `verify --base`.
+- per branch: a fetch, a worktree, `accept --batch`, the export, a commit, `verify --base`, and a push only when that is green.
 
 That leaves the five-minute target for reading time. The listing run before it takes a few seconds more, because it creates a worktree and runs `verify --base … --json` per branch to find re-acceptance items.
 
@@ -132,6 +151,8 @@ That leaves the five-minute target for reading time. The listing run before it t
   - `L009` reads the introducing commit's author and requires it to be the acceptance's actor.
   - The inbox commits as the holder, so it passes. A server-written commit (a GitHub App) would fail `L009` unless it is authored as the holder, and an author field the server sets freely would empty `L009` of meaning.
   - Now that acceptances are signed, the proposal for the principal is that `L009` stand down for an acceptance whose required signature verifies: the signature, not the commit author, is the authority (registry PRD §7, "writes are self-authenticating").
+
+    > **Ruled 5 October 2026: accepted, for R1.5.** Not implemented in #92.
 - **Browser triage hands off a batch (R1.5).** The batch file is that hand-off, and `accept --batch` already signs it. The open server needs only to produce the file, with the same manifest law.
 - **Incremental index (R1.5).** R0 rebuilds the index every invocation, so no rebuild-equals-incremental test was written (#79's last bullet). It belongs with the first maintained index.
 
@@ -153,7 +174,7 @@ That leaves the five-minute target for reading time. The listing run before it t
 | `main` after #88 | 1,933 passed |
 | #89 merged | 1,999 passed |
 | #90 (step 2) | 2,010 passed |
-| step 3 | 2,021 passed, 0 failed |
+| step 3 | 2,026 passed, 0 failed |
 
 - **New suites:**
   - `signing.rs`, `trust.rs`, `immutability.rs`, `closed_key.rs`, `export_verifier.rs` (#89);

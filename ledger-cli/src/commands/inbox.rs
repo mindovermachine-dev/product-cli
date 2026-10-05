@@ -6,9 +6,10 @@
 //! in their own state; and every namespace with no policy, named as
 //! unchecked. `inbox accept` writes the batch selection file, prints its
 //! manifest, and — confirmed at a terminal — signs each branch with `ledger
-//! accept --batch` in a worktree, commits as the holder, pushes, and runs
-//! `ledger verify --base <default branch>`. Every `verify` the inbox runs
-//! names its base explicitly; none relies on `origin/HEAD`.
+//! accept --batch` in a worktree, commits as the holder, runs `ledger verify
+//! --base <default branch>`, and pushes only when that is green. Every
+//! `verify` the inbox runs names its base explicitly; none relies on
+//! `origin/HEAD`. Every run first sweeps the worktrees an earlier one left.
 
 use std::path::{Path, PathBuf};
 
@@ -73,6 +74,9 @@ pub fn open(config_path: Option<PathBuf>, as_role: Option<&str>) -> Result<Sitti
     let config_path = config_path.unwrap_or_else(config::default_path);
     let config = config::load(&config_path)?;
     let holder = holder(&config)?;
+    for repo in &config.repositories {
+        ledger_core::inbox::git::sweep(repo).map_err(|e| format!("{}: {e}", repo.name))?;
+    }
     let index = index::build(&config)?;
     let listing = list::list(&index, &holder, as_role)?;
     let mut reviews = Vec::new();
@@ -107,8 +111,9 @@ fn review(index: &Index, branch: &Branch, holder: &Identity) -> Result<Vec<Revie
     let repo = index.repository(&branch.repository).ok_or("unknown repository")?;
     let wt = ledger_core::inbox::git::worktree(repo, &branch.name, &branch.rev)?;
     let out = verify(&wt, &branch.base, &["--json", "--no-blame"])?;
-    let report: serde_json::Value = serde_json::from_str(&out.0).map_err(|e| format!("verify --json: {e}"))?;
     let store = ledger_core::store::load(&wt);
+    ledger_core::inbox::git::discard_worktree(repo, &wt);
+    let report: serde_json::Value = serde_json::from_str(&out.0).map_err(|e| format!("verify --json: {e}"))?;
     let acceptance = |id: &str| store.log.iter().flat_map(|l| l.file.acceptances.iter()).find(|a| a.id.to_string() == id).cloned();
     // An acceptance the default branch already holds is listed there, once,
     // not again on every branch cut after it.

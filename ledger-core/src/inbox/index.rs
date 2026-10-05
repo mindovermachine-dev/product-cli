@@ -44,8 +44,9 @@ pub struct Branch {
     pub indexed_at: DateTime<Utc>,
     /// Graph-stage findings over this graph alone.
     pub findings: Vec<GraphFinding>,
-    /// Why the remote will not take a push here, when it will not.
-    pub read_only: Option<String>,
+    /// Why the remote cannot be reached for a push here, when it cannot
+    /// (`git::push_unreachable`: a dry run, not a test of write permission).
+    pub push_unreachable: Option<String>,
 }
 
 /// The index over every configured clone.
@@ -92,7 +93,7 @@ fn index_clone(dataset: &Dataset, repo: &Repository) -> Result<Vec<Branch>, Stri
             repository: repo.name.clone(),
             name: name.to_string(),
             findings: crate::graph::shapes::graph_findings_in(dataset, &graph),
-            read_only: git::push_refusal(repo, &head, name),
+            push_unreachable: git::push_unreachable(repo, &head, name),
             pr: prs.get(&head).copied(),
             rev,
             head,

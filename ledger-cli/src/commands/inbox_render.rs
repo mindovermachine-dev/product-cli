@@ -57,8 +57,8 @@ fn header(b: &Branch) -> String {
         None => b.name.clone(),
     };
     let mut out = format!("\n{} — {label} @ {} (indexed {})\n", b.repository, short(&b.head), b.indexed_at.format("%Y-%m-%dT%H:%M:%SZ"));
-    if let Some(why) = &b.read_only {
-        let _ = writeln!(out, "  read-only: {why}");
+    if let Some(why) = &b.push_unreachable {
+        let _ = writeln!(out, "  remote unreachable for a push: {why}");
     }
     for f in &b.findings {
         let _ = writeln!(out, "  graph: [{}] {} — {}", f.class.code(), f.subject, f.message);
@@ -107,7 +107,7 @@ pub fn branches_json(index: &Index) -> serde_json::Value {
                 serde_json::json!({
                     "repository": b.repository, "branch": b.name, "head": b.head, "pr": b.pr,
                     "default": b.default, "base": b.base, "indexed_at": b.indexed_at.to_rfc3339(),
-                    "read_only": b.read_only,
+                    "push_unreachable": b.push_unreachable,
                     "graph": b.findings.iter().map(|f| format!("[{}] {} — {}", f.class.code(), f.subject, f.message)).collect::<Vec<_>>(),
                 })
             })

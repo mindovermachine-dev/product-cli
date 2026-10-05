@@ -73,21 +73,48 @@ pub fn pull_requests(dir: &Path) -> BTreeMap<String, u32> {
         .collect()
 }
 
-/// Whether the clone's remote takes a push to `branch`: `None` when it
-/// does, the reason when it does not. A dry run; nothing is sent.
-pub fn push_refusal(repo: &Repository, commit: &str, branch: &str) -> Option<String> {
+/// Whether the clone's remote can be reached for a push to `branch`: `None`
+/// when it can, the reason when it cannot. A forced dry run: it resolves the
+/// push URL, connects and reads the ref advertisement, and sends nothing,
+/// so nothing the receiving side checks on an update — write permission,
+/// branch protection, hooks — is tested. `--force` keeps a merely stale
+/// branch from reading as unreachable; `--no-verify` keeps the clone's own
+/// `pre-push` hooks, which a dry run would otherwise run, out of a probe.
+pub fn push_unreachable(repo: &Repository, commit: &str, branch: &str) -> Option<String> {
     let dst = format!("{commit}:refs/heads/{branch}");
-    git(&repo.path, &["push", "--dry-run", "--force", "--porcelain", &repo.remote, &dst]).err()
+    git(&repo.path, &["push", "--dry-run", "--force", "--no-verify", "--porcelain", &repo.remote, &dst]).err()
+}
+
+/// Where the inbox keeps its worktrees: `<git-common-dir>/ledger-inbox/`.
+fn worktrees_dir(repo: &Repository) -> Result<PathBuf, String> {
+    let common = git(&repo.path, &["rev-parse", "--git-common-dir"])?;
+    Ok(repo.path.join(common.trim()).join("ledger-inbox"))
+}
+
+/// Remove every worktree the inbox made in this clone. A sitting discards
+/// its own as it goes; this clears what a killed one left, signed but
+/// unpushed commits included — reachable from no ref, they go at the next
+/// `git gc`.
+pub fn sweep(repo: &Repository) -> Result<(), String> {
+    let dir = worktrees_dir(repo)?;
+    let listing = git(&repo.path, &["worktree", "list", "--porcelain"])?;
+    for path in listing.lines().filter_map(|l| l.strip_prefix("worktree ")).map(PathBuf::from) {
+        if path.starts_with(&dir) || std::fs::canonicalize(&path).ok().zip(std::fs::canonicalize(&dir).ok()).is_some_and(|(p, d)| p.starts_with(d)) {
+            let _ = git(&repo.path, &["worktree", "remove", "--force", &path.display().to_string()]);
+        }
+    }
+    if dir.exists() {
+        std::fs::remove_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    }
+    git(&repo.path, &["worktree", "prune"]).map(|_| ())
 }
 
 /// A worktree of `rev` (detached) under the clone's git directory, made
 /// fresh: the inbox signs and verifies a branch there without touching the
 /// holder's own checkout.
 pub fn worktree(repo: &Repository, branch: &str, rev: &str) -> Result<PathBuf, String> {
-    let common = git(&repo.path, &["rev-parse", "--git-common-dir"])?;
-    let common = repo.path.join(common.trim());
     let name: String = branch.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' }).collect();
-    let path = common.join("ledger-inbox").join(name);
+    let path = worktrees_dir(repo)?.join(name);
     let at = path.display().to_string();
     if path.exists() {
         let _ = git(&repo.path, &["worktree", "remove", "--force", &at]);

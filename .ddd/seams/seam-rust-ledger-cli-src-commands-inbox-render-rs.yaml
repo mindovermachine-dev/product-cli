@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-src-commands-inbox-render-rs
 boundary: contract surface of ledger-cli/src/commands/inbox_render.rs
-verdict_knowledge: "Callers learn how the inbox reads on screen: per repository and pull request or branch, with index time, read-only reason, graph findings, each item's fields, re-acceptance items and unchecked namespaces."
+verdict_knowledge: 'Callers learn how the inbox reads on screen: per repository and pull request or branch, with index time, read-only reason, graph findings, each item''s fields, re-acceptance items and unchecked namespaces.'
 contract_location: ledger-cli/src/commands/inbox_render.rs
 obligations: []
 metadata: {}
@@ -18,3 +18,15 @@ bindings:
   after: sha256:0c05e0aba853800246ae10d8f1dd7f182caff90c0852c1b98551b31ab6328434
   base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
   hash: sha256:4c5d2283cd5dca6877031e16cde879955ec31507a36932af881f470a71a9577d
+- symbol: branches_json
+  file: ledger-cli/src/commands/inbox_render.rs
+  before: absent
+  after: sha256:73ddad9e1c0099b8b4b369ed8953716b836de469b2eb6dca1df56abf4129c224
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:5f3c68ddfac048b0f31b82e91bb2ee3efffa7cbd93fe52fe560e338b8d7a2c29
+- symbol: listing
+  file: ledger-cli/src/commands/inbox_render.rs
+  before: absent
+  after: sha256:73ddad9e1c0099b8b4b369ed8953716b836de469b2eb6dca1df56abf4129c224
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:22e226a6a33e960708e619fff2cfc2a701704340d8ee7eb8bb002fe9df8e02b2

@@ -54,3 +54,27 @@ bindings:
   after: sha256:f14509a9e3d70a68d84fa82008a313e8cc821afe06eccaa6daba2f63b2071c84
   base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
   hash: sha256:fafaee5c84db549926053640f94349936f8f93c73302fdbe7e44b71bc9a8ee93
+- symbol: run
+  file: ledger-cli/src/commands/inbox_accept.rs
+  before: absent
+  after: sha256:ac20941ed56ba94b0e0b00062f47b3b9a295652891680b44bce8cca80aca78f9
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:c6c3923cb52250b448f9af5350b6c8104ec49f886ff2ba9d7b8e854b8da1d0ea
+- symbol: Selection
+  file: ledger-cli/src/commands/inbox_accept.rs
+  before: absent
+  after: sha256:ac20941ed56ba94b0e0b00062f47b3b9a295652891680b44bce8cca80aca78f9
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:2a446ff78f77e11519ec47bcb22ebb0f11be9d7ae44d125b4b2907da568f2a0e
+- symbol: all
+  file: ledger-cli/src/commands/inbox_accept.rs
+  before: absent
+  after: sha256:ac20941ed56ba94b0e0b00062f47b3b9a295652891680b44bce8cca80aca78f9
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:694b2e34d39b6efa8ece91789eac6a72fc4c284efdba587e5ae423b0cd8e024f
+- symbol: decisions
+  file: ledger-cli/src/commands/inbox_accept.rs
+  before: absent
+  after: sha256:ac20941ed56ba94b0e0b00062f47b3b9a295652891680b44bce8cca80aca78f9
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:1da8b49b42e78627c8e08cdad16dc579fd5866fbd63846e9fb87398801db706b

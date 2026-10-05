@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-src-commands-inbox-rs
 boundary: contract surface of ledger-cli/src/commands/inbox.rs
-verdict_knowledge: "Callers learn the `ledger inbox list|accept` surface: one principal per sitting, the index and list over the configured clones, re-acceptance items read from verify with an explicit base."
+verdict_knowledge: 'Callers learn the `ledger inbox list|accept` surface: one principal per sitting, the index and list over the configured clones, re-acceptance items read from verify with an explicit base.'
 contract_location: ledger-cli/src/commands/inbox.rs
 obligations: []
 metadata: {}
@@ -78,3 +78,75 @@ bindings:
   after: sha256:3bcd72eb2eb9b8b6bf2734bcf17c245a435243778df6ddce81de707c5947ef0a
   base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
   hash: sha256:ea25c73285e2c4b31bfc29d4e934dceadb9bfd0336c4d31847bc5345fccfb2fa
+- symbol: InboxCmd
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:8eba812d7668623dd314cefd1c307977989f42903947b699a1637335972ad1c0
+- symbol: open
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:582b4c9f6ef7cc7d99d5deab78f7793ff91f424471434e0fd0fab20701bbe0a0
+- symbol: run
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:b3eccd5767bdea69ce877059b0f5a77ac946d908978d7403e8592d53135756fd
+- symbol: verify
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:aaefaa59097009b0e5dc9cfb6d32e07dcf89328aa1da8cc707e0c13817fed717
+- symbol: Sitting
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:7e7d303ae47d717e58b1b9dd727cb7e65087144995d1bcc7ab57cf303865e866
+- symbol: Accept
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:e29410b45f1f0fa7eda2902d9678b06ef00673ed857eec985c8c92e523ed4c74
+- symbol: List
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:70811b4c55839f8a9d4d2574bc28ee2f5d64a0f9344adcf5f2058db75b2ec51c
+- symbol: config_path
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:6f0c733b2f951564092ac5a46a2337d2323010f613f30ec7469edfe147cc3d8b
+- symbol: holder
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:6cdf16eadf5bd152aced77746122e3a69fded0dd2b6e3e9b0e8409e5bc4a9519
+- symbol: index
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:434d462d544ebc2147973ce8877109a212908d1113d26da1b8e1ef1d14e0f19f
+- symbol: listing
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:0662254dd285e8e0f1c66e722621d0140ae2a7b150f716fa5a585d03866e5117
+- symbol: reviews
+  file: ledger-cli/src/commands/inbox.rs
+  before: absent
+  after: sha256:e3dcbfe58d62f59e51f330f03c2e741d1d972045c68c916803448b8bc44a5ce8
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:8c98230c29bb2af6641aaf13fad17a827567903b673c2d04ae4c5a65ba0924aa

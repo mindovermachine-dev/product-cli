@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-inbox-git-rs
 boundary: contract surface of ledger-core/src/inbox/git.rs
-verdict_knowledge: 'Callers learn the git the inbox runs in a clone: default and remote-tracking branches, committed exports at a revision, pull-request labels from refs/pull, a forced push dry run, worktrees, fetch.'
+verdict_knowledge: 'Callers learn the git the inbox runs in a clone: default and remote-tracking branches, committed exports at a revision, pull-request labels from refs/pull, a forced dry-run probe of whether the remote can be reached for a push (no hooks run), worktrees made, discarded and swept, fetch.'
 contract_location: ledger-core/src/inbox/git.rs
 obligations: []
 metadata: {}
@@ -120,3 +120,69 @@ bindings:
   after: sha256:8c70eda2a0b8d71615ff41dbe87c1ed1ccb9e19b53f6056a3125a3d92587f98a
   base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
   hash: sha256:60cf8d1a6107eb17314b520292dfb36f8ed6115776a3755eb53a711cda644c07
+- symbol: commit_of
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:e705475bbffbb7c5a9b2805ae0ce0e96caa2145b6b88e20634e9d8f59c7bb159
+- symbol: default_branch
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:18bd793250b26fb2402ad68fdc6410800b541a1f00c8022c7daf8adc750b8456
+- symbol: discard_worktree
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:ea73629625008da9c593fe1c5c31f7f8b4859b75cff78682f4ee9a6e85ebb1dd
+- symbol: exports_at
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:b1c22724be20842d80aab9f82f84bccdef357552925836db4a4c751ac8576c23
+- symbol: fetch
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:0d51b2a6ef1efef1abc4d0cdc4f167f4749ffc4848e1c874a0f5da916196697e
+- symbol: git
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:e9345e5d68dfd8aed33e8e9f5d3b14e43ce5f88ea1787944a42e238035799f84
+- symbol: pull_requests
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:ec95cb99969cc2ea97a7490032dab4129769cbd9aafe5bfd6a89fe0ef6fcc99c
+- symbol: push_unreachable
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:3c50a3eba670283da0229ada19af5b6c17df5b7dd165fcc35d1b72b5a889b605
+- symbol: remote_branches
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:cc425b8304ee3957f117624580a6ec818cd8eef2323e861c50d7c392b3934ba1
+- symbol: sweep
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:54837d46029234d9d336439f231a4015719158f21d1c6beedf0b9cd9c220b062
+- symbol: worktree
+  file: ledger-core/src/inbox/git.rs
+  before: absent
+  after: sha256:8b0d48611cadd182398b7634bccb9f7bbd5ed5ae3ce8afaffa1cda6c75634e6d
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:49c9fbcf1402e47b6cd3b7ebbd9eb9c9c7c227ba20ef9e4647f6d49bb1e0c23f

@@ -83,6 +83,26 @@ The positions, reasons and the walk through Session A's twelve questions are in 
 
 **Session A close-out §3** (`docs/sessions/2026-10-session-a.md`): 1 (a). 2 (a) with D5 (c) now, and (b) as an issue after Session B. 3 (a). 4 (a); a hierarchy, if ever, is a new scope form. 5 (a), on the grant the act names. 6 (a). 7 (a), by covering scope within one role, per D9 (e). 8 write-once, held by `verify`. 9 gate it. 10 (a). 11 no ruling; an issue for `rotate-genesis`. 12 no new class.
 
+## Session B close-out (ruled 2026-10-05)
+
+The questions and options are in `docs/sessions/2026-10-session-b.md` §1 ("Interpretations") and §3. Each ruling is recorded there under its question. These notes record what was ruled, and win where the two differ. **None is implemented in #92**, except the registry PRD §8 amendment, which the ruling places there.
+
+| Question | Ruling | Where it goes |
+|---|---|---|
+| How `accept` is authorised | **(a).** Only the policy's `accept_role` counts. | As built; no change. |
+| Batch rows carry `branch` | **Accepted.** The manifest digest covers it: `batch_file::manifest` hashes each row as (repository, branch, decision, version, grant). | As built. `batch_file_tests.rs` asserts it (#92). |
+| Q1, a passphrase-less key file | **(c), warn only.** | Not yet built. |
+| Q2, DSSE | The DSSE key is one of the signer's own key bindings. The payload type stays `application/vnd.ledger.signed-bytes.v1`. Key types are deferred to the hosted hand-off. | The first two as built; key types later. |
+| Q3, registry PRD §8 | **Amend as built.** | `docs/decision-registry-prd.md` §8, in #92. |
+| Q4, citing symbols and the rule | **R1, as derived predicates in the export only.** No file format change. | R1. |
+| Q5, `fails-on-base` acceptances | **Revocation is the remedy.** A validly revoked acceptance raises no `L011`, `L012` or `A006` of its own. | #95, with the inbox offering revoke and re-accept. |
+| Q6, a key rotated on the default branch | **Yes.** `accept`, `accept --batch` and the inbox read keys, grants and policy from the union of branch and base, as `verify --base` does. | #94. |
+| `L009` and a server-written commit | **Accepted, for R1.5.** `L009` stands down for an acceptance whose required signature verifies. | R1.5. |
+
+**The principal's proposals of the same day**, opened as issues: #97, the property test that an earlier `at` never improves a verdict at a fixed landing position; and #96, binding the genesis key in `init --namespace`, signing a first policy when the genesis holder has a trusted key, and a `verify` notice for a `[none]` namespace. #96 must land before the Varve import (#73).
+
+**A note for the principal (Session B close-out §3, item 7).** The terminal check and the typed manifest are passable by any process that allocates a pseudo-terminal. The control that requires a person is the key: its passphrase, or a touch under `require_sk`.
+
 ## Two further differences the side-by-side surfaces
 
 - **The trust root.** Ruling 4 makes allowed signers "a set of decisions [that] lives in the ledger", with "an explicitly-named **genesis** entry, self-attested and conspicuous". The PRD keeps a plain `ledger/allowed_signers` file seeded by `init` "with the initialising identity", whose changes "are themselves accepted decisions in the policy set". Both govern changes. The difference is that the PRD's genesis is an implicit seed at `init`, while the ruling requires a named one.

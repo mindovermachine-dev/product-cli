@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-inbox-index-rs
 boundary: contract surface of ledger-core/src/inbox/index.rs
-verdict_knowledge: "Callers learn the inbox index: one named graph per (repository, branch) from committed exports — the default branch and every remote-tracking branch whose export differs — rebuilt every invocation, shapes per graph."
+verdict_knowledge: 'Callers learn the inbox index: one named graph per (repository, branch) from committed exports — the default branch and every remote-tracking branch whose export differs — rebuilt every invocation, shapes per graph.'
 contract_location: ledger-core/src/inbox/index.rs
 obligations: []
 metadata: {}
@@ -126,3 +126,123 @@ bindings:
   after: sha256:b9d75e2ea8f842a74d4a7ffec2cb1b0dec136b52a9603ff0a00bb24315114ceb
   base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
   hash: sha256:ea26ad4f4755d7f881d4e94d6cc86c80dd85a6e84a80b08db4c3d01257ffe521
+- symbol: build
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:dafe98220840b916952ca43f5a022935242c09581ccaf93b23a6009e74a00bf3
+- symbol: graph_iri
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:36927a3d4aac61423c17f388a2c977bba7c18f95763912fc552f6c9234b664cf
+- symbol: impl Index
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:a5b6f48d89046c4f51857986899fbb16edb42a86f4398d21a86d8a2702c88518
+- symbol: Branch
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:1dba5145b21f26d991d72c1b10e1f40ffb975e259447892b357fa0fdeb2fc4b7
+- symbol: Index
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:82bdaf46184dc246fd5c9f5cc7a7092c57b0fb1341a394f549b85fa81ec7f34f
+- symbol: base
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:194c09185ab4cd1bde8283cfde3776506c2b1deca28429c15cd298d2e05a8b89
+- symbol: default
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:516ea638a3c947d9dfd89c5ebd4bd3c18353e39335985ff0b13d17c3758da142
+- symbol: findings
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:33852f19f92e73534f34940d9d6a56ed7829edc4b6c3bce3df01c9b206ff801e
+- symbol: graph
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:12a9922ee5c968b0b76090586dd518f4a4ca46ef36a85bb1191914caa6cb3330
+- symbol: head
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:a204b572d9755c87bcfb7fe8697537c433358133d3b8ad93499983bfbcd255d1
+- symbol: indexed_at
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:0e62127e082c77ff3e65cb52660cc254e39ff901ad5a19e403c468236900ffc7
+- symbol: name
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:c4693ac6011b7cff24b695e7351037eab17d14365d0e014c913d6403a6e3758e
+- symbol: pr
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:d1ffdce95b29ef795cd03dff52146e5e344671b77a86f1b9ecea036570998b68
+- symbol: push_unreachable
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:98b0f0487dbf8ced99105fd957e993a778616e0504eaeb9f7b0f8409fc379ac3
+- symbol: repository
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:ebae1373e758f7db49ff3218c10386a25c59a4a4458471c0d831d7ea5711ca32
+- symbol: rev
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:f1cae75e3b5d6fc7f09ac967b56c3380adf2062cd78559dab8739590cee81fcd
+- symbol: branches
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:ee50afac807ba5b182b7eec448272ec67a270a11341b8f9898c8f4fba6f8bb90
+- symbol: dataset
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:c690e9731ade5e853095fcdd89e7fa24dec49e3e60c9153483aba7c48619053d
+- symbol: repositories
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:2781ab33a457e04cf59fa5dd6e926211a077bf8a8343c931a5c3a26131cf3ee4
+- symbol: path
+  file: ledger-core/src/inbox/index.rs
+  before: absent
+  after: sha256:d8c9205fe4194ca96adc978317ec81598f03c7061fc616371bcf03a2970cacdb
+  base_revision: 2d242ec237c2a1f4658dd74725540217e0631d38
+  hash: sha256:24f1d1ba353b89b0a829e481ca2a1a753314f19d65760abe3d6f92f87c7b3091

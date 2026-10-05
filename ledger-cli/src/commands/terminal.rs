@@ -118,3 +118,7 @@ fn role(cmd: &RoleCmd) -> Mode {
 #[path = "terminal_tests.rs"]
 #[cfg(test)]
 mod tests;
+
+#[path = "terminal_callers_tests.rs"]
+#[cfg(test)]
+mod callers;
