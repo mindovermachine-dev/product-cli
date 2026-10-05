@@ -53,15 +53,16 @@ impl<'a> Authority<'a> {
         a
     }
 
-    /// The records as they stood at `pos` (D6): enabling entries (grants,
-    /// grant acceptances, key bindings that open a key) that are not after
-    /// it; terminating ones (revocations, key closes) and governing ones
+    /// The records as they stood at `pos` (D6): role files landed no later
+    /// (landing alone: a role file has no signed `at`); enabling entries
+    /// (grants, grant acceptances, key bindings that open a key) that are
+    /// not after it; terminating ones (revocations, key closes) and governing ones
     /// (policies) unless the act is before them; and the
     /// availability intervals landed no later (their clock decides). This
     /// is what `verify` judges a historic act against (`A006`, D7).
     pub fn as_of(store: &'a Store, landing: &Landing, pos: Position) -> Self {
         let mut a = Self::default();
-        for role in &store.roles {
+        for role in store.roles.iter().filter(|r| role_landing(landing, r) <= pos.index) {
             a.roles.insert(role.id.clone(), role);
         }
         for logged in &store.log {
@@ -171,4 +172,11 @@ impl<'a> Authority<'a> {
     pub fn is_empty(&self) -> bool {
         self.roles.is_empty() && self.grants.is_empty() && self.policies.is_empty()
     }
+}
+
+/// A role file's landing index (D6). A role file carries no signed `at` —
+/// `created_at` is a date its author typed, in no payload — so landing alone
+/// places it: a role counts for an act that landed no earlier than it.
+fn role_landing(landing: &Landing, role: &Role) -> usize {
+    landing.index(&format!("{}/roles/{}", crate::STORE_DIR, role.file_name()))
 }

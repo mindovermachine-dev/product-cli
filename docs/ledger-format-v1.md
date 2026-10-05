@@ -828,6 +828,9 @@ entity: changing a file's format declaration alone changes no entity.
 - A terminating entry applies to every act that is not before it — so a
   close filed with `at` set to the time of compromise invalidates what
   landed in between.
+- **A role file is an enabling entry, placed by landing alone.** It has
+  no signed `at`, so where D6 would compare times, landing decides: it
+  counts for an act that landed no earlier than it (2026-10-05).
 - **A policy governs every act that is not before it.** An act that landed
   after a namespace's policy is under that policy whatever its `at`; only an
   act both landed no later and dated earlier is before it (a pre-policy act,
@@ -859,6 +862,29 @@ of a version.
   check never searches for another grant; a governed act with no `under`
   fails. An act before its namespace's first policy is not checked (D5 (c));
   a grant's revocation is checked once the store has a genesis.
+- **A policy is the genesis holder's act** (2026-10-05). Every policy,
+  a namespace's first or a change, is judged like any other act as of its
+  own position: the grant it names (`under`) must be the genesis grant as
+  of the policy, held by its `by`, live and available at its `at`, through
+  the same role check (`A006`). **The genesis grant only:** in the
+  reference implementation the act is `Act::SetPolicy`, which the role check
+  maps to the `grant-role` capability every genesis role carries — that
+  mapping does not widen who may file a policy. A grant of `grant-role`
+  over `*` that is not the genesis grant authorises no policy, signed or
+  not. The position rule does not exempt it: a
+  policy defines a namespace's governance, so even the first one is
+  checked. A signature on a policy change says who filed it, not that they
+  were the one who may. Until this rule a policy by anyone with a bound key
+  — or, under `[none]` or for a namespace's first policy, by anyone at all
+  — passed the gate and governed the namespace.
+- **A role takes effect from its own landing** (2026-10-05). A role file
+  is an enabling entry, and it carries no signed `at` (`created_at` is a
+  date in no payload), so landing alone places it (D6): it counts for an
+  act whose position landed no earlier than the role file. Its
+  `created_at` plays no part. An act made under a grant whose role landed
+  after it fails `A006`; a role and an act landed in the same commit stand
+  together. Until this rule every role file counted for every act,
+  whenever it landed.
 - **An old-style revocation is a pre-policy act** (2026-10-05). A legacy
   revocation (`acceptance`, `by`; formats 1–5) of an acceptance is judged
   like a `rev:` revocation: before its namespace's first policy it stands
@@ -1297,7 +1323,7 @@ unchanged exit semantics (findings exit `1`):
 | `G006` | two live decisions of one namespace whose tips share a `key` — the cross-check of `L014` (spec v1.6) |
 | `A003` | two live grants (unrevoked, unsuperseded, accepted) share role, scope and order (spec v1.7) |
 | `A005` | more than one live (unsuperseded, unrevoked) genesis grant (spec v1.7) |
-| `A006` | an acceptance or `rev:` revocation whose named grant did not, as of the act, let its actor do it — or a governed act naming none (spec v1.8, §3.10.7); or an old-style revocation not before its namespace's first policy (2026-10-05) |
+| `A006` | an acceptance, `rev:` revocation or policy whose named grant did not, as of the act, let its actor do it — or a governed act naming none (spec v1.8, §3.10.7); an old-style revocation not before its namespace's first policy; a policy not made under the genesis grant (2026-10-05) |
 
 `A003` and `A005` are the authority shapes' gate classes
 (`docs/ledger-authority/ledger-authority-shapes.ttl`), with two
