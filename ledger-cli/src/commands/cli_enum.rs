@@ -18,6 +18,13 @@ pub enum Commands {
         /// Every decision in one weight class: mechanical | individual
         #[arg(long, value_name = "GROUP")]
         group: Option<String>,
+        /// The rows of a selection file (`ledger.acceptance-batch.v1`, the
+        /// file `ledger inbox` writes) — enumerated, then confirmed
+        #[arg(long, value_name = "FILE", conflicts_with_all = ["decision", "set", "group"])]
+        batch: Option<PathBuf>,
+        /// With --batch: this clone's repository label in the file
+        #[arg(long, value_name = "LABEL", requires = "batch")]
+        repository: Option<String>,
         /// When this signature goes stale (YYYY-MM-DD)
         #[arg(long, value_name = "DATE")]
         expires: Option<String>,

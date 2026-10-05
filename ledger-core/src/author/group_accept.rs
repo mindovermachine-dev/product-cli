@@ -71,7 +71,7 @@ impl Author {
     }
 
     /// File one change-set holding one acceptance per signable member.
-    fn sign(
+    pub(super) fn sign(
         &mut self,
         store: &Store,
         plan: Plan,
@@ -180,7 +180,7 @@ fn note(plan: &Plan) -> String {
     )
 }
 
-fn refuse(plan: Plan, refusal: Refusal) -> Outcome {
+pub(super) fn refuse(plan: Plan, refusal: Refusal) -> Outcome {
     Outcome { plan, dry_run: false, signed: Vec::new(), filed: None, refusal: Some(refusal) }
 }
 

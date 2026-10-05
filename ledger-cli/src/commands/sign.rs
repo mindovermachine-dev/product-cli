@@ -20,7 +20,7 @@
 use std::path::PathBuf;
 use std::time::Instant;
 
-use ledger_core::author::{AcceptArgs, AcceptGroupArgs, AuthorError, RevokeArgs};
+use ledger_core::author::{AcceptArgs, AcceptBatchArgs, AcceptGroupArgs, AuthorError, RevokeArgs};
 use ledger_core::show::Selector;
 
 use super::common::{self, finish, open_author, parse_date};
@@ -62,6 +62,30 @@ pub fn accept(root: Option<PathBuf>, flags: AcceptFlags) -> Result<i32, String> 
     }
 }
 
+/// `accept --batch <file>`: this clone's rows of a selection file, pinned
+/// by the file's manifest; signing takes `--confirm` with that digest.
+pub fn batch(root: Option<PathBuf>, file: PathBuf, repository: Option<String>, flags: AcceptFlags) -> Result<i32, String> {
+    let started = Instant::now();
+    let mut author = open_author(root)?;
+    author.as_role = flags.as_role.clone();
+    let args = AcceptBatchArgs {
+        file: ledger_core::batch_file::read(&file)?,
+        path: file.display().to_string(),
+        repository,
+        branch: current_branch(&author.root),
+        expires_at: flags.expires.as_deref().map(parse_date).transpose()?,
+        confirm: flags.confirm,
+    };
+    report(author.accept_batch(args), flags.json, started)
+}
+
+/// The branch checked out, when HEAD is on one.
+fn current_branch(root: &std::path::Path) -> Option<String> {
+    let out = std::process::Command::new("git").arg("-C").arg(root).args(["symbolic-ref", "-q", "--short", "HEAD"]).output().ok()?;
+    let name = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    (out.status.success() && !name.is_empty()).then_some(name)
+}
+
 /// The batched act: enumerate, and only against a matching manifest, sign.
 fn grouped(root: Option<PathBuf>, selector: Selector, flags: AcceptFlags) -> Result<i32, String> {
     let started = Instant::now();
@@ -72,7 +96,12 @@ fn grouped(root: Option<PathBuf>, selector: Selector, flags: AcceptFlags) -> Res
         expires_at: flags.expires.as_deref().map(parse_date).transpose()?,
         confirm: flags.confirm,
     };
-    let outcome = match author.accept_group(args) {
+    report(author.accept_group(args), flags.json, started)
+}
+
+/// Print a batched run, enumeration and verdict, in either form.
+fn report(result: Result<ledger_core::batch::Outcome, AuthorError>, as_json: bool, started: Instant) -> Result<i32, String> {
+    let outcome = match result {
         Ok(outcome) => outcome,
         Err(err @ (AuthorError::Refused(_) | AuthorError::Conflict(_) | AuthorError::Unauthorized(_))) => {
             eprintln!("{err}");
@@ -84,7 +113,7 @@ fn grouped(root: Option<PathBuf>, selector: Selector, flags: AcceptFlags) -> Res
     // a pass actually costs, per weight class. It is reported on every
     // path, refusals included, because a refused run cost time too.
     let elapsed = format!("{:.2}s", started.elapsed().as_secs_f64());
-    if flags.json {
+    if as_json {
         println!("{}", json(&outcome, &elapsed)?);
     } else {
         print!("{}", ledger_core::batch::render(&outcome, &elapsed));

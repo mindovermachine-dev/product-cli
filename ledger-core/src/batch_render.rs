@@ -34,6 +34,12 @@ fn member(m: &Member) -> String {
         "  {} [{}] {} → {}\n    {}\n    {}\n",
         m.decision, m.group, m.state, m.standing, m.version, m.statement_head
     );
+    if let Some(repository) = &m.repository {
+        out.push_str(&format!("    in {repository}\n"));
+    }
+    if let Some(grant) = &m.grant {
+        out.push_str(&format!("    under {grant}\n"));
+    }
     if let Some(because) = &m.because {
         out.push_str(&format!("    {because}\n"));
     }
