@@ -173,3 +173,65 @@ fn verify_names_a_none_namespace_in_a_notice_and_passes() {
     let report: serde_json::Value = serde_json::from_slice(&json.stdout).expect("json");
     assert_eq!(report["unsigned"][0], NS);
 }
+
+#[test]
+fn init_in_a_later_namespace_binds_the_holders_key_there_and_they_sign_with_no_identity_add() {
+    let (repo, key, _) = keyed();
+    let out = repo.ok(&["init", "--namespace", SECOND, "--external-ref", MANDATE]);
+    assert!(out.contains(&format!("in `{SECOND}`, signed by their key trusted elsewhere")), "{out}");
+    let policy = policy_of(&repo, SECOND);
+    let store = ledger_core::store::load(repo.path());
+    let here: Vec<_> = store.log.iter().flat_map(|l| l.file.key_bindings.iter()).filter(|b| b.namespace == SECOND).collect();
+    assert_eq!(here.len(), 1, "one binding, in the init change-set");
+    let b = here[0];
+    assert!(!b.self_bound && b.mandate.is_none() && b.by.as_str() == OWNER, "their own add: {b:?}");
+    assert_eq!(b.at, policy.at, "dated with the policy");
+    assert!(std::fs::read_to_string(format!("{key}.pub")).expect("pub").contains(b.key.as_deref().unwrap_or("?")), "the existing key");
+    assert!(sidecar(&repo, b.id.ulid()).exists(), "signed by their key trusted in the first namespace");
+    // They sign in the new namespace straight away.
+    let grant = hand::word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{SECOND}")]), "grant:");
+    repo.ok(&["grant", "accept", &grant]);
+    let out = repo.ok(&[
+        "add", "--set", "ledger-design", "--namespace", SECOND, "--statement", "Signed with no separate identity add.",
+        "--store", "constraint", "--discharge", "analyzer:DEC001",
+    ]);
+    repo.ok_tty(&["accept", &common::decision_id(&out)]);
+    hand::commit(&repo, "second namespace, accepted in");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 0, "{text}");
+}
+
+/// The genesis holder with bindings in the store, every one closed.
+fn every_key_closed() -> (Repo, String) {
+    let (repo, _, _) = keyed();
+    hand::commit(&repo, "governed");
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let id = ledger_core::store::load(repo.path()).log.iter().flat_map(|l| l.file.key_bindings.iter()).map(|b| b.id.to_string()).next().expect("binding");
+    repo.ok(&["identity", "revoke", &id]);
+    hand::commit(&repo, "closed the holder's only key");
+    (repo, id)
+}
+
+#[test]
+fn with_every_key_closed_init_in_a_later_namespace_refuses_and_names_them() {
+    let (repo, closed) = every_key_closed();
+    let out = repo.ledger(&["init", "--namespace", SECOND, "--external-ref", MANDATE]);
+    let refused = common::both(&out);
+    assert_eq!(out.status.code(), Some(2), "a usage refusal: {refused}");
+    assert!(refused.contains("no live key") && refused.contains(&closed), "{refused}");
+    assert!(refused.contains("--without-key"), "the way to proceed is named: {refused}");
+    let store = ledger_core::store::load(repo.path());
+    assert!(store.log.iter().all(|l| l.file.policies.iter().all(|p| p.namespace != SECOND)), "nothing written");
+}
+
+#[test]
+fn with_every_key_closed_and_without_key_init_warns_and_initialises_unbound() {
+    let (repo, closed) = every_key_closed();
+    let out = repo.ok(&["init", "--namespace", SECOND, "--external-ref", MANDATE, "--without-key"]);
+    assert!(out.contains("warning: no live key") && out.contains(&closed), "{out}");
+    let store = ledger_core::store::load(repo.path());
+    assert!(store.log.iter().flat_map(|l| l.file.key_bindings.iter()).all(|b| b.namespace != SECOND), "no binding in {SECOND}");
+    hand::commit(&repo, "second namespace, unbound");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 0, "{text}");
+}

@@ -343,8 +343,12 @@ store (`.decisions/`), separate ontology.
   `init --namespace` binds the genesis holder's configured key in the same
   act (refused with no usable key; `--without-key` proceeds unbound), and a
   first policy is signed when its author holds a trusted key (#96); `verify`
-  names `[none]` namespaces and an unbound genesis holder in notices.
-  Integration suites need `ssh-keygen` (OpenSSH) as well as `script(1)`.
+  names `[none]` namespaces and an unbound genesis holder in notices. In a
+  later namespace `init` binds the holder's live key there, signed by a key
+  of theirs already trusted. A key binding is never exempt as a pre-policy
+  act (D5 (c) covers acceptances and revocations only): one before the
+  first policy is judged by D7 and that policy's requirement, so every
+  filed binding is trusted or named by a finding. Integration suites need `ssh-keygen` (OpenSSH) as well as `script(1)`.
 - **Authority verbs and signing verbs refuse a non-interactive caller**
   (#71, #85). `accept <dec>`, `accept … --confirm`, `revoke`, and every verb
   that writes an authority record exit non-zero and write nothing unless

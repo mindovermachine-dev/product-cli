@@ -19,6 +19,46 @@ only adds an unhashed field.
 
 ---
 
+## A key binding before its namespace's first policy is judged under it (2026-10-05, no format change)
+
+**Ruled 2026-10-05, narrowing D5 (c).** A key binding is never exempt as a
+pre-policy act. The pre-policy exemption covers acceptances and revocations
+only.
+
+**What the gate did before.** `signing/check.rs` `trust_bindings` skipped
+any binding with no policy in force at its position (`let Some(policy) = …
+else { continue }`). Such a binding was never trusted and named in no
+finding: the verb's gate passed, `verify` passed, and the first act signed
+with the key failed `L011`. It arises from a clock behind the policy's in a
+later namespace, or by hand.
+
+**What it does now.**
+- A binding before its namespace's first policy is judged by D7 and by that
+  first policy's requirement. Signed, it is trusted. Unsigned where that
+  policy requires a signature, it is `L011` and never trusted. Under a
+  `[none]` first policy, D7 alone decides it.
+- A binding in a namespace no policy governs at all stays the schema fault
+  it already was (`authority/references.rs`), so `init --namespace` refuses
+  to govern a namespace holding an unsigned binding that its policy would
+  fail. Every filed binding is trusted or named by a finding.
+- `init --namespace` in a later namespace binds the genesis holder's live
+  key there, in the same change-set and dated with the policy. If every key
+  of theirs is closed it refuses, naming them, unless `--without-key`, which
+  warns (before, it silently bound and signed nothing).
+- D7 is not widened: a key trusted in another namespace vouches only for the
+  holder's first binding in a namespace, so a closed key cannot re-enter
+  through a namespace where it is still live.
+
+**What can move.** No digest moves, and no file is rewritten. A store
+holding a binding before its namespace's first policy now reports:
+- that binding as trusted, if it was signed by a key the check accepts;
+- `L011`, if it was unsigned under a first policy that requires signing.
+
+This repository's store has no key bindings. Every fixture store's
+bindings land after their first policy, and all suites pass unchanged.
+
+---
+
 ## A first policy is signed; `init --namespace` binds the genesis key; the `[none]` notice (2026-10-05, #96, no format change)
 
 **What changed.**
