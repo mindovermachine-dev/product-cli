@@ -550,7 +550,10 @@ policies:
 `{acceptance, at, by, reason}`; format 6 carries the entity shape above,
 which revokes a grant or an acceptance. A file carries the shape its
 declared format defines; the other, or a mixture, is a schema fault. Both
-shapes are read forever — a log file is never rewritten.
+shapes are read forever — a log file is never rewritten. The legacy shape
+names no grant and has no id for a sidecar, so it is valid only as a
+**pre-policy act**: one that is not before its namespace's first policy
+fails `A006` (§3.10.7).
 
 #### 3.9.3 Hashing
 
@@ -838,6 +841,13 @@ of a version.
   check never searches for another grant; a governed act with no `under`
   fails. An act before its namespace's first policy is not checked (D5 (c));
   a grant's revocation is checked once the store has a genesis.
+- **An old-style revocation is a pre-policy act** (2026-10-05). A legacy
+  revocation (`acceptance`, `by`; formats 1–5) of an acceptance is judged
+  like a `rev:` revocation: before its namespace's first policy it stands
+  unchecked; one that is not before that policy (D6 — dated *and* landed
+  before it) fails `A006`, because the shape cannot name a grant. Until this
+  rule such a revocation passed the gate unchecked, unsigned, and still
+  revoked the acceptance it named.
 - **Unchecked namespaces.** `verify` names each namespace the log speaks
   that has no policy, as a notice, not a failure.
 - **Landed entities are immutable.** Every entity a landed log file has
@@ -1262,7 +1272,7 @@ unchanged exit semantics (findings exit `1`):
 | `G006` | two live decisions of one namespace whose tips share a `key` — the cross-check of `L014` (spec v1.6) |
 | `A003` | two live grants (unrevoked, unsuperseded, accepted) share role, scope and order (spec v1.7) |
 | `A005` | more than one live (unsuperseded, unrevoked) genesis grant (spec v1.7) |
-| `A006` | an acceptance or `rev:` revocation whose named grant did not, as of the act, let its actor do it — or a governed act naming none (spec v1.8, §3.10.7) |
+| `A006` | an acceptance or `rev:` revocation whose named grant did not, as of the act, let its actor do it — or a governed act naming none (spec v1.8, §3.10.7); or an old-style revocation not before its namespace's first policy (2026-10-05) |
 
 `A003` and `A005` are the authority shapes' gate classes
 (`docs/ledger-authority/ledger-authority-shapes.ttl`), with two

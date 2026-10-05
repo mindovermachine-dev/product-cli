@@ -19,6 +19,31 @@ only adds an unhashed field.
 
 ---
 
+## `A006` judges old-style revocations after the first policy (2026-10-05, no format change)
+
+**What the gate did before.** `verify/acts.rs` `unauthorised` role-checked
+only `rev:` revocations (`.filter(|r| r.is_entity())`), and
+`signing/subject.rs` `subjects` made only `rev:` revocations signing
+subjects. Yet `verify/view.rs` `View::build` and `Authority::as_of` count
+every revocation, either shape, as revoking. So in a governed namespace a
+hand-filed format 1–5 file holding an old-style revocation (`acceptance`,
+`by`) of another holder's acceptance, unsigned and naming no grant, passed
+`verify`; the acceptance counted as revoked, and the export carried the
+revocation.
+
+**What it does now.** An old-style revocation is valid only as a pre-policy
+act. One that is not before its namespace's first policy (D6: dated *and*
+landed before it) fails `A006` (spec §3.10.7). No new class, no format
+change, no digest moves: the rule is an extension of `A006` by the `L010`
+mechanism.
+
+**For an existing store.** A store whose governed namespace holds an
+old-style revocation landed after its first policy now fails `A006`, and
+keeps failing: a landed entity is never edited or removed (§3.10.7), so
+there is no in-place remedy, and how such a store recovers is not ruled
+here. This repository's store has no policy in any namespace and is
+unaffected.
+
 ## Three format 1 declarations corrected to format 4 (2026-10-05, #81, no format change)
 
 **What was wrong.** Spec §3.7 makes a lower-format file carrying
