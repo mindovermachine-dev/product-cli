@@ -19,6 +19,44 @@ only adds an unhashed field.
 
 ---
 
+## A first policy is signed; `init --namespace` binds the genesis key; the `[none]` notice (2026-10-05, #96, no format change)
+
+**What changed.**
+- **`init --namespace`** files the genesis holder's self-bound binding in
+  the same change-set as the genesis grant and the first policy, whenever
+  the genesis holder has no key in the store. The key is the one
+  `git config user.signingkey` names. The binding is signed by the key it
+  binds, and the same key signs the first policy. **With no usable key it
+  refuses** (ruled 2026-10-05), naming what is missing. `--without-key`
+  initialises unbound, as before, with a warning.
+- **`verify`** says, as a notice, while the genesis holder has no trusted
+  key (`genesis_unbound` in `--json`).
+- **Callers moved.** 16 test call sites in 12 files bootstrap a namespace
+  with no key configured. They now pass `--without-key`. Later-namespace
+  calls, made after a key is bound, are unchanged.
+- **A namespace's first policy is a signing subject** (`signing/subject.rs`
+  `subjects`), judged under its own schemes when its `by` held a live
+  trusted key at its position (`signing/check.rs` `judge_first_policy`). In
+  a later namespace `init --namespace` signs it with the genesis holder's
+  live key.
+- **`verify`** prints a notice for every namespace whose policy in force is
+  `[none]` (`Report::unsigned`).
+
+**What can move.** No digest moves, and no file is rewritten. A store in
+which a later namespace's first policy was filed **unsigned after** its
+author already held a trusted key now reports `L011` on that policy. No such
+store is known: this repository's own store has no policy, and every test
+fixture's first policies predate their keys. The remedy is a sidecar over
+the policy's unchanged signed bytes, made with the key that was live at its
+`at`. The CLI has no verb for that yet.
+
+**Not gated by format.** The requirement applies to every first policy. A
+format gate would let a writer avoid it by declaring the older format.
+
+---
+
+---
+
 ## `A006` judges policy authors; roles take effect from their position (2026-10-05, no format change)
 
 **Policy authors — what the gate did before.** No `verify` check looked at

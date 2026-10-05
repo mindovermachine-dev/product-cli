@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-author-genesis-key-rs
+boundary: contract surface of ledger-core/src/author/genesis_key.rs
+verdict_knowledge: 'Callers learn the genesis holder''s key at init: bound self-bound in the same change-set as the first policy when a usable signing key is configured, signing that policy; in a later namespace the first policy is signed with a live key.'
+contract_location: ledger-core/src/author/genesis_key.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: impl Author
+  file: ledger-core/src/author/genesis_key.rs
+  before: absent
+  after: sha256:83ef66d93920595fc042cca55f795d54956ab3a08a6ddf1cf7b42e414b76433d
+  base_revision: c7d2de2df3c3894e3172c4de96c76a0b6428eafc
+  hash: sha256:3d6e22c93276711fa87ff4648ebf2bd50600ef34ae9de3d1536e620be67224aa
+- symbol: impl Author
+  file: ledger-core/src/author/genesis_key.rs
+  before: absent
+  after: sha256:5801df17915003fb774af123939eba1b149d02e3258b981adfa1155335b38115
+  base_revision: c4b9c904c0389a9e3b484e92436dd01637346118
+  hash: sha256:a8ae70a2556a5ef78129ed998538fe2a0f230359cb45c86af0439c5e0ca53d26

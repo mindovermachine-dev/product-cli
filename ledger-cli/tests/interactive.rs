@@ -127,7 +127,7 @@ fn word(out: &str, prefix: &str) -> String {
 fn governed() -> Governed {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     let grant = word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{NS}")]), "grant:");
     repo.ok(&["grant", "accept", &grant]);
     let owner = repo.keygen("owner");

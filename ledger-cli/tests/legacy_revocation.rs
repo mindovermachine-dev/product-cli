@@ -26,7 +26,7 @@ fn verify(repo: &Repo) -> (i32, String) {
 /// role, then file and accept a decision. Returns the acceptance id.
 fn governed_and_accepted(repo: &Repo) -> String {
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     repo.bind_own_key(NS, "owner");
     let grant = hand::word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{NS}")]), "grant:");
     repo.ok(&["grant", "accept", &grant]);
@@ -101,7 +101,7 @@ fn an_old_style_revocation_before_the_first_policy_stands() {
     legacy_revocation(&repo, &acc, OWNER, &now);
     hand::commit(&repo, "accepted and revoked, ungoverned");
     std::thread::sleep(std::time::Duration::from_millis(1100));
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     hand::commit(&repo, "governed afterwards");
     let (code, text) = verify(&repo);
     assert_eq!(code, 0, "{text}");

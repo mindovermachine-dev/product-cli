@@ -8,7 +8,8 @@
 //!   principal for its own keys, the genesis holder for a first key (D7)
 //!   or a revoke it files; a self-bound binding by the key it binds;
 //! - a **policy change** (format 7): by its author, under the policy it
-//!   replaces. A namespace's first policy replaces nothing and is unsigned.
+//!   replaces; a namespace's **first policy**, by its author, under its own
+//!   schemes, when the author held a trusted key at its position (#96).
 
 use chrono::{DateTime, Utc};
 
@@ -67,12 +68,7 @@ pub fn subjects<'a>(store: &'a Store, landing: &Landing) -> Vec<Subject<'a>> {
                 .filter_map(|r| revocation(store, r, landing.position(&path, &crate::landed::revocation_key(r), r.at))),
         );
         out.extend(cs.key_bindings.iter().map(|b| binding(b, landing.position(&path, &k("key_bindings", &b.id.to_string()), b.at))));
-        out.extend(
-            cs.policies
-                .iter()
-                .filter(|p| p.replaces.is_some())
-                .map(|p| policy(p, landing.position(&path, &k("policies", &p.id.to_string()), p.at))),
-        );
+        out.extend(cs.policies.iter().map(|p| policy(p, landing.position(&path, &k("policies", &p.id.to_string()), p.at))));
     }
     out
 }
@@ -151,9 +147,5 @@ pub fn acceptance_namespace(store: &Store, id: &str) -> Option<String> {
 /// Every entity ULID a sidecar may name: the signable entities' and
 /// nothing else, so an orphan sidecar is a `SCHEMA` fault.
 pub fn signable_ulids(store: &Store) -> std::collections::BTreeSet<String> {
-    subjects(store, &Landing::unknown()).into_iter().map(|s| s.ulid).chain(
-        // A first policy is never signed, but it is an entity a hand-written
-        // sidecar could name; it is listed so the fault reads "not required".
-        store.log.iter().flat_map(|l| l.file.policies.iter().map(|p| ulid_of(&p.id.to_string()))),
-    ).collect()
+    subjects(store, &Landing::unknown()).into_iter().map(|s| s.ulid).collect()
 }

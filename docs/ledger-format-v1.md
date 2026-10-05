@@ -734,6 +734,7 @@ revocation of an acceptance (a grant's revocation is signed with the grant,
 | revocation of an acceptance | its `actor` | the revoked acceptance's namespace |
 | key binding | its `by` (§3.10.5) | its `namespace` |
 | policy change (`replaces` present) | its `by` | its `namespace` |
+| first policy (no `replaces`), when its `by` held a trusted key at its position (2026-10-05, #96) | its `by` | its `namespace` |
 
 `<ns>` is the ledger namespace of the store that holds the entity, never a
 flag and never derived from the principal.
@@ -758,14 +759,35 @@ lists the required schemes. Under `[none]` an entity needs no sidecar;
 under any other policy each listed scheme needs one. A policy listing
 `none` with another scheme is a schema fault, and `ledger policy set`
 refuses it. A sidecar that is present always has to verify. An entity before its namespace's first policy
-is not checked. A namespace's first policy replaces nothing and is
-unsigned.
+is not checked.
+
+**A namespace's first policy** (2026-10-05, #96) replaces nothing, so no
+policy is in force before it. It is judged under **its own** schemes, and
+only when its `by` held a live trusted key at its position — bound in this
+namespace (in the same change-set, dated with the policy, at `init`) or in
+another, which for this check alone stands in this namespace as it does
+for the genesis holder's later first binding (§3.10.5). Then a missing or
+invalid signature is `L011`. A first policy filed before its author held
+any trusted key needs none, and stands unsigned.
 
 #### 3.10.5 Trusted bindings and the first key (D7)
 
 Key bindings are judged first, in order (§3.10.6). A binding is **trusted**
 when its filer is one D7 allows and, where the policy in force requires a
-signature, its signature verifies against the bindings already trusted:
+signature, its signature verifies against the bindings already trusted. A
+binding with no policy in force at its position — before its namespace's
+first policy — is never trusted.
+
+`ledger init --namespace` (2026-10-05, #96) files the genesis holder's
+self-bound binding in the same change-set as the genesis grant and the
+first policy, dated with the policy (so the policy is in force at it),
+whenever the genesis holder has no key in the store — the key `git config
+user.signingkey` names. The window in which the first self-bound binding to
+land for the address — anyone's — is the one trusted is then closed by the
+act that opens the namespace. With no usable key, `init --namespace`
+refuses and names what is missing; `--without-key` is the explicit way to
+proceed unbound (ruled 2026-10-05), and `verify` then says the window is
+open (§3.10.7).
 
 - the genesis holder's **self-bound** first binding in the store, carrying
   the genesis grant's `external_ref` as `mandate`, signed by the key it
@@ -876,6 +898,18 @@ of a version.
   revoked the acceptance it named.
 - **Unchecked namespaces.** `verify` names each namespace the log speaks
   that has no policy, as a notice, not a failure.
+- **Unsigned namespaces** (2026-10-05, #96). `verify` names each namespace
+  whose policy in force is `[none]`, as a notice, not a failure, with what
+  does not hold there: an absent signature is no finding, `L012` cannot
+  arise, key bindings are trusted unsigned, a policy change is unsigned,
+  and `ssh-keygen` is not consulted unless an `ssh` sidecar exists. A
+  sidecar that is present is still verified. `--json` carries the list as
+  `unsigned`.
+- **An unbound genesis holder** (2026-10-05, #96). While the genesis
+  holder has no trusted key, `verify` says so as a notice, naming the
+  governed namespaces: the first self-bound binding to land for that
+  address will be the one trusted (D7). `--json` carries it as
+  `genesis_unbound` (`holder`, `namespaces`).
 - **Landed entities are immutable.** Every entity a landed log file has
   held on the verified commit's first-parent line must be present, and
   identical to what landed, at the verified commit (the working tree

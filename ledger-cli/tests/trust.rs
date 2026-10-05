@@ -15,7 +15,7 @@ const NS: &str = "fixture.ledger";
 fn governed() -> (Repo, String) {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     let key = repo.bind_own_key(NS, "owner");
     hand::commit(&repo, "governed");
     (repo, key)
@@ -157,7 +157,7 @@ fn acts_before_the_first_policy_stand_and_acts_after_it_are_checked() {
     assert_eq!(code, 0, "{text}");
     assert!(text.contains(&format!("namespace `{NS}` has no policy")), "the unchecked notice: {text}");
     repo.act_as(OWNER);
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     let owner = repo.bind_own_key(NS, "owner");
     let arch = repo.vouch_for(NS, ARCHITECT, "architect");
     hand::commit(&repo, "opted in");

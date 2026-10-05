@@ -27,7 +27,7 @@ fn verify(repo: &Repo) -> (i32, String) {
 fn governed_with_a_bound_architect() -> (Repo, String) {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
-    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117"]);
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
     repo.bind_own_key(NS, "owner");
     let arch = repo.vouch_for(NS, ARCHITECT, "architect");
     hand::commit(&repo, "governed");
