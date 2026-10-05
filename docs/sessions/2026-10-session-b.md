@@ -36,6 +36,9 @@ October). No other issue body was edited.
 **On 5 October 2026, in the #89 review:**
 - **Key closes are terminating**, and the change stays: under `[none]`, it is the only check that refuses a self-filed key dated back inside a closed window. The test is `closed_key.rs` `under_none_a_principals_own_add_dated_before_their_keys_close_is_refused_and_never_trusted`.
 
+**On 5 October 2026, in the #92 review:**
+- **`ledger inbox accept` exits 1 when a selected branch was not signed at all** (for example when a version hash moved since the dry run), as well as when signing introduced a finding or a push failed. Findings the branch already carried do not fail the sitting. Kept as built: exiting 0 would report a sitting as clean when part of the holder's selection was never signed.
+
 ### Interpretations made in the code, for confirmation
 
 Each is stated in its PR.
