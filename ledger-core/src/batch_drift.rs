@@ -119,6 +119,8 @@ mod tests {
             statement_head: "x".to_string(),
             standing,
             because: None,
+            repository: None,
+            grant: None,
         }
     }
 

@@ -17,6 +17,7 @@
 mod acceptance_ops;
 mod authority_ops;
 mod availability_ops;
+mod batch_accept;
 mod declare;
 mod decision;
 mod group_accept;
@@ -35,6 +36,7 @@ pub use authority_ops::{GrantArgs, InitNamespaceArgs, RoleArgs};
 pub use availability_ops::UnavailableArgs;
 pub use identity_ops::KeyArgs;
 pub use policy_ops::PolicyArgs;
+pub use batch_accept::AcceptBatchArgs;
 pub use group_accept::AcceptGroupArgs;
 pub use declare::DeclareArgs;
 pub use decision::{AddArgs, AllocationArgs};

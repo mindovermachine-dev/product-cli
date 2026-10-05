@@ -82,6 +82,12 @@ pub struct Member {
     /// Why, for every standing but `signable`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub because: Option<String>,
+    /// `--batch` only: the clone the row belongs to, and the grant it is
+    /// accepted under (D9), as the manifest covers them.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repository: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub grant: Option<String>,
 }
 
 /// The whole selection, with the digest that pins it.
@@ -216,6 +222,8 @@ fn member(s: &Screen, actor: &Identity, today: NaiveDate) -> Member {
         statement_head: head(&s.statement),
         standing: standing.as_str(),
         because,
+        repository: None,
+        grant: None,
     }
 }
 

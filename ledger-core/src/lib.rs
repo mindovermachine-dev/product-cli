@@ -18,6 +18,7 @@ pub mod allocation;
 pub mod author;
 pub mod authority;
 pub mod batch;
+pub mod batch_file;
 pub mod blame;
 pub mod canon;
 pub mod changeset;

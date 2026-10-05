@@ -871,6 +871,55 @@ repository. A committed export is held byte-identical by a `verify` that
 does check order, so an export from a green repository holds no act that
 fails it.
 
+#### 3.10.9 The batch selection file (the hand-off artefact, #86)
+
+The file `ledger inbox` writes and `ledger accept --batch <file>` signs. It
+is a hand-off, not a store entity: it is never committed under
+`.decisions/`, carries no signature, and is not itself signed. YAML:
+
+```yaml
+form: ledger.acceptance-batch.v1
+actor: owner@customer.example      # whose acceptances these are
+as: acceptor                       # optional: the role the batch is made as (D9 (b))
+rows:
+  - repository: billing            # the writer's label for a clone
+    branch: agent/1234             # optional: the branch the decision is proposed on
+    decision: dec:hafeok.ledger/01K…
+    version: sha256:…              # the exact hash the acceptance signs
+    grant: grant:01K…              # optional: the grant the row is accepted under
+```
+
+- **Shape.** `form` is exactly `ledger.acceptance-batch.v1`; at least one
+  row; no `(repository, branch, decision)` twice; no other keys.
+- **The manifest.** `sha256( "ledger.acceptance-manifest.v1" || 0x0A ||
+  canonical JSON )` over `{"selector": "batch", "actor": …, "as": …,
+  "rows": [[repository, branch, decision, version, grant], …]}`, with `as`
+  omitted when absent, an absent branch as `""`, an absent grant (a
+  namespace with no policy) as `"-"`, and the rows sorted. The prefix is
+  the one `accept --set|--group --confirm` uses; the `selector` key keeps
+  the two kinds of manifest apart. One digest covers every row of every
+  repository and branch in the file, grants included, so a holder confirms
+  a sitting once.
+- **Signing.** In a clone, `ledger accept --batch <file> [--repository
+  <label>]` takes the rows for that label (the file's only label when it has
+  one). Each row must name a decision this store holds, at exactly its
+  latest version hash, not held or forked, not already carrying the actor's
+  live acceptance (an acceptance awaiting re-acceptance, §3.10.6, may be
+  affirmed), and accepted under a grant that qualifies under the batch's
+  `as`. The clone resolves each row's grant itself; a `grant` in the file
+  that differs is drift. Any failing row refuses the whole batch: nothing is
+  signed around it. Without `--confirm` the run prints the rows, the grant
+  per row, and the manifest, and writes nothing. With `--confirm
+  <manifest>` — only at a terminal (§3.10.4) — the manifest is recomputed
+  over the file with this clone's grants, and must match.
+- **One confirmation, one signature per acceptance.** The clone files one
+  change-set with one acceptance per row, each signing its own version hash,
+  each with its own sidecar (D2). There is no signature over the manifest
+  and none covering more than one acceptance. Under an `-sk` policy that is
+  one touch per acceptance.
+- **The actor.** A clone whose identity is not the file's `actor` refuses:
+  nobody accepts on another principal's behalf.
+
 ---
 
 ## 4. Canonicalisation and hashing

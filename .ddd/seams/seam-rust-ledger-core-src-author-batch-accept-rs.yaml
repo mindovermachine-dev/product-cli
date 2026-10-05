@@ -1,0 +1,128 @@
+format: 2
+id: seam/rust/ledger-core-src-author-batch-accept-rs
+boundary: contract surface of ledger-core/src/author/batch_accept.rs
+verdict_knowledge: 'Callers learn how a batch is signed: only the actor''s own file, only this clone''s rows on its checked-out branch, each row present at its exact hash, signable and under a qualifying grant, the whole batch refused on any failing row, and signing only against the manifest a dry run printed — one acceptance and one sidecar per row.'
+contract_location: ledger-core/src/author/batch_accept.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: impl AcceptBatchArgs
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:44ab352ce7f2af63b1ba81291c7e3a091b5ca491efbbf0fcb425b36f7ec04420
+- symbol: impl Author
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:b39c0af16c77fe55f5ccc34cd74185832b8729a8c3e458c1abf7c0380488f1f8
+- symbol: AcceptBatchArgs
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:a1dd0c7cbad4ddfb7de987ddd4d304621a4befed468623d87bd9c78bef679000
+- symbol: branch
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:730b400abeff3d2477ddaf581ce94fd73352f0739f43229d4d21692d7c345137
+- symbol: confirm
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:63624661adffe6391594c2b64aa21e8235e1c6793f04ce7957b3ac931d5f7c4c
+- symbol: expires_at
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:d684ec3160c6ecc2083bf8a1ab628b5706204eaae392103d98b8bd7da0935231
+- symbol: file
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:84561f3dc771a4c9f3fabe13e6187e68989301e1def78426333b556a53243f89
+- symbol: path
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:7ce8d2c14069ed8b99435b0a37b96f861e7504fcdb20f45bbb7c3eaf1dbb7dd8
+- symbol: repository
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:49e4d30c353d0c22e6d639b5af1b5ccfd173a9b3200564201dec4260153b5299
+- symbol: accept_batch
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:39b96b17ec35cf4263c1e955f62f89f313c99ec39053ecd80842eadf525c8d2f
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:fea6c6278a07510d941a1d3e04a2fccd426702c8c5d53c19dea3a58175eac641
+- symbol: impl AcceptBatchArgs
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:8fac45b32ac2237b504598ccdc966959abca026c4d632510da8cb76b35b01971
+- symbol: impl Author
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:5bee0f9014ae4524090487ada7bd2373959c435afb5739ba78f83eb449afd3a6
+- symbol: AcceptBatchArgs
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:e8b8ef20e186b2d483a8f3213908de2f2a816172737aa22efaf36786f1ac0c79
+- symbol: branch
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:2a9d3d11907da050ed68f24d2c864c704f8a4ce501806cfe192adf1b6eea9e19
+- symbol: confirm
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:c5799268eb9e81298d15c40a66db62dad7a2af86f89afe06a96ad46e38f655e5
+- symbol: expires_at
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:6445b94a99a2a796befd3deaf3a10518e0d32e5b83f1c9df729bcedd241ba144
+- symbol: file
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:446f83557d34df29d11ac9638055793644fba442af51d8323491a08934d75a8d
+- symbol: path
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:50fa9d7da323dd1511dac6b6eebeb9e378f1b2adb73f97ca151e6a91935a4e74
+- symbol: repository
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:f1821f8e98b259009237f198dbe01c57406e2820dd46df35f040f90c87313296
+- symbol: accept_batch
+  file: ledger-core/src/author/batch_accept.rs
+  before: absent
+  after: sha256:3aefb29598e737fd3f4dbd5722649dbf7cbf08980545de9a84bf14d579a0949b
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:830b124b1215423c5e0905441d30585e362a6c6532dd282ff21074ee74c43eb4

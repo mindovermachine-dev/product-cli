@@ -121,7 +121,7 @@ impl Author {
 
     /// A second live signature of the same hash by the same actor adds
     /// nothing; refusing it keeps the log an act-record, not an echo.
-    fn refuse_duplicate(
+    pub(super) fn refuse_duplicate(
         &self,
         view: &View,
         decision: &DecisionId,

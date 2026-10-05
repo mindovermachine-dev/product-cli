@@ -51,9 +51,10 @@ pub fn run(command: Commands, root: Option<PathBuf>) -> i32 {
 /// that append to the log, and reads that never touch it.
 fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
     match command {
-        Commands::Accept { decision, set, group, expires, confirm, json, as_role } => {
-            sign::accept(root, sign::AcceptFlags { decision, set, group, expires, confirm, json, as_role })
-        }
+        Commands::Accept { decision, set, group, batch, repository, branch, expires, confirm, json, as_role } => match batch {
+            Some(file) => sign::batch(root, file, (repository, branch), sign::AcceptFlags { decision, set, group, expires, confirm, json, as_role }),
+            None => sign::accept(root, sign::AcceptFlags { decision, set, group, expires, confirm, json, as_role }),
+        },
         Commands::Add {
             set, statement, namespace, store, discharge, stage, expectation, actor,
             tolerance_override, based_on, revisit_if, note, key, exported,

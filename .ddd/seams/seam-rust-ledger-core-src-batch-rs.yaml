@@ -1,0 +1,20 @@
+format: 2
+id: seam/rust/ledger-core-src-batch-rs
+boundary: contract surface of ledger-core/src/batch.rs
+verdict_knowledge: "Callers learn the pinned selection a batched acceptance signs: members with their standing (and, for a batch file, repository and grant), the manifest digest over them, and the outcome a run reports."
+contract_location: ledger-core/src/batch.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: grant
+  file: ledger-core/src/batch.rs
+  before: sha256:fca52c68d4dc306146f422376644e7243e6a7c2a48869fdde63773be550c57f6
+  after: sha256:387693002e944185c2db817ad0a9207f4949d9ca7f65653b0d8a6d685945c31e
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:0cec7f2a6da6ed0ae875fa679952e42b3ad3cbb71f46e8be89a57b74e36e9dcd
+- symbol: repository
+  file: ledger-core/src/batch.rs
+  before: sha256:fca52c68d4dc306146f422376644e7243e6a7c2a48869fdde63773be550c57f6
+  after: sha256:387693002e944185c2db817ad0a9207f4949d9ca7f65653b0d8a6d685945c31e
+  base_revision: 262a2eb04d9c0504bfbe02f63e0a0c224467e8ca
+  hash: sha256:74349c64055cee6ed56e90a1573df963ad746f11b9646109e1bcd28d5def26f0
