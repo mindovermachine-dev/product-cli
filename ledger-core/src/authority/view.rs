@@ -54,8 +54,9 @@ impl<'a> Authority<'a> {
     }
 
     /// The records as they stood at `pos` (D6): enabling entries (grants,
-    /// grant acceptances, key bindings, policies) that are not after it,
-    /// terminating ones (revocations) unless the act is before them, and the
+    /// grant acceptances, key bindings that open a key) that are not after
+    /// it; terminating ones (revocations, key closes) and governing ones
+    /// (policies) unless the act is before them; and the
     /// availability intervals landed no later (their clock decides). This
     /// is what `verify` judges a historic act against (`A006`, D7).
     pub fn as_of(store: &'a Store, landing: &Landing, pos: Position) -> Self {
@@ -83,8 +84,15 @@ impl<'a> Authority<'a> {
             a.revocations.extend(cs.revocations.iter().filter(|r| {
                 !pos.before(&landing.position(&path, &crate::landed::revocation_key(r), r.at))
             }));
-            a.bindings.extend(cs.key_bindings.iter().filter(|b| at("key_bindings", b.id.to_string(), b.at).not_after(&pos)));
-            a.policies.extend(cs.policies.iter().filter(|p| at("policies", p.id.to_string(), p.at).not_after(&pos)));
+            // A key's close is terminating, like a revocation: it applies
+            // unless the act is before it. An opening binding enables.
+            a.bindings.extend(cs.key_bindings.iter().filter(|b| {
+                let here = at("key_bindings", b.id.to_string(), b.at);
+                if b.closes.is_some() { !pos.before(&here) } else { here.not_after(&pos) }
+            }));
+            // A policy governs every act not before it (D5 (c), D6): an act
+            // that landed after a policy is under it, however it is dated.
+            a.policies.extend(cs.policies.iter().filter(|p| !pos.before(&at("policies", p.id.to_string(), p.at))));
         }
         a
     }

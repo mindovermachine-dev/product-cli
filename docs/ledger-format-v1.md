@@ -792,6 +792,11 @@ entity: changing a file's format declaration alone changes no entity.
 - A terminating entry applies to every act that is not before it — so a
   close filed with `at` set to the time of compromise invalidates what
   landed in between.
+- **A policy governs every act that is not before it.** An act that landed
+  after a namespace's policy is under that policy whatever its `at`; only an
+  act both landed no later and dated earlier is before it (a pre-policy act,
+  D5 (c)). Dating an act back past a policy it landed after does not make
+  it unchecked.
 - **Branches.** Entities on an unmerged branch land at the tip, after
   everything on the base. `ledger verify --base <ref>` (default
   `origin/HEAD` when the clone has it) computes landing against the base
