@@ -259,7 +259,10 @@ pub(super) fn build(case: Case, act_index: usize, act_at: &str) -> (Store, Landi
     let act_id = b.act(case.act, &version, &ga, names_grant.then_some(&ga), act_at, act_index);
     let mut store = fixture::store(vec![role("steward", Capability::ROOT), role("acceptor", &[Capability::AcceptDecision])], b.cs);
     store.sidecars = b.sidecars;
-    (store, Landing::fixed(PATH, &b.placed, 10), act_id)
+    // The role files land with the enabling entries: a role takes effect
+    // from its file's landing.
+    let roles: Vec<(String, usize)> = store.roles.iter().map(|r| (format!("{}/roles/{}", crate::STORE_DIR, r.file_name()), 0)).collect();
+    (store, Landing::fixed(PATH, &b.placed, &roles, 10), act_id)
 }
 
 /// What the gate says about the act alone: each file-gate and graph-stage

@@ -112,13 +112,14 @@ impl Landing {
         Ok(Self { available: true, landed, entities, touched, tip })
     }
 
-    /// A landing with every listed entity of one file at a fixed index:
-    /// positions without git, for tests over the order rules alone.
+    /// A landing with every listed entity of one file, and every listed
+    /// whole file (a role file, say), at a fixed index: positions without
+    /// git, for tests over the order rules alone.
     #[cfg(test)]
-    pub(crate) fn fixed(path: &str, entities: &[(String, usize)], tip: usize) -> Self {
+    pub(crate) fn fixed(path: &str, entities: &[(String, usize)], files: &[(String, usize)], tip: usize) -> Self {
         Self {
             available: true,
-            landed: BTreeMap::new(),
+            landed: files.iter().map(|(f, i)| (f.clone(), (*i, String::new()))).collect(),
             entities: entities.iter().map(|(key, i)| ((path.to_string(), key.clone()), *i)).collect(),
             touched: [path.to_string()].into(),
             tip,
