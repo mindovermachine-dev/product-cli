@@ -42,7 +42,12 @@ later namespace, or by hand.
   to govern a namespace holding an unsigned binding that its policy would
   fail. Every filed binding is trusted or named by a finding.
 - `init --namespace` in a later namespace binds the genesis holder's live
-  key there, in the same change-set and dated with the policy.
+  key there, in the same change-set and dated with the policy. If every key
+  of theirs is closed it refuses, naming them, unless `--without-key`, which
+  warns (before, it silently bound and signed nothing).
+- D7 is not widened: a key trusted in another namespace vouches only for the
+  holder's first binding in a namespace, so a closed key cannot re-enter
+  through a namespace where it is still live.
 
 **What can move.** No digest moves, and no file is rewritten. A store
 holding a binding before its namespace's first policy now reports:

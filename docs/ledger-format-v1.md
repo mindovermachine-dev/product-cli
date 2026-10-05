@@ -801,13 +801,19 @@ open (§3.10.7). In a **later namespace**, while the genesis holder holds a
 live key, `init --namespace` binds that key there in the same change-set —
 their own `add`, signed by a key of theirs already trusted, dated with the
 policy — so they sign in the new namespace with no separate `identity add`.
+If every key of theirs is closed, `init` refuses and names the closed keys,
+unless `--without-key` — then it warns, binds nothing and signs nothing.
 
 - the genesis holder's **self-bound** first binding in the store, carrying
   the genesis grant's `external_ref` as `mandate`, signed by the key it
   binds. Once per store: in any later namespace the genesis holder's first
   binding is their own `add`, signed by a key of theirs already trusted in
   another namespace (for that check alone, that key stands in the new
-  namespace);
+  namespace). A key trusted elsewhere vouches for that **first** binding
+  only — never a further `add` (ruled 2026-10-05). Otherwise a key closed in
+  one namespace and live in another could re-enter the namespace it was
+  closed in. So a further key dated before `init`'s binding, which would
+  turn that binding into a further `add`, is refused;
 - a principal's **first key** (no open window in the namespace) is filed and
   signed by the genesis holder: `by` the genesis holder, `principal` the new
   holder, `under` the genesis grant;

@@ -200,3 +200,38 @@ fn init_in_a_later_namespace_binds_the_holders_key_there_and_they_sign_with_no_i
     let (code, text) = verify(&repo);
     assert_eq!(code, 0, "{text}");
 }
+
+/// The genesis holder with bindings in the store, every one closed.
+fn every_key_closed() -> (Repo, String) {
+    let (repo, _, _) = keyed();
+    hand::commit(&repo, "governed");
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let id = ledger_core::store::load(repo.path()).log.iter().flat_map(|l| l.file.key_bindings.iter()).map(|b| b.id.to_string()).next().expect("binding");
+    repo.ok(&["identity", "revoke", &id]);
+    hand::commit(&repo, "closed the holder's only key");
+    (repo, id)
+}
+
+#[test]
+fn with_every_key_closed_init_in_a_later_namespace_refuses_and_names_them() {
+    let (repo, closed) = every_key_closed();
+    let out = repo.ledger(&["init", "--namespace", SECOND, "--external-ref", MANDATE]);
+    let refused = common::both(&out);
+    assert_eq!(out.status.code(), Some(2), "a usage refusal: {refused}");
+    assert!(refused.contains("no live key") && refused.contains(&closed), "{refused}");
+    assert!(refused.contains("--without-key"), "the way to proceed is named: {refused}");
+    let store = ledger_core::store::load(repo.path());
+    assert!(store.log.iter().all(|l| l.file.policies.iter().all(|p| p.namespace != SECOND)), "nothing written");
+}
+
+#[test]
+fn with_every_key_closed_and_without_key_init_warns_and_initialises_unbound() {
+    let (repo, closed) = every_key_closed();
+    let out = repo.ok(&["init", "--namespace", SECOND, "--external-ref", MANDATE, "--without-key"]);
+    assert!(out.contains("warning: no live key") && out.contains(&closed), "{out}");
+    let store = ledger_core::store::load(repo.path());
+    assert!(store.log.iter().flat_map(|l| l.file.key_bindings.iter()).all(|b| b.namespace != SECOND), "no binding in {SECOND}");
+    hand::commit(&repo, "second namespace, unbound");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 0, "{text}");
+}

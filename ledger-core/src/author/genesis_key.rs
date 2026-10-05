@@ -16,7 +16,9 @@
 //! **Once the genesis holder has a key**, `init` in a later namespace binds
 //! that live key there in the same act — their own `add`, signed by a key of
 //! theirs already trusted, dated with the policy — and signs the first
-//! policy with it, the signature `verify` then requires.
+//! policy with it, the signature `verify` then requires. If every key of
+//! theirs is closed, `init` refuses as it does with no usable key, unless
+//! `--without-key` — then it warns.
 
 use crate::authority::payload::{binding_bytes, binding_hash, policy_bytes};
 use crate::authority::{Authority, BindingAct, Grant, KeyBinding, Policy};
@@ -40,7 +42,7 @@ impl Author {
         without_key: bool,
     ) -> Result<Vec<String>, AuthorError> {
         if Authority::build(store).bindings.iter().any(|b| b.principal == self.who) {
-            return self.carry_genesis_key(store, candidate, policy);
+            return self.carry_genesis_key(store, candidate, policy, without_key);
         }
         match configured(&self.root) {
             Ok((key, key_type, blob)) => self.bind_genesis_key(store, candidate, genesis, policy, (&key, key_type, blob)),
@@ -98,12 +100,12 @@ impl Author {
     /// a key of theirs already trusted, dated with the policy — and sign the
     /// first policy with it. They can then sign in this namespace with no
     /// separate `identity add`.
-    fn carry_genesis_key(&mut self, store: &Store, candidate: &mut ChangeSet, policy: &Policy) -> Result<Vec<String>, AuthorError> {
+    fn carry_genesis_key(&mut self, store: &Store, candidate: &mut ChangeSet, policy: &Policy, without_key: bool) -> Result<Vec<String>, AuthorError> {
         let auth = Authority::build(store);
         let closed = |b: &KeyBinding| auth.bindings.iter().any(|c| c.closes.as_ref() == Some(&b.id));
         let live = |b: &&KeyBinding| b.act.opens() && b.principal == self.who && !closed(b);
         if !auth.bindings.iter().any(&live) {
-            return Ok(Vec::new());
+            return self.no_live_key(&auth, policy, without_key);
         }
         let mut lines = Vec::new();
         if !auth.bindings.iter().any(|b| live(b) && b.namespace == policy.namespace) {
@@ -137,6 +139,26 @@ impl Author {
         self.sign_under(store, Some(policy), what)?;
         lines.push(format!("signed {} with {}'s live key", policy.id, self.who));
         Ok(lines)
+    }
+}
+
+impl Author {
+    /// The genesis holder has bindings, every one closed: nothing of theirs
+    /// can vouch for a binding here or sign the policy. Refused, naming the
+    /// closed keys, unless `--without-key` says to proceed unbound (ruled
+    /// 2026-10-05).
+    fn no_live_key(&self, auth: &Authority<'_>, policy: &Policy, without_key: bool) -> Result<Vec<String>, AuthorError> {
+        let ids: Vec<String> = auth.bindings.iter().filter(|b| b.act.opens() && b.principal == self.who).map(|b| b.id.to_string()).collect();
+        let missing = format!("no live key: every key bound to {} is closed ({})", self.who, ids.join(", "));
+        if without_key {
+            return Ok(vec![format!(
+                "warning: {missing}; --without-key — `{}` is initialised with no key bound for {} and its first policy unsigned",
+                policy.namespace, self.who
+            )]);
+        }
+        Err(AuthorError::Usage(format!(
+            "refused — {missing}. `init --namespace` binds the genesis holder's live key in the new namespace and signs its policy with it: bind a live key first, or pass `--without-key` to initialise unbound"
+        )))
     }
 }
 

@@ -107,6 +107,8 @@ The questions and options are in `docs/sessions/2026-10-session-b.md` §1 ("Inte
 
 Implemented in `signing/check.rs` `trust_bindings`. A signed binding before the first policy is trusted. An unsigned one fails `L011` where that policy requires a signature, and is never trusted. Under a `[none]` first policy, D7 alone decides it: an unsigned binding the genesis holder may file is trusted. A binding in a namespace no policy governs at all stays the schema fault it was. Every filed binding is either trusted or named by a finding. In the same change, `init --namespace` in a later namespace binds the genesis holder's live key there, signed by a key of theirs already trusted, dated with the policy. No new class, no format change; see `docs/ledger-format-migrations.md`.
 
+> **Ruled the same day, on #103: D7 is not widened.** A key trusted in another namespace counts only for the holder's first binding in a namespace. Otherwise a key closed in one namespace and live in another could re-enter the namespace it was closed in. The refusal of a skewed further key dated before `init`'s binding stays. When the genesis holder has bindings but none is live, `init` refuses, naming them, unless `--without-key`, which warns.
+
 **A note for the principal (Session B close-out §3, item 7).** The terminal check and the typed manifest are passable by any process that allocates a pseudo-terminal. The control that requires a person is the key: its passphrase, or a touch under `require_sk`.
 
 ## Two further differences the side-by-side surfaces
