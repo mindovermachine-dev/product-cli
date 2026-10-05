@@ -340,6 +340,9 @@ store (`.decisions/`), separate ontology.
   `verify --base <ref>` judges a branch as its merge would. `A006`
   re-runs the role check over history as of each act; key bindings follow
   D7 (`authority/filing.rs`, called by the verbs and by `verify`).
+  `init --namespace` binds the genesis holder's configured key in the same
+  act, and a first policy is signed when its author holds a trusted key
+  (#96); `verify` names `[none]` namespaces in a notice.
   Integration suites need `ssh-keygen` (OpenSSH) as well as `script(1)`.
 - **Authority verbs and signing verbs refuse a non-interactive caller**
   (#71, #85). `accept <dec>`, `accept … --confirm`, `revoke`, and every verb

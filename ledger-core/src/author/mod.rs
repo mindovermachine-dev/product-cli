@@ -19,6 +19,7 @@ mod authority_ops;
 mod availability_ops;
 mod batch_accept;
 mod declare;
+mod genesis_key;
 mod decision;
 mod group_accept;
 mod identity_ops;

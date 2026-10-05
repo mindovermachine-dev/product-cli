@@ -19,6 +19,36 @@ only adds an unhashed field.
 
 ---
 
+## A first policy is signed; `init --namespace` binds the genesis key; the `[none]` notice (2026-10-05, #96, no format change)
+
+**What changed.**
+- **`init --namespace`** files the genesis holder's self-bound binding in
+  the same change-set as the genesis grant and the first policy, when
+  `git config user.signingkey` names a usable key. The binding is signed by
+  the key it binds, and the same key signs the first policy. With no
+  usable key the namespace is initialised unbound, as before, and `init`
+  prints a warning.
+- **A namespace's first policy is a signing subject** (`signing/subject.rs`
+  `subjects`), judged under its own schemes when its `by` held a live
+  trusted key at its position (`signing/check.rs` `judge_first_policy`). In
+  a later namespace `init --namespace` signs it with the genesis holder's
+  live key.
+- **`verify`** prints a notice for every namespace whose policy in force is
+  `[none]` (`Report::unsigned`).
+
+**What can move.** No digest moves, and no file is rewritten. A store in
+which a later namespace's first policy was filed **unsigned after** its
+author already held a trusted key now reports `L011` on that policy. No such
+store is known: this repository's own store has no policy, and every test
+fixture's first policies predate their keys. The remedy is a sidecar over
+the policy's unchanged signed bytes, made with the key that was live at its
+`at`. The CLI has no verb for that yet.
+
+**Not gated by format.** The requirement applies to every first policy. A
+format gate would let a writer avoid it by declaring the older format.
+
+---
+
 ## `A006` judges old-style revocations after the first policy (2026-10-05, no format change)
 
 **What the gate did before.** `verify/acts.rs` `unauthorised` role-checked

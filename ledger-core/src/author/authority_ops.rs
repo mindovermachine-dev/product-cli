@@ -108,16 +108,31 @@ impl Author {
             new_roles.push(self.new_role(&accept_role, "Accepts decisions", &[Capability::AcceptDecision]));
             lines.push(format!("declared role `{accept_role}` — may accept-decision; held by nobody until granted"));
         }
-        let under = joined.or_else(|| candidate.grants.first().map(|g| g.id.clone()));
+        let bootstrapped = candidate.grants.first().cloned();
+        let under = joined.or_else(|| bootstrapped.as_ref().map(|g| g.id.clone()));
         let policy = self.first_policy(&args.namespace, &accept_role, under)?;
         lines.push(format!("namespace `{}` under policy {} (accept role `{accept_role}`)", args.namespace, policy.id));
+        lines.extend(match &bootstrapped {
+            Some(g) => self.bind_genesis_key(&store, &mut candidate, g, &policy)?,
+            None => self.sign_first_policy(&store, &policy)?,
+        });
         candidate.policies.push(policy);
         store.roles.extend(new_roles.iter().cloned());
         self.refusal_check(&store, &candidate, |_| false)?;
-        for role in &new_roles {
+        self.file_init(&candidate, &new_roles, lines)
+    }
+
+    /// Write the new roles, the change-set with its signatures, and — when
+    /// a key was bound — the regenerated `allowed_signers`.
+    fn file_init(&mut self, candidate: &crate::changeset::ChangeSet, new_roles: &[Role], mut lines: Vec<String>) -> Result<Applied, AuthorError> {
+        for role in new_roles {
             self.write_role(role)?;
         }
-        let path = self.append(&candidate)?;
+        let path = self.append_signed(candidate)?;
+        if !candidate.key_bindings.is_empty() {
+            crate::authority::signers::write(&self.load()).map_err(AuthorError::Io)?;
+            lines.push(format!("regenerated {}", crate::authority::signers::FILE));
+        }
         Ok(Applied { path, lines })
     }
 

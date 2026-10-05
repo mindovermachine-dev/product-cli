@@ -91,6 +91,12 @@ pub fn check<'a>(store: &'a Store, landing: &Landing, today: NaiveDate) -> Outco
     let mut verdicts: BTreeMap<String, bool> = BTreeMap::new();
     let mut closed: Vec<(&Subject<'_>, &KeyBinding)> = Vec::new();
     for s in all.iter().filter(|s| s.kind != Kind::Binding) {
+        if let Some(p) = first_policy(s) {
+            if let Some(Err(message)) = judge_first_policy(store, s, p, &out.trusted, &positions) {
+                out.findings.push(Finding::new(VerifyClass::L011, &s.id, message));
+            }
+            continue;
+        }
         let Some(policy) = governing(store, landing, s) else { continue };
         match judge(store, s, &policy, &out.trusted, &positions) {
             Ok(None) => {
@@ -111,10 +117,47 @@ pub fn check<'a>(store: &'a Store, landing: &Landing, today: NaiveDate) -> Outco
 }
 
 /// Whether any check in this store needs `ssh-keygen`: an `ssh` sidecar,
-/// or an entity whose policy requires `ssh`.
+/// or an entity whose policy requires `ssh`. A first policy needs one only
+/// through a sidecar or a key its author held (judged in the loop).
 fn needs_ssh(store: &Store, landing: &Landing, all: &[Subject<'_>]) -> bool {
     store.sidecars.iter().any(|c| c.scheme == Scheme::Ssh)
-        || all.iter().any(|s| governing(store, landing, s).is_some_and(|p| p.schemes.contains(&Scheme::Ssh)))
+        || all
+            .iter()
+            .filter(|s| first_policy(s).is_none())
+            .any(|s| governing(store, landing, s).is_some_and(|p| p.schemes.contains(&Scheme::Ssh)))
+}
+
+/// The subject's policy, when it is a namespace's first (it replaces none).
+fn first_policy<'a>(s: &Subject<'a>) -> Option<&'a Policy> {
+    s.policy.filter(|p| p.replaces.is_none())
+}
+
+/// A namespace's first policy (#96): signed under its own schemes when its
+/// author held a live trusted key at its position — in this namespace or
+/// another, which for this check stands here, as [`carried_over`] does for
+/// a binding. A sidecar that names it is verified whatever. `None`: neither,
+/// so nothing is required.
+fn judge_first_policy(
+    store: &Store,
+    s: &Subject<'_>,
+    p: &Policy,
+    trusted: &[&KeyBinding],
+    positions: &BTreeMap<String, Position>,
+) -> Option<Result<(), String>> {
+    let at = |id: &crate::id::KeyBindingId| positions.get(&id.to_string()).copied();
+    let closed = |k: &KeyBinding| {
+        trusted.iter().any(|c| c.closes.as_ref() == Some(&k.id) && at(&c.id).is_some_and(|c| !s.position.before(&c)))
+    };
+    let held = trusted.iter().any(|k| {
+        k.principal == s.signer && k.act.opens() && at(&k.id).is_some_and(|o| o.not_after(&s.position)) && !closed(k)
+    });
+    if !held && !store.sidecars.iter().any(|c| c.ulid == s.ulid) {
+        return None;
+    }
+    let here: Vec<KeyBinding> =
+        trusted.iter().filter(|k| k.principal == s.signer).map(|k| KeyBinding { namespace: s.namespace.clone(), ..(*k).clone() }).collect();
+    let keys: Vec<&KeyBinding> = here.iter().collect();
+    Some(judge(store, s, p, &keys, positions).map(|_| ()))
 }
 
 fn ordered(mut all: Vec<Subject<'_>>) -> Vec<Subject<'_>> {

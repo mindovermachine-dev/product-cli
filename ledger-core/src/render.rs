@@ -73,6 +73,11 @@ fn status_lines(report: &Report) -> Vec<String> {
             "notice: namespace `{ns}` has no policy — nothing in it is role-checked or signature-checked (`ledger init --namespace {ns}` opts it in)"
         ));
     }
+    for ns in &report.unsigned {
+        out.push(format!(
+            "notice: namespace `{ns}` is under policy `[none]` — governed and role-checked (D7, `A006`), but no signature is required: an absent signature is no finding, `L012` cannot arise, key bindings are trusted unsigned, a policy change is unsigned, and `ssh-keygen` is not consulted unless an `ssh` sidecar exists; a sidecar that is present is still verified"
+        ));
+    }
     if report.export.as_ref().is_some_and(Vec::is_empty) {
         out.push("export: every committed export matches the log byte for byte".to_string());
     }

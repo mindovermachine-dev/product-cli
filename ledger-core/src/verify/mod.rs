@@ -93,6 +93,10 @@ pub struct Report {
     /// role-checked or signature-checked (a notice, not a failure, D5 (c)).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub unchecked: Vec<String>,
+    /// Namespaces whose policy in force is `[none]`: governed and
+    /// role-checked, but no signature is required (a notice, not a failure).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub unsigned: Vec<String>,
 }
 
 impl Report {
@@ -121,8 +125,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     findings.extend(disposition::stranded(&view, store));
     findings.extend(disposition::model_acceptor(&view));
     findings.extend(disposition::model_judge(&view));
-    findings.extend(integrity::hash_mismatch(&view));
-    findings.extend(integrity::dangling_acceptance(&view));
+    findings.extend(integrity::hash_mismatch(&view).into_iter().chain(integrity::dangling_acceptance(&view)));
     findings.extend(keys::key_changed(&view));
     findings.extend(keys::key_collision(&view));
     findings.extend(authority::findings(store));
@@ -137,6 +140,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
         awaiting_acceptance: awaiting(&view),
         reaccept: signing.reaccept.clone(),
         unchecked: unchecked(store),
+        unsigned: unsigned(store),
         ..Report::default()
     };
     if opts.blame {
@@ -182,6 +186,20 @@ fn unchecked(store: &Store) -> Vec<String> {
         .flat_map(|l| l.file.versions.iter())
         .map(|v| v.decision.namespace().to_string())
         .filter(|ns| auth.policy(ns).is_none())
+        .collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Every namespace whose policy in force is `[none]`.
+fn unsigned(store: &Store) -> Vec<String> {
+    let auth = crate::authority::Authority::build(store);
+    let mut out: Vec<String> = auth
+        .policies
+        .iter()
+        .map(|p| p.namespace.clone())
+        .filter(|ns| auth.policy(ns).is_some_and(|p| p.schemes == [crate::authority::Scheme::None]))
         .collect();
     out.sort();
     out.dedup();
