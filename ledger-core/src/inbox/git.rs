@@ -98,6 +98,14 @@ pub fn worktree(repo: &Repository, branch: &str, rev: &str) -> Result<PathBuf, S
     Ok(path)
 }
 
+/// Remove a worktree the inbox made. A commit made there and never pushed
+/// is then reachable from no ref, and goes at the clone's next `git gc`.
+pub fn discard_worktree(repo: &Repository, path: &Path) {
+    let _ = git(&repo.path, &["worktree", "remove", "--force", &path.display().to_string()]);
+    let _ = std::fs::remove_dir_all(path);
+    let _ = git(&repo.path, &["worktree", "prune"]);
+}
+
 /// Fetch the clone's remote, so a stale item is re-read before signing.
 pub fn fetch(repo: &Repository) -> Result<(), String> {
     git(&repo.path, &["fetch", "--quiet", &repo.remote]).map(|_| ())

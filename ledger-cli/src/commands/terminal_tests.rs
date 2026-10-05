@@ -21,6 +21,8 @@ const TERMINAL: &[&[&str]] = &[
     &["accept", DEC],
     &["accept", "--set", "s", "--confirm", "sha256:00"],
     &["accept", "--group", "mechanical", "--confirm", "sha256:00"],
+    &["accept", "--batch", "b.yml", "--confirm", "sha256:00"],
+    &["accept", "--batch", "b.yml", "--repository", "r", "--branch", "b", "--confirm", "sha256:00"],
     &["available", "unav:01K5M000000000000000000004"],
     &["grant", "accept", GRANT],
     &["grant", "new", "acceptor", "--to", "a@x", "--scope", "*"],

@@ -153,7 +153,7 @@ That leaves the five-minute target for reading time. The listing run before it t
 | `main` after #88 | 1,933 passed |
 | #89 merged | 1,999 passed |
 | #90 (step 2) | 2,010 passed |
-| step 3 | 2,020 passed, 0 failed |
+| step 3 | 2,021 passed, 0 failed |
 
 - **New suites:**
   - `signing.rs`, `trust.rs`, `immutability.rs`, `closed_key.rs`, `export_verifier.rs` (#89);

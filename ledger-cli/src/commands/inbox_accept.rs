@@ -127,49 +127,69 @@ fn flags(sel: &Selection) -> String {
     }
 }
 
-/// Each branch in turn: re-read, sign, export, commit, push, verify.
+/// Each branch in turn: re-read, sign, export, commit, push, verify. A
+/// branch that fails stops only itself; the others proceed, and the sitting
+/// exits non-zero when any branch failed or was pushed without a green
+/// verify.
 fn sign(s: &Sitting, file: &BatchFile, path: &std::path::Path, manifest: &str) -> Result<i32, String> {
     let mut groups: BTreeMap<(String, String), usize> = BTreeMap::new();
     for r in &file.rows {
         *groups.entry((r.repository.clone(), r.branch.clone().unwrap_or_default())).or_default() += 1;
     }
-    let mut failed = 0;
+    let (mut failed, mut red) = (0, 0);
     for ((repository, branch), count) in &groups {
         match sign_branch(s, repository, branch, *count, path, manifest) {
-            Ok(line) => println!("{line}"),
+            Ok((line, green)) => {
+                red += usize::from(!green);
+                println!("{line}");
+            }
             Err(why) => {
                 failed += 1;
-                println!("{repository} @ {branch}: not signed — {why}");
+                println!("{repository} @ {branch}: {why}");
             }
         }
     }
     println!("\n{} branch(es) signed and pushed, {failed} not", groups.len() - failed);
-    Ok(if failed == 0 { EXIT_OK } else { EXIT_VIOLATIONS })
+    if red > 0 {
+        println!("{red} pushed branch(es) do not verify green against their base");
+    }
+    Ok(if failed == 0 && red == 0 { EXIT_OK } else { EXIT_VIOLATIONS })
 }
 
-fn sign_branch(s: &Sitting, repository: &str, branch: &str, count: usize, path: &std::path::Path, manifest: &str) -> Result<String, String> {
-    let repo = s.index.repository(repository).ok_or("unknown repository")?;
-    let indexed = s.index.branches.iter().find(|b| b.repository == repository && b.name == branch).ok_or("not indexed")?;
-    git::fetch(repo)?;
-    let wt = git::worktree(repo, branch, &indexed.rev)?;
-    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+/// One branch: `Ok((line, green))` once pushed; `Err` names whether the
+/// branch was signed, and says what became of a signed commit.
+fn sign_branch(s: &Sitting, repository: &str, branch: &str, count: usize, path: &std::path::Path, manifest: &str) -> Result<(String, bool), String> {
+    let repo = s.index.repository(repository).ok_or("not signed — unknown repository")?;
+    let indexed = s.index.branches.iter().find(|b| b.repository == repository && b.name == branch).ok_or("not signed — not indexed")?;
+    let unsigned = |e: String| format!("not signed — {e}");
+    git::fetch(repo).map_err(unsigned)?;
+    let wt = git::worktree(repo, branch, &indexed.rev).map_err(unsigned)?;
+    let signed_on = git::commit_of(&wt, "HEAD").map_err(unsigned)?;
+    let exe = std::env::current_exe().map_err(|e| unsigned(e.to_string()))?;
     let p = path.display().to_string();
     let status = Command::new(&exe)
         .arg("--root")
         .arg(&wt)
         .args(["accept", "--batch", &p, "--repository", repository, "--branch", branch, "--confirm", manifest])
         .status()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| unsigned(e.to_string()))?;
     if !status.success() {
-        return Err("`ledger accept --batch` refused — see above".to_string());
+        git::discard_worktree(repo, &wt);
+        return Err(unsigned("`ledger accept --batch` refused — see above".to_string()));
     }
-    let export = Command::new(&exe).arg("--root").arg(&wt).args(["export", "--format", "ntriples"]).output().map_err(|e| e.to_string())?;
-    if !export.status.success() {
-        return Err(format!("export: {}", String::from_utf8_lossy(&export.stderr).trim()));
+    if let Err(why) = publish(repo, &wt, &exe, branch, count) {
+        let commit = git::commit_of(&wt, "HEAD").unwrap_or_default();
+        git::discard_worktree(repo, &wt);
+        let moved = git::fetch(repo).and_then(|_| git::commit_of(&repo.path, &indexed.rev)).ok().filter(|tip| *tip != signed_on);
+        let why = match moved {
+            Some(tip) => format!(
+                "stale — {} moved from {} to {} after it was fetched; the push was refused and nothing on the remote was overwritten",
+                indexed.rev, short(&signed_on), short(&tip)
+            ),
+            None => why,
+        };
+        return Err(format!("signed, not pushed — {why}. The signed commit {} was discarded with its worktree; the item stays in your list", short(&commit)));
     }
-    git::git(&wt, &["add", "-A", ".decisions", "docs/decisions"])?;
-    git::git(&wt, &["commit", "-q", "-m", &format!("ledger: accept {count} decision(s) — ledger inbox")])?;
-    git::git(&wt, &["push", "-q", &repo.remote, &format!("HEAD:refs/heads/{branch}")])?;
     let (stdout, stderr, code) = inbox::verify(&wt, &indexed.base, &["--export"])?;
     let report = format!("{stdout}{stderr}");
     let verdict = if code == 0 {
@@ -178,5 +198,22 @@ fn sign_branch(s: &Sitting, repository: &str, branch: &str, count: usize, path: 
         let findings: Vec<&str> = report.lines().filter(|l| l.trim_start().starts_with("- [")).collect();
         format!("NOT green:\n{}", findings.join("\n"))
     };
-    Ok(format!("{repository} @ {branch}: {count} accepted, committed as {}, pushed — verify --base {} {verdict}", s.holder, indexed.base))
+    let line = format!("{repository} @ {branch}: {count} accepted, committed as {}, pushed — verify --base {} {verdict}", s.holder, indexed.base);
+    Ok((line, code == 0))
+}
+
+/// Export, commit as the holder, and push — never forced: a remote that
+/// moved since the fetch refuses the push.
+fn publish(repo: &ledger_core::inbox::config::Repository, wt: &std::path::Path, exe: &std::path::Path, branch: &str, count: usize) -> Result<(), String> {
+    let export = Command::new(exe).arg("--root").arg(wt).args(["export", "--format", "ntriples"]).output().map_err(|e| e.to_string())?;
+    if !export.status.success() {
+        return Err(format!("export: {}", String::from_utf8_lossy(&export.stderr).trim()));
+    }
+    git::git(wt, &["add", "-A", ".decisions", "docs/decisions"])?;
+    git::git(wt, &["commit", "-q", "-m", &format!("ledger: accept {count} decision(s) — ledger inbox")])?;
+    git::git(wt, &["push", "-q", &repo.remote, &format!("HEAD:refs/heads/{branch}")]).map(|_| ())
+}
+
+fn short(commit: &str) -> &str {
+    commit.get(..12).unwrap_or(commit)
 }

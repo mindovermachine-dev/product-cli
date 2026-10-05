@@ -233,6 +233,41 @@ fn a_stale_item_is_re_read_before_signing_and_refused_when_its_hash_moved() {
 }
 
 #[test]
+fn a_remote_branch_that_advances_between_fetch_and_push_refuses_the_push_and_is_reported_stale() {
+    let f = fixture();
+    let bare = f.root.path().join("remote1.git");
+    let agent = f.root.path().join("agent1");
+    let marker = f.root.path().join("raced");
+    // The race, made deterministic: the holder clone's pre-push hook runs
+    // after the inbox fetched and signed agent/1 and before its push lands,
+    // and the agent pushes a new commit to agent/1 there.
+    let hook = f.holders[1].path().join(".git/hooks/pre-push");
+    std::fs::write(&hook, format!(
+        "#!/bin/sh\nunset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE\ngrep -q ' refs/heads/agent/1 ' || exit 0\n[ -e '{m}' ] && exit 0\ntouch '{m}'\n\
+         cd '{a}' && git checkout -q agent/1 && echo raced > raced.txt && git add raced.txt && git commit -q -m raced && git push -q origin agent/1\n",
+        m = marker.display(), a = agent.display(),
+    )).expect("hook");
+    std::fs::set_permissions(&hook, std::os::unix::fs::PermissionsExt::from_mode(0o755)).expect("chmod");
+    let dry = common::both(&inbox(&f, &["accept", "--all"]));
+    let out = inbox(&f, &["accept", "--all", "--confirm", &manifest(&dry)]);
+    let text = common::both(&out);
+    assert!(marker.exists(), "the hook ran: {text}");
+    assert_eq!(out.status.code(), Some(1), "{text}");
+    assert!(text.contains("repo1 @ agent/1: signed, not pushed — stale"), "{text}");
+    assert!(text.contains("nothing on the remote was overwritten"), "{text}");
+    assert!(text.contains("11 branch(es) signed and pushed, 1 not"), "the others proceed: {text}");
+    // The remote holds the agent's commit, not the holder's: no push was forced.
+    let raced = git(&agent, &["rev-parse", "HEAD"]);
+    assert_eq!(git(&bare, &["rev-parse", "agent/1"]), raced, "the remote branch was not overwritten");
+    assert!(!git(&bare, &["log", "--format=%ae", "main..agent/1"]).contains(OWNER), "no holder commit landed on agent/1");
+    // The signed commit went with its worktree, and the item is listed again.
+    let left = f.holders[1].path().join(".git/ledger-inbox/agent_1");
+    assert!(!left.exists(), "the worktree of the refused push is gone");
+    let list = common::both(&inbox(&f, &["list"]));
+    assert!(list.contains("repo1 — agent/1"), "the item stays in the list: {list}");
+}
+
+#[test]
 fn an_acceptance_under_a_since_closed_key_is_affirmed_in_the_same_batch() {
     let accepted = std::cell::RefCell::new(String::new());
     let f = fixture_with(|h| {
