@@ -244,3 +244,37 @@ fn a_principals_own_add_dated_before_the_close_of_their_only_key_is_a_d7_fault()
     assert!(text.contains("D7") && text.contains("has no live key"), "{text}");
     assert!(!derived_signers(&repo).contains(&public(&next)));
 }
+
+#[test]
+fn under_none_a_principals_own_add_dated_before_their_keys_close_is_refused_and_never_trusted() {
+    let (repo, _) = governed();
+    repo.vouch_for(NS, ARCHITECT, "architect");
+    let (first, bound) = store(&repo)
+        .log
+        .iter()
+        .flat_map(|l| l.file.key_bindings.iter())
+        .find(|b| b.principal.as_str() == ARCHITECT)
+        .map(|b| (b.id.to_string(), b.at))
+        .expect("architect's key");
+    let inside = bound.duration_trunc(Duration::seconds(1)).unwrap_or(bound) + Duration::seconds(1);
+    std::thread::sleep(std::time::Duration::from_millis(2100));
+    repo.ok(&["identity", "revoke", &first]);
+    repo.ok(&["policy", "set", "--namespace", NS, "--scheme", "none"]);
+    hand::commit(&repo, "closed the architect's key; governed and unsigned");
+    // No signature is required, so only D7 stands between this binding and
+    // the trust root — and D7 holds only if the close applies to it.
+    let next = repo.keygen("architect-next");
+    let mut b = hand::binding(BindingAct::Add, ARCHITECT, ARCHITECT, NS, Some(&format!("{next}.pub")), None, None);
+    b.at = inside;
+    b.hash = binding_hash(&b);
+    let id = b.id.to_string();
+    let mut cs = change_set(inside);
+    cs.created_by = ARCHITECT.parse().expect("id");
+    cs.key_bindings.push(b);
+    file_signed(&repo, cs, &[], "");
+    // The forger regenerates the derived file too (verify reads the tree).
+    repo.ok(&["identity", "sync"]);
+    let text = fails_with(&repo, &id, "SCHEMA");
+    assert!(text.contains("D7") && text.contains("has no live key"), "{text}");
+    assert!(!derived_signers(&repo).contains(&public(&next)), "never trusted");
+}
