@@ -810,6 +810,9 @@ entity: changing a file's format declaration alone changes no entity.
 - A terminating entry applies to every act that is not before it — so a
   close filed with `at` set to the time of compromise invalidates what
   landed in between.
+- **A role file is an enabling entry.** It is positioned at its file's
+  landing, dated at the start of its `created_at` day, and counts only for
+  acts it is not after (2026-10-05).
 - **A policy governs every act that is not before it.** An act that landed
   after a namespace's policy is under that policy whatever its `at`; only an
   act both landed no later and dated earlier is before it (a pre-policy act,
@@ -841,6 +844,22 @@ of a version.
   check never searches for another grant; a governed act with no `under`
   fails. An act before its namespace's first policy is not checked (D5 (c));
   a grant's revocation is checked once the store has a genesis.
+- **A policy is the genesis holder's act** (2026-10-05). Every policy,
+  a namespace's first or a change, is judged like any other act as of its
+  own position: the grant it names (`under`) must be the genesis grant as
+  of the policy, held by its `by`, live and available at its `at`, through
+  the same role check (`A006`). The position rule does not exempt it: a
+  policy defines a namespace's governance, so even the first one is
+  checked. A signature on a policy change says who filed it, not that they
+  were the one who may. Until this rule a policy by anyone with a bound key
+  — or, under `[none]` or for a namespace's first policy, by anyone at all
+  — passed the gate and governed the namespace.
+- **A role takes effect from its own position** (2026-10-05). A role file
+  is an enabling entry: it counts for an act only when it is not after it
+  (§3.10.6) — its file landed no later, and its `created_at` day began no
+  later than the act's `at`. An act made under a grant whose role landed
+  after it fails `A006`. Until this rule every role file counted for every
+  act, whenever it landed.
 - **An old-style revocation is a pre-policy act** (2026-10-05). A legacy
   revocation (`acceptance`, `by`; formats 1–5) of an acceptance is judged
   like a `rev:` revocation: before its namespace's first policy it stands
@@ -1272,7 +1291,7 @@ unchanged exit semantics (findings exit `1`):
 | `G006` | two live decisions of one namespace whose tips share a `key` — the cross-check of `L014` (spec v1.6) |
 | `A003` | two live grants (unrevoked, unsuperseded, accepted) share role, scope and order (spec v1.7) |
 | `A005` | more than one live (unsuperseded, unrevoked) genesis grant (spec v1.7) |
-| `A006` | an acceptance or `rev:` revocation whose named grant did not, as of the act, let its actor do it — or a governed act naming none (spec v1.8, §3.10.7); or an old-style revocation not before its namespace's first policy (2026-10-05) |
+| `A006` | an acceptance, `rev:` revocation or policy whose named grant did not, as of the act, let its actor do it — or a governed act naming none (spec v1.8, §3.10.7); an old-style revocation not before its namespace's first policy; a policy not made under the genesis grant (2026-10-05) |
 
 `A003` and `A005` are the authority shapes' gate classes
 (`docs/ledger-authority/ledger-authority-shapes.ttl`), with two

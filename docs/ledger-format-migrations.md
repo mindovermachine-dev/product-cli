@@ -19,6 +19,37 @@ only adds an unhashed field.
 
 ---
 
+## `A006` judges policy authors; roles take effect from their position (2026-10-05, no format change)
+
+**Policy authors — what the gate did before.** No `verify` check looked at
+who filed a policy. `verify/acts.rs` `unauthorised` judged acceptances and
+revocations only; `signing/check.rs` checked that a policy change was
+signed by its `by` under the policy it replaced, and a namespace's first
+policy is unsigned by design. Only the verbs (`init --namespace`, `policy
+set`) required the genesis holder. So a hand-filed policy change by any
+principal with a bound key, signed with that key, passed `verify` and
+became the policy in force; under `[none]` the same change needed no
+signature at all; and a hand-filed first policy for an ungoverned namespace
+by anyone passed.
+
+**What it does now.** `unauthorised` judges every policy, first or change,
+through `policy_verdict`: its `under` must name the genesis grant as of the
+policy, held by its `by`, live and available at its `at`, through
+`authorize_named` (as `Act::SetPolicy`, which needs `grant-role`, carried
+by every genesis role). A policy that fails is `A006`.
+
+**Roles — what the gate did before.** `Authority::as_of` admitted every
+role file whatever its landing, so a role landed after an act still counted
+for it. **Now** a role counts only for acts it is not after: its file
+landed no later, and its `created_at` day began no later (`role_position`
+in `authority/view.rs`). An act made under a grant whose role landed later
+fails `A006`.
+
+No new class, no format change, no digest moves: both are extensions of
+`A006` by the `L010` mechanism. This repository's store has no policy and
+no role file, and is unaffected. A store holding such a policy or such an
+act now fails `A006`; how it recovers is not ruled here.
+
 ## `A006` judges old-style revocations after the first policy (2026-10-05, no format change)
 
 **What the gate did before.** `verify/acts.rs` `unauthorised` role-checked

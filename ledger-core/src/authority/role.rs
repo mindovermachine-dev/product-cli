@@ -131,13 +131,18 @@ pub enum Act {
     DeclareUnavailability,
     /// Declare a new role file.
     DeclareRole,
+    /// File a namespace policy, first or change — the genesis holder's act,
+    /// made under the genesis grant. It needs `grant-role`, which every
+    /// genesis role carries (`Capability::ROOT`); `verify` additionally
+    /// requires the grant named to be the genesis grant.
+    SetPolicy,
 }
 
 impl Act {
     pub fn capability(self) -> Capability {
         match self {
             Self::Accept | Self::RevokeAcceptance => Capability::AcceptDecision,
-            Self::Grant | Self::DeclareRole => Capability::GrantRole,
+            Self::Grant | Self::DeclareRole | Self::SetPolicy => Capability::GrantRole,
             Self::RevokeGrant => Capability::RevokeGrant,
             Self::DeclareUnavailability => Capability::DeclareUnavailability,
         }
@@ -150,7 +155,7 @@ impl Act {
             Self::Grant => Some(Limit::NoGrants),
             Self::RevokeGrant => Some(Limit::NoGrantRevocations),
             Self::DeclareRole => Some(Limit::NoRoleEdits),
-            Self::Accept | Self::RevokeAcceptance | Self::DeclareUnavailability => None,
+            Self::Accept | Self::RevokeAcceptance | Self::DeclareUnavailability | Self::SetPolicy => None,
         }
     }
 
@@ -162,6 +167,7 @@ impl Act {
             Self::RevokeGrant => "revoke a grant",
             Self::DeclareUnavailability => "declare unavailability",
             Self::DeclareRole => "declare a role",
+            Self::SetPolicy => "set a namespace policy",
         }
     }
 }

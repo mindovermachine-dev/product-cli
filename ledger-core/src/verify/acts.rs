@@ -7,7 +7,8 @@
 //! through the same function the verbs call
 //! ([`crate::authority::authorize_named`]). It checks the grant the act
 //! names and never searches for another; a governed act that names none
-//! fails.
+//! fails. A policy, first or change, is the genesis holder's act: the
+//! grant it names must be the genesis grant as of the policy.
 //!
 //! **Position rule** (D5 (c)). An act before its namespace's first policy is
 //! not role-checked; every other act is. A grant's revocation is checked
@@ -44,8 +45,36 @@ pub fn unauthorised(store: &Store, landing: &Landing) -> Vec<GraphFinding> {
         for r in &logged.file.revocations {
             out.extend(revocation_verdict(store, landing, &sets, &path, r));
         }
+        for p in &logged.file.policies {
+            out.extend(policy_verdict(store, landing, &path, p));
+        }
     }
     out
+}
+
+/// One policy, first or change, judged as of its position (D6): the genesis
+/// holder's act, so the grant it names (`under`) must be the genesis grant
+/// as of the policy, held by its `by`, live and available at its `at`. A
+/// signature says only who filed it, not that they were the one who may.
+fn policy_verdict(store: &Store, landing: &Landing, path: &str, p: &crate::authority::Policy) -> Option<GraphFinding> {
+    let id = p.id.to_string();
+    let pos = landing.position(path, &crate::landed::key("policies", &id), p.at);
+    let auth = Authority::as_of(store, landing, pos);
+    let Some(genesis) = auth.genesis().map(|g| g.id.clone()) else {
+        return Some(finding(&id, format!(
+            "{} sets `{}`'s policy with no live genesis grant as of the policy — a policy is the genesis holder's act",
+            p.by, p.namespace
+        )));
+    };
+    if let Some(under) = p.under.as_ref().filter(|u| **u != genesis) {
+        return Some(finding(&id, format!(
+            "{} sets `{}`'s policy under {under}, which is not the genesis grant ({genesis}) as of the policy — a policy is the genesis holder's act",
+            p.by, p.namespace
+        )));
+    }
+    let scope = crate::authority::GrantScope::Namespace(p.namespace.clone());
+    let act = ActRef { subject: &id, actor: &p.by, under: p.under.as_ref(), act: Act::SetPolicy, at: p.at };
+    judge(&auth, &act, Target::Scope(&scope), None)
 }
 
 /// One revocation, either shape, judged as of its position. An old-style
