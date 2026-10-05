@@ -11,7 +11,9 @@
 //!
 //! **Position rule** (D5 (c)). An act before its namespace's first policy is
 //! not role-checked; every other act is. A grant's revocation is checked
-//! once the store has a genesis.
+//! once the store has a genesis. An old-style revocation (formats 1–5, no
+//! id, no `under`) is valid only before the first policy; one that is not
+//! before it fails.
 
 use crate::authority::{authorize_named, Act, Authority, Revocable, Target};
 use crate::graph::{GraphClass, GraphFinding};
@@ -39,34 +41,49 @@ pub fn unauthorised(store: &Store, landing: &Landing) -> Vec<GraphFinding> {
             let act = ActRef { subject: &id, actor: &a.actor, under: a.under.as_ref(), act: Act::Accept, at: a.at };
             out.extend(judge(&auth, &act, target, Some(&policy.accept_role)));
         }
-        for r in logged.file.revocations.iter().filter(|r| r.is_entity()) {
-            let (Some(target), Some(actor)) = (r.target(), r.actor()) else { continue };
-            let id = r.subject();
-            let act = |kind| ActRef { subject: &id, actor, under: r.under.as_ref(), act: kind, at: r.at };
-            let pos = landing.position(&path, &crate::landed::revocation_key(r), r.at);
-            let auth = Authority::as_of(store, landing, pos);
-            let verdict = match &target {
-                Revocable::Acceptance(acc) => {
-                    let Some(revoked) = store.log.iter().flat_map(|l| l.file.acceptances.iter()).find(|a| a.id == *acc) else { continue };
-                    let ns = revoked.decision.namespace();
-                    let Some(policy) = auth.policy(ns) else { continue };
-                    let set = sets.get(&revoked.decision.to_string()).map(String::as_str).unwrap_or_default();
-                    let t = Target::Decision { namespace: ns, set };
-                    judge(&auth, &act(Act::RevokeAcceptance), t, Some(&policy.accept_role))
-                }
-                Revocable::Grant(g) => {
-                    let Some(grant) = auth.grants.get(&g.to_string()).copied() else { continue };
-                    if auth.genesis().is_none() {
-                        continue;
-                    }
-                    let t = Target::Scope(&grant.scope);
-                    judge(&auth, &act(Act::RevokeGrant), t, None)
-                }
-            };
-            out.extend(verdict);
+        for r in &logged.file.revocations {
+            out.extend(revocation_verdict(store, landing, &sets, &path, r));
         }
     }
     out
+}
+
+/// One revocation, either shape, judged as of its position. An old-style
+/// revocation (`acceptance`, `by`) names no grant and can carry no
+/// signature, so it is valid only before its namespace's first policy; one
+/// that is not before it (D6) fails like a `rev:` revocation naming none.
+fn revocation_verdict(
+    store: &Store,
+    landing: &Landing,
+    sets: &std::collections::BTreeMap<String, String>,
+    path: &str,
+    r: &crate::authority::Revocation,
+) -> Option<GraphFinding> {
+    let (Some(target), Some(actor)) = (r.target(), r.actor()) else { return None };
+    let id = r.subject();
+    let act = |kind| ActRef { subject: &id, actor, under: r.under.as_ref(), act: kind, at: r.at };
+    let pos = landing.position(path, &crate::landed::revocation_key(r), r.at);
+    let auth = Authority::as_of(store, landing, pos);
+    match &target {
+        Revocable::Acceptance(acc) => {
+            let revoked = store.log.iter().flat_map(|l| l.file.acceptances.iter()).find(|a| a.id == *acc)?;
+            let ns = revoked.decision.namespace();
+            let policy = auth.policy(ns)?;
+            if !r.is_entity() {
+                return Some(finding(&id, format!(
+                    "an old-style revocation (acceptance, by) by {actor} is not before `{ns}`'s first policy (D6) — the old shape is valid only as a pre-policy act; a governed revocation is a `rev:` entity naming the grant it is made under"
+                )));
+            }
+            let set = sets.get(&revoked.decision.to_string()).map(String::as_str).unwrap_or_default();
+            let t = Target::Decision { namespace: ns, set };
+            judge(&auth, &act(Act::RevokeAcceptance), t, Some(&policy.accept_role))
+        }
+        Revocable::Grant(g) => {
+            let grant = auth.grants.get(&g.to_string()).copied()?;
+            auth.genesis()?;
+            judge(&auth, &act(Act::RevokeGrant), Target::Scope(&grant.scope), None)
+        }
+    }
 }
 
 /// One act, as `A006` reads it.
