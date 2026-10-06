@@ -258,3 +258,39 @@ bindings:
   after: sha256:9019bb5f3450a4e12712f75cb2c185f951b9ff339a62f1f2bfd008fb1a267321
   base_revision: 969c4fa55c488eb473bb892cdced00008607455b
   hash: sha256:72d574cfb0d034fa5a91e2c066b0ceb0f65fea7f52a7c3de6cf75156cf3ea280
+- symbol: Reaccept
+  file: ledger-core/src/signing/check.rs
+  before: sha256:9fbcecd818014421da2234c412d77941dc82472d023abace1fd9d9d0c275b6c0
+  after: sha256:443008ba0f3b1eee55dc68a2beff20534f45be31ddcd0993029ab01b5badce87
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:c26392e9caa2c7861c897028703f93447ca981482631a16d01466b0547a189d5
+- symbol: acceptance
+  file: ledger-core/src/signing/check.rs
+  before: sha256:9fbcecd818014421da2234c412d77941dc82472d023abace1fd9d9d0c275b6c0
+  after: sha256:443008ba0f3b1eee55dc68a2beff20534f45be31ddcd0993029ab01b5badce87
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:c738a5b1423d66c92794b7294c980d487cacef7abbffcee30c5140dd19401942
+- symbol: actor
+  file: ledger-core/src/signing/check.rs
+  before: sha256:9fbcecd818014421da2234c412d77941dc82472d023abace1fd9d9d0c275b6c0
+  after: sha256:443008ba0f3b1eee55dc68a2beff20534f45be31ddcd0993029ab01b5badce87
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:2741272c7b6fd7397be6c58ff815e0152d67416e1184a06a256837f59c148510
+- symbol: closed_by
+  file: ledger-core/src/signing/check.rs
+  before: sha256:9fbcecd818014421da2234c412d77941dc82472d023abace1fd9d9d0c275b6c0
+  after: sha256:443008ba0f3b1eee55dc68a2beff20534f45be31ddcd0993029ab01b5badce87
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:cf39a94d537ffc722faa0d1ead39dcd7db36dac250cad424db8a45281554378f
+- symbol: deadline
+  file: ledger-core/src/signing/check.rs
+  before: sha256:9fbcecd818014421da2234c412d77941dc82472d023abace1fd9d9d0c275b6c0
+  after: sha256:443008ba0f3b1eee55dc68a2beff20534f45be31ddcd0993029ab01b5badce87
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:a79f2ae94e54612408e37dcc7d750d6d842ddada70cfca69cde1f49ad535de79
+- symbol: key
+  file: ledger-core/src/signing/check.rs
+  before: sha256:9fbcecd818014421da2234c412d77941dc82472d023abace1fd9d9d0c275b6c0
+  after: sha256:443008ba0f3b1eee55dc68a2beff20534f45be31ddcd0993029ab01b5badce87
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:34a0087af4d79b1be9b714e374115a25f2367d73741284773a2419a96542bc09
