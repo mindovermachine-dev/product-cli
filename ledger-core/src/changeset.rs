@@ -55,7 +55,7 @@ pub struct ChangeSet {
     pub acceptances: Vec<Acceptance>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub revocations: Vec<Revocation>,
-    /// The authority records (format 6, `docs/ledger-authority/`): grants,
+    /// The authority records (format 6, `ledger/spec/authority/`): grants,
     /// their acceptances, unavailability and its end, key bindings, and
     /// namespace policy versions. Revocations of grants share
     /// `revocations` with revocations of acceptances — one entity.

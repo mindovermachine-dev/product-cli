@@ -1,7 +1,7 @@
 //! Decision Ledger record substrate — the L0 file format with its gate.
 //!
 //! A version-control system for governing decisions (PRD:
-//! `docs/decision-ledger-prd.md`). L0 is deliberately the format plus
+//! `ledger/prd/decision-ledger-prd.md`). L0 is deliberately the format plus
 //! `verify`: no graph, no RDF index, no merge, no coverage query beyond the
 //! gate. `.decisions/` files in git are the append-only log and the sole
 //! source of truth; everything derived is out of scope at this milestone.

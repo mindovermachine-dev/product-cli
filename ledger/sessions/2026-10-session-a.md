@@ -30,7 +30,7 @@ code follows:
 - **#66**: "signed like an acceptance (#70)". Signing is Session B. The closed
   payload `{revokes, actor, at, reason}` is hashed under `ledger.revocation.v1`
   now, and the signature over it lands with #70.
-- **The authority vocabulary** (`docs/ledger-authority/`) was extended,
+- **The authority vocabulary** (`ledger/spec/authority/`) was extended,
   not contradicted:
   - `ledger:KeyBinding` and `ledger:NamespacePolicy` were added; the #65 rulings name them and the draft did not define them.
   - `A003` is tightened to count only a `ledger:GrantAcceptance` as acceptance. The draft's `?ga ledger:grant $this` also matches an `Unavailability`.
@@ -105,7 +105,7 @@ transition (tracked in #76).
 None of these stopped a step. Each is a judgement made so the work could
 land. Each has a default (the one built) and alternatives for a ruling.
 All twelve were ruled on 2 October 2026; each ruling is recorded under its
-question (`docs/signing-rulings-2026-10.md`, "D5 to D9").
+question (`ledger/rulings/signing-rulings-2026-10.md`, "D5 to D9").
 
 1. **The selection dry run stays scriptable.** `accept --set/--group`
    without `--confirm` writes nothing and is not TTY-gated; the `--confirm`

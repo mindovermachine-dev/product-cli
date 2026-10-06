@@ -1,10 +1,10 @@
 # Rulings D5 to D9, and Session A's twelve questions, 2 October 2026
 
-Status: ruled by the principal, 2 October 2026. Every recommendation on this page was adopted. On D9: `--as` is required only when more than one grant qualifies; fewest-claims is enforced in the verb only; all parts land in Session B. `docs/signing-rulings-2026-10.md` holds the ruled positions and wins where the two differ.
+Status: ruled by the principal, 2 October 2026. Every recommendation on this page was adopted. On D9: `--as` is required only when more than one grant qualifies; fewest-claims is enforced in the verb only; all parts land in Session B. `ledger/rulings/signing-rulings-2026-10.md` holds the ruled positions and wins where the two differ.
 
 Sources: the project bundle, and the Session A session's answers about PR #80, with file paths and symbols as it reported them. The repository itself was not read for this page.
 
-D5 to D9 come out of Session B step 1 (#70). D5 depends on D6, because "as of the act" needs a definition of when an act happened. The last section goes through §3 of `docs/sessions/2026-10-session-a.md`.
+D5 to D9 come out of Session B step 1 (#70). D5 depends on D6, because "as of the act" needs a definition of when an act happened. The last section goes through §3 of `ledger/sessions/2026-10-session-a.md`.
 
 ## D5: is the role checked at verify, or only in the verb?
 

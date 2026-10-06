@@ -5,7 +5,7 @@
 //! is that a change is *signed under the policy in force before it*;
 //! signing is Session B's, so until then the entry carries the replaced
 //! hash and the check that it was signed under that policy is deferred
-//! (recorded in `docs/sessions/2026-10-session-a.md`).
+//! (recorded in `ledger/sessions/2026-10-session-a.md`).
 
 use crate::authority::payload::policy_hash;
 use crate::authority::{Authority, Policy, Scheme};

@@ -1,10 +1,10 @@
 # Signing: the 2026-08-11 rulings beside the ledger CLI PRD §7
 
-For a ruling on issue I4. On the left are the five rulings recorded in `docs/decision-ledger-prd.md` §4.5 and milestone L6 (principal: Emil, 2026-08-11; no code was written for them). On the right is `docs/ledger-cli-prd.md` §4 and §7, **as amended 2026-10-01**. The last section covers `L001`, which the import story depends on.
+For a ruling on issue I4. On the left are the five rulings recorded in `ledger/prd/decision-ledger-prd.md` §4.5 and milestone L6 (principal: Emil, 2026-08-11; no code was written for them). On the right is `ledger/prd/ledger-cli-prd.md` §4 and §7, **as amended 2026-10-01**. The last section covers `L001`, which the import story depends on.
 
 > D5 to D9 were ruled the same day; see "D5 to D9 (ruled 2026-10-02)" below.
 >
-> **All ruled 2026-10-02 on #65** (now closed): namespace policy (D1); a sidecar with the inline field retired (D2); `L011`/`L012` kept, new classes from `L013` (D3); `ssh`, then `dsse` verification, `none` for pre-v2 stores only, `webauthn` later (D4); the trust root as a governed projection; `L012` as a review trigger with an optional deadline set by policy. The ruling text is in `docs/ledger-cli-prd.md` §0, items 7–12. The comparison below is the record the rulings were made on.
+> **All ruled 2026-10-02 on #65** (now closed): namespace policy (D1); a sidecar with the inline field retired (D2); `L011`/`L012` kept, new classes from `L013` (D3); `ssh`, then `dsse` verification, `none` for pre-v2 stores only, `webauthn` later (D4); the trust root as a governed projection; `L012` as a review trigger with an optional deadline set by policy. The ruling text is in `ledger/prd/ledger-cli-prd.md` §0, items 7–12. The comparison below is the record the rulings were made on.
 
 ## Already ruled (2026-10-01), shown for reference
 
@@ -59,7 +59,7 @@ The PRD's registry seam can hold all three. The decision is whether `openpgp` an
 
 ## D5 to D9 (ruled 2026-10-02)
 
-The positions, reasons and the walk through Session A's twelve questions are in `docs/signing-rulings-2026-10-d5-d9.md`. That page holds the positions and reasons; these notes record what was ruled, and win where the two differ.
+The positions, reasons and the walk through Session A's twelve questions are in `ledger/rulings/signing-rulings-2026-10-d5-d9.md`. That page holds the positions and reasons; these notes record what was ruled, and win where the two differ.
 
 **D5. Is the role checked at verify, or only in the verb?**
 
@@ -81,11 +81,11 @@ The positions, reasons and the walk through Session A's twelve questions are in 
 
 > **Ruled 2026-10-02: B, all parts, all in Session B.** `--as` is required only when more than one grant qualifies. Fewest-claims is enforced in the verb only. `under` in the payloads supersedes ruling 4's closed lists (PRD §0 item 4).
 
-**Session A close-out §3** (`docs/sessions/2026-10-session-a.md`): 1 (a). 2 (a) with D5 (c) now, and (b) as an issue after Session B. 3 (a). 4 (a); a hierarchy, if ever, is a new scope form. 5 (a), on the grant the act names. 6 (a). 7 (a), by covering scope within one role, per D9 (e). 8 write-once, held by `verify`. 9 gate it. 10 (a). 11 no ruling; an issue for `rotate-genesis`. 12 no new class.
+**Session A close-out §3** (`ledger/sessions/2026-10-session-a.md`): 1 (a). 2 (a) with D5 (c) now, and (b) as an issue after Session B. 3 (a). 4 (a); a hierarchy, if ever, is a new scope form. 5 (a), on the grant the act names. 6 (a). 7 (a), by covering scope within one role, per D9 (e). 8 write-once, held by `verify`. 9 gate it. 10 (a). 11 no ruling; an issue for `rotate-genesis`. 12 no new class.
 
 ## Session B close-out (ruled 2026-10-05)
 
-The questions and options are in `docs/sessions/2026-10-session-b.md` §1 ("Interpretations") and §3. Each ruling is recorded there under its question. These notes record what was ruled, and win where the two differ. **None is implemented in #92**, except the registry PRD §8 amendment, which the ruling places there.
+The questions and options are in `ledger/sessions/2026-10-session-b.md` §1 ("Interpretations") and §3. Each ruling is recorded there under its question. These notes record what was ruled, and win where the two differ. **None is implemented in #92**, except the registry PRD §8 amendment, which the ruling places there.
 
 | Question | Ruling | Where it goes |
 |---|---|---|
@@ -93,7 +93,7 @@ The questions and options are in `docs/sessions/2026-10-session-b.md` §1 ("Inte
 | Batch rows carry `branch` | **Accepted.** The manifest digest covers it: `batch_file::manifest` hashes each row as (repository, branch, decision, version, grant). | As built. `batch_file_tests.rs` asserts it (#92). |
 | Q1, a passphrase-less key file | **(c), warn only.** | Not yet built. |
 | Q2, DSSE | The DSSE key is one of the signer's own key bindings. The payload type stays `application/vnd.ledger.signed-bytes.v1`. Key types are deferred to the hosted hand-off. | The first two as built; key types later. |
-| Q3, registry PRD §8 | **Amend as built.** | `docs/decision-registry-prd.md` §8, in #92. |
+| Q3, registry PRD §8 | **Amend as built.** | `ledger/prd/decision-registry-prd.md` §8, in #92. |
 | Q4, citing symbols and the rule | **R1, as derived predicates in the export only.** No file format change. | R1. |
 | Q5, `fails-on-base` acceptances | **Revocation is the remedy.** A validly revoked acceptance raises no `L011`, `L012` or `A006` of its own. **Widened the same day:** a valid revocation by the genesis holder may retire any landed entity that fails `L011` or `A006`, not only an acceptance. | #95, with the inbox offering revoke and re-accept. #95 states per kind what retiring means, and lists the open questions. |
 | Q6, a key rotated on the default branch | **Yes.** `accept`, `accept --batch` and the inbox read keys, grants and policy from the union of branch and base, as `verify --base` does. | #94. |
