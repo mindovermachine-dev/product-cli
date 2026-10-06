@@ -1,6 +1,6 @@
 //! Emitting the authority records as triples — the vocabulary's read model.
 //!
-//! The node shapes follow `docs/ledger-authority/ledger-authority.ttl` and
+//! The node shapes follow `ledger/spec/authority/ledger-authority.ttl` and
 //! its SHACL shapes: roles at `<urn:ledger-role:{id}>`, every other record
 //! at `<urn:{id}>`, identities as `mailto:` IRIs. Every node is complete
 //! when its record is filed: nothing here adds a triple to a node another

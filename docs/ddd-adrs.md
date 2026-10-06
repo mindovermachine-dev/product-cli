@@ -83,6 +83,6 @@ territory: the graph is the source of truth.
 | The PRD splits | `dec/ddd/prd-split` |
 
 The ledger relationship (record substrate, `dec:` migration at M8) is
-owned by [`decision-ledger-prd.md`](decision-ledger-prd.md) OD-2 and the
+owned by [`decision-ledger-prd.md`](../ledger/prd/decision-ledger-prd.md) OD-2 and the
 roadmap; the process layer (DAD) by
 [`way-of-working-decision-allocated-delivery.md`](way-of-working-decision-allocated-delivery.md).

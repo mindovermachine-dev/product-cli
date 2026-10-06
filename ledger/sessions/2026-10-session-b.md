@@ -27,7 +27,7 @@ October). No other issue body was edited.
 - `policy set` refuses the genesis role as the accept role.
 
 **On 4 October 2026, in the #89 review:**
-- **`none` is exclusive.** A policy listing `none` with another scheme is a schema fault, and `policy set` refuses it. `none` means governed and unsigned; this amends D4 (`docs/signing-rulings-2026-10.md`).
+- **`none` is exclusive.** A policy listing `none` with another scheme is a schema fault, and `policy set` refuses it. `none` means governed and unsigned; this amends D4 (`ledger/rulings/signing-rulings-2026-10.md`).
 - **`L012`** as built: a review item until the policy's deadline, a finding after it.
 - **Agent-held software keys** are refused, as built.
 - **Grant revocations stay unsigned** until #82.
@@ -97,7 +97,7 @@ Each is stated in its PR.
    > **Ruled 5 October 2026.** The DSSE key is one of the signer's own key bindings, as built. The payload type stays `application/vnd.ledger.signed-bytes.v1`. Key types beyond ed25519 are deferred to the hosted hand-off. Not implemented in #92; the first two are as built.
 3. **Registry PRD §8 needs amending.** It says "every branch with an open PR". Git does not record open PRs, so R0 indexes the default branch plus every remote-tracking branch whose committed export differs from the default branch's. A PR number is only a label, read from `refs/pull/<n>/head` when that ref is fetched and matches.
 
-   > **Ruled 5 October 2026: amend §8 as built, in #92.** Done: `docs/decision-registry-prd.md` §8 now describes what R0 indexes.
+   > **Ruled 5 October 2026: amend §8 as built, in #92.** Done: `ledger/prd/decision-registry-prd.md` §8 now describes what R0 indexes.
 4. **Citing symbols and the firing rule are not in the export.** The inbox reads them from `based_on` pointers by scheme: `symbol:` and `code:` for citations, `rule:` and `analyzer:` for the rule. Should R1 give them their own predicates?
 
    > **Ruled 5 October 2026: R1, as derived predicates in the export only, with no file format change.** Not implemented in #92.

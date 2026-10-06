@@ -185,7 +185,7 @@ const SHAPES: &[Shape] = &[
         },
     },
     Shape {
-        // The authority shapes' A003 (docs/ledger-authority/), tightened to
+        // The authority shapes' A003 (ledger/spec/authority/), tightened to
         // count only a GrantAcceptance as acceptance (the draft's
         // `?ga ledger:grant $this` also matches an Unavailability).
         class: GraphClass::A003,

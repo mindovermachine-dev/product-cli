@@ -2,7 +2,7 @@
 
 Two sessions, run in `mindovermachine-dev/product-cli` after PR #77 (export, PRDs, rulings) and PR #78 (authority amendment) are merged. Each step is one PR that lands green on its own; no step starts until the previous PR is merged or its branch is the base. Read `CLAUDE.md` first and follow it for clippy, conventions and commit form.
 
-Rulings are closed. `docs/ledger-cli-prd.md` §0 items 1–12 and the "Ruled" notes in `docs/signing-rulings-2026-10.md` are not to be re-opened. If an issue body and a ruling disagree, the ruling wins; say so in the PR description and amend the issue. If implementing a step needs a decision the rulings do not cover, stop at that step, write the question into the close-out report with the options you see, and continue with the next step that does not depend on it.
+Rulings are closed. `ledger/prd/ledger-cli-prd.md` §0 items 1–12 and the "Ruled" notes in `ledger/rulings/signing-rulings-2026-10.md` are not to be re-opened. If an issue body and a ruling disagree, the ruling wins; say so in the PR description and amend the issue. If implementing a step needs a decision the rulings do not cover, stop at that step, write the question into the close-out report with the options you see, and continue with the next step that does not depend on it.
 
 Every PR: tests for every new class and verb (violating and conforming), the format document and migration note updated in the same PR, exports regenerated (`ledger export --format ntriples`) so `verify --export` passes, closed-count tests (`finding.rs`, `gate.rs` `fails_only_with`) updated, 100% of existing tests passing or changed with the reason in the PR description.
 
@@ -15,7 +15,7 @@ Amended 2 October 2026: Session B only. First for step 0 carry-overs, proposed r
 Order: #67 → #71 → #69 → #66. #70 and #79 are Session B.
 
 ### Read first
-`docs/ledger-format-v1.md`, `docs/ledger-cli-prd.md` (§0, §4, §5, §7), `docs/signing-rulings-2026-10.md`, `docs/ledger-authority/` (all four files, as amended for ruling 3), `docs/audit-2026-10.md` §1–§4 and §9, then the four issue bodies. Then the emitter (`turtle.rs`), `acceptance.rs`, `verify/disposition.rs`, `format::needed_for`, `canon::put`/`put_set`/`domain_hash`, and the `L010` amendment mechanism, so you know where a new class and a new field go before writing either.
+`docs/ledger-format-v1.md`, `ledger/prd/ledger-cli-prd.md` (§0, §4, §5, §7), `ledger/rulings/signing-rulings-2026-10.md`, `ledger/spec/authority/` (all four files, as amended for ruling 3), `ledger/audits/audit-2026-10.md` §1–§4 and §9, then the four issue bodies. Then the emitter (`turtle.rs`), `acceptance.rs`, `verify/disposition.rs`, `format::needed_for`, `canon::put`/`put_set`/`domain_hash`, and the `L010` amendment mechanism, so you know where a new class and a new field go before writing either.
 
 ### Step 1 — #67: spec v1.6 / format 5
 - `key` on `VersionRaw` (`^[A-Z][A-Za-z0-9]{0,63}$`, SCHEMA fault at parse), `exported` hashed as the string `"true"` when set, absent when false. Both hashed when present, omitted when absent; `CANONICAL_FORM` stays `v1`; prove with a test that every existing fixture digest is unchanged.
@@ -29,7 +29,7 @@ Order: #67 → #71 → #69 → #66. #70 and #79 are Session B.
 - Tests: move the `assert_cmd` tests that run `accept` to a PTY driver, or inject an interactivity predicate into the core and keep the real check in the binary. Pick one, state why in the PR. Add the negative test: piped stdin exits non-zero and writes nothing.
 
 ### Step 3 — #69: authority model
-Start from `docs/ledger-authority/`; the vocabulary is the specification, the shapes are the graph-stage checks (`A003`, `A005`; `A006` deferred).
+Start from `ledger/spec/authority/`; the vocabulary is the specification, the shapes are the graph-stage checks (`A003`, `A005`; `A006` deferred).
 - File schema: `.decisions/roles/<id>.yml`; grants, grant acceptances, unavailability, availability, revocations and key bindings as log entries.
 - Hashes: `ledger.authority-grant.v1`, `ledger.revocation.v1`, and a key-binding hash `ledger.identity-binding.v1`, all under the canonical-JSON law. Record each prefix in the format document.
 - Verbs: `init --namespace`, role and grant verbs, grant acceptance, `identity add|rotate|revoke` (append only, never edit), declare and end unavailability, `policy` show/set.
@@ -45,7 +45,7 @@ Start from `docs/ledger-authority/`; the vocabulary is the specification, the sh
 - Regenerate exports. Note in the PR that Hafeok/decision-driven-analyzers#83 reads both shapes during transition.
 
 ### Session A close-out
-Write `docs/sessions/2026-10-session-a.md`:
+Write `ledger/sessions/2026-10-session-a.md`:
 1. PR list with what each landed, and any issue text you amended because a ruling won.
 2. Format changes: every new field, class id, hash prefix, and the fixture-digest proof.
 3. Questions that stopped a step, with options.
@@ -56,12 +56,12 @@ Write `docs/sessions/2026-10-session-a.md`:
 
 ## Session B — signing and the R0 inbox
 
-Order: step 0 (carry-overs) → #70 → `accept --batch` → #79. Prerequisite: Session A merged (PR #80) with its close-out, `docs/sessions/2026-10-session-a.md`, on the default branch.
+Order: step 0 (carry-overs) → #70 → `accept --batch` → #79. Prerequisite: Session A merged (PR #80) with its close-out, `ledger/sessions/2026-10-session-a.md`, on the default branch.
 
-Five rulings that this session needs were proposed after the first version of this prompt: D5 (authority is checked at verify, as of the act; acts before a namespace's first policy are not role-checked), D6 (acts are ordered by landing, not by timestamp alone), D7 (who signs a key-binding), D8 (`at` in the policy payload) and D9 (every act names the grant it is made under; fallback order by covering scope; the genesis role carries no decision capability). They are closed only if `docs/signing-rulings-2026-10.md` records them as ruled. If one is not there when you start, do not implement the bullets marked with it: implement the rest of the step and list the marked bullets in the close-out as blocked on the ruling. Session A's close-out §3 lists twelve questions for the principal; where one is still open and a bullet depends on it, treat it the same way. Never implement a proposal.
+Five rulings that this session needs were proposed after the first version of this prompt: D5 (authority is checked at verify, as of the act; acts before a namespace's first policy are not role-checked), D6 (acts are ordered by landing, not by timestamp alone), D7 (who signs a key-binding), D8 (`at` in the policy payload) and D9 (every act names the grant it is made under; fallback order by covering scope; the genesis role carries no decision capability). They are closed only if `ledger/rulings/signing-rulings-2026-10.md` records them as ruled. If one is not there when you start, do not implement the bullets marked with it: implement the rest of the step and list the marked bullets in the close-out as blocked on the ruling. Session A's close-out §3 lists twelve questions for the principal; where one is still open and a bullet depends on it, treat it the same way. Never implement a proposal.
 
 ### Read first
-Session A's close-out, `docs/ledger-cli-prd.md` §4 and §7, `docs/signing-rulings-2026-10.md` (including D5 to D9 if ruled), `docs/decision-registry-prd.md` (§2, §5, §7, §8, §9 R0, §11), then #70 and #79. Confirm `ssh-keygen -Y sign/verify` is available in CI and in the dev container before writing code; if it is not, the first PR is the CI change.
+Session A's close-out, `ledger/prd/ledger-cli-prd.md` §4 and §7, `ledger/rulings/signing-rulings-2026-10.md` (including D5 to D9 if ruled), `ledger/prd/decision-registry-prd.md` (§2, §5, §7, §8, §9 R0, §11), then #70 and #79. Confirm `ssh-keygen -Y sign/verify` is available in CI and in the dev container before writing code; if it is not, the first PR is the CI change.
 
 What Session A landed, as its session reported it. Confirm each against the code in the first PR description. Where the code differs, the code is the fact and the difference goes in the close-out:
 - `require_terminal` (`ledger-cli/src/commands/common.rs`) refuses non-interactive `accept <dec>`, `accept --set|--group --confirm`, `revoke` and `grant revoke`. Tests run under a PTY driver (`script(1)`); there is no injected predicate. The selection dry run stays scriptable.
@@ -123,7 +123,7 @@ One PR.
 - Acceptance criterion in a test fixture: three repositories, twelve branches with proposed decisions, one sitting, every branch's `verify` green afterwards. Every namespace in the fixture is initialised with `init --namespace`, and each repository has its own genesis.
 
 ### Session B close-out
-`docs/sessions/2026-10-session-b.md`, same structure as A, plus:
+`ledger/sessions/2026-10-session-b.md`, same structure as A, plus:
 - the measured time for twenty acceptances through the inbox on the fixture, and the number of confirmations and signatures that took;
 - what in R1 and R1.5 the R0 design already leaves room for or blocks: `ledger:Review`, reject, changes-requested, and commits written by a server, given that `L009` reads the introducing commit's author;
 - every [D5] to [D9], [Q7] or [Q8] bullet left out because the ruling was not recorded, and every bullet left out because a Session A question was still open;

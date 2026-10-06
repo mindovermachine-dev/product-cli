@@ -2,7 +2,7 @@
 //!
 //! A role is declared scope, like a set: a file of its own, written once,
 //! naming the capabilities it carries from a **closed** vocabulary
-//! (`ledger:CapabilityScheme` in `docs/ledger-authority/ledger-authority.ttl`).
+//! (`ledger:CapabilityScheme` in `ledger/spec/authority/ledger-authority.ttl`).
 //! A role grants nothing by itself — a [`super::grant::Grant`] gives one to
 //! an identity over a scope. Every act the authority model polices is an
 //! [`Act`], which names the capability it needs and the fallback limit that

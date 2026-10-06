@@ -1,7 +1,7 @@
 //! The authority records — who may accept, revoke and grant (format 6).
 //!
 //! The file schema the authority vocabulary projects
-//! (`docs/ledger-authority/ledger-authority.ttl`, draft-2026-09-22 as
+//! (`ledger/spec/authority/ledger-authority.ttl`, draft-2026-09-22 as
 //! amended for ruling 3): role files under `.decisions/roles/`, and as log
 //! entries grants, grant acceptances, unavailability and availability,
 //! revocations, key bindings and namespace policy versions. The files are

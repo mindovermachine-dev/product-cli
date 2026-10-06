@@ -6,7 +6,7 @@
 //! the genesis carries one; an interval ends after it starts; a key-binding
 //! act carries exactly the fields its act defines; a policy names at least
 //! one scheme. Every fault is a `SCHEMA` finding — the shapes in
-//! `docs/ledger-authority/ledger-authority-shapes.ttl`, enforced where an
+//! `ledger/spec/authority/ledger-authority-shapes.ttl`, enforced where an
 //! outside implementation must enforce them too.
 
 use crate::changeset::ChangeSet;

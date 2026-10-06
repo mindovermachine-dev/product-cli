@@ -287,7 +287,7 @@ must stay ddd-free** — that is the downstream-consumer contract.
 ## Decision ledger (`.decisions/`, the `ledger` binary)
 
 A third stack — `ledger-core` / `ledger-cli` — is the decision **record
-substrate** ([PRD](docs/decision-ledger-prd.md)). L0–L2 shipped: the file
+substrate** ([PRD](ledger/prd/decision-ledger-prd.md)). L0–L2 shipped: the file
 format, the CI gate, the L1 authoring verbs, and the L2 graph. Separate
 store (`.decisions/`), separate ontology.
 
