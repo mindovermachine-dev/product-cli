@@ -637,7 +637,9 @@ Options are comma-separated, as OpenSSH's grammar requires (v1.7 wrote
 them space-separated, which `ssh-keygen` refuses as an invalid key; v1.8
 corrects the derivation, and no committed store carried the file).
 `valid-after` is the opening binding's `at`; `valid-before` the `at` of the
-`rotate` or `revoke` that closed it. Since v1.8 only **trusted** bindings
+earliest `rotate` or `revoke` that closed its **key** — in any namespace,
+since a close ends the key, not the binding (ruled 2026-10-06, §3.10.6), so
+every line of a closed key carries the end date. Since v1.8 only **trusted** bindings
 are written (§3.10.5): an unsigned or wrongly signed binding never reaches
 the file. Lines are sorted by code point, under a
 two-line `#` header. `verify` re-derives the file and fails a
@@ -826,6 +828,12 @@ A binding filed by anyone else is a schema fault (D7); one whose required
 signature does not verify is `L011`. Neither is trusted, and only trusted
 bindings reach `allowed_signers`.
 
+**A key is bound once per namespace** (ruled 2026-10-06). A binding that
+opens a key its principal already has open in that namespace — the same
+principal and key, opened by a trusted binding whose key no close has ended
+— is refused at filing, and at `verify` it is a schema fault, never
+trusted. The same key may be bound in another namespace.
+
 #### 3.10.6 Order: landing and `at` (D6)
 
 An entity's **landing commit** is the first commit on the first-parent
@@ -866,13 +874,20 @@ entity: changing a file's format declaration alone changes no entity.
   branch verifies as its merge would. On a merge ref the merge commit's
   first-parent line is the base line, and the two agree.
 
-**Closed keys.** An entity signed by a key whose window a later binding
-closed: dated at or after the close, it fails the `-Overify-time` check
+**Closed keys.** A close ends the **key**, not the binding (ruled
+2026-10-06): closing any binding of a principal's key — by `rotate` or
+`revoke`, in any namespace, the target a trusted binding or not — closes
+that key (the principal and the key) in every namespace of the store, from
+the close's position (D6). Every signature check considers all bindings of
+the matched key, never the first it matched; with several closes, the
+earliest the act is not before decides. The `L011` finding names the
+namespace the act is refused in, the namespace of the close, and the close.
+An entity signed by a closed key: dated at or after the close, it fails the `-Overify-time` check
 (`L011`); landed after the close, whatever its date, it is `L011`; dated and
 landed before it, an acceptance is a review item ("needs re-acceptance")
 until a later valid acceptance of the same version by the same actor
 affirms it, and `L012` once the policy's `reaccept_within_days` deadline
-(from the close) has passed. The reader takes the latest valid acceptance
+(from the close — the key's earliest, in whichever namespace) has passed. The reader takes the latest valid acceptance
 of a version.
 
 #### 3.10.7 The role check over history (`A006`) and history rules

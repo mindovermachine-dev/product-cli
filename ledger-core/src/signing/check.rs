@@ -19,40 +19,32 @@
 //! policy; one in a namespace no policy governs is a schema fault. Every
 //! filed binding ends trusted or with a finding — none is left silent.
 //!
-//! **Closed keys** (ruling 12, D6). An entity signed by a key whose window
-//! a later binding closed is judged by order: dated after the close fails
-//! `-Overify-time`, so `L011`; landed after the close, whatever its date,
-//! is `L011`; dated *and* landed before it, an acceptance is a review item
-//! ("needs re-acceptance") until a later valid acceptance of the same
-//! version by the same actor affirms it, and `L012` once the policy's
-//! re-acceptance deadline has passed.
+//! **Closed keys** (ruling 12, D6). A close ends the key, not the binding
+//! (ruled 2026-10-06): closing any binding of a principal's key closes it in
+//! every namespace, and every check asks over all bindings of the matched
+//! key ([`key_close`]). An entity signed by a closed key is judged by order:
+//! dated after the close fails `-Overify-time`, so `L011`; landed after the
+//! close, whatever its date, is `L011`, naming the close and its namespace;
+//! dated *and* landed before it, an acceptance goes to the re-acceptance
+//! review (`L012`, `review.rs`). A key already open in a namespace is never
+//! bound there twice: a second binding is a schema fault.
 
 use std::collections::BTreeMap;
 
-use chrono::{Duration, NaiveDate};
-use serde::Serialize;
+use chrono::NaiveDate;
 
 use crate::authority::filing::may_file;
-use crate::authority::signers::derive_from;
+use crate::authority::key_close;
+use crate::authority::signers::{derive_from, filed};
 use crate::authority::{Authority, KeyBinding, Policy, Scheme};
 use crate::finding::{Finding, VerifyClass};
 use crate::landing::{Landing, Position};
 use crate::store::Store;
 
+use super::review::review_closed;
+pub use super::review::Reaccept;
 use super::subject::{signable_ulids, subjects, Kind, Subject};
 use super::{dsse, ssh, Sidecar};
-
-/// An acceptance signed by a key closed after it, awaiting affirmation.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub struct Reaccept {
-    pub acceptance: String,
-    pub actor: String,
-    pub key: String,
-    pub closed_by: String,
-    /// After this date the acceptance stops being citable (`L012`).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deadline: Option<NaiveDate>,
-}
 
 /// What the signature gate found.
 #[derive(Debug, Default)]
@@ -151,7 +143,7 @@ fn judge_first_policy(
 ) -> Option<Result<(), String>> {
     let at = |id: &crate::id::KeyBindingId| positions.get(&id.to_string()).copied();
     let closed = |k: &KeyBinding| {
-        trusted.iter().any(|c| c.closes.as_ref() == Some(&k.id) && at(&c.id).is_some_and(|c| !s.position.before(&c)))
+        key_close::closes_among(trusted, &filed(store), k).iter().any(|c| at(&c.id).is_some_and(|c| !s.position.before(&c)))
     };
     let held = trusted.iter().any(|k| {
         k.principal == s.signer && k.act.opens() && at(&k.id).is_some_and(|o| o.not_after(&s.position)) && !closed(k)
@@ -185,6 +177,11 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
     let positions: BTreeMap<String, Position> = all.iter().map(|s| (s.id.clone(), s.position)).collect();
     for s in all.iter().filter(|s| s.kind == Kind::Binding) {
         let Some(b) = s.binding else { continue };
+        if let Some(open) = key_close::already_open(&out.trusted, b) {
+            let rule = format!("{} already has this key open in `{}` ({}) — a key is bound once per namespace", b.principal, b.namespace, open.id);
+            out.findings.push(Finding::schema(&s.id, rule));
+            continue;
+        }
         let auth = Authority::as_of(store, landing, s.position);
         if let Err(rule) = may_file(&auth, b) {
             out.findings.push(Finding::schema(&s.id, format!("D7: {rule}")));
@@ -256,8 +253,9 @@ fn judge<'a>(
             return Err(format!("`{}`'s policy requires a `{scheme}` signature; none is filed", s.namespace));
         }
     }
+    let filed = filed(store);
     for sidecar in sidecars {
-        match verify_one(s, sidecar, keys, positions) {
+        match verify_one(s, sidecar, keys, (&filed, positions)) {
             Verdict::Valid => {}
             Verdict::Closed(c) => close = Some(c),
             Verdict::Invalid(why) => return Err(format!("its `{}` signature does not hold: {why}", sidecar.scheme)),
@@ -270,19 +268,21 @@ fn verify_one<'a>(
     s: &Subject<'_>,
     sidecar: &Sidecar,
     keys: &[&'a KeyBinding],
-    positions: &BTreeMap<String, Position>,
+    (filed, positions): (&[&KeyBinding], &BTreeMap<String, Position>),
 ) -> Verdict<'a> {
     let mine: Vec<&'a KeyBinding> = keys
         .iter()
         .copied()
         .filter(|k| k.act.opens() && k.principal == s.signer && k.namespace == s.namespace)
         .collect();
+    // The matched binding, and whether the signature holds cryptographically
+    // — asked after the key's closes, so a closed key's finding names its close.
     let key = match sidecar.scheme {
-        Scheme::Ssh => ssh_key(s, sidecar, keys, &mine),
-        Scheme::Dsse => dsse_key(s, sidecar, keys, &mine),
+        Scheme::Ssh => ssh_key(s, sidecar, keys, &mine, (filed, positions)),
+        Scheme::Dsse => dsse_key(s, sidecar, keys, &mine).map(|k| (k, Ok(()))),
         Scheme::None => Err("`none` has no sidecar".to_string()),
     };
-    let key = match key {
+    let (key, holds) = match key {
         Ok(k) => k,
         Err(why) => return Verdict::Invalid(why),
     };
@@ -290,28 +290,51 @@ fn verify_one<'a>(
     if opened.is_some_and(|o| !o.not_after(&s.position)) {
         return Verdict::Invalid(format!("its key {} was bound after the act", key.id));
     }
-    let Some(close) = keys.iter().copied().find(|c| c.closes.as_ref() == Some(&key.id)) else { return Verdict::Valid };
-    let closed_at = positions.get(&close.id.to_string()).copied();
-    match closed_at {
-        Some(c) if s.position.before(&c) => Verdict::Closed(close),
-        _ => Verdict::Invalid(format!(
-            "its key {} was closed by {}, and the act is not dated and landed before the close (D6)",
-            key.id, close.id
-        )),
+    // A close ends the key, not the binding (ruled 2026-10-06): every close
+    // of any binding of this key, in any namespace, counts.
+    let closes = key_close::closes_among(keys, filed, key);
+    let at = |c: &KeyBinding| positions.get(&c.id.to_string()).copied();
+    if let Some(close) = closes.iter().copied().find(|c| !at(c).is_some_and(|p| s.position.before(&p))) {
+        return Verdict::Invalid(format!(
+            "its key {} was closed in `{}` by {}, and the act is not dated and landed before the close (D6) — a close ends the key in every namespace, so it signs nothing in `{}`",
+            key.id, close.namespace, close.id, s.namespace
+        ));
     }
+    if let Err(why) = holds {
+        return Verdict::Invalid(why);
+    }
+    let earliest = closes.into_iter().reduce(|a, b| match (at(a), at(b)) {
+        (Some(pa), Some(pb)) if pb.before(&pa) => b,
+        _ => a,
+    });
+    earliest.map_or(Verdict::Valid, Verdict::Closed)
 }
 
-fn ssh_key<'a>(s: &Subject<'_>, sidecar: &Sidecar, keys: &[&'a KeyBinding], mine: &[&'a KeyBinding]) -> Result<&'a KeyBinding, String> {
+/// Whether `k` was bound no later than the act.
+fn opened_by(positions: &BTreeMap<String, Position>, k: &KeyBinding, s: &Subject<'_>) -> bool {
+    positions.get(&k.id.to_string()).is_none_or(|o| o.not_after(&s.position))
+}
+
+/// The binding a sidecar's key matches — of every binding of that key, one
+/// opened no later than the act when there is one. Whether the key is
+/// closed is asked of all of them ([`key_close`]), never this one alone.
+fn ssh_key<'a>(
+    s: &Subject<'_>,
+    sidecar: &Sidecar,
+    keys: &[&'a KeyBinding],
+    mine: &[&'a KeyBinding],
+    (filed, positions): (&[&KeyBinding], &BTreeMap<String, Position>),
+) -> Result<(&'a KeyBinding, Result<(), String>), String> {
     ssh::preflight().map_err(|why| format!("could not be checked — {why}"))?;
     let fp = ssh::signer_fingerprint(&s.namespace, &sidecar.bytes, &s.bytes)?;
     let key = mine
         .iter()
         .copied()
-        .find(|k| k.key.as_deref().and_then(ssh::fingerprint).as_deref() == Some(fp.as_str()))
+        .filter(|k| k.key.as_deref().and_then(ssh::fingerprint).as_deref() == Some(fp.as_str()))
+        .reduce(|a, b| if opened_by(positions, a, s) { a } else { b })
         .ok_or_else(|| format!("signed by {fp}, which is no key bound to {} in `{}`", s.signer, s.namespace))?;
-    let text = derive_from(keys).unwrap_or_default();
-    ssh::verify(&text, s.signer.as_str(), &s.namespace, &sidecar.bytes, &s.bytes, &s.at)?;
-    Ok(key)
+    let text = derive_from(keys, filed).unwrap_or_default();
+    Ok((key, ssh::verify(&text, s.signer.as_str(), &s.namespace, &sidecar.bytes, &s.bytes, &s.at)))
 }
 
 fn dsse_key<'a>(s: &Subject<'_>, sidecar: &Sidecar, keys: &[&'a KeyBinding], mine: &[&'a KeyBinding]) -> Result<&'a KeyBinding, String> {
@@ -324,55 +347,6 @@ fn dsse_key<'a>(s: &Subject<'_>, sidecar: &Sidecar, keys: &[&'a KeyBinding], min
     let blobs: Vec<String> = in_window.iter().filter_map(|k| k.key.clone()).collect();
     let blob = dsse::verify(&sidecar.bytes, &s.bytes, &blobs)?;
     in_window.into_iter().find(|k| k.key.as_deref() == Some(blob.as_str())).ok_or_else(|| "no bound key".to_string())
-}
-
-/// `L012` and the review list, for acceptances under a since-closed key.
-fn review_closed(
-    store: &Store,
-    closed: &[(&Subject<'_>, &KeyBinding)],
-    verdicts: &BTreeMap<String, bool>,
-    today: NaiveDate,
-    out: &mut Outcome<'_>,
-) {
-    let auth = Authority::build(store);
-    let acceptances: Vec<&crate::acceptance::Acceptance> = store.log.iter().flat_map(|l| l.file.acceptances.iter()).collect();
-    for (s, close) in closed.iter().filter(|(s, _)| s.kind == Kind::Acceptance) {
-        let Some(a) = acceptances.iter().find(|a| a.id.to_string() == s.id) else { continue };
-        let affirmed = acceptances.iter().any(|later| {
-            later.actor == a.actor
-                && later.decision == a.decision
-                && later.version == a.version
-                && later.at > a.at
-                && verdicts.get(&later.id.to_string()).copied().unwrap_or(false)
-        });
-        if affirmed {
-            continue;
-        }
-        let deadline = auth
-            .policy(&s.namespace)
-            .and_then(|p| p.reaccept_within_days)
-            .map(|d| close.at.date_naive() + Duration::days(i64::from(d)));
-        if deadline.is_some_and(|d| today > d) {
-            out.findings.push(Finding::new(
-                VerifyClass::L012,
-                &s.id,
-                format!(
-                    "signed under a key {} closed on {}; not re-accepted by the policy's deadline {} — no longer citable",
-                    close.closes.as_ref().map(ToString::to_string).unwrap_or_default(),
-                    close.at.date_naive(),
-                    deadline.map(|d| d.to_string()).unwrap_or_default()
-                ),
-            ));
-        } else {
-            out.reaccept.push(Reaccept {
-                acceptance: s.id.clone(),
-                actor: a.actor.to_string(),
-                key: close.closes.as_ref().map(ToString::to_string).unwrap_or_default(),
-                closed_by: close.id.to_string(),
-                deadline,
-            });
-        }
-    }
 }
 
 #[path = "check_tests.rs"]

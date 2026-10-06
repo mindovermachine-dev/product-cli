@@ -10,8 +10,9 @@
 //! Options are comma-separated, as OpenSSH's `allowed_signers` grammar
 //! requires (spec v1.8 corrects the space-separated form spec v1.7 wrote,
 //! which `ssh-keygen` refuses as an invalid key). `valid-after` is the
-//! opening binding's time; `valid-before` is the time
-//! of the `rotate` or `revoke` that closed it, when one did. The principal
+//! opening binding's time; `valid-before` is the time of the earliest
+//! `rotate` or `revoke` that closed its key, when one did — in any
+//! namespace, since a close ends the key, not the binding (ruled 2026-10-06). The principal
 //! is the bare address (ruling 6: files keep the bare address). The file is
 //! never edited by hand: every `ledger identity` verb rewrites it, and
 //! `verify` re-derives it and holds the committed bytes identical — the
@@ -49,14 +50,22 @@ fn when(at: &DateTime<Utc>) -> String {
 /// `None` when nothing binds a key.
 pub fn derive(store: &Store) -> Option<String> {
     let landing = crate::landing::Landing::compute(&store.root, None).unwrap_or_default();
-    derive_from(&crate::signing::check::trusted_bindings(store, &landing))
+    derive_from(&crate::signing::check::trusted_bindings(store, &landing), &filed(store))
 }
 
-/// The allowed-signers text for exactly these bindings.
-pub fn derive_from(bindings: &[&KeyBinding]) -> Option<String> {
+/// Every binding filed in the store, trusted or not.
+pub fn filed(store: &Store) -> Vec<&KeyBinding> {
+    store.log.iter().flat_map(|l| l.file.key_bindings.iter()).collect()
+}
+
+/// The allowed-signers text for exactly these bindings; a close's target is
+/// looked up in `filed`.
+pub fn derive_from(bindings: &[&KeyBinding], filed: &[&KeyBinding]) -> Option<String> {
+    // A close ends the key in every namespace (ruled 2026-10-06): every
+    // line of a closed key ends at its key's earliest close.
     let closes: BTreeMap<String, DateTime<Utc>> = bindings
         .iter()
-        .filter_map(|b| b.closes.as_ref().map(|c| (c.to_string(), b.at)))
+        .filter_map(|b| super::key_close::closes_among(bindings, filed, b).iter().map(|c| c.at).min().map(|t| (b.id.to_string(), t)))
         .collect();
     let mut lines: Vec<String> = bindings
         .iter()
@@ -96,7 +105,7 @@ pub fn check(store: &Store, trusted: &[&KeyBinding]) -> Vec<ExportFinding> {
     let label = format!("{STORE_DIR}/{FILE}");
     let committed = std::fs::read_to_string(path(&store.root)).ok();
     let regenerate = "regenerate it with `ledger identity sync` — it is never edited by hand";
-    let message = match (derive_from(trusted), committed) {
+    let message = match (derive_from(trusted, &filed(store)), committed) {
         (None, None) => return Vec::new(),
         (Some(want), Some(have)) if want == have => return Vec::new(),
         (Some(_), None) => format!("the log binds keys but no {FILE} is committed — {regenerate}"),

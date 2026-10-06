@@ -19,6 +19,44 @@ only adds an unhashed field.
 
 ---
 
+## A close ends the key, not the binding (2026-10-06, no format change)
+
+**Ruled 2026-10-06** (#104). Two rulings, no new class:
+
+1. Binding a key that the same principal already has open in that
+   namespace is refused at filing, and at `verify` it is a schema fault.
+2. A close applies to the key, not the binding. Closing any binding of a
+   principal's key closes that key in every namespace of the store, from
+   the close's position (D6). Every signature check considers all bindings
+   of the matched key, not the first. The finding names the namespace it
+   was refused in, the namespace of the close, and the close.
+
+**What the gate did before.** A `rotate` or `revoke` named one binding, and
+the check asked for a close of the first binding whose key matched the
+signature. The same key bound twice — in one namespace, or in two — stayed
+live through whichever binding the close did not name, and the verdict
+depended on the order the bindings were filed in.
+
+**What can move.** No digest moves and no file is rewritten.
+- A second trusted binding of a key already open in its namespace becomes a
+  `SCHEMA` finding and leaves `allowed_signers`.
+- An act signed with a key closed in another namespace, or through another
+  binding of the same key, after that close, becomes `L011`.
+- An acceptance dated and landed before such a close becomes a review item,
+  then `L012` past the deadline.
+- Every `allowed_signers` line of a closed key gains its `valid-before`, so
+  `ledger identity sync` rewrites the file and the `[SIGNERS]` stage fails
+  until it is regenerated.
+- The genesis holder whose only key is closed in one namespace has no live
+  key in any: `init --namespace` refuses (or, with `--without-key`, warns),
+  and D7 refuses their own `add` there (#104 asks whether they may carry in
+  a key live elsewhere).
+
+This repository's store has no key bindings; every fixture store binds each
+key once per namespace and all suites pass unchanged.
+
+---
+
 ## A key binding before its namespace's first policy is judged under it (2026-10-05, no format change)
 
 **Ruled 2026-10-05, narrowing D5 (c).** A key binding is never exempt as a

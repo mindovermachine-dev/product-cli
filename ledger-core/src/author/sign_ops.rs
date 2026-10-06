@@ -91,8 +91,9 @@ impl Author {
             None => self.live_key(store, (!what.any_namespace).then_some(what.namespace), &key_type, &blob),
         };
         if !bound {
+            let closed = self.closed_by(store, &blob).map(|(id, ns)| format!(": it was closed in `{ns}` by {id}, and a close ends the key in every namespace")).unwrap_or_default();
             return Err(AuthorError::Unauthorized(format!(
-                "{} is not {}'s live key in `{}` — the signature would not verify",
+                "{} is not {}'s live key in `{}`{closed} — the signature would not verify",
                 key.display(),
                 self.who,
                 what.namespace
@@ -111,8 +112,16 @@ impl Author {
                 && b.principal == self.who
                 && b.key_type.as_deref() == Some(key_type)
                 && b.key.as_deref() == Some(blob)
-                && !auth.bindings.iter().any(|c| c.closes.as_ref() == Some(&b.id))
+                && !crate::authority::key_close::is_closed(&auth.bindings, b)
         })
+    }
+
+    /// The close that ended this author's key `blob`, and its namespace.
+    fn closed_by(&self, store: &Store, blob: &str) -> Option<(String, String)> {
+        let auth = Authority::build(store);
+        let mine = auth.bindings.iter().copied().find(|b| b.act.opens() && b.principal == self.who && b.key.as_deref() == Some(blob))?;
+        let close = crate::authority::key_close::closes_of(&auth.bindings, mine).into_iter().next()?;
+        Some((close.id.to_string(), close.namespace.clone()))
     }
 
     /// Append the change-set and write its pending signatures beside it —
