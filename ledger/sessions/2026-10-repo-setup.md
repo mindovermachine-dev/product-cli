@@ -8,7 +8,9 @@ except where noted below. Where they differed, I followed the repository.
 
 ## 1. Pull requests
 
-- **PR 1, the move** (mindovermachine-dev/product-cli#108): `git mv` of the thirteen files in §2 into `ledger/`.
+- **PR 1, the move** (mindovermachine-dev/product-cli#108): `git mv` of the fourteen files in §2 into `ledger/`.
+  `docs/acceptance-worksheet-2026-08.md` was moved in a second commit, on the
+  principal's reply (§8).
   Citations of the moved paths were updated in `CLAUDE.md`, the comment on
   the "Ledger gate" step in `.github/workflows/product-ci.yml`, eight
   `ledger-core/src` comments, `docs/ddd-adrs.md`, `docs/ddd-cli-prd.md`,
@@ -72,6 +74,7 @@ form hashes them, so editing them would move digests.
 | `docs/sessions/2026-10-session-a.md` | `ledger/sessions/2026-10-session-a.md` |
 | `docs/sessions/2026-10-session-b.md` | `ledger/sessions/2026-10-session-b.md` |
 | `docs/sessions/product-cli-v2-sessions.md` | `ledger/sessions/product-cli-v2-sessions.md` |
+| `docs/acceptance-worksheet-2026-08.md` | `ledger/sessions/acceptance-worksheet-2026-08.md` |
 | `incoming/ledger-protocol.md` (untracked) | `ledger/spec/ledger-protocol.md` |
 | `incoming/server-client-protocol.md` (untracked) | `ledger/spec/server-client-protocol.md` |
 | `incoming/ground-and-protocol-rulings-2026-10.md` (untracked) | `ledger/rulings/ground-and-protocol-rulings-2026-10.md` |
@@ -121,11 +124,13 @@ updated.
 
 ## 4. Documents left in `docs/` that may belong to the ledger
 
-For the principal to decide. None was moved.
+For the principal to decide. `docs/acceptance-worksheet-2026-08.md`, the
+August pass over 80 pending ledger entries, was listed here and has since
+moved to `ledger/sessions/` on the principal's reply (§8). Nothing cited it,
+and it cites no path. None of the documents below was moved.
 
 | Document | What it is | Reading |
 | --- | --- | --- |
-| `docs/acceptance-worksheet-2026-08.md` | Grouping and sequence for the August pass over 80 pending ledger entries (`ledger show --group`). | Ledger. Nothing cites it, so moving it to `ledger/sessions/` or `ledger/audits/` is free. |
 | `docs/ledger-format-v1.md`, `docs/ledger-format-migrations.md` | The format document and its migrations. | Ledger. Excluded by the prompt; the absorption session takes them. |
 | `docs/audits/provenance-2026-08.md` | Cross-repo provenance of decisions across five repositories. | Shared. It reads decisions across both stores. |
 | `docs/audits/basis-quality-2026-08.md` | Tests the DDD claim `DDD-method-06` over pre-format-5 decisions. | DDD. Cited by ten `.ddd/` files and by `.decisions/log/01KZTGHF4B5HHKMR0QGBRBFD38.yml` and `01KZX70S86QGXVCA5GW5WSY6XA.yml`, so it cannot move without leaving a cited path behind in an immutable store. |
@@ -349,4 +354,41 @@ I opened none. For the principal to file:
   against SSH login (§5, item 26).
 - **`.ddd/` seams:** five seams will cite a deleted file once
   `docs/ledger-format-v1.md` is absorbed (§3). This is for the `ddd` owner.
-- **`docs/acceptance-worksheet-2026-08.md`:** decide whether it moves (§4).
+
+## 8. Principal's replies, 2026-10-06
+
+Both pull requests were accepted as they stood.
+
+**On the session.**
+
+- Following the repository at `f0bb9ed` rather than `969c4fa` was right.
+- Leaving `docs/ledger-format-v1.md` and `docs/ledger-format-migrations.md`
+  untouched was right. The prompt's check (old paths found only in the path
+  map and `.ddd/`) was wrong. The three old-path lines in §3 stay until the
+  absorption session deletes the file.
+- The second branch for mindovermachine-dev/product-cli#109 is fine.
+- `docs/acceptance-worksheet-2026-08.md` moves to `ledger/sessions/` in
+  mindovermachine-dev/product-cli#108 (§2, §4).
+
+**Answers to §6.**
+
+1. **`CLAUDE.md`:** (a). The ledger section stays in the root.
+2. **Layout as a decision:** (b). File nothing. The path map and git history
+   are the record.
+3. **"Ground" naming:** not ruled yet. Rename nothing. The principal will rule
+   before the absorption session.
+
+**Proposals for the absorption session.** These are proposals, not rulings.
+
+- **§5 item 26, SSH login.** The server verifies a login signature against
+  the key bindings and their validity windows, not against `allowed_signers`.
+  That file stays acceptance-only, so the two signing namespaces
+  (`ledger-accept@<ns>` and `ledger-auth@<host>`) stay separate.
+- **§5 item 12, `accept_role` and class claims.** `accept_role` becomes the
+  `ordinary` row of the class requirement table, so existing policies read
+  unchanged.
+- **`based_on`.** The format already has hashed basis pointers on every
+  version (`based_on`, format document §4.1). Pinned grounds may become new
+  token forms inside `based_on`, with no new `grounds` field (§5 item 4).
+- **§5 item 14.** Fallback ordering by covering scope is already ruled
+  (D9 (e)). The draft's open item is wrong and is removed at absorption.
