@@ -9,7 +9,7 @@
 //! The digest is taken over [`crate::canon`]'s bytes with a domain-separation
 //! prefix carrying the canonical-form version, so a hash computed under one
 //! reading of the fields can never collide with a hash computed under
-//! another. See `docs/ledger-format-v1.md` for the specification an outside
+//! another. See `ledger/spec/ledger-protocol.md` §4 for the specification an outside
 //! implementation works from, including its pinned conformance vector.
 
 use std::fmt;

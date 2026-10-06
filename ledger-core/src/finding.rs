@@ -7,8 +7,8 @@
 //! `L013`/`L014` the same way at spec v1.6, and the signing classes
 //! `L011`/`L012` — numbers reserved for them since #65, ruling D3 — at
 //! spec v1.8).
-//! Adding a variant here without a row in `docs/ledger-format-v1.md` is
-//! caught by the `every_class_is_specified` test.
+//! Adding a variant here needs its row in `ledger/spec/ledger-protocol.md`
+//! §8.3 in the same change. No test checks that the row exists.
 //!
 //! "Allocated, awaiting acceptance" is deliberately absent. The gate polices
 //! violations, not pendency: a decision that is enumerated and allocated but
@@ -72,7 +72,7 @@ pub enum VerifyClass {
     L014,
 }
 
-/// Every class, in report order. The list the format document mirrors.
+/// Every class, in report order. The list the ledger protocol mirrors (§8.3).
 pub const ALL_CLASSES: &[VerifyClass] = &[
     VerifyClass::Schema,
     VerifyClass::L001,
@@ -92,7 +92,7 @@ pub const ALL_CLASSES: &[VerifyClass] = &[
 ];
 
 impl VerifyClass {
-    /// The code as it appears in output and in the format document.
+    /// The code as it appears in output and in the ledger protocol.
     pub fn code(self) -> &'static str {
         match self {
             Self::Schema => "SCHEMA",

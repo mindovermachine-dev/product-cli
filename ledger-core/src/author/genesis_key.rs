@@ -2,7 +2,7 @@
 //!
 //! **At bootstrap** the key `git config user.signingkey` names is bound in
 //! the same change-set as the genesis grant and the first policy: the
-//! genesis holder's self-bound first binding (§3.10.5), carrying the
+//! genesis holder's self-bound first binding (protocol §4.10), carrying the
 //! mandate, dated with the policy and signed by the key it binds. That
 //! closes the window in which the first self-bound binding to land for the
 //! address — anyone's — would be the one trusted. The same key signs the

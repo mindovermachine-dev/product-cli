@@ -96,7 +96,7 @@ This is an extension grant in the sense of Section 4.5 of [RFC6749]. It lets a s
 2. The client signs the nonce as an SSH signature [SSHSIG] under the namespace string `ledger-auth@<host>`, where `<host>` is the server's host.
 3. The client sends a token request carrying the grant type, the principal, the nonce and the signature.
 4. The server checks that it issued the nonce and that the nonce is unused and unexpired.
-5. The server verifies the signature for that principal against the union of the `allowed_signers` files of the namespaces it indexes, at the current time.
+5. The server verifies the signature for that principal against the key bindings of the namespaces it indexes, with their validity windows, at the current time.
 6. The server issues a token response as in Section 5.1 of [RFC6749], or an `invalid_grant` error as in Section 5.2.
 
 ```
@@ -110,7 +110,7 @@ grant_type=<grant type URI, to be assigned>
 &signature=<SSH signature>
 ```
 
-- **SC-2.5** (S) The server verifies the signature against the union of the `allowed_signers` of the namespaces it indexes.
+- **SC-2.5** (S) The server verifies the signature against the key bindings of the namespaces it indexes, with their validity windows. It does not use `allowed_signers`, which accepts acceptance signatures only.
 - **SC-2.6** (S) A nonce is single-use and short-lived.
 
 The parameter names, the grant type URI and the nonce endpoint are provisional (Appendix A). The signing namespace `ledger-auth@<host>` differs from the acceptance namespace of [LEDGER], so a login signature can never be replayed as an acceptance.
@@ -129,10 +129,10 @@ Reads are either anonymous or guarded by a token. Nothing a read returns is auth
 | Read | Access | Returns |
 | --- | --- | --- |
 | Exported decision | Anonymous | The decision's triples, by lineage, decision or version hash. |
-| Version file | Anonymous | The file of an exported version by its hash, for holding a ground closure. |
+| Version file | Anonymous | The file of an exported version by its hash, for holding a basis closure. |
 | Version status | Anonymous | The acceptances and revocations of one version hash. |
 | Inbox list | Token whose subject is a principal | Proposed decisions in namespaces where the principal holds the class's claim, grouped by repository and pull request. |
-| Inbox detail | Token whose subject is a principal | One proposed version with its grounds, their trust status and its predecessor. |
+| Inbox detail | Token whose subject is a principal | One proposed version with its bases, their trust status and its predecessor. |
 | Non-exported decision | Token | As namespace policy allows for the token's subject or installation. |
 
 - **SC-3.1** (S) A non-exported decision MUST NOT be served anonymously.
@@ -215,7 +215,7 @@ Servers form a network without trusting each other. Trust runs between namespace
 - **SC-4.4** (S) A server reading another server is an anonymous client of its reads. There is no separate server-to-server protocol.
 - **SC-4.5** (S) Any server MAY mirror version files, exports and signed acts of any namespace. A recipient checks each against its hash or signature.
 - **SC-4.6** (C) Fetching is outside verification. What is fetched is committed to the repository, and a verifier reads only what is committed.
-- **SC-4.7** (S) A server offers the version status read of Section 4, so that a revocation of a foundation reaches every store that grounds on it.
+- **SC-4.7** (S) A server offers the version status read of Section 4, so that a revocation of a foundation reaches every store whose versions rest on it as a basis.
 
 This is a network of projections. Each namespace has one canonical repository and one set of holders, so servers have nothing to reach consensus on, and none replicates another's state.
 
@@ -328,3 +328,4 @@ If it is ever submitted, it would request a grant type URI for the SSH signature
 | --- | --- |
 | 5 October 2026 | Split from sections 10 to 12 of the Decision Ledger Protocol Editor's Draft and recast in RFC form. Requirement identifiers unchanged. |
 | 5 October 2026 | Added the steps of the SSH signature grant, the error conditions, and the security, privacy and IANA considerations. |
+| 6 October 2026 | SC-2.5 and step 5 of Section 3.3: the login signature is verified against the key bindings of the indexed namespaces with their validity windows, not against `allowed_signers` (ruling 26). "Ground" in the ledger protocol's sense renamed "basis" in Section 4 and SC-4.7 (ruling 23). No section number of [LEDGER] cited here moved. Requirement identifiers unchanged. |

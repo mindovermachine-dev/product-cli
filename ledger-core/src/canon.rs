@@ -10,7 +10,7 @@
 //! reproduce: no anchors, no tags, no four ways to write a multi-line scalar.
 //!
 //! The full specification, including the pinned conformance vector, is
-//! `docs/ledger-format-v1.md`. This module is its implementation, not its
+//! `ledger/spec/ledger-protocol.md` §4.3–§4.5. This module is its implementation, not its
 //! definition; where they disagree the document wins.
 
 use std::collections::BTreeSet;

@@ -291,10 +291,13 @@ substrate** ([PRD](ledger/prd/decision-ledger-prd.md)). L0–L2 shipped: the fil
 format, the CI gate, the L1 authoring verbs, and the L2 graph. Separate
 store (`.decisions/`), separate ontology.
 
-- **Format** — [`docs/ledger-format-v1.md`](docs/ledger-format-v1.md) is
-  normative and is what an outside implementation (the Org Ledger) imports;
-  the code follows it, not the other way round. Migrations:
-  `docs/ledger-format-migrations.md`. Two files: `sets/<id>.yml` declares a
+- **Format** — [`ledger/spec/ledger-protocol.md`](ledger/spec/ledger-protocol.md),
+  the Decision Ledger Protocol, is normative and is what an outside
+  implementation (the Org Ledger) imports; the code follows it, not the
+  other way round. It is the one normative text: it absorbed the former
+  format document (ruling 22), and requirements it marks *Not implemented*
+  are ruled but not built. Migrations: its Appendix C, where a format change
+  adds its note in the same PR. Two files: `sets/<id>.yml` declares a
   tolerance **floor**, `log/<ulid>.yml` is an append-only change-set holding
   decisions, versions, acceptances and revocations. Never edit a log file
   after writing it — a correction is a new version, a reversal a revocation.
@@ -307,7 +310,7 @@ store (`.decisions/`), separate ontology.
 - **Gate** — `ledger verify [--gate readiness|completeness] [--json]
   [--today YYYY-MM-DD] [--no-blame] [--base <ref>]`. Fails for a schema
   fault plus classes `L001`–`L014` and **nothing else**; adding a class is a
-  format-spec change (`L010` shipped that way as spec v1.1, the key classes
+  change to the protocol (§8.2; `L010` shipped that way as spec v1.1, the key classes
   `L013`/`L014` as spec v1.6 / format 5, the signing classes `L011`/`L012`
   as spec v1.8 / format 7).
   Exit `0` conformant, `1` findings, `2` could not run. Runs in CI with
@@ -375,7 +378,7 @@ store (`.decisions/`), separate ontology.
   `indeterminate:` is *held* and stops the whole run by name.
 - **Batch and inbox (#86, #79)** — `ledger accept --batch <file>
   [--repository <label>] [--branch <name>]` signs exactly the rows of a
-  selection file (`ledger.acceptance-batch.v1`, format §3.10.9; `batch_file`),
+  selection file (`ledger.acceptance-batch.v1`, protocol §10.1; `batch_file`),
   pinned by one manifest digest over every row of every repository: one
   confirmation, one acceptance and one sidecar per row. `ledger inbox list`
   indexes each configured clone's committed exports (`docs/decisions/*.nt`)

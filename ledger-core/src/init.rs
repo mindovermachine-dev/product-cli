@@ -3,7 +3,7 @@
 //! §5's layout is three directories, one of them derived. L0 builds none of
 //! the derived one — there is no index at this milestone — but the ignore
 //! line goes in now so an L2 rebuild cache can never be committed by
-//! accident. Adopting the format from `docs/ledger-format-v1.md` alone
+//! accident. Adopting the format from `ledger/spec/ledger-protocol.md` alone
 //! should not require anyone to guess at directory names.
 
 use std::path::{Path, PathBuf};

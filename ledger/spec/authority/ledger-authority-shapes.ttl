@@ -173,5 +173,5 @@ lsh:A005 a sh:NodeShape ;
 #   A005 also excludes a revoked genesis grant — a revocation ends a grant
 #        as surely as supersession does.
 # The structural node shapes above are enforced in the file gate as SCHEMA
-# faults (ledger-format-v1.md §3.9.4), where an outside implementation of
+# faults (ledger-protocol.md §8.4), where an outside implementation of
 # the format must enforce them too.

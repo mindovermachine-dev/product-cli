@@ -1,7 +1,7 @@
 # The specification-flow store — format v1
 
 **Status:** normative. The code follows this document, not the other way round.
-Companion to `docs/ledger-format-v1.md`, which it borrows its hashing law and
+Companion to `ledger/spec/ledger-protocol.md`, which it borrows its hashing law and
 its closed-class discipline from.
 
 **What this covers.** Every file the specification flow writes — act-time

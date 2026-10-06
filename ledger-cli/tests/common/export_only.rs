@@ -1,7 +1,7 @@
 //! An export-only verifier (#70): its whole input is one namespace's
 //! N-Triples export and the sidecar files. No file under `.decisions/`, no
 //! git. It rebuilds each signed entity's bytes from the export's triples by
-//! the format document's reconstruction rules, rebuilds `allowed_signers`
+//! the ledger protocol's reconstruction rules (§9.3), rebuilds `allowed_signers`
 //! from the `KeyBinding` nodes, and verifies every signature with
 //! `ssh-keygen` at the entity's own `at`. Its stated limit (D6): it orders
 //! by `at` alone, so it cannot check landing order.
