@@ -50,12 +50,29 @@ fn another_key_or_another_principals_binding_of_the_blob_stays_open() {
 }
 
 #[test]
-fn a_key_open_in_a_namespace_is_not_bound_there_twice_but_may_be_bound_elsewhere() {
+fn a_key_is_bound_once_per_namespace_and_once_closed_never_again() {
     let first = bind("1", BindingAct::Add, OWNER, "a.ledger", Some("AAAAk"), None);
     let twice = bind("2", BindingAct::Add, OWNER, "a.ledger", Some("AAAAk"), None);
     let elsewhere = bind("3", BindingAct::Add, OWNER, "b.ledger", Some("AAAAk"), None);
     assert_eq!(already_open(&[&first], &twice).map(|o| o.id.clone()), Some(first.id.clone()));
     assert!(already_open(&[&first], &elsewhere).is_none());
     let revoke = bind("4", BindingAct::Revoke, OWNER, "a.ledger", None, Some(&first));
-    assert!(already_open(&[&first, &revoke], &twice).is_none(), "a closed key is not open");
+    // Ruling 3: a closed key is refused, not accepted — in its own namespace
+    // and in every other.
+    let why = refusal(&[&first, &revoke], &[&first, &revoke], &twice).expect("refused");
+    assert!(why.contains("a closed key is never bound again") && why.contains(&revoke.id.to_string()), "{why}");
+    assert!(refusal(&[&first, &revoke], &[&first, &revoke], &elsewhere).is_some(), "closed in every namespace");
+}
+
+#[test]
+fn a_key_bound_to_another_principal_is_never_bound_to_this_one() {
+    let theirs = bind("1", BindingAct::Add, OTHER, "a.ledger", Some("AAAAk"), None);
+    let mine = bind("2", BindingAct::Add, OWNER, "b.ledger", Some("AAAAk"), None);
+    let why = refusal(&[&theirs], &[&theirs], &mine).expect("refused");
+    assert!(why.contains("a key belongs to one principal") && why.contains(OTHER), "{why}");
+    // Was bound counts as well as is: closed for them, still theirs.
+    let revoke = bind("3", BindingAct::Revoke, OTHER, "a.ledger", None, Some(&theirs));
+    assert!(refusal(&[&theirs, &revoke], &[&theirs, &revoke], &mine).is_some_and(|w| w.contains("one principal")));
+    let fresh = bind("4", BindingAct::Add, OWNER, "b.ledger", Some("AAAAj"), None);
+    assert!(refusal(&[&theirs], &[&theirs], &fresh).is_none(), "another key is fine");
 }

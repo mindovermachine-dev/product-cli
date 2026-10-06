@@ -25,6 +25,9 @@ only adds an unhashed field.
 
 1. Binding a key that the same principal already has open in that
    namespace is refused at filing, and at `verify` it is a schema fault.
+   Extended the same day: a closed key is never bound again (3), and a key
+   bound to another principal anywhere in the store is never bound (4) —
+   both refused at filing and a schema fault at `verify`.
 2. A close applies to the key, not the binding. Closing any binding of a
    principal's key closes that key in every namespace of the store, from
    the close's position (D6). Every signature check considers all bindings
@@ -38,7 +41,8 @@ live through whichever binding the close did not name, and the verdict
 depended on the order the bindings were filed in.
 
 **What can move.** No digest moves and no file is rewritten.
-- A second trusted binding of a key already open in its namespace becomes a
+- A trusted binding of a key already open in its namespace, of a key closed
+  for its principal, or of a key bound to another principal becomes a
   `SCHEMA` finding and leaves `allowed_signers`.
 - An act signed with a key closed in another namespace, or through another
   binding of the same key, after that close, becomes `L011`.

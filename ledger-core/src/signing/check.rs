@@ -26,8 +26,9 @@
 //! dated after the close fails `-Overify-time`, so `L011`; landed after the
 //! close, whatever its date, is `L011`, naming the close and its namespace;
 //! dated *and* landed before it, an acceptance goes to the re-acceptance
-//! review (`L012`, `review.rs`). A key already open in a namespace is never
-//! bound there twice: a second binding is a schema fault.
+//! review (`L012`, `review.rs`). A binding of a key already open in its
+//! namespace, closed, or another principal's is a schema fault
+//! ([`key_close::refusal`]).
 
 use std::collections::BTreeMap;
 
@@ -177,8 +178,7 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
     let positions: BTreeMap<String, Position> = all.iter().map(|s| (s.id.clone(), s.position)).collect();
     for s in all.iter().filter(|s| s.kind == Kind::Binding) {
         let Some(b) = s.binding else { continue };
-        if let Some(open) = key_close::already_open(&out.trusted, b) {
-            let rule = format!("{} already has this key open in `{}` ({}) — a key is bound once per namespace", b.principal, b.namespace, open.id);
+        if let Some(rule) = key_close::refusal(&out.trusted, &filed(store), b) {
             out.findings.push(Finding::schema(&s.id, rule));
             continue;
         }

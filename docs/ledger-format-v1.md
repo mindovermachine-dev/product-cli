@@ -828,11 +828,17 @@ A binding filed by anyone else is a schema fault (D7); one whose required
 signature does not verify is `L011`. Neither is trusted, and only trusted
 bindings reach `allowed_signers`.
 
-**A key is bound once per namespace** (ruled 2026-10-06). A binding that
-opens a key its principal already has open in that namespace — the same
-principal and key, opened by a trusted binding whose key no close has ended
-— is refused at filing, and at `verify` it is a schema fault, never
-trusted. The same key may be bound in another namespace.
+**Which keys may be bound** (ruled 2026-10-06). A binding that opens a key
+is refused at filing, and at `verify` it is a schema fault and never
+trusted, when, against the bindings trusted before it:
+
+- **the key belongs to another principal** — it is, or was, bound to a
+  different principal anywhere in the store: a key belongs to one principal;
+- **the key is closed** for its principal, in any namespace (§3.10.6): a
+  closed key is never bound again, the genesis holder vouching for it as
+  someone's first key included;
+- **the key is already open** for its principal in that namespace: a key is
+  bound once per namespace. The same key may be bound in another namespace.
 
 #### 3.10.6 Order: landing and `at` (D6)
 
