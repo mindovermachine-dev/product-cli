@@ -9,9 +9,12 @@ session. The root `CLAUDE.md`, section "Decision ledger", governs the crates.
 
 ## Directories
 
-**`spec/`** holds the ledger's specification. `spec/authority/` is the format-6
-authority ontology: `ledger-authority.ttl`, its SHACL shapes
+**`spec/`** holds the ledger's specification. `ledger-protocol.md` is the Decision
+Ledger Protocol 1.0 Editor's Draft and `server-client-protocol.md` the Decision
+Ledger Server-Client Protocol, both drafts of 5 October 2026. `spec/authority/` is
+the format-6 authority ontology: `ledger-authority.ttl`, its SHACL shapes
 `ledger-authority-shapes.ttl`, and the two samples the shapes are checked against.
+`spec/tests/` is the protocol test suite, empty today.
 
 **`rulings/`** holds the principal's rulings, each recorded beside the questions it
 answers. A ruling wins over the document that asked the question.
@@ -24,6 +27,22 @@ ledger CLI PRD, and the decision registry PRD.
 **`sessions/`** holds the prompts that drove implementation sessions, the
 close-out each session wrote, and the worksheets that sequenced work over the
 ledger's pending entries.
+
+## Status
+
+Which document is normative today.
+
+| Document | Status |
+| --- | --- |
+| `docs/ledger-format-v1.md` | **Normative** for the store format, hashing and the gate, until the absorption session lands. |
+| `docs/ledger-format-migrations.md` | Normative migration notes for the format document. |
+| `ledger/spec/ledger-protocol.md` | **Draft.** Where it and the format document differ, the format document governs. |
+| `ledger/spec/server-client-protocol.md` | **Draft.** Where it and the format document differ, the format document governs. |
+| `ledger/spec/authority/` | The vocabulary and shapes the format document's §3.9 projects. |
+| `ledger/spec/tests/` | Empty. A test case binds once the principal approves it. |
+| `ledger/rulings/` | The principal's rulings, as recorded. |
+| `ledger/prd/` | Requirements, amended by the rulings. Not a specification. |
+| `ledger/audits/`, `ledger/sessions/` | Records. Not normative. |
 
 ## Path map
 
