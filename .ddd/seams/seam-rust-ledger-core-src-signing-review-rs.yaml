@@ -1,0 +1,44 @@
+format: 2
+id: seam/rust/ledger-core-src-signing-review-rs
+boundary: contract surface of ledger-core/src/signing/review.rs
+verdict_knowledge: Callers learn which acceptances signed under a since-closed key await re-acceptance, and which are L012 once the policy's deadline from the key's earliest close has passed.
+contract_location: ledger-core/src/signing/review.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: Reaccept
+  file: ledger-core/src/signing/review.rs
+  before: absent
+  after: sha256:709ad136397c0a7daaf3560aa03a0a339f7a91272edd43a02123a37a23c85e95
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:66ae45040f076f2afb25a121264da3a8a75a94551c8fa17f8f098a643d82acf2
+- symbol: acceptance
+  file: ledger-core/src/signing/review.rs
+  before: absent
+  after: sha256:709ad136397c0a7daaf3560aa03a0a339f7a91272edd43a02123a37a23c85e95
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:ba3c717e9099d9d40b961b87182ac7ac5ca07a0eb952a36a728cb13c699b54a4
+- symbol: actor
+  file: ledger-core/src/signing/review.rs
+  before: absent
+  after: sha256:709ad136397c0a7daaf3560aa03a0a339f7a91272edd43a02123a37a23c85e95
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:3b1ea327c0379577030d6cc0ce0fe2b792c9bf3b7e2b0fce6351341acd0a9c0e
+- symbol: closed_by
+  file: ledger-core/src/signing/review.rs
+  before: absent
+  after: sha256:709ad136397c0a7daaf3560aa03a0a339f7a91272edd43a02123a37a23c85e95
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:1677227ff46e506af8599177db0b88f780b351a2be4149a73a3e9325bba22b00
+- symbol: deadline
+  file: ledger-core/src/signing/review.rs
+  before: absent
+  after: sha256:709ad136397c0a7daaf3560aa03a0a339f7a91272edd43a02123a37a23c85e95
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:9e065746c8086b4faa746ee5c5cc16a6587e2d3b07e3f64c9e16efdc40d77e5a
+- symbol: key
+  file: ledger-core/src/signing/review.rs
+  before: absent
+  after: sha256:709ad136397c0a7daaf3560aa03a0a339f7a91272edd43a02123a37a23c85e95
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:c2e5a3875448aac032afc8fc83401d7b1a73b1c2637d41b557336137a44e50c7
