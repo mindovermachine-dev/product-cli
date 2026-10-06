@@ -8,14 +8,14 @@ except where noted below. Where they differed, I followed the repository.
 
 ## 1. Pull requests
 
-- **PR 1, the move** (__PR1__): `git mv` of the thirteen files in §2 into `ledger/`.
+- **PR 1, the move** (mindovermachine-dev/product-cli#108): `git mv` of the thirteen files in §2 into `ledger/`.
   Citations of the moved paths were updated in `CLAUDE.md`, the comment on
   the "Ledger gate" step in `.github/workflows/product-ci.yml`, eight
   `ledger-core/src` comments, `docs/ddd-adrs.md`, `docs/ddd-cli-prd.md`,
   `docs/audits/provenance-2026-08.md`, and the moved documents' citations of
   each other. The PR also adds `ledger/README.md` (index and path map). It
   makes no code change.
-- **PR 2, the protocol** (__PR2__): the three `incoming/` files placed unedited at
+- **PR 2, the protocol** (mindovermachine-dev/product-cli#109): the three `incoming/` files placed unedited at
   `ledger/spec/ledger-protocol.md`, `ledger/spec/server-client-protocol.md` and
   `ledger/rulings/ground-and-protocol-rulings-2026-10.md`. Adds
   `ledger/spec/tests/README.md`, the status table in `ledger/README.md`, and
@@ -31,7 +31,8 @@ except where noted below. Where they differed, I followed the repository.
   `docs/decisions/hafeok.ddd.nt` = `33218d29376b66de7c241a7e2de976159e5802d9`,
   `docs/decisions/hafeok.ledger.nt` = `5440946bb5fee2ae1aace691d32d791bc8a29f55`.
 - `cargo build`, `cargo clippy -- -D warnings -D clippy::unwrap_used` and
-  `cargo t`: __GATES__.
+  `cargo t`: all pass. `cargo t` ran 2083 tests with 0 failures, on the PR 2 tree, which has the same Rust as PR 1. The first run failed 18 `ledger-cli` signing suites only because this container lacked `ssh-keygen` (`ledger-cli/tests/common/mod.rs:117`). After installing `openssh-client`, every suite passed.
+- `ddd validate` (conformant, 362 entries) and `cargo xtask check` (0 errors, 5 warnings in unchanged code) also pass. `ledger verify --export` on the PR 2 tree prints the same output as before the move.
 - `cargo fmt --all -- --check` fails on `main` already (for example
   `ddd-cli/src/commands/bind.rs`). It is not one of the `CLAUDE.md` gates, and
   this session changed no code it could affect.
