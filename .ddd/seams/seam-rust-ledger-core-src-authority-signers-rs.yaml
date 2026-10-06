@@ -60,3 +60,15 @@ bindings:
   after: sha256:ab237eed42ab3e57177d5689adaa7264c8fc95c542dc75b347ea205cafed346f
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:5c90c8e2be9aaf8f99ed30e2018b86e18dd975dfaf3b45eae8578db70db34c57
+- symbol: derive_from
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:ab237eed42ab3e57177d5689adaa7264c8fc95c542dc75b347ea205cafed346f
+  after: sha256:661c2da986aa08f2d1c994b4cef1dec84dcf93ce26e8df1f9309180ea265940f
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:d0419486c4dcdfae0b6aa657b275e8900c56d030966ead7211d59c51ac27bc3b
+- symbol: filed
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:ab237eed42ab3e57177d5689adaa7264c8fc95c542dc75b347ea205cafed346f
+  after: sha256:661c2da986aa08f2d1c994b4cef1dec84dcf93ce26e8df1f9309180ea265940f
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:26d49dc9593d0093aeb3fecebd5e60dc569503f230432b4e4f13f7c8e6889477

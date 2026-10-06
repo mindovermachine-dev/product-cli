@@ -348,7 +348,12 @@ store (`.decisions/`), separate ontology.
   of theirs already trusted. A key binding is never exempt as a pre-policy
   act (D5 (c) covers acceptances and revocations only): one before the
   first policy is judged by D7 and that policy's requirement, so every
-  filed binding is trusted or named by a finding. Integration suites need `ssh-keygen` (OpenSSH) as well as `script(1)`.
+  filed binding is trusted or named by a finding. A close ends the key, not
+  the binding (ruled 2026-10-06, `authority/key_close.rs`): closing any
+  binding of a principal's key closes it in every namespace, every check
+  asks over all bindings of the key; a key is bound once per namespace, a
+  closed key never again, and a key belongs to one principal (each a schema
+  fault, refused at filing). Integration suites need `ssh-keygen` (OpenSSH) as well as `script(1)`.
 - **Authority verbs and signing verbs refuse a non-interactive caller**
   (#71, #85). `accept <dec>`, `accept … --confirm`, `revoke`, and every verb
   that writes an authority record exit non-zero and write nothing unless

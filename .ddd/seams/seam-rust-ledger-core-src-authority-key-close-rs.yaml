@@ -1,0 +1,74 @@
+format: 2
+id: seam/rust/ledger-core-src-authority-key-close-rs
+boundary: contract surface of ledger-core/src/authority/key_close.rs
+verdict_knowledge: Callers learn whether a principal's key is closed — a close of any binding of the same principal and key, in any namespace, ends it (ruled 2026-10-06) — and whether a binding may open its key at all (once per namespace, never once closed, never another principal's).
+contract_location: ledger-core/src/authority/key_close.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: already_open
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:3be6c9d74a3bb44dec876cd7ce49441f750a1b25b01a5dcd37055fe177204117
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:8a7c300491c47bd57d16ed88de7ce1c19992dd8ee697af85d942fb66a6ce742c
+- symbol: closes_among
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:3be6c9d74a3bb44dec876cd7ce49441f750a1b25b01a5dcd37055fe177204117
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:f2197901666e8f1edee763f0c08b8d4255545d2b8dacba4e0eb482dc9f8891d2
+- symbol: closes_of
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:3be6c9d74a3bb44dec876cd7ce49441f750a1b25b01a5dcd37055fe177204117
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:03a840778b14c6a4cf4a09974e8dbdfb63bbd28a7b968584de52a988ed33c676
+- symbol: is_closed
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:3be6c9d74a3bb44dec876cd7ce49441f750a1b25b01a5dcd37055fe177204117
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:9d8b170a2f40837984f84591f06c21cc0bdce21719eac0e62966b53bfabf32ee
+- symbol: same_key
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:3be6c9d74a3bb44dec876cd7ce49441f750a1b25b01a5dcd37055fe177204117
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:84b27f0e6ee62808a8a413903e5a8d72119cacb936bcf5284fe5e01d4b7dc3ed
+- symbol: already_open
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:eb0c8ff6ec8a6811489af8cfa94891bdbd07abb590ea11d1368e57e6e7db4025
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:3c18c43f9971c7896e04242f6d510f5720f68d84e79be09a16e3ba7e2525ea0c
+- symbol: closes_among
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:eb0c8ff6ec8a6811489af8cfa94891bdbd07abb590ea11d1368e57e6e7db4025
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:f04f164d1280f02ddc1c7153ace465bf97f6da849a8a5c21682d742a88f610b1
+- symbol: closes_of
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:eb0c8ff6ec8a6811489af8cfa94891bdbd07abb590ea11d1368e57e6e7db4025
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:0d6af20d2f03bfd35ecc8a288ee7f54ef436d71109187b280676a49dfee874f8
+- symbol: is_closed
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:eb0c8ff6ec8a6811489af8cfa94891bdbd07abb590ea11d1368e57e6e7db4025
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:6d36b1f00227bb376b3a08514d0c992b896e2c83ec59d13c485195eab6809411
+- symbol: refusal
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:eb0c8ff6ec8a6811489af8cfa94891bdbd07abb590ea11d1368e57e6e7db4025
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:146d60c12df3db82ffa74ac4290c1108f9853c600282722dee3da8b7af67a63e
+- symbol: same_key
+  file: ledger-core/src/authority/key_close.rs
+  before: absent
+  after: sha256:eb0c8ff6ec8a6811489af8cfa94891bdbd07abb590ea11d1368e57e6e7db4025
+  base_revision: 969c4fa55c488eb473bb892cdced00008607455b
+  hash: sha256:fdf9b9b9699b4a6887b854809e97a3d5fea103960c1bcda89d15681d6bf9ea3d

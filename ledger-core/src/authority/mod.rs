@@ -17,6 +17,7 @@ pub mod binding;
 pub mod check;
 pub mod choice;
 pub mod filing;
+pub mod key_close;
 #[cfg(test)]
 pub(crate) mod fixture;
 pub mod grant;

@@ -57,14 +57,15 @@ pub fn may_file(auth: &Authority<'_>, b: &KeyBinding) -> Result<(), String> {
 }
 
 /// Whether `who` holds an open key window (other than `b` itself) in `ns`,
-/// or in any namespace when `ns` is `None`.
+/// or in any namespace when `ns` is `None`. A window is open while its key
+/// is: a close of the same key in any namespace closes it (ruled 2026-10-06).
 fn open_window(auth: &Authority<'_>, b: &KeyBinding, who: &crate::identity::Identity, ns: Option<&str>) -> bool {
     auth.bindings.iter().any(|o| {
         o.act.opens()
             && ns.is_none_or(|ns| o.namespace == ns)
             && o.principal == *who
             && o.id != b.id
-            && !auth.bindings.iter().any(|c| c.closes.as_ref() == Some(&o.id))
+            && !super::key_close::is_closed(&auth.bindings, o)
     })
 }
 

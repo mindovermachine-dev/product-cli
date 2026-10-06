@@ -109,6 +109,20 @@ Implemented in `signing/check.rs` `trust_bindings`. A signed binding before the 
 
 > **Ruled the same day, on #103: D7 is not widened.** A key trusted in another namespace counts only for the holder's first binding in a namespace. Otherwise a key closed in one namespace and live in another could re-enter the namespace it was closed in. The refusal of a skewed further key dated before `init`'s binding stays. When the genesis holder has bindings but none is live, `init` refuses, naming them, unless `--without-key`, which warns.
 
+**A key binding and its close (ruled 2026-10-06, #104).**
+
+> 1. Binding a key that the same principal already has open in that namespace is refused at filing, and at `verify` it is a schema fault.
+> 2. A close applies to the key, not the binding. Closing any binding of a principal's key closes that key in every namespace of the store, from the close's position (D6). Every signature check considers all bindings of the matched key, not the first. The finding names the namespace it was refused in, the namespace of the close, and the close.
+
+**Extending ruling 1 (ruled 2026-10-06, on #107).**
+
+> 3. A closed key is never bound again. Binding a key that is closed for that principal, in any namespace, is refused at filing and is a schema fault at `verify`. This covers the genesis holder vouching for a closed key as someone's first key.
+> 4. A key belongs to one principal. Binding a key that is, or was, bound to a different principal anywhere in the store is refused at filing and is a schema fault at `verify`.
+
+Ruling 4 closes the gap ruling 2 leaves open: a close ends the key for its principal, so another principal holding a binding of the same key could otherwise go on signing with it after its owner closed it. Both are judged against the bindings trusted before the one being filed (`authority/key_close.rs` `refusal`), in landing order, so an untrusted binding — a forgery — can neither block nor claim a key.
+
+The reason: a close named one binding, and the check asked only the first binding whose key matched, so a key closed in one namespace stayed live in another, and a key bound twice in one namespace stayed live through the binding the close did not name — decided by filing order, not by a rule. Implemented in `authority/key_close.rs`, used by `signing/check.rs`, `allowed_signers` (every line of a closed key ends at the close), the `L012` review, D7's filing rule and the signing verbs. No new class, no format change; see `docs/ledger-format-migrations.md`. `identity rotate|revoke` across every namespace in one act, and a `verify` notice for a split state, follow after the Varve import.
+
 **A note for the principal (Session B close-out §3, item 7).** The terminal check and the typed manifest are passable by any process that allocates a pseudo-terminal. The control that requires a person is the key: its passphrase, or a touch under `require_sk`.
 
 ## Two further differences the side-by-side surfaces

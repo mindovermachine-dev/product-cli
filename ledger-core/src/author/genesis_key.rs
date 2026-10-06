@@ -102,8 +102,8 @@ impl Author {
     /// separate `identity add`.
     fn carry_genesis_key(&mut self, store: &Store, candidate: &mut ChangeSet, policy: &Policy, without_key: bool) -> Result<Vec<String>, AuthorError> {
         let auth = Authority::build(store);
-        let closed = |b: &KeyBinding| auth.bindings.iter().any(|c| c.closes.as_ref() == Some(&b.id));
-        let live = |b: &&KeyBinding| b.act.opens() && b.principal == self.who && !closed(b);
+        // A close ends the key in every namespace (ruled 2026-10-06).
+        let live = |b: &&KeyBinding| b.act.opens() && b.principal == self.who && !crate::authority::key_close::is_closed(&auth.bindings, b);
         if !auth.bindings.iter().any(&live) {
             return self.no_live_key(&auth, policy, without_key);
         }
