@@ -21,8 +21,9 @@ ledger CLI PRD, and the decision registry PRD.
 
 **`audits/`** holds read-only audits of the ledger against its requirements.
 
-**`sessions/`** holds the prompts that drove implementation sessions and the
-close-out each session wrote.
+**`sessions/`** holds the prompts that drove implementation sessions, the
+close-out each session wrote, and the worksheets that sequenced work over the
+ledger's pending entries.
 
 ## Path map
 
@@ -45,6 +46,7 @@ This map is how those citations resolve.
 | `docs/sessions/2026-10-session-a.md` | `ledger/sessions/2026-10-session-a.md` |
 | `docs/sessions/2026-10-session-b.md` | `ledger/sessions/2026-10-session-b.md` |
 | `docs/sessions/product-cli-v2-sessions.md` | `ledger/sessions/product-cli-v2-sessions.md` |
+| `docs/acceptance-worksheet-2026-08.md` | `ledger/sessions/acceptance-worksheet-2026-08.md` |
 
 A basis pointer such as `prd:decision-ledger-prd#4.2.1` names a document by its
 base name, not its path, so the move does not touch it.
