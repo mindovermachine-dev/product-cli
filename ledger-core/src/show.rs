@@ -126,7 +126,10 @@ pub struct Screen {
     /// The set's currently declared floor, which is not necessarily the
     /// floor this version pinned — a raise strands members until re-pinned.
     pub set_floor: Option<String>,
-    pub state: DispositionState,
+    /// The decision's state; absent for a tip of a forked chain, which has
+    /// no latest version and so no state (ruling 54).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub state: Option<DispositionState>,
     /// Which weight class this entry falls in, so a grouped pass can say
     /// what it is reading.
     pub group: &'static str,
@@ -193,9 +196,10 @@ pub struct AcceptanceLine {
     pub expires_at: Option<String>,
 }
 
-/// Build the screen for one decision, or `None` when the log holds no
-/// version of it — an unknown id is the caller's error to report, not a
-/// blank screen to render.
+/// Build the screen for one decision, or `None` when it has no latest
+/// version: the log holds none (an unknown id is the caller's error to
+/// report, not a blank screen to render), or its chain is forked, whose
+/// tips [`screens`] shows one by one.
 pub fn screen(
     store: &Store,
     decision: &DecisionId,
@@ -204,7 +208,8 @@ pub fn screen(
 ) -> Option<Screen> {
     let view = View::build(store);
     let rows = state::states(&view, today);
-    build(store, &view, &rows, &decision.to_string(), texts)
+    let index = *view.latest.get(&decision.to_string())?;
+    build(store, &view, &rows, index, texts)
 }
 
 /// Every screen a selector covers, in decision-id order. One `View` build
@@ -218,9 +223,14 @@ pub fn screens(
 ) -> Vec<Screen> {
     let view = View::build(store);
     let rows = state::states(&view, today);
-    view.latest
-        .keys()
-        .filter_map(|id| build(store, &view, &rows, id, texts))
+    // A forked decision has no latest version (ruling 54): each of its tips
+    // gets a screen, marked forked, and none is picked as the one.
+    let ids: std::collections::BTreeSet<&String> = view.latest.keys().chain(view.forked.keys()).collect();
+    ids.into_iter()
+        .flat_map(|id| {
+            let indices = view.latest.get(id).map(|i| vec![*i]).or_else(|| view.forked.get(id).cloned()).unwrap_or_default();
+            indices.into_iter().filter_map(|i| build(store, &view, &rows, i, texts)).collect::<Vec<_>>()
+        })
         .filter(|s| matches(s, selector))
         .collect()
 }
@@ -251,12 +261,13 @@ fn build(
     store: &Store,
     view: &View,
     rows: &std::collections::BTreeMap<String, state::StateRow>,
-    id: &str,
+    index: usize,
     texts: &dyn BasisText,
 ) -> Option<Screen> {
-    let index = *view.latest.get(id)?;
     let viewed = view.versions.get(index)?;
     let raw = viewed.raw;
+    let decision = raw.decision.to_string();
+    let id = decision.as_str();
     let row = rows.get(id);
     let filing = store.log.iter().find(|l| l.path == viewed.path).map(|l| &l.file);
     let edges = |items: Vec<String>| -> Vec<Edge> {
@@ -269,7 +280,10 @@ fn build(
         decision: id.to_string(),
         set: raw.set.clone(),
         set_floor: store.set(&raw.set).map(|s| s.tolerance_floor.to_string()),
-        state: row.map(|r| r.state).unwrap_or(DispositionState::Undecided),
+        state: match view.is_forked(id) {
+            true => None,
+            false => Some(row.map(|r| r.state).unwrap_or(DispositionState::Undecided)),
+        },
         group: group_of(raw).as_str(),
         statement: raw.statement.clone(),
         allocation: raw.allocation.map(|a| a.as_str().to_string()),
@@ -303,8 +317,6 @@ fn build(
 }
 
 fn acceptance_lines(view: &View, id: &str) -> Vec<AcceptanceLine> {
-    let latest =
-        view.latest.get(id).and_then(|i| view.versions.get(*i)).map(|v| v.raw.hash.clone());
     view.acceptances
         .iter()
         .map(|v| v.acceptance)
@@ -316,7 +328,8 @@ fn acceptance_lines(view: &View, id: &str) -> Vec<AcceptanceLine> {
             at: a.at.date_naive().to_string(),
             standing: if view.is_revoked(a) {
                 "revoked"
-            } else if latest.as_ref() == Some(&a.version) {
+            } else if view.signs_a_tip(a) {
+                // A tip of a forked chain counts: nothing is picked among tips.
                 "live"
             } else {
                 "historical"

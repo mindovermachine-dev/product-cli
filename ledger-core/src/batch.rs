@@ -174,6 +174,9 @@ pub fn plan(
 ) -> Plan {
     let mut members: Vec<Member> = screens.iter().map(|s| member(s, actor, today)).collect();
     members.sort_by(|a, b| a.decision.cmp(&b.decision));
+    // A forked decision is one member, whatever its number of tips: it has
+    // no latest version to sign (ruling 54).
+    members.dedup_by(|a, b| a.decision == b.decision && a.standing == Standing::Forked.as_str() && b.standing == a.standing);
     let selector = selector.to_string();
     let actor = actor.to_string();
     let manifest = manifest(&selector, &actor, &members);
@@ -216,9 +219,10 @@ fn member(s: &Screen, actor: &Identity, today: NaiveDate) -> Member {
     let (standing, because) = standing_of(s, actor, today);
     Member {
         decision: s.decision.clone(),
-        version: s.hash.clone(),
+        // No latest version on a forked chain, so no version to pin.
+        version: if s.forked { String::new() } else { s.hash.clone() },
         group: s.group.to_string(),
-        state: s.state.as_str().to_string(),
+        state: s.state.map_or("forked", |st| st.as_str()).to_string(),
         statement_head: head(&s.statement),
         standing: standing.as_str(),
         because,

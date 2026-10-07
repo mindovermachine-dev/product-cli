@@ -174,7 +174,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
 
     let mut report = Report {
         entries: store.entry_count(),
-        decisions: view.latest.len(),
+        decisions: view.decision_count(),
         awaiting_acceptance: awaiting(&view),
         reaccept: signing.reaccept.clone(),
         notices: notices(store, &signing.trusted),

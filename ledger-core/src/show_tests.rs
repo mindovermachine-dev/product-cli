@@ -40,7 +40,7 @@ fn the_screen_carries_the_hashed_content_and_the_filing_act() {
     assert_eq!(s.versions_in_chain, 1);
     assert_eq!(s.allocation.as_deref(), Some("constraint"));
     assert_eq!(s.filed.by, "fixture-human@example");
-    assert_eq!(s.state, DispositionState::AwaitingAcceptance);
+    assert_eq!(s.state, Some(DispositionState::AwaitingAcceptance));
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn a_live_acceptance_shows_as_live_and_stops_prompting() {
     let acc = testkit::acceptance(&v);
     let store = testkit::store(testkit::changeset(vec![v], vec![acc]));
     let s = screen(&store, &testkit::decision_id(), today(), &NoText).expect("screen");
-    assert_eq!(s.state, DispositionState::Decided);
+    assert_eq!(s.state, Some(DispositionState::Decided));
     assert_eq!(s.acceptances.len(), 1);
     assert_eq!(s.acceptances[0].standing, "live");
     let text = render(&s);

@@ -166,10 +166,27 @@ fn g004_a_forked_chain_fails_verify_and_names_both_tips() {
     for cls in ["L001", "L007", "SCHEMA", "G001", "G002", "G003"] {
         assert!(!err.contains(&format!("[{cls}]")), "the fork isolates: {err}");
     }
+    // Ruling 54: a forked decision has no latest version, so `G004` is its
+    // one finding and it is not "allocated, awaiting acceptance".
+    assert!(err.contains("non-conformant — 1 finding(s)"), "{err}");
+    assert!(!err.contains("awaiting acceptance"), "{err}");
 
+    // `status` lists it apart from the seven states, with both tips and no
+    // stand-in hash.
     let status = ledger(&root, &["status", "--today", "2026-08-10"]);
     let text = stdout(&status);
-    assert!(text.contains("chain forked into 2 tips"), "{text}");
+    assert!(text.contains("1 forked — no latest version until `ledger merge --resolve` arbitrates:"), "{text}");
+    assert!(text.contains("tips 523a5b4b0e93, a289f499364f"), "{text}");
+    assert!(!text.contains("[a289f499364f]"), "no tip stands in as the latest: {text}");
+
+    // `show` gives each tip a screen, with no state; `coverage` lists the
+    // decision apart from the seven states.
+    let show = stdout(&ledger(&root, &["show", "dec:fixture.forked/01K2C4YQJ3F8M0PT5W7NZ9RDXV", "--today", "2026-08-10"]));
+    assert!(show.starts_with("2 decision(s)"), "{show}");
+    assert_eq!(show.matches("— forked [").count(), 2, "{show}");
+    assert!(show.contains("523a5b4b0e93") && show.contains("a289f499364f"), "{show}");
+    let coverage = stdout(&ledger(&root, &["coverage", "--today", "2026-08-10"]));
+    assert!(coverage.contains("forked, no state until `ledger merge --resolve`: dec:fixture.forked/01K2C4YQJ3F8M0PT5W7NZ9RDXV"), "{coverage}");
 }
 
 /// Point the file's `supersedes:` at a ULID nobody filed.

@@ -58,8 +58,18 @@ pub fn plan(labels: [&str; 3], ours: &Store, theirs: &Store, base: &Store) -> Me
 }
 
 fn plan_decisions(out: &mut MergePlan, ours: &View, theirs: &View, base: &View) {
+    // A side whose chain is already forked has no latest version of the
+    // decision (ruling 54): nothing is planned for it until that side is
+    // arbitrated.
+    for (label, side) in [("ours", ours), ("theirs", theirs)] {
+        for decision in side.forked.keys() {
+            out.notices.push(format!(
+                "{decision}: forked on {label} — no latest version there; `ledger merge --resolve` that side first"
+            ));
+        }
+    }
     let all: BTreeSet<&String> = ours.latest.keys().chain(theirs.latest.keys()).collect();
-    for decision in all {
+    for decision in all.into_iter().filter(|d| !ours.is_forked(d) && !theirs.is_forked(d)) {
         let o = ours.latest.get(decision).and_then(|&i| ours.versions.get(i));
         let t = theirs.latest.get(decision).and_then(|&i| theirs.versions.get(i));
         match (o, t) {

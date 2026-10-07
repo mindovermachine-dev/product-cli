@@ -1032,7 +1032,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 These notes are part of the specification, not implementation detail:
 
 - **LP-8.10** (V) **Only the latest version of a decision is judged** by `L001`, `L003`, `L005`, `L010` and `L014`. (`L013` judges every version against its predecessors: a rename anywhere in the chain is a rename.) An acceptance of a superseded version was already invalidated when the hash moved; reporting it again is noise on a resolved fact.
-- **LP-8.11** (V) **"Latest" derives from the parent DAG, never from file or ULID order** (spec v1.2). The latest version of a decision is the unique version whose hash no other version of the same decision names as `parent`. Content-identical filings (one hash filed more than once) are one version. A chain that cannot name one tip (two versions unclaimed as parents, the store two divergent writers leave behind) has no latest: an implementation MUST NOT resolve the ambiguity by any ordering heuristic. The reference implementation reports it as `G004` (section 8.6) and refuses authoring acts against the forked decision until a recorded arbitration settles the chain.
+- **LP-8.11** (V) **"Latest" derives from the parent DAG, never from file or ULID order** (spec v1.2). The latest version of a decision is the unique version whose hash no other version of the same decision names as `parent`. Content-identical filings (one hash filed more than once) are one version. A chain that cannot name one tip (two versions unclaimed as parents, the store two divergent writers leave behind) has no latest: an implementation MUST NOT resolve the ambiguity by any ordering heuristic. The classes LP-8.10 names skip a forked decision, and `G004` (section 8.6) is its one finding (ruling 54). The reference implementation refuses authoring acts against the forked decision until a recorded arbitration settles the chain.
 - **LP-8.12** (V) **A revoked acceptance is not judged** for expiry.
 - **LP-8.13** (V) **`L008` checks the pair.** An acceptance naming one decision while signing another's hash is signing nothing about the decision it claims to accept.
 - **LP-8.14** (V) **`L009` skips, never fails, when there is no introducing commit.** An uncommitted acceptance is the state every acceptance passes through; failing it would make an acceptance impossible to commit in the first place. The check lands on the next run over committed history, which in practice is CI. A skipped check is always reported: a silently unrun rule reads as a passing one.
@@ -1119,6 +1119,15 @@ A decision's state is a function of the entities present. No entity has a state 
 
 **Implemented: the disposition vocabulary.**
 
+- **LP-8.34** (V) **A forked decision has no state** (ruling 54). It has no latest version (LP-8.11), so it holds none of the seven states below and is never "allocated, awaiting acceptance". Readers of the latest version treat it as follows, and none picks a tip:
+  - the file gate's latest-only classes skip it, and it is not live for any acceptance (LP-8.10);
+  - status and coverage list it apart from the seven states, with its tips;
+  - a decision screen shows each tip, marked forked and with no state;
+  - a batch selection holds it as one forked member, with no version to sign;
+  - a semantic diff whose target settles a fork reports a tip move from the forked tips;
+  - a merge plan notes a side already forked and plans nothing for it there.
+
+  An acceptance that signs one of its tips is reported as standing on that tip, not as history.
 - **LP-8.33** (V) Coverage reports the seven-state disposition vocabulary (`undecided`, `awaiting-acceptance`, `decided`, `escaped-priced`, `escape-review-due`, `expired`, `superseded`) per set and per namespace, with supersession chains walked to their tips, and always states the honest limit: coverage is measured against the enumerated set, and nothing verifies the set itself.
 
 **Not implemented: the acceptance states of the protocol draft.**
@@ -1425,6 +1434,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 5 October 2026 | Former sections 10 to 12 moved to The Decision Ledger Server-Client Protocol. Later sections renumbered 11 to 14; requirement identifiers unchanged. |
 | 6 October 2026 | The format document absorbed (ruling 22): this document becomes the normative format. Its content lands in sections 3 to 10 and 12, its revision history in Appendix B.1, and its migration record in Appendix C. Existing requirement ids keep their numbers; absorbed requirements take the next free number in their section. Subsections are numbered. The draft's "ground" is renamed "basis" (ruling 23), and pinned bases become tokens inside `based_on` with no `grounds` field (ruling 25). `accept_role` is described as the `ordinary` row of the class requirement table (ruling 24). Extraction markers filled. The open item on fallback ordering removed: covering scope is ruled (D9 (e)). Unimplemented requirements marked. Section order is unchanged. |
 | 7 October 2026 | The rulings of 7 October applied (27 to 48). **LP-4.18 step 2c now follows the code** (ruling 33): space, `\t`, `\n`, `\f` and `\r` are stripped and `\v` is not. This is the one place where the canonicalisation text departs from the absorbed format document, which listed `\v`; no digest moves. The pinned-basis edge is `ledger:pinnedBasis` (27). The token forms of section 7.3 are ruled, with their format rule LP-7.27 (34), and other `@sha256:` tokens take no part in convergence, LP-7.28 (35). Basis-loss past a policy deadline is a failing class, LP-7.29 (29). The verifier profile is the whole of section 8, LP-8.6 and section 1 (31). Namespace independence is stated as not implemented: section 3.6 (LP-3.30 to LP-3.33), LP-3.8, LP-3.18, the term Pin, LP-7.11, LP-7.30, LP-7.31, and authority per namespace in section 6.7 (LP-6.31, LP-6.32) with supersession notes where the implemented text stands (32, 41 to 48). Citations of the PRDs and the way-of-working document marked informative (37). Section 3.6 and section 6.7 are new subsections; no existing number moved. |
+| 7 October 2026 | Ruling 54 applied: a forked decision has no latest version; the latest-only classes skip it and `G004` is its one finding (LP-8.10, LP-8.11). New LP-8.34 states what each reader of the latest version does for a decision that has none. The reference had judged a smallest-hash stand-in tip. No class added; no digest moves. |
 
 ### B.1 Revisions of the absorbed format document
 
