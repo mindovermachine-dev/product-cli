@@ -12,7 +12,8 @@
 //! **Trust.** Key bindings are judged first, in landing order: a binding
 //! counts only when D7 allows its filer ([`crate::authority::filing`]) and,
 //! where policy requires it, its signature verifies against the bindings
-//! already trusted (a self-bound binding against the key it binds). The
+//! already trusted (a self-bound binding against the key it binds, a
+//! `rotate` against the key it closes, ruling 53). The
 //! trusted bindings are what `allowed_signers` is derived from, so an
 //! unsigned binding for an existing holder never reaches the trust root.
 //! A binding before its namespace's first policy is judged under that
@@ -200,15 +201,34 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
         }
         let elsewhere = carried_over(&out.trusted, b);
         keys.extend(elsewhere.iter());
+        let rotate = b.act == crate::authority::BindingAct::Rotate;
+        if rotate {
+            keys = closed_key_only(&keys, &filed(store), b);
+        }
         match judge(store, s, &policy, &keys, &positions) {
             Ok(_) => out.trusted.push(b),
             Err(message) => out.findings.push(Finding::new(
                 VerifyClass::L011,
                 &s.id,
-                format!("{message} — the binding is not trusted and is left out of allowed_signers"),
+                format!(
+                    "{message}{} — the binding is not trusted and is left out of allowed_signers",
+                    if rotate { " (a `rotate` is signed by the key it closes, LP-4.12)" } else { "" }
+                ),
             )),
         }
     }
+}
+
+/// The keys a `rotate` may verify against (ruling 53): of its principal's
+/// opening bindings, only those of the key it closes. Closes, and every
+/// other principal's bindings, stay, so whether that key is already closed
+/// is still asked of every close of it.
+fn closed_key_only<'a>(keys: &[&'a KeyBinding], filed: &[&KeyBinding], b: &KeyBinding) -> Vec<&'a KeyBinding> {
+    let target = filed.iter().find(|o| Some(&o.id) == b.closes.as_ref() && o.act.opens());
+    keys.iter()
+        .copied()
+        .filter(|k| !k.act.opens() || k.principal != b.principal || target.is_some_and(|t| key_close::same_key(k, t)))
+        .collect()
 }
 
 /// A namespace's first policy (it replaces none), wherever it landed.
