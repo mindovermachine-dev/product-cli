@@ -1,24 +1,32 @@
 # Namespace independence: design PRD
 
-Draft, 7 October 2026. Design session for rulings 32 and 41 to 48 (`ledger/rulings/absorption-replies-rulings-2026-10-07.md`).
+First draft 7 October 2026; revised the same day after rulings 61 to 81 (`ledger/rulings/namespace-design-rulings-2026-10-07.md`).
 
-This document decides nothing. At each fork it sets out the options and their costs, then gives one line marked **Lean**. The principal decides. It changes no code and no protocol text. The protocol changes in §5 are proposals, and the protocol will change together with the implementation.
+This document states the ruled design for rulings 32 and 41 to 48.
 
-The record of this session is `ledger/sessions/2026-10-namespace-design.md`: what was read, every experiment's commands and full output, and what could not be determined.
+- **Section 3** gives the design topic by topic, each with the rulings it rests on.
+- **Points not separately ruled** are the first draft's leans, which the principal accepted as the basis of the design. They are marked "accepted with the design".
+- **Options that were not chosen** are in Appendix A.
+- **Sections 1 and 2** are kept as they were written before the rulings: they are the record of the problem and of the experiment.
+- **The protocol changes in §5** are proposals. The protocol changes with the implementation.
 
-**Base.** The prompt was written against `main` at `55c3bcf`. `main` is now at `e20fadc`. The only change since is `ledger/sessions/2026-10-verification.md` (#114), which this design reads. No code changed between the two commits.
+The session record is `ledger/sessions/2026-10-namespace-design.md`. It holds what was read, every experiment's commands and full output, the principal's replies, and what could not be determined.
+
+**Base.** The first draft was written against `e20fadc`. The revision is on `846975a`, which adds rulings 49 to 60 (`ledger/rulings/verification-rulings-2026-10-07.md`) and amends LP-9.14 and LP-9.15 (ruling 51). Where those bear on this design, the text says so.
 
 **Reading the claims.** Every statement about today's behaviour names a file and a symbol. It is marked *(run)* when an experiment in §2 showed it, *(read)* when it comes from reading the code, and *(inference)* when it follows from the code but was not run.
 
 ## Contents
 
-1. The coupling inventory
-2. The extraction experiment
-3. The design: twelve topics
+1. The coupling inventory (record)
+2. The extraction experiment (record)
+3. The design
 4. Acceptance criteria
 5. Protocol changes
 6. Issues
-7. Questions for the principal
+7. Rulings, and the questions they raise
+
+Appendix A. Options considered
 
 ---
 
@@ -289,484 +297,456 @@ No verdict can get stricter. So the backdating attack D6 closed reopens through 
 
 ```mermaid
 flowchart TB
-  subgraph today["Today: one store, shared state"]
-    direction TB
-    G["genesis grant, scope *"]
-    R["roles/"]
-    AS["allowed_signers"]
-    S["sets/"]
-    LA["log/ — A's entities"]
-    LB["log/ — B's entities"]
-    GIT["first-parent history"]
-    G --> LA & LB
-    R --> LA & LB
-    S --> LA & LB
-    LA -- "a close ends the key in B" --> LB
-    GIT -- "landing, L009" --> LA & LB
-    LA & LB --> AS
-  end
-```
-
-```mermaid
-flowchart TB
-  subgraph proposed["Proposed: a namespace is a directory"]
+  subgraph proposed["Every store: a namespace is a directory"]
     direction TB
     subgraph A[".decisions/ns/A/"]
       GA["genesis, roles, grants, bindings, policy"] --> LAA["log/, sig/, sets/"]
       LAA --> ASA["allowed_signers"]
-      LAA --> LRA["landing (record)"]
     end
     subgraph B[".decisions/ns/B/"]
       GB["genesis, roles, grants, bindings, policy"] --> LBB["log/, sig/, sets/"]
       LBB --> ASB["allowed_signers"]
-      LBB --> LRB["landing (record)"]
-      PIN["pin of A: name + key material"] -.-> VEND["pins/A/&lt;digest&gt;.nt"]
+      LBB --> LRB["landing/&lt;move-ulid&gt; — only after a move act"]
+      PIN["pin of A: name, genesis hash, anchor hash"] -.-> VEND["pins/A/&lt;digest&gt;.nt"]
     end
   end
 ```
 
-*Layout proposal (lean of §3.1). A dashed edge is a pin (§3.6), the only way one namespace reaches another.*
+*A dashed edge is a pin (§3.6), the only way one namespace reaches another.*
 
 ### 3.1 Layout
 
-**What must hold.** Extraction moves files and nothing else: no hash and no reference changes form (ruling 32). No file holds two namespaces (ruling 45).
+*Rulings 62, 63 and 66.*
 
-| | 1A: a directory per namespace | 1B: flat, with a rule per file |
+**Every store** holds each namespace under `.decisions/ns/<namespace>/` (62), and no store has another form (63).
+
+**What each namespace directory holds:**
+- `sets/`, `roles/`, `log/` and `sig/`;
+- the derived `allowed_signers` (§3.4);
+- after a move act, `landing/<move-ulid>` (§3.5);
+- `pins/` (§3.6);
+- once basis bytes are held (LP-7.4, not implemented), `basis/<sha256>`.
+
+The root `.decisions/` holds only `ns/` and the uncommitted `index/` cache. The export stays at `docs/decisions/<ns>.nt`, the path the analyzers read.
+
+**Namespace of a file.** A file's namespace is its directory. A content check refuses an entity that names another namespace (§3.7).
+
+**Each file kind belongs to one namespace** (accepted with the design):
+
+| Kind | Rule |
+| --- | --- |
+| Sets | A version names a set of its own namespace; a set named across namespaces is a set not declared, so a schema fault. |
+| Roles | Declared under the namespace's `roles/`. |
+| Sidecars | Under the namespace of the entity they sign. |
+| Held basis bytes | Under the namespace whose versions rest on them. Duplicates across namespaces are allowed, because the bytes are content-addressed. |
+| Pinned material | Under the dependent (§3.6). |
+
+**The flat layout at the verified commit.** A file at the verified commit or in the working tree at `.decisions/sets/`, `.decisions/roles/`, `.decisions/log/`, `.decisions/sig/` or `.decisions/allowed_signers` is a schema fault. So is a store with no `ns/` directory and any of those paths. The layout is specification revision v1.9, with no format number (66), because no file's content changes.
+
+#### 3.1.1 History written in the flat layout
+
+Verification reads earlier commits, and in this repository, as in every store made before v1.9, those commits use the flat layout. Ruling 63 makes the flat layout invalid at the verified commit. It cannot make it disappear from history.
+
+**What verification reads from history today** *(read)*:
+
+| Reader | What it reads | Flat paths it names today |
 | --- | --- | --- |
-| Paths | `.decisions/ns/<namespace>/{sets,roles,log,sig}/`, plus `allowed_signers` and (§3.5) `landing` in that directory. `.decisions/index/` stays at the root as the store's cache. The export stays at `docs/decisions/<ns>.nt`. | As today. Each file's namespace is read from its content, or from a new `namespace:` header field on change-sets, sets and roles. |
-| Ruling 45 | Structural: a file's namespace is its directory. A content check refuses an entity that names another namespace (§3.7). | A content check only. A grant of scope `*`, a grant acceptance, an unavailability and a revocation have no namespace of their own. Each is resolved through what it names, and some through other files. |
-| Extraction | Move one directory and one `.nt` file | Select files by a filter that a tool must implement, and resolve sidecars through their entities |
-| Ids per namespace | Two namespaces may hold a set or role of the same id, and a file of the same ULID name | Set and role file names collide in the shared directories. They would need `sets/<ns>--<id>.yml`, which changes the stem rule (LP-3.12). |
-| Cost | The loader, every path in the reference implementation, and every test fixture. Landing must follow an entity when its path changes (§3.5). | A new header field is a format bump on three file kinds, and namespace inference is brittle. |
+| Landing | `landing::first_parent_adds`: the first commit adding each tracked path. `landing::entity_landings`, `file_versions` and `landed::entities`: the first version holding each entity of a touched file. | `landing::TRACKED`: `.decisions/log`, `.decisions/roles`, `.decisions/sig` |
+| Landed immutability (`L007`) | `verify::history::findings`, with `landing::touched_after_landing` and `content_at`: every earlier version of every modified or deleted tracked file | The same |
+| `format:` across history | Ruling 58, not yet built: the same walk | The same |
+| `L009` | `blame::introducing_author`: `git log --reverse -S<id> -- <path>` | The acceptance's current path |
+| The base overlay | `revision::overlay_base`: the base's log files and sidecars that a branch checkout lacks (LP-8.29) | `.decisions/log/`, `.decisions/sig/` |
+| Departure | §3.5: a landed move act read from history | — (new) |
 
-The `ns/` level keeps namespace directories apart from the legacy flat directories. That matters during migration, and because the namespace grammar allows a namespace called `log`.
+`revision::load_at`, used by `ledger diff` and `ledger merge`, also reads whole stores at a revision. It is not part of verification.
 
-**The flat layout as the form of a one-namespace store.** Under 1A, a flat store whose entities all belong to one namespace can be read as that namespace's directory. Every existing single-namespace store, including all 15 committed fixtures (one namespace each, by scan), then needs no migration (§3.11). A store with two namespaces must use directories, and a store that mixes the two layouts is a schema fault.
+**What an implementation must do.**
 
-**What each kind of file becomes.**
+1. **At the verified commit and in the working tree**, read only `ns/`. Refuse the flat paths (above).
+2. **In history**, recognise both path patterns, and read nothing of the flat layout but its files' entities:
+   - flat: `.decisions/log/<ulid>.yml`, `.decisions/roles/<id>.yml`, `.decisions/sig/<ulid>.<scheme>.sig`;
+   - per namespace: the same three under `.decisions/ns/<ns>/`.
 
-| Kind | Proposal | Why |
-| --- | --- | --- |
-| Sets | One namespace each, under `ns/<ns>/sets/`. A version names a set of its own namespace. Naming another namespace's set is a schema fault (it names an undeclared set). | N5: a floor raised in one namespace must not strand another's versions. A `set:` scope then covers only its own namespace (N4). |
-| Roles | One namespace each, under `ns/<ns>/roles/` | N3 and ruling 47 |
-| Sidecars | Under the namespace of the entity they sign | It is that namespace's act |
-| Held basis bytes (LP-7.4, not implemented) | `ns/<ns>/basis/<sha256>`, with duplicates across namespaces allowed | A held basis is evidence for that namespace's versions. The bytes are content-addressed, so two copies cannot disagree. |
-| Pinned material (§3.6) | `ns/<ns>/pins/<pinned-ns>/…` | Held by the dependent, so it travels with the dependent |
+   **How the two are told apart.** By path alone. The flat pattern has `log`, `roles` or `sig` directly under `.decisions/`, and the other has `ns/<ns>/` between. `ns` is not a directory name of the flat layout, so no path matches both. Each path is classified by itself, not each commit by its layout, so the re-layout commit, which deletes one set of paths and adds the other, reads like any other.
+3. **Key landing by entity, not by path.**
+   - An entity's key is its list and id, as `landed::entities` keys it. A change-set header is keyed by its `cs:` id, not by its file, and a role file or sidecar by its id.
+   - An entity of namespace N lands at the first first-parent commit whose tree holds its key at a path of N's directory or, before the re-layout, at a flat path.
+   - Flat-era ids were unique per store (N20). So a flat-era key names at most one entity, and nothing needs to attribute a flat-era file to a namespace: the lookup starts from the entity at the verified commit, which knows its namespace.
+4. **Judge immutability by entity across paths.**
+   - The re-layout deletes every flat file. That is not a removal when each of its entities is present, unchanged, under its namespace's directory in the same commit.
+   - Anything else stays `L007`.
+5. **Make `L009`'s pickaxe name both paths.** That is the flat path and the namespace path of the acceptance's file: `git log --reverse -S<id> -- .decisions/log/<f> .decisions/ns/<ns>/log/<f>`. *(Inference: `-S` also matches the re-layout commit, where the id leaves one path and enters the other, but `--reverse` puts the original introduction first, and `blame::introducing_author` takes the first line.)*
+6. **Read a flat base in the overlay.** When the pull request under verification is the re-layout itself, its base is flat, so the overlay reads both patterns.
 
-**Lean:** 1A, with the flat layout kept as the form of a store with one namespace. A set belongs to exactly one namespace.
+**What is not read from flat history.** No flat semantics: not the store-wide sets (set files are not tracked anyway), roles, genesis or `allowed_signers`. Every verdict is computed at the verified commit, under v1.9's rules. History supplies only three things: positions, earlier content and authors.
+
+**Can one layout be had without reading the old one in history?** No. There are three ways around it, and each is excluded:
+- **Treat the re-layout commit as every entity's landing.** That is the collapse of §2.3, which is permissive.
+- **Fix the pre-re-layout order in a record.** Ruling 64 writes a record only at a move, and the principal's reply of 7 October says a re-layout uses none.
+- **Rewrite history so that it was always in the new layout.** That changes every commit id. It also breaks the assumption D6 rests on: `landing.rs` states that the default branch's history is not rewritten.
+
+**What it costs.**
+- *For implementations.* Every implementation that verifies a repository whose history predates v1.9 carries the flat path pattern in its history reader for good. It is used by landing, immutability, the `format:` comparison, `L009` and the base overlay. The cost is bounded: three path patterns and a file grammar it already reads, with no flat semantics.
+- *For new stores.* A store created at v1.9 or later never meets it.
+- *For test vectors.* Any test vector built on a pre-v1.9 history has to exercise it.
+
+This is question N-Q1 (§7).
 
 ### 3.2 Authority records
 
-**How a record belongs to one namespace.**
+*Ruling 67; ruling 47. Belonging by directory is accepted with the design.*
 
-| | 2A: by directory | 2B: by a hashed `namespace` field on every authority record |
-| --- | --- | --- |
-| Grants, grant acceptances, intervals | Belong to the directory they are filed in | New grants carry `namespace` (hashed when present). Old grants have none, so they still need 2A. |
-| Bindings, policies | Already carry `namespace` (hashed). The gate requires it to equal the directory (schema fault). | Same |
-| Digests | None move | None move for old records. A new grant's hash binds it to one namespace forever. |
-| Ruling 48 | Leaves a grant free to be filed under a later authority unit (§3.12) | Binds grants to namespaces in their hash, which works against a later shared authority unit |
+**How a record belongs to a namespace.** A grant, grant acceptance, unavailability, availability, revocation or role belongs to the namespace whose directory holds it. Bindings and policies already carry a hashed `namespace`, and the gate requires it to equal the directory (schema fault). No grant gains a namespace field (§3.12).
 
-**Lean:** 2A.
+**What scopes mean.** A scope is read inside its own namespace (ruling 47):
 
-**What the scopes mean afterwards.** A grant's scope is read inside its own namespace only. Nothing in one namespace's authority has effect in another (ruling 47).
-
-| Scope | Proposal |
+| Scope | Meaning |
 | --- | --- |
-| `*` | The whole of the grant's own namespace |
-| `ns:<own>` | The same as `*`. Allowed, and redundant. |
-| `ns:<other>` | A schema fault: a grant that could never have effect. |
-| `set:<id>` | A set of its own namespace (§3.1) |
-| `pattern:<id>` | Unchanged. It covers no decision today (`authority::check::covers`). |
+| `*` | The whole of the grant's own namespace (67) |
+| `ns:<own>` | The same as `*` |
+| `ns:<other>` | A schema fault: the grant could never have effect |
+| `set:<id>` | A set of its own namespace, dots allowed (ruling 59) |
+| `pattern:<id>` | Unchanged: it covers no decision (`authority::check::covers`) |
 
-The genesis grant keeps its shape rule (scope `*`, self-granted, primary, `external_ref`; `authority::structure::grant_faults`). There are three options:
+**The genesis grant** keeps its shape: self-granted, scope `*`, primary, with `external_ref` (`authority::structure::grant_faults`; 67). No digest moves.
 
-| | Keep `*`, read as "this namespace" | Require `ns:<own>` on new genesis grants; `*` stays legal on old ones | Rewrite `*` to `ns:<own>` everywhere |
-| --- | --- | --- | --- |
-| Digests | None move | None move | Every grant hash moves, and every grant acceptance must be re-signed |
-| Clarity | `*` reads as "everything" | Explicit, but two spellings exist for one thing | Explicit |
+**The genesis role** is the role of the namespace's live genesis grant, declared in that namespace's `roles/`. Ruling 50's rules hold per namespace: a policy's accept role is never the genesis role, and the genesis role carries no decision capability. `A003` and `A005` count per namespace, because the graph stage runs over each namespace's graph alone (§3.9).
 
-**Lean:** keep `*`, read as this namespace.
-
-**"The genesis role" per namespace** is the role of the namespace's live genesis grant, declared in that namespace's `roles/`. Two namespaces may name their root roles differently. `A005` counts per namespace (§3.9: the graph stage runs per namespace).
-
-**Opening a namespace.** Every namespace is opened as the first one is today:
-- its own genesis grant, resting on its own `external_ref` mandate;
-- its own root role and accept role;
+**Opening a namespace.** Every namespace is opened as the first is today:
+- its own genesis grant, on its own `external_ref` mandate;
+- its own root and accept roles;
 - its own first policy;
 - the genesis holder's self-bound first binding (§3.3).
 
-One person may be the genesis holder of several namespaces, and nothing links them. `Author::join_genesis` goes away. What `init` asks for in a later namespace then changes: `--external-ref` is required every time.
+`Author::join_genesis` goes away, and `--external-ref` is required every time. One person may hold the genesis of several namespaces, and nothing links them.
 
 ### 3.3 Keys
 
-**Bound and closed per namespace.** The functions in `authority::key_close` compare `namespace`:
-- a close ends the key in its own namespace only (ruling 47, LP-6.32);
-- "a key belongs to one principal" and "a closed key is never bound again" are judged within the namespace;
-- the same key may be bound in several namespaces, and each judges it alone.
+*Ruling 69; ruling 47. The first key per namespace is accepted with the design.*
 
-**A close in every namespace a writer holds** (ruling 47: "a writer may file a close in every namespace it holds").
+**Bound and closed per namespace.** The functions of `authority::key_close` compare `namespace`. A close ends the key in its own namespace only (LP-6.32). "A key belongs to one principal" and "a closed key is never bound again" are judged within the namespace. The same key may be bound in several namespaces, and each judges it alone.
 
-| | 3A: one change-set per namespace, filed by one invocation and committed together | 3B: one act that closes in several namespaces | 3C: a store-level close list that every namespace reads |
-| --- | --- | --- | --- |
-| Ruling 45 | Holds | Broken: one file holds several namespaces | Broken in spirit: one record has effect in several namespaces (ruling 47) |
-| Ordering | Each close is ordered in its own namespace only, by D6 there. The verb gives every close the same `at` (the time of compromise, when given), and one git commit lands them together. Order across namespaces is meaningless, because no verdict compares across them. | One landing | One landing |
-| After a move | Each namespace keeps its own close | The act cannot be split | Lost by the moved namespace |
+**A close in every namespace a writer holds** is one change-set per namespace, filed by one invocation, in one commit (69). Each close gets the same `at`: the time of compromise when given. Each is ordered by D6 in its own namespace only, since no verdict compares across namespaces.
 
-**Lean:** 3A.
+**Repository notices** (69):
+- a key closed in one namespace and open in another: "key K of p is closed in A and open in B";
+- accepted with the design: one key bound to two principals in two namespaces.
 
-One risk is left. A holder who closes a compromised key in A and forgets B leaves it live in B. The proposal is a **repository notice**, never a finding: "key K of p is closed in A and open in B". It follows ruling 46's pattern of reports over the namespaces of one repository. A notice for one key bound to two principals in two namespaces is proposed alongside.
+Neither is ever a finding.
 
-**A principal's first key in a second namespace.** Today the genesis holder's first key in a later namespace is "their own `add`, signed by a key of theirs already trusted in another namespace" (N8). Afterwards it is that namespace's self-bound binding:
-- filed by its genesis holder;
-- carrying its own genesis mandate;
-- signed by the key it binds.
-
-It is trusted by the rule that trusts the first namespace's today: the first self-bound binding to land for that address, with the window closed by the act that opens the namespace (LP-4.38). It leans on no other namespace. Any other principal's first key is filed by that namespace's genesis holder under that namespace's genesis grant, as today.
-
-That is as strong as the first namespace is today and no stronger. Trust in each namespace's root starts out of band, from its mandate. A key trusted in one namespace vouching for a key in another is exactly what ruling 47 removes. Authority as its own unit (ruling 48) is where such vouching would return, through a pin.
-
-**Lean:** each namespace's first key is self-bound under its own mandate, and nothing carries over.
+**A principal's first key in a namespace.**
+- *The genesis holder's first key* is that namespace's self-bound binding, filed by its genesis holder, carrying its genesis mandate, and signed by the key it binds.
+- *How it is trusted.* By the rule that trusts the first namespace's today: the first self-bound binding to land for the address, with the window closed by the act that opens the namespace (LP-4.38). It leans on no other namespace, and `signing::check::carried_over` and the store-wide branch of `authority::filing::may_file` go away.
+- *Any other principal's first key* is filed by that namespace's genesis holder under that namespace's genesis grant, as today. A `rotate` verifies against the key it closes (ruling 53).
 
 ### 3.4 `allowed_signers`
 
-| | 4A: one file per namespace, `ns/<ns>/allowed_signers` | 4B: one file per store, the union of every namespace's derivation | 4C: none committed; derived at verification only |
-| --- | --- | --- | --- |
-| Content | Today's lines for that namespace, with `valid-before` from closes in that namespace only (LP-4.32 as superseded) | The same lines, sorted together | — |
-| What `[SIGNERS]` compares | Each namespace's committed file against that namespace's trusted bindings | One file against all | Nothing |
-| On a move | The file moves with the directory, and both sides verify | Both sides must regenerate the file, so moving files alone does not verify (E4, N10) | Nothing to move |
-| Cost | `ssh-keygen -Y verify -f` takes the namespace's file directly, since every line names that namespace already | None new | Loses the trust root as a reviewable file in every pull request (#65's reason for committing it) |
+*Accepted with the design.*
 
-Whichever is chosen, `signers::write` should remove a stale file when nothing binds. Today it leaves the file (E4a′).
+One derived file per namespace, `ns/<ns>/allowed_signers`. It holds today's lines for that namespace, with `valid-before` taken from closes in that namespace only. `[SIGNERS]` compares each namespace's committed file with that namespace's trusted bindings. A namespace that binds nothing has no file, and `signers::write` removes a stale one, which it does not do today (N10).
 
-**Lean:** 4A.
+### 3.5 Landing order and the move
 
-### 3.5 Landing order after a move
+*Rulings 64, 65, 66, 77 and 79.*
 
-This is the hard part. Today D6 reads order from the holding repository's history. "Whoever can rewrite the default branch's history" controls the evidence, and an export-only verifier "cannot check" it (`ledger/rulings/signing-rulings-2026-10-d5-d9.md`, D6 table). Ruling 32 asks that a namespace move by moving its files. Git history is not a file of the namespace.
+**Before a move.** Order is read from the holding repository's history, as D6 says (64), with landing keyed by entity (§3.1.1). There is no record.
 
-**What depends on landing today** (§8.7, read):
-- whether an act is before a policy (pre-policy acts are not role-checked; LP-8.28);
-- whether an act is before a key close or a grant revocation (`L011` against `L012`; LP-4.13, LP-8.26);
-- whether a binding, grant or grant acceptance enables an act (`not_after`);
-- whether a role counts (landing alone; LP-6.30);
-- D7's "the first self-bound binding to land is the one trusted";
-- landed immutability (`L007`; LP-8.30).
+**Why there is no continuous record** (the principal's reasoning for ruling 64, accepted here and not shown wrong). An entity's ordinal is its position on the default branch, and a pull request cannot know it, because another may merge first. A record held byte-identical to git on every commit would therefore:
+- make every two open pull requests in a namespace conflict in that file;
+- turn the default branch red after a merge, until someone regenerated the record.
 
-`L009` reads the introducing commit's author. That is the same kind of dependence on the repository.
-
-**What a move does to it** (§2.3). It collapses order. A collapse is permissive and never strict, so a move is a laundering path for backdated acts (E5b, E5c).
-
-**How landing is keyed today.** By repo-relative path (`landing::first_parent_adds`, `Landing::index`). Re-laying a store out into directories (§3.1) changes every path. Read with today's code, every entity would land at the re-layout commit, which is a collapse *(inference: today's loader does not read another layout, so this was not run)*. `L009`'s pickaxe is path-scoped (`-- <path>`), so every acceptance would be attributed to whoever committed the re-layout *(inference, consistent with E1a)*.
-
-**Five options.**
-
-| | 5A: carry the history | 5B: a landing record, closed by a signed move act | 5C: order inside the files (a hash chain) | 5D: `at` alone for moved entities | 5E: never move a governed namespace |
-| --- | --- | --- | --- | --- | --- |
-| Mechanism | Move with `git filter-repo` or similar, so the namespace's commits become the target's first-parent line | A per-namespace derived file holds each entity's landing ordinal and, for acceptances, the introducing author. It is held byte-identical to git while git can derive it. A signed **move act** fixes its digest at departure, and the target takes pre-move order from the record. | Each change-set names the digest of the namespace's previous change-set | Arrived entities are ordered by `at`, as the export-only verifier does | Moves allowed only for namespaces with no policy |
-| Verifiable in the new repository | Yes, from git | Pre-move order: from the record, attested by the namespace's own signature. Post-move order: from git. | Yes, from the files | Not needed | — |
-| Who controls pre-move evidence | Whoever rewrote the history while carrying it (`filter-repo` can reorder) | The namespace's genesis holder at departure. The source's own CI held the record equal to git up to the move commit, but the target cannot see that. | Nobody after filing | The signer of each act (D6 position A) | — |
-| Into a fresh repository | Works (E2a, E5a) | Works | Works | Works (permissive) | — |
-| Into a repository with history of its own | Collapses (E2c, E5c). The namespace's line cannot also be the target's first-parent line. | Works | Works | Works (permissive) | — |
-| Re-layout inside one repository | Needs landing keyed by entity, not path | The same operation as extraction, and also checkable against git | Unaffected | — | — |
-| Concurrent branches | Unaffected | Unaffected: the record is derived, not authored | Every concurrent branch forks the chain. A merge needs a chain-merge act, or files must be rewritten, which immutability forbids. | Unaffected | — |
-| `L009` after a move | Holds: authors are kept (E2a) | The record carries the author, so `L009` compares the actor with it | Not addressed | Skipped and reported | — |
-| Format | None | A new signable entity (format 8), a derived file and its stage | Change-sets become hashed, which is a new hashed form for every change-set, and existing stores need an anchoring checkpoint | None | None |
-| Ruling 32 | Holds only into a fresh repository | Holds: the record and the act are files of the namespace | Holds | Holds, but reopens D6's backdating gap | Fails for governed namespaces |
-
-**Lean:** 5B. It is the only option that keeps D6's protection across a move into any repository, and it makes re-layout and extraction one operation.
+**A re-layout inside one repository** uses no record and no move act. It needs only landing keyed by entity across both path patterns (§3.1.1).
 
 ```mermaid
 sequenceDiagram
   participant S as Source repository
-  participant N as Namespace files (ns/B/)
+  participant N as ns/B/
   participant T as Target repository
-  Note over S,N: verify holds ns/B/landing equal to what git derives (stage [LANDING])
-  S->>N: file the move act (signed by B's genesis holder): digest of landing, digest of the file manifest
-  S->>S: commit; CI verifies green, record still equal to git
-  S->>T: copy ns/B/ and docs/decisions/B.nt (any means: copy, filter-repo, merge)
-  S->>S: remove ns/B/ and B.nt in one commit: allowed after a landed move act (not L007)
-  Note over T: arrived entities: order and authors from the record, which matches the move act's digest
-  Note over T: entities landing after the arrival: ordinals continue from git, after the record's last
+  Note over S: before the move: order from S's history (D6)
+  S->>N: one change-set: move act move:M (signed) + record landing/M, written from S's history
+  S->>S: the commit where move:M lands: A007 checks the record against S's history, once
+  S->>T: ns/B/ and docs/decisions/B.nt reach T (copy, filter-repo, merge)
+  S->>S: remove ns/B/ and B.nt in one commit (ruling 65)
+  Note over T: arrived entities: ordinals and authors from landing/M (A007 checks digest, manifest, signature)
+  Note over T: later entities: ordinals from T's history, after move:M
 ```
 
-**5B in detail.**
+**The move act** is a new signable entity, `move:<ULID>`, in format 8 (66). Its closed payload `ledger.namespace-move.v1` is:
+- `id` and `namespace`;
+- `landing`: the digest of the record;
+- `manifest`: the digest of the sorted list of every file path under `ns/<ns>/` with each file's SHA-256, excluding the act's own change-set file, its sidecar and the record;
+- `by`, `under` and `at`.
 
-1. **The record.** `ns/<ns>/landing` is a derived file, like `allowed_signers`. It has one line per entity of the namespace, by `landed::key` (`<list>/<id>`, the header, role files, sidecars). Each line carries:
-   - the entity's **ordinal**: the dense rank of its landing commit among the namespace's landing commits, not a git index;
-   - for an acceptance, the email of the commit author who introduced it.
+It is the genesis holder's act, made under the genesis grant and judged by `A006` like a policy (LP-6.28). It is signed when policy requires (but see N-Q4 for a namespace with no policy).
 
-   Ordinals keep D6's comparison ("landed no later") and drop git ids. `verify` re-derives the record from git and requires the committed file to be byte-identical. That is a new derived-file stage, `[LANDING]`.
+**The record: when it is written.** Once, at departure. The writer that files the move act also writes `ns/<ns>/landing/<move-ulid>`, in the same commit. The file is named by the move act's ULID, so a later move adds a file and never edits one. It has one line per landed entity of the namespace, each with:
+- the entity's key;
+- its ordinal: the dense rank of its landing commit among the namespace's landing commits on the first-parent line;
+- for an acceptance, the email of the author of the commit that introduced it.
 
-   While the namespace has never moved, git and the record agree by construction. Re-laying out a store is then a rename that the record survives. This needs one change: landing is keyed by entity within the namespace, not by path, so that a rename is not a landing (LP-8.24 as amended in §5).
-2. **The move act** is a new signable entity, `move:<ULID>`. Its closed payload `ledger.namespace-move.v1` is:
-   - `id` and `namespace`;
-   - `landing`: the digest of the record as it stands when the act is filed;
-   - `manifest`: the digest of the sorted list of every file path under `ns/<ns>/` with each file's SHA-256, excluding the act's own file, its sidecar and the record;
-   - `by`, `under` and `at`.
+The writer derives it from the history its checkout stands on, and refuses while any entity of the namespace is uncommitted. The move act and the record are not rows. The move act's ordinal is defined as one after the record's last.
 
-   The act cannot know where it will itself land, so its own line is not in the digest it signs. The writer refuses to file it while any other entity of the namespace is uncommitted. The act's own ordinal is defined as one after the record's last. Once it lands, `[LANDING]` checks that git places it there and that the record's other lines still equal the act's digest.
+**Who checks it against git, and at which commit.** The source's verifier, at the commit where the move act lands. A007 fails unless:
+- every entity of the namespace that landed before that commit has a row equal to what git gives, in ordinal and in introducing author;
+- the record's digest is the act's `landing`;
+- the manifest is the namespace's files at that commit;
+- nothing of the namespace lands at that commit but the act, its sidecar and the record.
 
-   It is the genesis holder's act, made under the genesis grant and judged by `A006` like a policy (LP-6.28). It is signed when policy requires. In a namespace with no policy it is unchecked and unsigned, like every other act there.
-3. **Departure.** At the source, after a landed move act, removing every file of `ns/<ns>/` (and `docs/decisions/<ns>.nt`) in one commit is not `L007`. Removing part of a namespace stays `L007`. The source's history keeps the act, and `verify::history` reads it through `content_at`.
+Any entity of the namespace landing after that commit is also A007, because the namespace is frozen in the source from its move act on (N-Q3).
 
-   The namespace is frozen in the source from its move act on. An entity of it that lands after the act, from a branch that was open during the move, is an `A007` finding. Such an entity is filed again in the target.
-4. **Arrival.** In the target, entities that land in the commit that adds the directory are *arrived*. The rules:
-   - Their ordinals and acceptance authors come from the record, provided its digest equals the move act's, the manifest matches the arrived files, and the move act verifies under the namespace's own trusted bindings as of its position in the record.
-   - Entities landing later get ordinals from target git, after the record's highest.
-   - Arrived acceptances are judged by `L009` against the record's author.
-   - A mismatch is a finding. The proposal is a new graph-stage class, `A007` (§3.10), because it judges an authority act's attestation over the files.
-5. **More than one move.** A later move files a new move act whose record carries the earlier ordinals forward. The chain of move acts in the namespace's log shows every departure.
-6. **Ungoverned namespaces.** Order decides nothing there except `L007`, and `L007` restarts at arrival. So the move act is unsigned and attests nothing beyond the manifest. `L009` for arrived acceptances compares with an unattested record. **Inference:** this is no weaker than today, because in an ungoverned namespace anyone may file anything.
+Later verifications of the source reach the same answer from the same history, so this is one check, made once in substance. After the removal (below), nothing of the record is re-read.
 
-**Re-layout and extraction.** As file operations they are the same: a namespace's files move to new paths. As verification:
-- under 5A they differ. A re-layout keeps the first-parent line and needs landing to follow renames. An extraction needs the history carried, and works only into a fresh repository.
-- under 5B they are the same operation, with one difference. In a re-layout git still agrees with the record, so no move act is needed. In an extraction the move act attests the record.
+On a pull request, the check runs against the base (LP-8.29) and gives what the merge will give. If another pull request lands an entity of the namespace first, the move act's pull request fails A007 and is refiled on the new tip. That is the one place where ruling 64's merge-order point remains: confined to the move, not spread over every pull request.
 
-**Lean:** a re-layout is a rename that the record survives with no move act, and an extraction is the same rename plus a move act.
+**Departure** (65). After a landed move act, removing every file of `ns/<ns>/` and `docs/decisions/<ns>.nt` in one commit is not `L007`. Removing part of a namespace stays `L007`. The source's history keeps the act, and `verify::history` reads it through `content_at`. Adding the move act is within "no hash changes" (65).
 
-**Where the rulings meet here.** Ruling 32 ("moved … by moving its files … both sides still verify") and D6 (order from the holding repository's history) cannot both hold as written for a governed namespace moved into a repository with history of its own. The rulings leave three ways out:
-- **5A:** D6 holds as written, and a governed namespace moves only into a fresh repository;
-- **5B:** D6 is extended so that pre-move order may rest on the namespace's signed record;
-- **5D:** D6 yields for moved entities.
+**What the target reads.**
+- *The arrival commit* is the first commit on the target's first-parent line whose tree holds `ns/<ns>/`. The arrived entities are those present in it.
+- *For arrived entities*, ordinals and introducing authors come from the latest record: the one named by the namespace's latest move act. A007 fails unless:
+  - the record's digest is that act's `landing`;
+  - the arrived files match its `manifest`;
+  - every arrived entity, other than the move acts, their sidecars and the records, has a row;
+  - the move act verifies under the namespace's own authority as judged in record order.
 
-That is question Q3 (§7).
+  The move act's ordinal is one after the record's last. Every check of section 8 then runs on those positions, as at the source. `L009` compares an arrived acceptance's actor with the record's author (79).
+- *For entities that land later*, ordinals come from the target's history: the move act's ordinal plus the dense rank of each entity's landing commit among the namespace's later landing commits. `L009` reads the target's git.
+
+**A second move.** The writer writes a new record, named by the new move act:
+- rows for entities that arrived by the earlier move copy that record's ordinals and authors unchanged;
+- rows for entities that landed since come from the current repository's history, after the earlier move act.
+
+The new act's digest covers it. Earlier records and move acts stay as landed files. Wherever the namespace sits, the verifier checks that each record agrees with the one before it on every row the earlier one holds, so a later move cannot rewrite an earlier one's order.
+
+**No continuous check.** There is no derived-file stage for the record, and no `[LANDING]` stage. A record is checked only where a move act exists:
+- in the source, at the act's landing commit;
+- in the target, at arrival;
+- between successive records.
+
+**A namespace with no policy.** Order decides nothing there except `L007`, and `L007` restarts at arrival. Ruling 64 calls the move act signed, but nothing in such a namespace can be signed: a key binding needs a policy (`authority::references::binding_refs`). That is N-Q4.
 
 ### 3.6 The dependency declaration (pin)
 
-**What a pin is.** The 5 October acceptance makes a pin a trusted-source decision with the `signed` method: a version carrying `source_prefix`, `source_method: signed` and `source_keys`, accepted by a holder of `trust-source` (LP-7.8, LP-7.11). Ruling 42 removes the server from it.
+*Rulings 70, 71, 72 and 73. The pin as a trusted-source decision is accepted with the design.*
 
-| | 6-i: a trusted-source decision (as accepted 5 October) | 6-ii: a new authority record, `dependency` |
-| --- | --- | --- |
-| Acceptance | A decision proper, accepted with `trust-source` (rulings 4 and 5) | Signed by the genesis holder, like a policy |
-| Fits | Ruling 4: "adding a trusted source is a decision proper" | Nothing ruled |
-| Cost | Waits for the basis work (decision classes, `trust-source`) | A second mechanism for one idea |
+- **What a pin is.** A trusted-source decision: a version carrying `source_prefix: dec:<ns>/`, `source_method: signed` and `source_keys`, accepted by a holder of `trust-source` (LP-7.8; ruling 4). Its `source_keys` are exactly two tokens (70):
+  - `genesis:sha256:<hash of the pinned namespace's genesis grant>`;
+  - `anchor:sha256:<hash of its first trusted key binding>`, the genesis holder's self-bound binding.
+- **No location.** No server or place appears in it (ruling 42).
+- **One name, two namespaces.** Two unrelated namespaces of one name are told apart by genesis grant hash (71). A namespace holds at most one live pin per name, and a second is a schema fault. That is the cost of ruling 34's token, which names a namespace by name.
+- **`dec:` prefixes.** A `dec:` prefix with any method other than `signed`, or without the two tokens, is a schema fault.
+- **Pinned material** is a snapshot of the pinned namespace's export, held by the dependent at `ns/<ns>/pins/<pinned-ns>/<digest>.nt` (72), inside one repository too. The duplication is the price of a namespace verifying the same wherever it sits.
+- **Ungoverned namespaces cannot be pinned** (73). So `hafeok.ddd` and `hafeok.ledger` cannot pin each other until they are governed.
 
-**Lean:** 6-i.
-
-**What "key material" is.**
-
-| | 6a: a set of public keys | 6b: the policy hash in force | 6c: the genesis grant hash | 6d: the genesis grant hash and the hash of the trusted self-bound binding |
-| --- | --- | --- | --- | --- |
-| Identifies the namespace | No: keys are reused across namespaces (§3.3) | Weakly | Yes. The hash covers the grant's ULID, holder and mandate, so two unrelated namespaces never share it. | Yes |
-| Survives rotation | No: every rotation needs a new pin | No: every policy change does | Yes: later keys follow from the pinned namespace's own authority log | Yes |
-| Trust without landing order | — | — | Only with the landing ordinals in the export (§3.9). D7 trusts "the first self-bound binding to land", which needs order. | Yes. The anchor binding is named, so no order is needed to find it. |
-| Genesis rotation | — | — | Breaks the pin. A `rotate-genesis` act is not implemented, so this is open. | The same |
-
-**Lean:** 6d, carried as two tokens in `source_keys`:
-- `genesis:sha256:<grant hash>`;
-- `anchor:sha256:<binding hash>`.
-
-**How two unrelated namespaces with one name are told apart** (SC-4.1). By key material. The pin's identity is `(name, genesis hash)`. Because ruling 34 fixes the token as `dec:<ns>/<ULID>@sha256:<hash>`, a pinned basis names a namespace by name only. So a namespace may hold at most one live pin per name, and two pins of one name are a schema fault. The cost: one namespace cannot depend on two unrelated namespaces that share a name. A local alias in the token would change the token form, which ruling 34 fixed, so it is not proposed.
-
-**The fate of `source_prefix` and `dec:<namespace>/`.** `source_prefix` stays as the field whose presence defines the trusted-source class (§6.4). For a namespace pin its value is `dec:<namespace>/`, so the working form becomes the ruled form if the principal agrees. A trusted source with a `dec:` prefix must have method `signed` and the two key tokens. A `dec:` prefix with any other method is a schema fault.
-
-**Ungoverned namespaces.** A namespace with no policy has no genesis grant, so there is no key material to pin with `signed`. Two options:
-- such a namespace cannot be pinned;
-- it may be pinned `content-addressed`: its version hashes are trusted as content, and no acceptance in it can be checked.
-
-**Lean:** cannot be pinned. A pinned basis is meant to rest on an accepted version, and nothing in an ungoverned namespace is role-checked. Consequence: `hafeok.ddd` and `hafeok.ledger` cannot pin each other until they are governed.
-
-**Where pinned material is held.** LP-7.5 requires the version file of every ancestor in a basis closure to be in the store.
-
-| | Vendored export snapshot | Vendored log files | The named versions only |
-| --- | --- | --- | --- |
-| What | `ns/<ns>/pins/<pinned-ns>/<digest>.nt`: the pinned namespace's export, byte-copied, named by its digest | The pinned namespace's change-sets and sidecars | Each pinned version and its acceptances |
-| Verified how | Export-only (§9.3, LP-9.14), anchored by the pin's key material. With §3.9's ordinals, order is checkable too. | Like a store, but order needs the pinned namespace's landing record | Signatures only. No trust walk from the anchor. |
-| Inside one repository | The same, even when the pinned namespace sits beside it (rulings 32 and 41) | The same | The same |
-
-**Lean:** the vendored export snapshot, held by the dependent even inside one repository.
-
-**Inside a repository** the cost of ruling 41 is duplication. If B pins A and both live in one repository, B still holds its own snapshot of A's export. Otherwise B's verdict would depend on A's live files, and B would not verify the same after a move.
+What a snapshot holder cannot know is in §3.9.
 
 ### 3.7 What crosses
 
-| Ruling | Check | Stage and class | Stores today |
+*Rulings 75, 76 and 78. The checks for rulings 43 to 45 are accepted with the design.*
+
+| Ruling | Check | Stage | Stores today |
 | --- | --- | --- | --- |
-| 43: only `based_on` crosses; `supersedes` never does | A version whose `supersedes` names a decision outside its own namespace. Proposed: judged on **live claims** only (a decision's latest version), as `G005` is, so a store can repair by a revision that drops the edge (LP-8.21). | File gate, `SCHEMA`: decidable from the version alone | This repository: none (0 `supersedes` in 187 files). Fixtures: none. Others: by scan at migration. |
-| 44: only an `exported` decision can be pinned | A pinned decision basis `dec:<ns>/<ULID>@sha256:<h>` whose version `h`, in the vendored snapshot, does not carry `exported: true` | Graph stage, new class (§3.10). It needs the vendored version. | None: nothing pins today (LP-7.3 note) |
-| 45: no file holds two namespaces | Every entity in `ns/<ns>/` belongs to `<ns>`. This covers decision ids, version and acceptance decisions, `namespace` fields, a revocation's target, a grant acceptance's or interval's grant, and an availability's interval. A revocation must name an acceptance or grant of its own namespace. | File gate, `SCHEMA` | This repository: 0 of 187 files mixed. Writer-made stores with two governed namespaces: the opening change-set mixes the genesis (scope `*`) with A's records (N14). Under per-namespace authority the genesis is A's own, so that file is no longer mixed. |
+| 43 | A version whose `supersedes` names a decision of another namespace. In a store that exists today it is judged on live claims only, a decision's latest version (75), so a revision that drops the edge repairs it (LP-8.21). | File gate, `SCHEMA` | None in this repository or the fixtures |
+| 44 | A pinned decision basis whose version, in the vendored snapshot, does not itself carry `exported: true` (78) | Graph, `G008` (77) | None: nothing pins |
+| 45 | Every entity in `ns/<ns>/` belongs to `<ns>`. That covers decision ids, the decisions that versions and acceptances name, the `namespace` fields, a revocation's target, the grant of a grant acceptance or interval, and the interval an availability ends. | File gate, `SCHEMA` | This repository: 0 of 187 files mixed |
+| 41 | In a file declaring the pinning format, a `dec:` token in `based_on` is a pinned basis of its own namespace or of a pinned one. An unpinned `dec:` token of another namespace is refused (76). Below that format it is opaque (LP-7.27). | File gate, `SCHEMA` | None: 0 `dec:` tokens in this repository |
 
-**Ruling 41 for unpinned tokens.** A `dec:<other-ns>/…` token in `based_on` without `@sha256:` is not a reference in the pinned sense. LP-7.21 keeps unpinned tokens valid. Two options:
-
-| | Refuse it from the pinning format | Keep it opaque |
-| --- | --- | --- |
-| Rule | In a file declaring the pinning format, a `dec:` token in `based_on` must be pinned, and its namespace must be its own or one it pins (schema fault). Below that format it is opaque, as LP-7.27 already does for the pinned forms. | A `dec:` token without `@sha256:` stays opaque everywhere |
-| Ruling 41 | Holds: there is one form of reference into another namespace | A second, unchecked form of cross-namespace reference survives |
-| Stores today | None affected: this repository holds 0 `dec:` tokens in `based_on` or `revisit_if` | — |
-
-**Lean:** refuse it from the pinning format.
-
-**Closing N12.** With ruling 45 checked, a revocation can only reach an acceptance of its own namespace. Case 3c then fails as a schema fault, whatever the duplicate-id fix does.
+**N12 is closed twice.**
+- Ruling 49 makes a duplicate acceptance id a schema fault.
+- Ruling 45's check makes a revocation of another namespace's acceptance one.
 
 ### 3.8 The dependency graph
 
-**Edges.** Each live pin in namespace N adds an edge from N to the pinned identity `(name, genesis hash)`. A pin is live when it is a tip version carrying the source fields, with an unrevoked, unexpired acceptance (LP-7.9).
+*Rulings 77 and 80. The rest is accepted with the design.*
 
-**Nodes.** Each namespace verified, plus each pinned identity. The edges of a pinned namespace are read from its vendored export snapshot, since its pins are versions and so are exported. The graph a namespace sees is therefore built from that namespace's own files alone. **That is what makes the verdict the same wherever the namespace sits** (ruling 32).
+**Edges and nodes.**
+- An edge runs from N to the identity `(name, genesis hash)` of each namespace it pins with a live pin.
+- A pinned namespace's own edges are read from its vendored snapshot, since its pins are versions and so are exported.
 
-**Acyclic check.** A cycle reachable from a namespace's own edges is a failing class of the graph stage, numbered when it lands (LP-7.30; proposed `G007`). Cycles across repositories are found as far as vendored snapshots reach. A snapshot carries the pinned namespace's pins, so a two-namespace cycle A→B→A is visible from either side.
+The graph a namespace sees is therefore built from its own files alone, and its verdict is the same wherever it sits.
 
-**Instability** (LP-7.31; ruling 46). For each namespace verified in one repository:
+**Cycles.** A cycle reachable from a namespace's own edges fails `G007` (77).
+
+**Instability.** It is reported for each namespace of one repository:
 
 > I = Ce / (Ca + Ce)
 
-- Ce is the number of distinct identities it pins.
+- Ce is the number of distinct identities the namespace pins.
 - Ca is the number of namespaces in the same repository that pin it.
-- A namespace with neither is reported as "isolated", not as 0/0.
+- A namespace with neither is reported as "isolated" (80).
 
-It appears in `verify`'s report as a section beside the notices (machine-readable key `instability`). It is never a finding, and an export-only verifier does not compute it.
-
-```mermaid
-flowchart LR
-  A["A (genesis gA)"] -- pin --> B["B (genesis gB)"]
-  B -- pin --> C["C (genesis gC)"]
-  C -. "pin, seen in B's snapshot of C" .-> A
-```
-
-*A cycle visible from A through B's and C's vendored snapshots is the failing class. Without the dashed edge, instability in a repository holding A and B is: A = 1/(0+1) = 1, B = 1/(1+1) = 0.5.*
+It is a report section (machine-readable key `instability`), never a finding.
 
 ### 3.9 The export
 
-**What one namespace's export carries.** Everything in its directory:
+*Rulings 74 and 81; ruling 51.*
+
+**What one namespace's export carries.** Everything in its directory, and nothing from another namespace:
 - decisions, versions, acceptances, revocations, sets and change-sets;
-- its own authority log: genesis, roles, grants, grant acceptances, intervals, bindings with their closes, and policies;
-- one node per sidecar;
-- its pins, which are versions carrying source fields;
-- its move acts.
+- its own authority log;
+- sidecar nodes;
+- its pins;
+- its move acts, with their `landing` and `manifest` digests as payload fields.
 
-Nothing from another namespace. The `*` reach of LP-9.11 goes, because a `*` grant now belongs to its own namespace (§3.2).
+The `*` reach of LP-9.11 goes.
 
-**Is it enough for an export-only verifier** (finding 11)?
+**What it does not carry.** It carries no landing ordinals and no introducing authors (81). The landing records are not emitted either: they are facts read from git.
 
-| Check | Today, from one export | After |
-| --- | --- | --- |
-| Signatures and `allowed_signers` | `valid-before` from closes in other namespaces is missing (13a) | Every close is in the namespace's own export, and a key is bound once per namespace, so "per binding" and "per key" coincide |
-| D7 trust | Cannot tell a trusted binding from an untrusted one (13b) | With landing ordinals in the export, D7 can be re-run. For a pinned namespace the anchor (§3.6) fixes the first trusted key. |
-| `A006` and D6 order | Cannot | Can, with ordinals |
-| `L009` | Cannot | Can, against the record's author |
-| Landed immutability | Cannot | Cannot. It stays the limit of LP-9.15, so the reader still relies on the exporting repository having verified green. |
+**IRIs.** Set and role IRIs carry the namespace: `urn:ledger-set:<ns>/<id>` and `urn:ledger-role:<ns>/<id>` (74).
 
-**Lean:** the export carries the landing record: one `ledger:landing` integer and, for acceptances, a `ledger:introducedBy` IRI per entity. With that, one namespace's export is enough for an export-only verifier, except for immutability. Ship the export-only verifier as a library function after this (finding 11's lean).
+**The graph stage** runs over each namespace's graph alone.
 
-**IRIs for sets and roles** (N16).
+**What an export-only reader can no longer check.** Ruling 51 already states three limits in LP-9.15. Ruling 81 keeps this list long:
 
-| | `urn:ledger-set:<ns>/<id>` and `urn:ledger-role:<ns>/<id>` | Keep `urn:ledger-set:<id>` |
-| --- | --- | --- |
-| Effect | Every export changes, with no digest moving. A reader taking "the last segment" (LP-9.8) still gets the id. | A reader must never union two namespaces' exports |
-| Coordination | The analyzers' reader | None |
+| Check | Why it cannot |
+| --- | --- |
+| D6 order | Whether an act is before a policy, a close or a revocation; whether a binding, grant or role enables it. These need landing, which the export does not carry. |
+| D7 trust | "The first self-bound binding to land", and every further binding's trust as of its position. LP-9.15 as amended takes every binding node as trusted. |
+| `L009` | No authors |
+| Landed immutability and ruling 58's `format:` comparison | No history |
+| `A007` | The records are not in the export. The reader sees the move act and its digests, but not the rows they cover. |
+| Whether the store verified green | The export carries no verdict. LP-9.15's guarantee is conditional on it. |
 
-**Lean:** namespace them.
+Once ruling 47 is implemented, ruling 51's one remaining difference (a close in another namespace) disappears, because every close of a namespace's keys is in its own export.
+
+**A dependent holding a pinned snapshot is such a reader.** About the pinned namespace, it cannot know:
+1. whether the pinned namespace's repository verified green at the commit the snapshot was taken from. The snapshot is a byte copy and carries no verdict;
+2. any order-dependent verdict on a pinned act. A backdated acceptance that the pinned repository fails (`L011`, `A006`; §2.3) looks valid in the snapshot;
+3. which of the pinned namespace's bindings were trusted, beyond the anchor the pin names. *(Inference: D7's filer rules can be judged by `at`; "first to land", and enabling by landing, cannot.)*
+4. who deposited each acceptance (`L009`);
+5. whether anything changed in the pinned namespace after the snapshot: a revocation, a close or a move;
+6. whether a move act in the snapshot matched its record.
+
+No fix is designed here. This is question N-Q2, for the pinning design. It also bears on LP-9.6 (N-Q5).
 
 ### 3.10 Format and classes
 
-**Hard constraints, checked.** Hashed content stays strings only. `CANONICAL_FORM` stays `v1`. A new field is hashed when present and omitted when absent. **No stored digest moves under any lean**, as the table shows row by row.
+*Rulings 66 and 77.* Hashed content stays strings only, `CANONICAL_FORM` stays `v1`, and a new field is hashed when present and omitted when absent. No stored digest moves.
 
 | Change | Kind | Format | Digests |
 | --- | --- | --- | --- |
-| Directory layout (§3.1) | Store property, not file content. A store holding `ns/` is in the new layout. A mixed store is a schema fault. | **No format number.** Files do not change, and LP-3.16 forbids raising `format:` for anything but content. Spec revision v1.9 and a migration note. | None: no file changes |
-| Sets, roles and authority records per namespace; scope reading (§3.2) | Rule change | None | None. A grant's scope string is unchanged. Bindings and policies already carry `namespace`. Records copied into several namespaces at migration are byte-identical (§3.11). |
-| Keys per namespace; D7 per namespace (§3.3) | Rule change, plus a legacy rule (§3.11) | None | None |
-| `allowed_signers` per namespace (§3.4) | Derived file moves | None | None |
-| Landing keyed by entity; the landing record and its stage `[LANDING]` (§3.5) | Rule change and derived file | None | None |
-| Move act `move:<ULID>`, prefix `ledger.namespace-move.v1`, payload `{id, namespace, landing, manifest, by, under, at}` (§3.5) | New signable entity | **Format 8**, the next free | New entity, so nothing existing moves |
-| Pins: `source_prefix`, `source_method`, `source_keys` on a version; the pinned token forms (§3.6) | New version fields | **The pinning format** of LP-7.27: the next free after 8, so 9 if the move act lands first. One format for both, since LP-7.27 and LP-7.11 arrive together. | Hashed when present. Every existing version keeps its bytes (LP-3.29's argument). |
-| Export: no `*` reach, landing ordinals, namespaced set and role IRIs (§3.9) | Derived file content | None | None. Exports regenerate. |
+| Layout under `ns/`; flat refused at the verified commit; both patterns read in history | Store property | Revision v1.9, no format number (66) | None |
+| Sets, roles and authority per namespace; scopes read inside it | Rule change | None | None. Scope strings are unchanged (67). |
+| Keys per namespace | Rule change | None | None |
+| `allowed_signers` per namespace | Derived file | None | None |
+| Landing keyed by entity across layouts | Rule change | None | None |
+| Move act `move:<ULID>`, `ledger.namespace-move.v1` | New signable entity | **8** (66) | New entity |
+| Landing record `ns/<ns>/landing/<move-ulid>` | Unhashed file, written once with a move act, covered by the act's digest | 8, with the act | None |
+| Pins: `source_prefix`, `source_method`, `source_keys`; the pinned tokens | Version fields | The pinning format, after 8 (66) | Hashed when present, so no existing version moves |
+| Export: no `*` reach; namespaced set and role IRIs | Derived file | None | None. Exports regenerate. |
 
-**New finding classes** (the `L010` mechanism, LP-8.7, LP-8.22). Numbers are the next free at the time of writing. The last used are `L014`, `G006` and `A006`. `A001`, `A002` and `A004` appear in no class list; whether they are free is the principal's call (Q16).
+**Classes** (77):
 
 | Class | Fails when | Stage |
 | --- | --- | --- |
-| `G007` | A cycle in the dependencies between namespaces (LP-7.30) | Graph |
-| `G008` | A pinned decision basis names a version not marked `exported` (ruling 44) | Graph |
-| `A007` | An arrived entity disagrees with the move act: the record's digest, the manifest, or the act's signature or authority. Lettered `A` because it judges an authority act's attestation; `G` if the principal prefers. | Graph |
+| `G007` | A cycle in the dependencies between namespaces | Graph |
+| `G008` | A pinned decision basis names a version not marked `exported` | Graph |
+| `A007` | A move mismatch: a record against git at the act's landing, an arrival against its record, digest or manifest, successive records disagreeing, or an entity landing after its namespace's move act in the source | Graph |
 
-**Rules that extend existing classes**, with no new class:
-- `SCHEMA`: an entity outside its directory's namespace (ruling 45); `supersedes` into another namespace (ruling 43); a grant scope `ns:<other>`; a set named across namespaces; an unpinned `dec:` token of another namespace in the pinning format; two pins of one name; a mixed-layout store.
-- `A006`: a move act not made under the namespace's genesis grant.
-- `L007`'s scope: a whole namespace leaving after a landed move act is not a removal.
-- Notices: a key closed in one namespace and open in another; one key bound to two principals in two namespaces.
-- Report: the instability section (§3.8).
+`A001`, `A002` and `A004` stay unused (77).
 
-**Derived-file stage.** `[LANDING]` (§3.5), beside `[SIGNERS]` and `[EXPORT]`.
+**Extensions with no new class:**
+- `SCHEMA`:
+  - a flat path at the verified commit;
+  - an entity outside its directory's namespace;
+  - `supersedes` across namespaces;
+  - scope `ns:<other>`;
+  - a set named across namespaces;
+  - an unpinned cross-namespace `dec:` token from the pinning format on;
+  - two live pins of one name;
+  - a `dec:` source that is not `signed` with the two tokens.
+- `A006`: a move act not made under the genesis grant.
+- `L007`'s scope: a whole namespace leaving after its move act; a re-layout that moves every entity unchanged.
+
+**Notices** (69): the two key notices. **Report** (80): instability.
 
 ### 3.11 Migration
 
-**A store with one namespace needs no migration** if the flat layout stays the form of a one-namespace store (§3.1, lean). Its genesis, roles, sets and `allowed_signers` are already its own. Every rule of ruling 47 reads the same over one namespace, and its exports lose nothing because no other namespace's `*` grant reached them.
+*Rulings 63 and 68.*
 
-Two things change even there:
-- the landing record and its `[LANDING]` stage, if §3.5's lean is taken: a derived file to generate and commit once;
-- the regenerated export (ordinals and IRIs, §3.9).
+**Ruling 68 rests on there being no governed store with more than one namespace outside this repository.** Whether there is one is the principal's to answer. No committed store in this repository holds an authority record (`ledger/sessions/2026-10-verification.md`, Summary).
 
-Neither moves a digest. If directories are required for every store, each single-namespace store needs a re-layout, which by §3.5 is a rename the record survives.
+**This repository's store** has two namespaces with no policy, two sets (one per namespace), and 187 log files, none mixed. It has no authority record, sidecar or `allowed_signers`. The re-layout is one commit:
+- `.decisions/sets/ddd-governance.yml` and `hafeok.ddd`'s 164 log files go to `.decisions/ns/hafeok.ddd/`;
+- `.decisions/sets/ledger-design.yml` and the other 23 log files go to `.decisions/ns/hafeok.ledger/`;
+- both exports are regenerated, with namespaced set IRIs (74).
 
-**This repository's store.** Two namespaces with no policy, two sets (one used per namespace), 187 log files with none mixed, no authority records, no sidecars and no `allowed_signers`.
-1. Generate each namespace's landing record from the current first-parent line, which the full history provides; the local clone was shallow.
-2. In one commit, move `sets/ddd-governance.yml` and `hafeok.ddd`'s 164 log files to `ns/hafeok.ddd/`, and the rest to `ns/hafeok.ledger/`.
-3. Regenerate both exports.
+No record is written, and no move act is filed. Landing and `L009` hold because §3.1.1 keys landing by entity and reads both path patterns. *Inference: not run, because today's loader reads only the flat layout.* The full history is needed. CI checks out full history (D6 note), and the local clone here was shallow.
 
-`L009` needs the record's authors, or a pickaxe that follows renames (`git log --follow -S`). Otherwise every acceptance is attributed to the person who commits the re-layout. **Inference:** `--follow` works for one path, which is what `blame::introducing_author` passes.
+**The fixtures.**
+- The 15 committed stores under `ledger-cli/tests/fixtures/` each hold one namespace (`fixture.ledger`, `fixture.coverage`, `fixture.forked`, `fixture.two-clocks`) and no authority records. Each moves its `sets/` and `log/` under `.decisions/ns/<namespace>/`. File contents and digests are unchanged, so `UPDATE_FIXTURES=1` should find nothing to refresh.
+- `ledger-cli/tests/inbox_fixture` builds its stores with the verbs, so it follows the writer.
 
-**The fixtures.** The 15 committed fixture stores hold one namespace each and no authority records, so with the flat form kept they need nothing. Tests that build two governed namespaces at run time encode store-wide authority and change meaning (read):
-- `ledger-cli/tests/key_across_namespaces.rs`, all six tests. They assert ruling 47's opposite, so they are rewritten to assert that a close stays in its namespace and that the notice appears.
-- `ledger-cli/tests/genesis_key.rs`, four tests on a later namespace: `a_later_namespaces_first_policy_is_signed_and_unsigned_it_is_l011`, `init_in_a_later_namespace_binds_the_holders_key_there_…`, and `with_every_key_closed_…` (two tests). Rewritten to open each namespace with its own genesis.
-- Second-namespace scenarios in `closed_key.rs` (line 165), `policy_authors.rs` (126), `pre_policy_binding.rs` (154, 166, 188), `trust.rs` (291, 308) and `interactive.rs` (164, refusal only).
-- Unit tests over several namespaces in `authority/key_close_tests.rs`, `authority/filing_tests.rs` and `signing/check_tests.rs`.
+**Tests to rewrite** *(read: by grep for the flat paths, and from §1's reading)*:
 
-**A store created before this lands, with two or more governed namespaces** (no such store is committed in this repository).
+1. **Tests that write, read or name flat paths.** Each needs its paths moved under `ns/<ns>/`, and its assertions keep their meaning.
+   - `ledger-cli/tests/`: `accept_group.rs`, `authority.rs`, `batch.rs`, `binding_accounting.rs`, `cli.rs`, `closed_key.rs`, `digests.rs`, `export.rs`, `export_verifier.rs`, `gate.rs`, `genesis_key.rs`, `graph.rs`, `inbox.rs`, `inbox_failures.rs`, `key_across_namespaces.rs`, `key_ownership.rs`, `keys.rs`, `legacy_revocation.rs`, `merge.rs`, `pre_policy_binding.rs`, `revisit_format.rs`, `role_position.rs`, `show.rs`, `signing.rs`, `trust.rs`, `verbs.rs`, and the helpers `common/mod.rs`, `common/hand.rs` and `common/export_only.rs`.
+   - Unit tests in `ledger-core/src/`: `landing_tests.rs`, `store_tests.rs`, `batch_tests.rs`, `author/sign_tests.rs`, `merge/tests.rs`, `verify/order_grid.rs`, and the tests in `merge/driver.rs` and `init.rs`.
+   - In `ledger-cli/src/commands/`: `terminal_tests.rs`.
+2. **Tests whose meaning changes** (rulings 47 and 68: every namespace has its own genesis).
+   - `key_across_namespaces.rs`, all six tests. They become: a close stays in its namespace, the writer files one change-set per namespace in one commit, and the notice appears.
+   - `genesis_key.rs`: `a_later_namespaces_first_policy_is_signed_and_unsigned_it_is_l011`, `init_in_a_later_namespace_binds_the_holders_key_there_and_they_sign_with_no_identity_add`, `with_every_key_closed_init_in_a_later_namespace_refuses_and_names_them`, and `with_every_key_closed_and_without_key_init_warns_and_initialises_unbound`. A later namespace is opened with its own genesis.
+   - Second-namespace scenarios in `closed_key.rs` (line 165), `policy_authors.rs` (126), `pre_policy_binding.rs` (154, 166, 188), `trust.rs` (291, 308) and `interactive.rs` (164, refusal only).
+   - Unit tests over several namespaces in `authority/key_close_tests.rs`, `authority/filing_tests.rs` and `signing/check_tests.rs`.
+3. **New tests** for §3.1.1: a history with a flat era and a re-layout commit, verifying with landing unchanged; a flat path at the verified commit refused.
 
-| Step | What | Digests |
-| --- | --- | --- |
-| M1 | Re-layout into directories, with each namespace's record seeded from git | None |
-| M2 | Copy each shared record into every namespace that used it, byte-identically: the genesis grant and its grant acceptance, its unavailability and availability records, and the role files | None: same ids, same hashes. The duplicate-id check becomes per namespace (N20). |
-| M3 | Record each copy's landing as its original first landing, keyed by entity across the store at migration. Otherwise the copies land at the migration commit, after every act made under them, and `A006` fails. | None |
-| M4 | A legacy reading of D7. In a namespace opened by joining the genesis (format 7, before the layout), the genesis holder's own first `add`, not self-bound, is that namespace's opening binding when it is signed by the key it binds. | None |
+**A store made before this lands.**
+- *One namespace:* it is re-laid out, as this repository's is.
+- *A governed store with more than one namespace:* it is re-founded per namespace (68). There is no copying of shared records and no exemption.
 
-M4 needs the binding to be signed by the key it binds. **Inference:** `ledger init --namespace` binds the holder's configured signing key and signs with the same key (`author::genesis_key`), so writer-made stores meet M4. A hand-made store whose carried-over binding was signed by a *different* key does not. That binding is then refused by D7 forever, and LP-4.35 says every filed binding is trusted or named by a finding. That case needs one of:
-- (a) a recorded exemption: the migration's landing record marks the binding as trusted under the store-wide rules, attested like a move act;
-- (b) the namespace stays red until re-founded;
-- (c) the store keeps store-wide D7 for files below the layout change, so that namespace stays coupled and cannot move.
+**Draft Appendix C note** for the re-founding:
 
-**Verdicts that change by design** (ruling 47): an acceptance awaiting re-acceptance, or `L012`, only because of a close in another namespace stops being one. The migration note must say so. A writer that wants the old effect files the close in that namespace too (§3.3).
-
-**Lean:** M1 to M4, with (a) for the residue.
+> #### Namespaces become independent; a store with shared authority is re-founded (spec v1.9 and format 8)
+>
+> From v1.9 every store holds each namespace under `.decisions/ns/<namespace>/`. Each namespace has its own genesis grant, roles, grants, key bindings, policy and `allowed_signers`, and nothing in one namespace's authority has effect in another (rulings 47, 62, 63).
+>
+> **Who must act.** A store whose log holds a policy for more than one namespace, filed before v1.9, shared one genesis grant, one set of role files and one set of trusted keys across them. Its namespaces cannot be split, and no migration path is provided (ruling 68). Under v1.9 rules such a store fails verification: each namespace after the first has no genesis grant of its own (`A006` on its policy, D7 on its first key binding).
+>
+> **What to do.** Re-found each namespace:
+>
+> 1. Open it in a fresh directory, `.decisions/ns/<namespace>/`, with `ledger init --namespace <namespace> --external-ref <mandate>`. That files its own genesis grant, roles, first policy and self-bound key.
+> 2. Grant its roles again.
+> 3. File each decision's latest version again, with its key carried, and accept it again under the new authority.
+>
+> **What is not carried over.** Acceptances, grants and key windows of the old store. The old store's history stays in git as the record of what was accepted under it. Re-founding is a new start, not a migration, and no digest of the old store is reused by the new one.
+>
+> **A store with one namespace, or with none under policy,** is not re-founded. It moves its files under `ns/<namespace>/` in one commit, and landing follows each entity across the move.
 
 ### 3.12 The seam for ruling 48
 
-Authority as its own unit, which namespaces depend on by pin, is for later. This design leaves these open, so that it does not block it:
+Accepted with the design. What it leaves open, so that authority can later become its own unit:
+1. **No hashed namespace on grants.** A grant belongs to a namespace by where it is filed, so the same grant can later be filed in an authority unit without its hash moving.
+2. **A namespace's authority is addressed the way a pin addresses it**, by genesis grant hash and anchor binding hash (70). An authority unit would be pinned by the same two tokens.
+3. **Authority records stay in change-sets of their own.** The writer already files grants, grant acceptances, bindings and policies apart from decisions (`init`, `grant new`, `identity`). Keeping that as a writer rule means a later split moves files, not entities out of files.
+4. **`under` names a grant id, not a namespace-qualified one.**
+5. **Nothing forbids one person holding the genesis of several namespaces.**
 
-1. **No hashed namespace on grants** (§3.2, 2A). A grant belongs to a namespace by where it is filed. The same grant can later be filed in an authority unit without its hash moving.
-2. **A namespace's authority is addressed the way a pin addresses it**, by genesis grant hash and anchor binding hash (§3.6). An authority unit would be pinned by the same two tokens.
-3. **Authority records in change-sets of their own.** The writer already files grants, grant acceptances, bindings and policies in change-sets that hold no decision (`init`, `grant new`, `identity`). The proposal keeps that as a writer rule, so that a later split moves files, not entities out of files.
-4. **`under` names a grant id, not a namespace-qualified one.** An act made under a grant held in an authority unit can keep the same field.
-5. **Nothing here forbids one person holding the genesis of several namespaces.** An authority unit would make that one grant pinned by several namespaces. Today it is several grants.
-
-What this design deliberately does not do: let a pin carry authority, or let one namespace's grant act in another.
+Not done here: a pin that carries authority, or one namespace's grant acting in another.
 
 ### 3.13 Every inventory entry, answered
 
 | Entry | Answer |
 | --- | --- |
-| N1 one genesis | Each namespace has its own (§3.2). Shared genesis copied at migration (§3.11 M2). |
-| N2 `A003`/`A005` store-wide | The graph stage runs per namespace graph (§3.9; §5 LP-8.19) |
-| N3 roles store-wide | Roles per namespace (§3.1, §3.2) |
-| N4 `*`, `set:` reach | Scopes read inside the grant's namespace (§3.2); sets per namespace (§3.1) |
+| N1 one genesis | Each namespace has its own (§3.2). Shared authority is re-founded (68). |
+| N2 `A003`/`A005` store-wide | The graph stage runs per namespace (§3.9) |
+| N3 roles store-wide | Per namespace (§3.1, §3.2) |
+| N4 `*`, `set:` reach | Read inside the grant's namespace (67; §3.2); sets per namespace (§3.1) |
 | N5 sets shared | A set belongs to one namespace (§3.1) |
-| N6 close ends key everywhere | A close ends it in its namespace; close in each namespace by one invocation; repository notice (§3.3) |
-| N7 key refusal store-wide | Judged per namespace; cross-namespace notice (§3.3) |
-| N8 D7 leans on other namespaces | Self-bound first binding per namespace (§3.3); legacy reading M4 (§3.11) |
-| N9 first policy, key from elsewhere | Signed by the namespace's own key only (§3.3) |
+| N6 a close ends the key everywhere | A close ends it in its namespace; one change-set per namespace; notice (69; §3.3) |
+| N7 key refusal store-wide | Per namespace, with a notice (§3.3) |
+| N8 D7 leans on other namespaces | Self-bound first binding per namespace (§3.3) |
+| N9 first policy, key from elsewhere | The namespace's own key only (§3.3) |
 | N10 one `allowed_signers` | One per namespace (§3.4) |
-| N11 one genesis holder in notices | Notices per namespace (§5 LP-8.31) |
-| N12 acceptance ids across namespaces | A revocation's target must be in its namespace (§3.7) |
-| N13 `supersedes` crosses | Schema fault on live claims (§3.7) |
-| N14 mixed change-sets | Schema fault; directory layout (§3.1, §3.7) |
-| N15 export reach | The export carries its own namespace only, plus ordinals (§3.9) |
-| N16 set/role IRIs | Namespaced (§3.9) |
-| N17 landing from the holding repository | Landing record and move act (§3.5) |
-| N18 `L009` from the holding repository | Record carries authors (§3.5) |
-| N19 cannot leave | Departure after a move act (§3.5) |
-| N20 ids per store | Per namespace (§3.1; §5) |
-| N21 policy lookup by hash | Per-namespace authority view makes it unreachable; the schema fault stays |
+| N11 one genesis holder in notices | Notices per namespace (§5, LP-8.31) |
+| N12 acceptance ids across namespaces | Ruling 49, and ruling 45's check (§3.7) |
+| N13 `supersedes` crosses | Schema fault on live claims (75; §3.7) |
+| N14 mixed change-sets | The directory layout and ruling 45's check (§3.1, §3.7) |
+| N15 export reach | Its own namespace only (§3.9) |
+| N16 set/role IRIs | Namespaced (74) |
+| N17 landing from the holding repository | D6 before a move; the record from a move act on (64; §3.5) |
+| N18 `L009` from the holding repository | Record author for arrived acceptances (79) |
+| N19 cannot leave | Departure after a move act (65) |
+| N20 ids per store | Per namespace. Flat-era ids, unique per store, key history lookups (§3.1.1). |
+| N21 policy lookup by hash | Per-namespace authority; the schema fault stays |
 
 ---
 
@@ -774,223 +754,241 @@ What this design deliberately does not do: let a pin carry authority, or let one
 
 **AC-1. The experiment, as a test** (`ledger-cli/tests/namespace_move.rs`, proposed).
 - *Setup.* Take a copy of this repository's store with full history, re-laid out (§3.11).
-- *Move.* Move `.decisions/ns/hafeok.ddd/` and `docs/decisions/hafeok.ddd.nt` into a fresh repository by plain copy in one commit, by someone who is not the acceptor. Under §3.5's lean, a move act is filed first.
-- *Verify.* Remove both from the source in one commit, then run `ledger verify --export` on both repositories.
+- *Move.* File a move act and its record in `hafeok.ddd`, then move `.decisions/ns/hafeok.ddd/` and `docs/decisions/hafeok.ddd.nt` into a fresh repository by plain copy in one commit, by someone who is not the acceptor. Remove both from the source in one commit.
 - *Pass when:*
-  - both are conformant;
+  - `ledger verify --export` is conformant on both repositories;
   - every file that existed before the move is byte-identical on the side that holds it, so no hash changed and no reference was rewritten;
-  - the source's `hafeok.ledger` verdicts, notices and export are identical to before the move.
+  - the move act and its record are the only files added (65);
+  - the source's `hafeok.ledger` verdicts, notices and export are identical to before.
 - *Must also hold:* the test passes again when the move is made by `git filter-repo`, and by merging carried history into a repository with history of its own.
+- *Depends on N-Q4:* `hafeok.ddd` has no policy, so its move act cannot be signed.
 
-**AC-32. A governed namespace moves without changing a verdict.**
-- E3's store, rebuilt under per-namespace rules, with `beta.ns` moved by the same three means. Each side's findings, review items and notices equal what the namespace had before the move.
-- E5's store moved by copy and by merge still fails `L011` and `A006` on the backdated acceptance.
+**AC-32.**
+- E3's store, rebuilt with a genesis per namespace, with `beta.ns` moved by the three means: each side's findings, review items and notices equal what the namespace had before the move.
+- E5's store, moved by copy and by merge, still fails `L011` and `A006` on the backdated acceptance.
 
-**AC-41. One form of reference.** In a file declaring the pinning format, `dec:<other>/…` without a pin, or with a pin of no matching name, is a schema fault. The same token resolves through a pin both when the pinned namespace sits in the same repository and when it does not, and the verdict is identical.
+**AC-41.** From the pinning format, `dec:<other>/…` without a pin is a schema fault. A pinned token resolves identically whether the pinned namespace sits in the same repository or not.
 
-**AC-42. A pin names no location.** A pin holds `source_prefix: dec:<ns>/`, `source_method: signed` and the two key tokens, and nothing else locates it. Two unrelated namespaces named `x` are told apart by their genesis hash. A second pin named `x` is a schema fault.
+**AC-42.** A pin holds `source_prefix: dec:<ns>/`, `source_method: signed` and the `genesis:` and `anchor:` tokens, and nothing that locates it.
 
-**AC-43.** A latest version whose `supersedes` names another namespace is a schema fault. After a revision that drops the edge, the store is conformant.
+**AC-43.** A latest version whose `supersedes` names another namespace is a schema fault. After a revision that drops the edge, the store is conformant (75).
 
-**AC-44.** A pinned basis naming a version without `exported: true` in the vendored snapshot fails `G008`.
+**AC-44.** A pinned basis naming a version without `exported: true` fails `G008` (78).
 
-**AC-45.** A file under `ns/A/` holding any entity of B is a schema fault, and so is a revocation naming an acceptance of B. Case 3c of the verification session fails.
+**AC-45.** A file under `ns/A/` holding any entity of B is a schema fault, and so is a revocation naming an acceptance of B.
 
 **AC-46.**
-- A cycle A→B→A, visible from A through B's vendored snapshot, fails `G007` in A's repository and in B's.
-- `verify --json` carries `instability` for each namespace of the repository, and verification passes with it.
+- A cycle A→B→A, visible from A through B's snapshot, fails `G007` in either repository.
+- `verify --json` carries `instability`, with "isolated" for a namespace with no edges (80).
 
 **AC-47.**
-- Two namespaces of one repository, each opened with its own genesis grant: `A005` and `A003` do not fire.
+- Two namespaces, each with its own genesis grant: `A003` and `A005` do not fire.
 - A rotate in A leaves B's acceptances, review items and `allowed_signers` unchanged.
-- The close verb files one change-set per namespace in one commit.
-- The notice names a key closed in A and open in B.
+- The close verb files one change-set per namespace in one commit, and the notice names a key closed in A and open in B (69).
 
-**AC-48.** No hashed payload gains a namespace field for grants. Authority records stay in change-sets that hold no decision.
+**AC-48.** No grant payload gains a namespace field, and authority records stay in change-sets that hold no decision.
+
+**AC-63.**
+- A store with any flat path at the verified commit is a schema fault.
+- This repository's history, re-laid out in one commit, verifies with every entity's landing index, `L009` author and immutability verdict the same as before the re-layout.
+
+**AC-64.**
+- Two pull requests open at once, each adding an entity to one namespace, merge in either order with no conflict in any derived file and no red default branch.
+- A move act whose pull request merges after another lands an entity of its namespace fails `A007`.
+
+**AC-65.** Removing part of a namespace is `L007`. Removing all of it after a landed move act is not. An entity of the namespace landing after its move act is `A007`.
+
+**AC-68.** A store with two governed namespaces built under today's rules fails v1.9 verification as the draft Appendix C note says.
+
+**AC-81.** No export holds a landing ordinal or an introducing author.
 
 ---
 
 ## 5. Protocol changes (proposed)
 
-These are proposals only. Each lands with the implementation that makes it true, and removes the matching **Not implemented** mark. Each new requirement takes the next free number in its section.
+These are proposals only. Each lands with the implementation that makes it true, and removes the matching **Not implemented** mark. New requirements take the next free number in their section.
 
 **Store and layout (§3)**
-- **LP-3.8:** remove "Not implemented" once pins exist. Keep the text.
+- **LP-3.8:** remove "Not implemented" once pins exist.
 - **LP-3.18:** mark superseded by LP-3.8 once pins exist.
-- **LP-3.30 to LP-3.33:** remove "Not implemented" as each lands. Replace the italic notes that describe today's behaviour.
-- **LP-3.34 (new):** "A store with more than one namespace holds each under `.decisions/ns/<namespace>/`, with its own `sets/`, `roles/`, `log/`, `sig/`, `allowed_signers` and `landing`. A file's namespace is its directory. A store with one namespace MAY keep the flat layout of section 3.1, which is that namespace's directory. A store holding both layouts is a schema fault."
-- **LP-3.35 (new):** "Ids, set ids, role ids and file names are unique within a namespace."
-- **LP-3.12:** "…filed as `<ulid>.yml` in its namespace's `log/`…"
+- **LP-3.30 to LP-3.33:** remove "Not implemented" as each lands, and drop the italic notes on today's behaviour.
+- **LP-3.34 (new):** "A store holds each namespace under `.decisions/ns/<namespace>/`, with its own `sets/`, `roles/`, `log/`, `sig/`, `allowed_signers`, and, after a move act, `landing/`. A file's namespace is its directory. At the verified commit, a file under `.decisions/` outside `ns/` and `index/` is a schema fault."
+- **LP-3.35 (new):** "In history, a verifier reads change-set, role and sidecar files at both the flat paths of revision v1.8 (`.decisions/log/`, `.decisions/roles/`, `.decisions/sig/`) and the paths of LP-3.34, told apart by path. It reads only their entities."
+- **LP-3.36 (new):** "Ids, set ids, role ids and file names are unique within a namespace."
 
-**Keys and trust (§4)**
-- **LP-4.10, LP-4.32, LP-4.33:** "`allowed_signers` is derived per namespace at `ns/<ns>/allowed_signers` … `valid-before` is the `at` of the earliest `rotate` or `revoke` in the same namespace that closed its key … `[SIGNERS]` compares each namespace's file."
-- **LP-4.12:** first bullet becomes "the genesis holder's self-bound first binding in the namespace, carrying that namespace's genesis `external_ref` as `mandate`, signed by the key it binds." Delete "Once per store …".
-- **LP-4.31:** delete "or in another …". A first policy is judged under its own schemes when its author held a live trusted key of the namespace.
+**Keys (§4)**
+- **LP-4.10, LP-4.32, LP-4.33:** per namespace, at `ns/<ns>/allowed_signers`; `valid-before` from closes in the same namespace; `[SIGNERS]` per namespace.
+- **LP-4.12:** first bullet becomes "the genesis holder's self-bound first binding in the namespace, carrying its genesis `external_ref` as `mandate`, signed by the key it binds." Delete "Once per store …".
+- **LP-4.31:** delete "or in another …".
 - **LP-4.37:** bullets 1 and 2 read "in the namespace".
-- **LP-4.38:** "A writer that opens a namespace files its genesis grant, root role, accept role, first policy and the genesis holder's self-bound binding in one change-set, whatever other namespaces the store holds."
+- **LP-4.38:** "A writer that opens a namespace files its genesis grant, root and accept roles, first policy and the genesis holder's self-bound binding in one change-set."
 - **LP-4.39:** superseded by LP-6.32.
-- **LP-4.25 table:** add "move act | its `by` | its `namespace`".
-- **LP-4.22 table:** add the row "Namespace move | `ledger.namespace-move.v1` | `id`, `namespace`, `landing`, `manifest`, `by`, `under`, `at`".
+- **LP-4.22 and LP-4.25 tables:** add the move act: `ledger.namespace-move.v1`, fields `id`, `namespace`, `landing`, `manifest`, `by`, `under`, `at`; signed by its `by` in its `namespace`.
 
 **Entities (§5)**
-- **§5 table:** add "Namespace move | `move:<ULID>` | Yes, `ledger.namespace-move.v1` | By policy | A namespace's departure: the digest of its landing record and of its files."
+- **§5 table:** add "Namespace move | `move:<ULID>` | Yes, `ledger.namespace-move.v1` | By policy | A namespace's departure: the digest of its landing record and of its files. Format 8."
 - **LP-5.19:** "…one `roles/` directory per namespace."
 - **LP-5.22 (new):** "A version names a set of its own namespace."
 
 **Authority (§6)**
-- **LP-6.5:** "Each namespace's genesis grant is self-granted, has scope `*` (the whole of its namespace) and order `primary`, and carries an `external_ref`. At most one genesis grant per namespace is live (`A005`)."
-- **LP-6.16:** "A grant's scope is read in its own namespace: `*` and `ns:<own>` cover the namespace, `set:` a set of it, `pattern:` as before. `ns:<other>` is a schema fault."
+- **LP-6.5:** "Each namespace's genesis grant is self-granted, has scope `*`, read as the whole of its namespace, and order `primary`, and carries an `external_ref`. At most one per namespace is live (`A005`)."
+- **LP-6.16:** "A grant's scope is read in its own namespace. `ns:<other>` is a schema fault."
 - **LP-6.28:** "the genesis grant" is the namespace's.
 - **LP-6.31, LP-6.32:** remove "Not implemented" as they land.
 - **LP-6.33 (new):** "A namespace move is the genesis holder's act, judged like a policy (`A006`)."
+- **LP-6.34 (new):** "A writer that closes a key in every namespace it holds files one change-set per namespace, in one commit."
 
 **Basis and pins (§7)**
-- **LP-7.11:** "…The pin's `source_prefix` is `dec:<namespace>/`, its method `signed`, and its `source_keys` exactly `genesis:sha256:<genesis grant hash>` and `anchor:sha256:<self-bound binding hash>`. A namespace holds at most one live pin per namespace name. The pinned namespace's export is held at `ns/<ns>/pins/<pinned>/<digest>.nt`, inside one repository as across."
-- **LP-7.32 (new):** "In a file declaring the pinning format, a `dec:` token in `based_on` is a pinned basis of its own namespace or of a pinned one."
-- **LP-7.30:** number the class `G007`.
-- **LP-7.31:** add "a namespace with no dependency and no dependent is reported isolated."
+- **LP-7.11:** "…`source_prefix` `dec:<namespace>/`, method `signed`, and `source_keys` exactly `genesis:sha256:<genesis grant hash>` and `anchor:sha256:<first trusted binding hash>`. A namespace holds at most one live pin per name. The pinned namespace's export snapshot is held at `ns/<ns>/pins/<pinned>/<digest>.nt`, inside one repository as across. An ungoverned namespace cannot be pinned."
+- **LP-7.30:** the class is `G007`.
+- **LP-7.31:** add "a namespace with no dependency in either direction is reported as isolated."
+- **LP-7.32 (new):** "From the pinning format, a `dec:` token in `based_on` names its own namespace or a pinned one; a pinned version carries `exported: true` itself (`G008`)."
 
 **Verification (§8)**
-- **LP-8.4:** add `G007`, `G008`, `A007` and the `[LANDING]` stage.
-- **LP-8.19:** "The graph stage runs per namespace, over that namespace's graph alone." Add `G007`, `G008` and `A007` to the table.
+- **LP-8.4:** add `G007`, `G008` and `A007`.
+- **LP-8.19:** "The graph stage runs per namespace, over that namespace's graph alone." Add the three classes to the table.
 - **LP-8.23:** delete the store-wide note on `A005`.
-- **LP-8.24:** "An entity's landing commit is the first commit on the first-parent history of the verified commit whose tree holds the entity in its namespace, at any path. For an entity that arrived by a move (LP-8.34), its ordinal is the landing record's."
-- **LP-8.30:** add "except that every file of a namespace MAY be removed in one commit after a landed move act of that namespace."
-- **LP-8.31:** notices are per namespace. Add the two key notices.
-- **LP-8.32:** "…for an arrived acceptance, the landing record's author."
-- **LP-8.34 (new):** "**Landing record.** Each namespace holds `landing`, one line per entity with its ordinal and, for an acceptance, its introducing author. A verifier re-derives it and requires byte-identity, except for rows fixed by a move act, which MUST equal the move act's digest (`A007`)."
+- **LP-8.24:** "An entity's landing commit is the first commit on the first-parent history of the verified commit whose tree holds the entity, by its key, at a path of its namespace or, before the re-layout, at a flat path (LP-3.35). An entity that arrived by a move takes its ordinal from the record of its namespace's latest move act (LP-8.34)."
+- **LP-8.30:** add two exceptions:
+  - "a whole namespace removed in one commit after a landed move act of that namespace";
+  - "a flat file whose every entity is present unchanged under its namespace's directory in the same commit."
+- **LP-8.31:** notices per namespace, plus the two key notices.
+- **LP-8.32:** "…for an arrived acceptance, the author in the landing record."
+- **LP-8.34 (new):** "**Landing record.** A writer filing a move act writes, in the same commit, `ns/<ns>/landing/<move-ulid>`: one line per landed entity of the namespace, with its ordinal and, for an acceptance, its introducing author, read from the history the act was filed on. The source checks it against git at the commit where the act lands. The target reads it for arrived entities. A mismatch is `A007`. No record is held before a move."
+- **LP-8.35 (new):** "**Departure.** From a landed move act on, no entity of its namespace may land in the source (`A007`)."
 
 **Export (§9)**
-- **LP-9.1, LP-9.11:** "The export of a namespace carries every entity of its directory, the landing ordinals (`ledger:landing`), and an acceptance's introducing author (`ledger:introducedBy`)." Delete the `*` reach.
+- **LP-9.1, LP-9.11:** "The export of a namespace carries every entity of its directory except its landing records, and no fact read from git: no landing ordinal and no introducing author." Delete the `*` reach.
 - **LP-9.4 table:** `urn:ledger-set:<ns>/<id>` and `urn:ledger-role:<ns>/<id>`.
-- **LP-9.6:** remove "Not implemented".
-- **LP-9.14:** "…`valid-before` from closes in the export … D7 and D6 by the ordinals."
-- **LP-9.15:** "…it cannot check landed immutability."
+- **LP-9.14:** a policy's `accept_role` is the `ledger:acceptRole` IRI's local part after `urn:ledger-role:<ns>/`.
+- **LP-9.15:** as amended by ruling 51, with these added to what it cannot check: D7 trust; `L009`; landed immutability; `A007`; and whether the store verified green. Once LP-6.32 lands, delete the bullet on a close in another namespace.
+- **LP-9.6:** depends on N-Q5.
 
-**Appendix C notes:** the layout (v1.9, no format), format 8 (move act), the pinning format, and the verdict changes of ruling 47 (§3.11).
+**Appendix C notes:**
+- v1.9, the layout and the re-founding (§3.11's draft);
+- format 8, the move act;
+- the pinning format.
 
 ---
 
 ## 6. Issues
 
-One per unit of work, in the order to do them. Sizes are S, M and L.
+One per unit of work, in order. Sizes are S, M and L.
 
 | # | Title | Cites | Size | Depends on | Appendix C note |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Load a store as namespaces: `ns/<ns>/` directories, and the flat layout as the one-namespace form | §3.1 | L | — | Yes (layout, v1.9) |
-| 2 | Key landing by entity within a namespace, not by path; make `L009` follow renames | §3.5 | M | 1 | Yes |
-| 3 | Refuse an entity outside its directory's namespace (ruling 45), including revocation targets | §3.7 | S | 1 | Yes |
-| 4 | Refuse `supersedes` into another namespace on live claims (ruling 43) | §3.7 | S | 1 | No |
-| 5 | Build authority per namespace: genesis, roles and grants; scopes read inside the namespace; graph stage per namespace graph (`A003`, `A005`) | §3.2, §3.9 | L | 1 | Yes |
-| 6 | Judge keys per namespace: `key_close`, D7, first policy; remove `carried_over`; add the two notices | §3.3 | M | 5 | Yes |
-| 7 | Derive `allowed_signers` per namespace; remove a stale file | §3.4 | S | 1, 6 | Yes |
-| 8 | Writer: open every namespace with its own genesis; close a key in every namespace a writer holds | §3.2, §3.3 | M | 5, 6 | No |
-| 9 | Migrate multi-namespace stores (M1 to M4); rewrite the tests listed in §3.11 | §3.11 | M | 1 to 8 | Yes |
-| 10 | Re-lay out this repository's store and regenerate its exports | §3.11 | S | 9 | No |
-| 11 | Landing record and the `[LANDING]` stage | §3.5 | M | 2 | Yes |
-| 12 | Namespace move act (format 8): departure exempt from `L007`, arrival judged by the record (`A007`) | §3.5 | L | 11 | Yes (format 8) |
-| 13 | Acceptance test AC-1 and AC-32 | §4 | S | 3, 12 | No |
-| 14 | Export per namespace: drop `*` reach, carry ordinals and authors, namespace set and role IRIs | §3.9 | M | 5, 11 | Yes; coordinate the analyzers' reader |
-| 15 | Ship the export-only verifier (finding 11) | §3.9 | M | 14 | No |
-| 16 | Pins as trusted-source decisions with `dec:<ns>/` and two key tokens; vendored snapshots (the pinning format) | §3.6 | L | 14; the basis work (pinned tokens, classes, `trust-source`) | Yes (pinning format) |
-| 17 | Only exported versions are pinnable (`G008`); unpinned cross-namespace `dec:` tokens refused | §3.7 | S | 16 | Yes |
-| 18 | Dependency graph: cycle class `G007` and the instability report | §3.8 | M | 16 | Yes |
+| 1 | Load every store from `ns/<ns>/`; refuse flat paths at the verified commit | §3.1 | L | — | Yes (v1.9) |
+| 2 | Read both path patterns in history; key landing, immutability, the `format:` comparison, `L009` and the base overlay by entity | §3.1.1 | L | 1 | Yes (v1.9) |
+| 3 | Refuse an entity outside its directory's namespace, including revocation targets (ruling 45) | §3.7 | S | 1 | Yes |
+| 4 | Refuse `supersedes` into another namespace on live claims (rulings 43, 75) | §3.7 | S | 1 | No |
+| 5 | Authority per namespace: genesis, roles, grants; scopes read inside it; graph stage per namespace | §3.2 | L | 1 | Yes |
+| 6 | Keys per namespace: `key_close`, D7, first policy; remove `carried_over`; the two notices | §3.3 | M | 5 | Yes |
+| 7 | `allowed_signers` per namespace; remove a stale file | §3.4 | S | 1, 6 | Yes |
+| 8 | Writer: open every namespace with its own genesis; close a key in every namespace held | §3.2, §3.3 | M | 5, 6 | No |
+| 9 | Re-lay out the fixtures; rewrite the tests of §3.11; the re-founding note | §3.11 | M | 1 to 8 | Yes (the re-founding note) |
+| 10 | Re-lay out this repository's store and regenerate its exports | §3.11 | S | 2, 9 | No |
+| 11 | Namespace move act (format 8) with its landing record, written at departure: the source check, departure, arrival, successive records, `A007` | §3.5 | L | 2, 5 | Yes (format 8) |
+| 12 | Acceptance tests AC-1, AC-32, AC-63 to AC-65 | §4 | S | 3, 10, 11 | No |
+| 13 | Export per namespace: drop `*` reach; namespaced set and role IRIs | §3.9 | S | 5 | Yes; the analyzers' reader is told |
+| 14 | Ship the export-only verifier (ruling 51), with LP-9.15's limits | §3.9 | M | 13 | No |
+| 15 | Pins as trusted-source decisions with two key tokens; vendored snapshots; one pin per name; ungoverned not pinnable (the pinning format) | §3.6 | L | 13; the basis work | Yes |
+| 16 | Unpinned cross-namespace `dec:` refused; `G008` | §3.7 | S | 15 | Yes |
+| 17 | Dependency graph: `G007`, the instability report | §3.8 | M | 15 | Yes |
 
-**Order:** 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, then 11, 12, 13, then 14, 15, then 16, 17, 18.
+**What changed from the first draft.**
+- The landing-record issue is folded into issue 11.
+- Issue 2 grows from M to L, because it now reads the flat layout in history.
+- Issue 9 shrinks: no M2 to M4.
+- The export issue (13) shrinks from M to S: no ordinals or authors.
 
-Issues 1 to 10 implement ruling 47 and the layout. Ruling 32 is done with 13. Rulings 41, 42, 44 and 46 wait for the basis work.
+**Order:** 1 to 10 (layout and authority), then 11 and 12 (the move), then 13 and 14 (the export), then 15 to 17 (pins, waiting on the basis work).
 
 ---
 
-## 7. Questions for the principal
+## 7. Rulings, and the questions they raise
 
-Questions that change the layout or the format come first, because they gate the rest. Each lists its options, with the lean first.
+The nineteen questions of the first draft are ruled:
 
-**Q1. Layout** (§3.1). Options:
-- (a) a directory per namespace, `.decisions/ns/<ns>/` (lean);
-- (b) the flat layout, with each file's namespace inferred or declared.
+| Question | Ruling | In short |
+| --- | --- | --- |
+| Q1 layout | 62 | `.decisions/ns/<namespace>/` |
+| Q2 one-namespace form | 63 | None. Every store uses the layout. |
+| Q3 landing after a move | 64 | Record written once at departure, fixed by a signed move act; D6 before. Extends D6. |
+| Q4 leaving the source | 65 | Whole removal after a landed move act; the act is within "no hash changes" |
+| Q5 format numbers | 66 | v1.9, no format number; move act format 8; pins after |
+| Q6 genesis scope | 67 | `*`, read as this namespace |
+| Q7 shared authority | 68 | No migration path; re-found |
+| Q8 a close in every namespace | 69 | One change-set per namespace in one commit; notice |
+| Q9 key material | 70 | Genesis grant hash and first trusted binding hash |
+| Q10 one name | 71 | Genesis hash; one live pin per name |
+| Q11 pinned material | 72 | Export snapshot held by the dependent, in one repository too |
+| Q12 ungoverned pin | 73 | Not possible |
+| Q13 IRIs | 74 | Namespaced |
+| Q14 `supersedes` in existing stores | 75 | Live claims only |
+| Q15 unpinned `dec:` | 76 | Refused from the pinning format |
+| Q16 class ids | 77 | `G007`, `G008`, `A007`; `A001`, `A002`, `A004` unused |
+| Q17 `exported` | 78 | On the pinned version itself |
+| Q18 `L009` on arrival | 79 | Against the record's author |
+| Q19 isolated | 80 | Reported as "isolated" |
 
-**Q2. The one-namespace form** (§3.1, §3.11). Options:
-- (a) a flat store with one namespace stays valid as that namespace's directory, so single-namespace stores need no migration (lean);
-- (b) every store uses directories.
+Ruling 81 follows from 64: the export carries no ordinals or authors.
 
-**Q3. Landing order after a move** (§3.5). Ruling 32 and D6 cannot both hold as written for a governed namespace moved into a repository with history of its own. Options:
-- (a) pre-move order may rest on the namespace's own signed landing record, through a move act (lean, 5B);
-- (b) D6 holds as written, and a governed namespace moves only into a fresh repository, with its history carried (5A);
-- (c) moved entities are ordered by `at` alone, reopening D6's backdating gap for them (5D);
-- (d) order in the files themselves, a per-namespace hash chain (5C);
-- (e) only namespaces with no policy may move (5E).
+### Questions the rulings raise
 
-**Q4. Leaving the source** (§3.5). Ruling 32 and landed immutability (LP-8.30) cannot both hold: a move removes landed entities. Options:
-- (a) after a landed move act, the whole namespace may be removed in one commit (lean);
-- (b) a whole-directory removal is allowed with no act;
-- (c) the source keeps a frozen copy, so a move is a copy.
+**N-Q1. The flat layout in history** (ruling 63; §3.1.1). One layout at the verified commit cannot be had without reading the flat layout in history. The alternatives are a permissive collapse, a record at re-layout, or rewritten history. As specified, every implementation that verifies a repository whose history predates v1.9 reads the flat path pattern in history, for good. Is that accepted?
 
-  Under (a), AC-1 adds one entity, the move act, to `hafeok.ddd` before the move. No existing hash changes. Is that within "no hash changes"?
+If not, the remaining choice is between rulings: a record at re-layout, which the reply of 7 October excludes, or a collapse at re-layout, which reopens the laundering path of §2.3.
 
-**Q5. Format numbers** (§3.10). Options:
-- (a) the layout as spec revision v1.9 with no format number; the move act as format 8; pins with the pinning format of LP-7.27, after 8 (lean);
-- (b) give the layout a format number. That would mean raising `format:` on every file, which LP-3.16 does not allow.
+**N-Q2. What a pinned snapshot cannot tell its holder** (ruling 81; §3.9). This is for the pinning design. A dependent holding a snapshot cannot know:
+- whether the pinned namespace's repository was green when the snapshot was taken;
+- any order-dependent verdict on a pinned act;
+- trust beyond the anchor;
+- authorship;
+- anything after the snapshot;
+- whether a move matched its record.
 
-**Q6. The genesis grant's scope** (§3.2). Options:
-- (a) keep `*`, read as "this namespace", with no digest moving (lean);
-- (b) require `ns:<own>` on new genesis grants;
-- (c) rewrite to `ns:<own>`, which moves every grant hash.
+What, if anything, should a pin or a snapshot carry so that a dependent can know the first and the fifth? No fix is designed here.
 
-**Q7. Migration of shared authority** (§3.11). Options:
-- (a) copy shared records byte-identically into each namespace, keep their original landing, and read a genesis holder's carried-over first `add` signed by its own key as the opening binding; for any residue, a recorded exemption in the migration's record (lean);
-- (b) as (a), but the residue stays red until re-founded;
-- (c) store-wide rules for files below the layout change, which leaves those namespaces coupled and unmovable.
+**N-Q3. A namespace frozen at its move act** (ruling 65; §3.5). The record is written at departure and checked at the commit where the act lands, so two things follow:
+- any entity of the namespace landing after the act in the source is `A007`, and is filed again in the target;
+- a move act whose pull request merges after another landing in its namespace fails `A007` and is refiled.
 
-**Q8. A close in every namespace** (§3.3). Options:
-- (a) one change-set per namespace from one invocation, in one commit, plus a repository notice for a key closed in one namespace and open in another (lean);
-- (b) the same, without the notice.
+Is freezing the namespace from its move act on what ruling 65 intends?
 
-**Q9. A pin's key material** (§3.6). Options:
-- (a) the genesis grant hash and the trusted self-bound binding hash (lean);
-- (b) the genesis grant hash alone;
-- (c) a set of public keys;
-- (d) the policy hash.
+**N-Q4. A move act in a namespace with no policy** (rulings 64 and 65 against LP-4.35 and `authority::references::binding_refs`). Ruling 64 fixes the record by a signed move act. A namespace with no policy can bind no key, so it can sign nothing. AC-1 moves `hafeok.ddd`, which has no policy. The two rulings cannot both hold for it as written. Options:
+- (a) in a namespace with no policy the move act is unsigned and unchecked, as every act there is;
+- (b) a namespace is put under policy before it may move;
+- (c) a namespace with no policy moves with no move act and no record, and ruling 65's departure rule is extended to it.
 
-**Q10. Two unrelated namespaces of one name** (§3.6). Options:
-- (a) told apart by genesis hash, with at most one live pin per name in a namespace (lean);
-- (b) a local alias in the token. That changes the token form ruled by ruling 34.
+**N-Q5. LP-9.6 against ruling 81.** LP-9.6 (not implemented, from the accepted points of 5 October) says the export of a pinned namespace carries "enough of the authority log to verify its acts from the pinned key material". Without landing order, an export can show that signatures hold, but not `A006` as of each act or D7's trust (§3.9). Both cannot hold in full. Options:
+- narrow LP-9.6 to signatures and key windows;
+- or leave it for the pinning design, with N-Q2.
 
-**Q11. Where pinned material is held** (§3.6). Options:
-- (a) a vendored export snapshot held by the dependent, even inside one repository (lean);
-- (b) the pinned namespace's log files;
-- (c) only the named versions.
+---
 
-**Q12. Pinning an ungoverned namespace** (§3.6). Options:
-- (a) not possible (lean);
-- (b) `content-addressed`, with no acceptance checked.
+## Appendix A. Options considered
 
-**Q13. Set and role IRIs** (§3.9). Options:
-- (a) `urn:ledger-set:<ns>/<id>` and `urn:ledger-role:<ns>/<id>` (lean; the analyzers' reader is told);
-- (b) unchanged.
+The first draft's options that the rulings did not choose. The first draft (`git show 4a35c9b:ledger/prd/namespace-independence-prd.md`) gives their costs in full.
 
-**Q14. `supersedes` across namespaces in an existing store** (§3.7). Options:
-- (a) judged on live claims only, so a revision can repair it (lean);
-- (b) every version.
-
-**Q15. Unpinned `dec:` tokens of another namespace** (§3.7). Options:
-- (a) refused from the pinning format (lean);
-- (b) opaque forever.
-
-**Q16. Class ids** (§3.10). Options:
-- (a) `G007` for cycles, `G008` for a non-exported pin, `A007` for a move mismatch (lean);
-- (b) other letters.
-
-  Are `A001`, `A002` and `A004` free, or reserved by the authority shapes?
-
-**Q17. `exported` on which version** (§3.7). Ruling 44 says "a decision marked `exported`". `exported` is a field of a version. Options:
-- (a) the pinned version itself carries `exported: true` (lean);
-- (b) the decision's tip carries it. A pin then becomes invalid when a later version drops the flag.
-
-**Q18. `L009` for arrived acceptances** (§3.5). Options:
-- (a) compared with the landing record's author (lean);
-- (b) skipped and reported, as for an uncommitted acceptance.
-
-**Q19. The instability report for an isolated namespace** (§3.8). Options:
-- (a) reported as "isolated" (lean);
-- (b) omitted.
+| Topic | Not chosen | Chosen |
+| --- | --- | --- |
+| Layout (Q1, Q2) | A flat layout with a per-file namespace rule; the flat layout kept as the form of a one-namespace store | 62, 63 |
+| Landing after a move (Q3) | A record held byte-identical to git on every commit, which is what the first draft leaned to (excluded by merge order, ruling 64); carrying history only, into fresh repositories; `at` alone for moved entities; a per-namespace hash chain of change-sets; moving only namespaces with no policy | 64 |
+| Leaving the source (Q4) | A whole-directory removal with no act; the source keeping a frozen copy | 65 |
+| Format (Q5) | A format number for the layout | 66 |
+| Genesis scope (Q6) | `ns:<own>` on new genesis grants; rewriting `*` (moves digests) | 67 |
+| Shared authority (Q7) | Copy shared records byte-identically into each namespace, carry their landing, accept a carried-over first key signed by its own key, and exempt any residue by record (the first draft's M2 to M4); store-wide rules for old files | 68 |
+| A close everywhere (Q8) | One act across namespaces (breaks ruling 45); a store-level close list (breaks ruling 47); no notice | 69 |
+| Key material (Q9) | Genesis hash alone; a set of public keys; the policy hash | 70 |
+| One name (Q10) | A local alias in the token (changes ruling 34's form) | 71 |
+| Pinned material (Q11) | Vendored log files; the named versions only | 72 |
+| Ungoverned pins (Q12) | `content-addressed` pins | 73 |
+| IRIs (Q13) | Unchanged IRIs | 74 |
+| `supersedes` (Q14) | Judged on every version | 75 |
+| Unpinned `dec:` (Q15) | Opaque forever | 76 |
+| `exported` (Q17) | On the decision's tip | 78 |
+| `L009` on arrival (Q18) | Skipped and reported | 79 |
+| Export (with 64) | Ordinals and authors in the export, which the first draft leaned to | 81 |
+| `allowed_signers` (not asked) | One file per store; none committed | Accepted with the design |
+| Authority belonging (not asked) | A hashed `namespace` on grants | Accepted with the design |
+| The pin's form (not asked) | A new `dependency` authority record | Accepted with the design |

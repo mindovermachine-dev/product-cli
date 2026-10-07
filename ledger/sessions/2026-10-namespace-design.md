@@ -798,7 +798,7 @@ Two earlier runs of these scripts were thrown away, and they explain two lines i
 - **The pinning format's number.** It depends on whether the basis work lands before or after the move act.
 - **Whether the analyzers' reader tolerates namespaced set and role IRIs.** That repository is outside this session's reach.
 
-## Questions for the principal
+## Questions for the principal (first draft; ruled by rulings 62 to 80)
 
 The PRD's §7, in one list. Questions that change the layout or the format come first, and each lean is listed first among its options.
 
@@ -835,16 +835,125 @@ The PRD's §7, in one list. Questions that change the layout or the format come 
 18. **`L009` for arrived acceptances.** Compared with the landing record's author (lean), or skipped and reported?
 19. **Instability for an isolated namespace.** Reported as "isolated" (lean), or omitted?
 
+## Principal's replies, 2026-10-07
+
+The design was accepted as the basis, with three changes to the leans. All nineteen questions are ruled, as rulings 62 to 80 in `ledger/rulings/namespace-design-rulings-2026-10-07.md`. Ruling 61 amends allocation at import and is outside this design. Ruling 81 follows from 64.
+
+### Rulings, by number
+
+| Ruling | Answers | In short |
+| --- | --- | --- |
+| 61 | — | Allocation at import comes from a reviewed triage; an unplaced decision is imported unallocated and fails `L001` |
+| 62 | Q1 | Each namespace has its own directory, `.decisions/ns/<namespace>/` |
+| 63 | Q2 | Every store uses that layout; no flat one-namespace form (**differs from the lean**) |
+| 64 | Q3 | The landing record is written once at departure and fixed by a signed move act, not held continuously; D6 before a move (**differs from the lean**) |
+| 65 | Q4 | Whole removal after a landed move act; partial removal stays a finding; the move act is within "no hash changes" |
+| 66 | Q5 | Layout v1.9 with no format number; move act format 8; pins after |
+| 67 | Q6 | Genesis scope `*`, read as this namespace |
+| 68 | Q7 | No migration path for shared authority; such a store is re-founded per namespace (**differs from the lean**) |
+| 69 | Q8 | One change-set per namespace, in one commit; a notice for a key closed in one namespace and open in another |
+| 70 | Q9 | Key material: genesis grant hash and first trusted binding hash |
+| 71 | Q10 | Told apart by genesis hash; one live pin per name |
+| 72 | Q11 | An export snapshot held by the dependent, inside one repository too |
+| 73 | Q12 | An ungoverned namespace cannot be pinned |
+| 74 | Q13 | `urn:ledger-set:<ns>/<id>` and `urn:ledger-role:<ns>/<id>` |
+| 75 | Q14 | A cross-namespace `supersedes` in an existing store is judged on live claims only |
+| 76 | Q15 | Unpinned cross-namespace `dec:` refused from the pinning format |
+| 77 | Q16 | `G007`, `G008`, `A007`; `A001`, `A002`, `A004` stay unused |
+| 78 | Q17 | The pinned version itself carries `exported` |
+| 79 | Q18 | `L009` on an arrived acceptance compares with the record's author |
+| 80 | Q19 | "Isolated" |
+| 81 | from 64 | No landing ordinals or introducing authors in the export |
+
+### Ruling 64's reasoning, checked
+
+The principal asked to be told, and the work stopped, if the reasoning behind ruling 64 is wrong. It is not.
+
+A continuously held record gives each entity an ordinal on the default branch. A pull request computes its rows against its base, where its entities land at the tip (LP-8.29). Take two pull requests open on one base, each adding an entity to the namespace:
+- both write the same next ordinal;
+- whichever merges second carries a wrong value, whether or not git reports a textual conflict;
+- the default branch then fails the check until the record is regenerated.
+
+This was checked by reasoning against `landing::Landing::compute` and the first draft's own definition of the ordinal, not run. The design now confines the merge-order dependence to the one pull request that lands a move act (PRD §3.5, N-Q3).
+
+### What changed in the PRD
+
+- **Header.** The document states the ruled design, and marks the points not separately ruled as "accepted with the design". It now rests on `846975a`, which adds rulings 49 to 60 and amends LP-9.14 and LP-9.15 (ruling 51).
+- **Sections 1 and 2.** Unchanged, byte for byte.
+- **Section 3** states the ruled design topic by topic, citing rulings.
+  - **§3.1 (ruling 63).** The one-namespace flat form is removed. A new §3.1.1 answers the history question:
+    - the five readers that read history;
+    - the two path patterns, told apart by path alone;
+    - landing, immutability and `L009` keyed by entity across both;
+    - the plain statement that one layout cannot be had without reading the flat layout in history, and what that costs.
+  - **§3.5 (ruling 64).** Reworked:
+    - no record before a move, and D6 as written;
+    - the record written once, by the writer filing the move act, at `ns/<ns>/landing/<move-ulid>`;
+    - checked against git by the source's verifier at the commit where the act lands;
+    - read by the target for arrived entities, with later entities ordered from the target's history after the act;
+    - a second move copies the earlier record's rows, and successive records are checked to agree;
+    - the continuous check and the `[LANDING]` stage removed;
+    - a re-layout uses no record and no move act, only landing keyed by entity.
+  - **§3.9 (ruling 81).** Ordinals and authors are removed from the export, and the landing records are not emitted. It states what an export-only reader can no longer check, and what a dependent holding a pinned snapshot cannot know about the pinned namespace. No fix is designed: that is question N-Q2.
+  - **§3.11 (ruling 68).** M2 to M4 and the exemption are removed. The migration is the re-layout of this repository and of the fixtures. The tests to rewrite are named, and the Appendix C note telling an earlier governed store to re-found is drafted. The section notes that ruling 68 rests on there being no governed multi-namespace store outside this repository, which is the principal's to answer.
+- **Sections 4 to 6** are brought into line.
+  - Added AC-63, AC-64, AC-65, AC-68 and AC-81.
+  - The protocol text gains LP-3.35 (history readers), LP-8.34 (the record at departure) and LP-8.35 (frozen after a move act), and drops the derived stage.
+  - The landing-record issue is folded into the move-act issue (11). Issue 2 grows to L, and issues 9 and 13 shrink. The order and the split are kept.
+- **Section 7** maps Q1 to Q19 to rulings 62 to 80 and lists five questions the rulings raise:
+  - N-Q1, the flat layout in history;
+  - N-Q2, what a pinned snapshot cannot tell its holder;
+  - N-Q3, the namespace frozen at its move act;
+  - N-Q4, a signed move act in a namespace with no policy. This is the one place two rulings cannot both hold as written: AC-1 moves `hafeok.ddd`, which has no policy;
+  - N-Q5, LP-9.6 against ruling 81.
+- **Appendix A**, "Options considered", holds the options not chosen, in one table.
+
+### For the principal to file: the analyzers' repository
+
+**Title:** The ledger export's set and role IRIs carry the namespace (ruling 74)
+
+**What changes.** From specification revision v1.9, every export at `docs/decisions/<ns>.nt` writes:
+- a set as `<urn:ledger-set:<ns>/<id>>` instead of `<urn:ledger-set:<id>>`;
+- a role as `<urn:ledger-role:<ns>/<id>>` instead of `<urn:ledger-role:<id>>`.
+
+This covers `ledger:set` on every version, the set nodes, `ledger:acceptRole` on policies, and a grant's role. No hash changes; only the IRI text does.
+
+**What the reader must check, and may need to change.** Nothing of that repository was read in this session, so each point is a check, not a finding.
+1. *Taking the set id.*
+   - A reader that takes the set id as the last `/`-separated segment of the IRI (LP-9.8) needs no change. Set ids and role ids contain no `/`, and a namespace contains no `/`.
+   - A reader that strips the prefix `urn:ledger-set:` and keeps the rest would now get `<ns>/<id>`, and must take the part after the last `/`.
+2. *Reading several exports into one graph.* Sets of the same id in two namespaces were one node and are now two. Anything keyed by the set IRI, such as grouping, counting or generated names, must decide whether it wants per-namespace sets.
+3. *Matching against a literal IRI or a fixed prefix.* Fixtures or SPARQL that match `urn:ledger-set:`, `urn:ledger-role:`, or a whole set IRI written out literally, must be updated.
+4. *Role IRIs.* A reader that ignores them is unaffected.
+
+**When.** The change lands with issue 13 of the PRD (export per namespace), after the layout and authority work. Exports regenerate in the same change.
+
 ## Checks
 
-- **What changed.** Two files were added: the PRD and this record. Nothing else in the repository changed. The experiment's repositories, scripts, keys and outputs live in the scratchpad and are not committed.
-- **Gates**, with the four git-identity variables unset, as `CLAUDE.md` requires before any commit: 
+### First draft (commit `4a35c9b`)
 
+- **What changed.** Two files were added: the PRD and this record. The experiment's repositories, scripts, keys and outputs live in the scratchpad and are not committed.
+- **Gates**, with the four git-identity variables unset:
   - `cargo build`: exit 0.
   - `cargo clippy -- -D warnings -D clippy::unwrap_used`: exit 0.
   - `cargo t`: exit 0. 2,083 passed, 0 failed and 2 ignored, summed over the 90 `test result:` lines.
   - `dotnet test` was not run, since no .NET code is touched.
-- **`ledger verify --export`** on this branch and on `main` at `e20fadc` (the unshallowed clone): exit 0 on both, and byte-identical output after the first line. The output:
+- **`ledger verify --export`** on that branch and on `main` at `e20fadc` (the unshallowed clone): exit 0 on both, and byte-identical output after the first line.
+
+### Revision
+
+- **What changed.** The branch merges `main` at `846975a`, which brings rulings 49 to 60 and the amended LP-9.14 and LP-9.15. The pull request's own change against `main`:
+  - adds `ledger/rulings/namespace-design-rulings-2026-10-07.md`;
+  - changes the PRD and this record.
+
+  Nothing else.
+- **Gates**, with the four git-identity variables unset:
+  - `cargo build`: exit 0.
+  - `cargo clippy -- -D warnings -D clippy::unwrap_used`: exit 0.
+  - `cargo t`: exit 0. 2,083 passed, 0 failed and 2 ignored, over 90 `test result:` lines.
+- **`ledger verify --export`**, built from this branch and run on this branch and on a worktree of `main` at `846975a`: exit 0 on both, and byte-identical output, shown below.
+
+The first draft's `verify` output:
 
 ```text
 landing computed on HEAD's own first-parent line — no base (no `--base`, and no `origin/HEAD` in this clone)
