@@ -511,6 +511,8 @@ An inventory, not a proposal: no test case was written, and approving one is the
 
 **The §4.4 vector.** The input, canonical JSON and digest of protocol §4.5. `ledger-core/src/canon_tests.rs` pins the digest (`the_pinned_conformance_vector_holds`, `sha256:ac2a6802…37cc`) and the canonical JSON (`the_canonical_form_is_compact_key_sorted_json`). The literal exists only there and in the protocol.
 
+**The vertical-tab case** (added 7 October, ruling 33). A version whose `statement` ends with U+000B keeps the character after LP-4.18 step 2c, so its canonical JSON carries `\u000b`. No fixture or test covers it today. A vector would pin the canonical JSON and the digest the reference implementation computes.
+
 **Committed fixture stores** (`ledger-cli/tests/fixtures/`, 16 stores; the format document said eight). All `gate.rs` runs use `verify --today 2026-08-10 --no-blame`. Its helper `fails_only_with` asserts exit 1, the named class present, and none of `SCHEMA`, `L001`–`L010`, `L013`, `L014` beyond it. It does not exclude `L011`, `L012`, the graph classes or the derived-file stages.
 
 | Fixture | Expected result | Usable as |
@@ -624,3 +626,161 @@ No test pins a complete `allowed_signers` file or a complete N-Triples export as
 | Search for `ledger-format-v1` | only `.ddd/` (5 seams and `render.html`), the README section map, the protocol's verbatim Appendices B.1 and C, the hashed `.decisions/log/` pointers and `docs/decisions/hafeok.ledger.nt`, and the records and live leftovers of §8 |
 
 One slip: while the first `cargo t` ran, I stashed and restored the working tree for a few seconds to compare `ddd validate`. Only comments and documents differed. The clean run above was made afterwards, on the final tree.
+
+## Principal's replies, 2026-10-07
+
+Both pull requests were accepted in substance. Leaving the four ruling-against-format conflicts unsettled and keeping the `\v` text verbatim were confirmed as right. The fourteen questions of §10 are ruled, and question 6 led to eight further rulings on namespaces. All are recorded in `ledger/rulings/absorption-replies-rulings-2026-10-07.md`.
+
+### Rulings, by number
+
+| Ruling | Question | In short |
+| --- | --- | --- |
+| 27 | 1 | The pinned-basis edge is `ledger:pinnedBasis`; `ledger:basis` keeps its meaning on unavailability nodes. |
+| 28 | 2 | The unavailability's `basis` field keeps its name. |
+| 29 | 3 | Basis-loss is a report until a policy deadline passes, then a failing class; with no deadline it stays a report. |
+| 30 | 4 | SC-3.7 names the ledger protocol's batch file as the batch. |
+| 31 | 5 | The verifier profile requires the graph stage and the export check. |
+| 32 | 6 | A namespace verifies the same wherever it sits; coupling between namespaces is kept minimal. |
+| 33 | 7 | Step 2c follows the code: `\v` is not stripped. |
+| 34 | 8 | The two pinned token forms are ruled; carrying one as a pinned basis declares a new format once pinning is implemented. |
+| 35 | 9 | Other `@sha256:` tokens take no part in convergence for now. |
+| 36 | 10 | One section map, in the protocol's appendix; the README names it. |
+| 37 | 11 | PRDs and the way-of-working document are cited as rationale only. |
+| 38 | 12 | The instruction sentence leaves the 6 October rulings file. |
+| 39 | 13 | The ledger CLI PRD's §0 item 4 and two headings stay as records. |
+| 40 | 14 | The thirteen code-versus-text findings go to a separate verification session. |
+| 41–48 | from 32 | Namespace independence: one form of cross-namespace reference (41), a pin names what is trusted, not where (42), only `based_on` crosses (43), only `exported` decisions are pinnable (44), no file holds two namespaces (45), acyclic dependencies and an instability report (46), authority per namespace (47), authority as its own unit later (48). |
+
+### Pull requests
+
+- mindovermachine-dev/product-cli#110 and mindovermachine-dev/product-cli#111 had already merged when the replies arrived. The two housekeeping changes asked for in #111 went into their own pull request, [mindovermachine-dev/product-cli#112](https://github.com/mindovermachine-dev/product-cli/pull/112): ruling 38 (the sentence removed, nothing else changed) and ruling 36 (the README's copy of the map removed; the README names Appendix C.0). The editorial merge in `main` is untouched, so its "copied exactly" claims stay checkable there.
+- The rulings are applied in a pull request stacked on #112 (branch `claude/youthful-hamilton-pz0v9n-rulings-1007`).
+
+### Changes made, with their requirement ids
+
+| Ruling | Where | Change |
+| --- | --- | --- |
+| 27 | §7.6, LP-9.5, §5.6 note | `ledger:pinnedBasis` replaces the working name in both SPARQL queries and in LP-9.5; Open mark and the collision note removed. |
+| 28 | §5.6 note | The disambiguating note kept, naming ruling 28 and the new edge. |
+| 29 | §7.7, LP-7.23, LP-7.29 (new), §8.9 | The report stated, then the failing class past a policy deadline, Not implemented, numbered at implementation. LP-7.23 keeps the implemented "neither is a gate class", marked superseded in part by ruling 29. The "not settled" sentence removed. |
+| 30 | SC-3.7, SC Appendix B | SC-3.7 says the batch is the ledger protocol's batch selection file (§10.1). Id kept. One Appendix B row. |
+| 31 | §1, LP-8.6, §9 intro | The verifier profile is the whole of §8 including the export check; a file-gate-only verifier does not conform. LP-8.6 no longer puts the graph stage outside conformance. |
+| 32 | §3.6, LP-3.30 (new) | The principle, Not implemented. |
+| 33 | LP-4.18 step 2c, Appendix B | Step 2c lists space, `\t`, `\n`, `\f`, `\r`, and says `\v` is not stripped. The note recording the disagreement is replaced by one saying this is the one place the canonicalisation text departs from the absorbed format document. No digest moves. |
+| 34 | §7.3, LP-7.27 (new), §3.3, §5 table | Open marks removed from the two token forms and from `basis:<ULID>`; the format rule stated as LP-7.27. `ledger.basis.v1` and `.decisions/basis/` stay Open (§3.1, §4.6, §5, §7.4). |
+| 35 | §7.1, LP-7.28 (new), §7.3 note | Stated in the basis-pointer and convergence text. |
+| 36 | `ledger/README.md` (#112) | See above. |
+| 37 | §1, and the citations listed below | A conformance bullet says these citations are informative; each is marked "informative". |
+| 38 | the 6 October rulings file (#112) | See above. |
+| 39, 40 | — | No text change. §12.3 records ruling 40. |
+| 41 | LP-3.8, LP-3.18 | LP-3.8 is the ruled rule everywhere: one form of reference, a pinned token under a declared dependency, inside a repository as across servers. LP-3.18's free reference is marked implemented and superseded by ruling 41 once pins exist. The conflict note is removed. |
+| 42 | Terminology "Pin", LP-7.11 | A pin names the namespace and its key material, with no server. Open working form of the prefix: `dec:<namespace>/`. |
+| 43 | LP-3.31 (new) | Stated. The implemented format does not refuse a cross-namespace `supersedes` inside one store: `G001` asks only that the target is a decision filed anywhere in the store (`ledger-core/src/graph/shapes.rs`, read). |
+| 44 | LP-3.32 (new) | Stated. Nothing pins today, and `exported` gates nothing; it is read only by the format-5 rule and the emitter (read). |
+| 45 | LP-3.33 (new) | Stated. The implemented format does not refuse it: no rule compares the namespaces of a change-set's entries, the export restricts each change-set per namespace (which presumes such files), and grants of scope `*` and role files belong to no namespace. No committed change-set in this repository holds two namespaces (read, and checked over `.decisions/log/`). |
+| 46 | LP-7.30, LP-7.31 (new), §8.9 | The acyclic rule with its failing class, numbered at implementation, and the instability report, not a gate. |
+| 47 | §6.7, LP-6.31, LP-6.32 (new), and supersession notes | Authority per namespace stated as Not implemented. Notes added where the implemented text stands (list below). |
+| 48 | §6.7, §12.3 | One sentence each. |
+
+**Ruling 47 will supersede, once implemented:**
+
+- **LP-4.12:** the genesis holder's self-bound binding once per store, and a later namespace's first binding signed by a key trusted in another namespace.
+- **LP-4.31:** a first policy judged by a key trusted in another namespace.
+- **LP-4.32:** `valid-before` taken from a close in any namespace.
+- **LP-4.37:** keys judged as belonging to another principal anywhere in the store, and as closed in any namespace.
+- **LP-4.38:** the later-namespace opening, which binds the genesis holder's live key from elsewhere.
+- **LP-4.39:** a close in one namespace closing the key in every namespace. LP-6.32 is its successor.
+- **LP-5.19:** the store-wide `roles/` directory.
+- **LP-6.5 and `A005` (LP-8.19, LP-8.23):** the store's one genesis grant of scope `*`.
+- **LP-6.16:** scopes `*` and `pattern:` covering every namespace.
+- **LP-6.28:** "the genesis grant" read as the store's one.
+- **LP-8.31:** the store's one genesis holder in the unbound-genesis notice.
+- **LP-9.11:** `*` grants reaching every namespace's export.
+
+LP-6.30 and LP-8.27 (a role placed by its landing) are named in LP-6.31. Their landing rule survives; only the store-wide role file goes.
+
+**Ruling 37, the citations checked.** Each is rationale or provenance, and each is now marked informative:
+
+- §3.4: the PRD's "accepted-by resolves";
+- §3.5: the ledger CLI PRD §4;
+- LP-4.17: PRD §10;
+- §4.6: the PRD §7 revocation payload, whose fields and instant form the table and LP-3.24 already state;
+- §5.1: the way-of-working §2.2, whose tier order `T0 < T1 < T2` is stated;
+- §5.3: OD-3;
+- §5.4 note: the PRD's ground table, whose four stage values are stated;
+- LP-7.19: PRD §9.4;
+- §12.4: PRD §4.4, PRD §8 and OD-6.
+
+The `OD-6 open` comment inside the verbatim change-set example is left as it was.
+
+**No citation needed its text stated in the protocol:** everything an implementation needs from those passages was already there.
+
+**Server-client protocol, ruling 42.** No line describes a pin as naming a server, so nothing changed for ruling 42. One line bears on it without being a pin description: SC-4.1, "Two servers MAY use the same namespace name for unrelated namespaces". Once a pin names a namespace and key material with no server, two unrelated namespaces of one name are told apart only by their key material. That is for the design session (list 3).
+
+**Test-case candidate added** (§7 above, by ruling 33). A version whose `statement` ends with U+000B. Its canonical JSON keeps the `\u000b`, and the digest is the one the reference implementation computes. No such vector exists today.
+
+**Checks on the stacked pull request.** As before: build, clippy and `cargo t` with the container's git-identity variables unset, and `ledger verify --export` identical to `main` (results in the pull request).
+
+### 1. For the verification session
+
+The thirteen rows of §4 marked "differs", in the order to check them. The first three weaken what a verifier guarantees against a hand-written file.
+
+1. **LP-4.7.** A sidecar on an act no policy governs is not verified, though a present sidecar always has to verify.
+2. **LP-6.17.** "The accept role is never the genesis role" is enforced at write only; the verifier checks only that the role may `accept-decision`.
+3. **LP-5.11.** A duplicate acceptance id is not refused, nor a decision identity object filed twice.
+4. **LP-8.8.** The same gap seen from the `SCHEMA` list: "a duplicate id" is checked for authority records only.
+5. **LP-8.11.** A forked decision gets a stand-in "latest" (the first tip in hash order), and the file-gate classes judge it.
+6. **LP-4.12.** A `rotate` passes when signed by any live key of the principal, not only the key it closes.
+7. **LP-3.16.** `format:` changes are not compared across history, so a lowering that still meets the need, or a raise past it, is not flagged.
+8. **LP-8.9.** `L006` checks an escape's `accepted_by` on latest versions only.
+9. **LP-3.4.** A YAML float in a string field is read as text, not refused.
+10. **LP-4.18.** The float half of step 7, the same point as item 9. The `\v` half is settled by ruling 33. The float half is not ruled.
+11. **LP-3.3.** A `set:` grant scope refuses dots, though set ids allow them.
+12. **LP-8.25.** `parents` is keyed as separate list items, not with the header entity.
+13. **LP-9.14.** The export-only verifier exists only as a test helper, and derives `valid-before` per binding, not per key.
+
+I confirmed item 5 by reading, and the `\v` half of LP-4.18 by running it. The other items are the survey's reading and still need checking. The implementation-defined points of §5, for example integer rendering and the Unicode version, are a separate list and not among the thirteen.
+
+### 2. Issues for the principal to file
+
+- **The NFC Unicode tables are not pinned.** `Cargo.lock` is git-ignored, and `ledger-core` asks for `unicode-normalization = "0.1"`, so the Unicode tables behind NFC (LP-4.18 step 2b) are not pinned. Options:
+  - commit the lockfile;
+  - pin the crate to an exact version.
+
+  Either way, name the Unicode version in the protocol.
+- **Fourteen tests depend on the caller's git identity.** They fail when the environment sets `GIT_AUTHOR_EMAIL`, `GIT_AUTHOR_NAME`, `GIT_COMMITTER_EMAIL` and `GIT_COMMITTER_NAME`, which override the identities the tests configure:
+  - `ledger-core` `blame::tests` (3);
+  - `ledger-cli` `gate.rs` `blame::*` (3);
+  - `inbox.rs` (8).
+
+  The tests should clear those variables for the git commands they run.
+
+### 3. For a later design session on namespace independence
+
+Not designed here. It must settle:
+
+- how grants, roles, key bindings and policies are stored and scoped per namespace, and what a grant scope of `*` or `pattern:` then means;
+- whether each namespace gets its own directory under `.decisions/`, so that extraction is a directory move (LP-3.30);
+- whether `allowed_signers` becomes one file per namespace, and what the `[SIGNERS]` stage then compares;
+- the migration for stores and fixtures that hold authority records today, including every fixture that bootstraps a genesis and binds keys in two namespaces (`key_across_namespaces.rs`, `genesis_key.rs`);
+- the exact content of a pin (LP-7.11): key material, policy hash or genesis grant, and the fate of `source_prefix` and the working prefix `dec:<namespace>/`;
+- what the export of a namespace carries once authority is per namespace (LP-9.11, LP-9.6);
+- how two unrelated namespaces of one name are told apart when a pin names no server (SC-4.1);
+- whether a writer filing "a close in every namespace it holds" (LP-6.32) is one act or one per namespace, and how it is ordered (§8.7);
+- how a move of a namespace between repositories treats landing order (LP-8.24), which is read from the history of the repository that holds it;
+- authority as its own unit (ruling 48), later.
+
+### 4. Still the principal's
+
+- **The five `.ddd/` seams.** Each should cite:
+
+  | Seam | Should cite |
+  | --- | --- |
+  | `seam-ledger-acceptor-identity.yaml` | protocol §3.4 (LP-3.22, LP-3.23) |
+  | `seam-ledger-canonical-form.yaml` | Appendix C, and §4.5 (LP-4.21) |
+  | `seam-ledger-disposition-states.yaml` | §8.10 (LP-8.33) |
+  | `seam-ledger-graph-stage.yaml` | §8.6 (LP-8.19, LP-8.22) |
+  | `seam-ledger-verify-classes.yaml` | §8.3 (LP-8.9) |
+
+  `.ddd/render.html` follows once the seams change.
+- **The analyzers' rules document.** Whether `docs/rules/ledger-input.md` in `Hafeok/decision-driven-analyzers` cites the format document. That repository is outside this session's reach.
