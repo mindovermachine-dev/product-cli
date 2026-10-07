@@ -1,6 +1,6 @@
 ## Rulings of 6 October 2026
 
-Write this section, unchanged, as `ledger/rulings/basis-and-absorption-rulings-2026-10-06.md`. The numbers continue `ledger/rulings/ground-and-protocol-rulings-2026-10.md`.
+The numbers continue `ledger/rulings/ground-and-protocol-rulings-2026-10.md`.
 
 > **22.** The protocol absorbs the format document. There is one prose document as the source of truth, no citing between prose documents, and no pointer stubs, because either confuses the people and the models working in the repository.
 >
