@@ -89,11 +89,15 @@ pub fn stranded(view: &View, store: &Store) -> Vec<Finding> {
 /// act that cannot be delegated (§9.3); route it to a model and the
 /// composite becomes pinnable only distributionally, at which point
 /// outcome-accountability is unavailable rather than merely absent.
+///
+/// Both halves judge every filing, not only the latest version: `L006` is
+/// not a latest-only class (LP-8.10), and a model never stands as an
+/// escape's acceptor in history either (ruling 57).
 pub fn model_acceptor(view: &View) -> Vec<Finding> {
     let from_acceptances = view.acceptances.iter().map(|a| a.acceptance).filter_map(|a| {
         reject(&a.actor).map(|why| (a.id.to_string(), format!("acceptance actor {why}")))
     });
-    let from_escapes = view.latest_versions().filter_map(|v| {
+    let from_escapes = view.versions.iter().filter_map(|v| {
         let parsed = v.parsed.as_ref()?;
         let acceptor = parsed.allocation.as_ref()?.escape_acceptor()?;
         reject(acceptor).map(|why| (parsed.decision.to_string(), format!("escape acceptor {why}")))

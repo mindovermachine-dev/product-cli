@@ -1019,7 +1019,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 | `L003` | a live acceptance of a decision's current version has `expires_at` before today |
 | `L004` | `tolerance_override` is at or below `tolerance_floor_at_creation` |
 | `L005` | a decision's latest effective tier is below its set's current floor |
-| `L006` | an acceptance actor, or an escape's `accepted_by`, is refused by section 3.4; extended to authority records by LP-8.16 |
+| `L006` | an acceptance actor, or an escape's `accepted_by` on any version, is refused by section 3.4; extended to authority records by LP-8.16 |
 | `L007` | a stored `hash` does not equal the recomputed canonical hash; extended by LP-8.16 and LP-8.30 |
 | `L008` | an acceptance's `(decision, version)` pair matches no filed version |
 | `L009` | an acceptance's actor is not the author of the commit that introduced it |
@@ -1031,7 +1031,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 
 These notes are part of the specification, not implementation detail:
 
-- **LP-8.10** (V) **Only the latest version of a decision is judged** by `L001`, `L003`, `L005`, `L010` and `L014`. (`L013` judges every version against its predecessors: a rename anywhere in the chain is a rename.) An acceptance of a superseded version was already invalidated when the hash moved; reporting it again is noise on a resolved fact.
+- **LP-8.10** (V) **Only the latest version of a decision is judged** by `L001`, `L003`, `L005`, `L010` and `L014`. (`L013` judges every version against its predecessors: a rename anywhere in the chain is a rename. `L006` judges an escape's `accepted_by` on every version, ruling 57: a model is never an escape's acceptor, in history either.) An acceptance of a superseded version was already invalidated when the hash moved; reporting it again is noise on a resolved fact.
 - **LP-8.11** (V) **"Latest" derives from the parent DAG, never from file or ULID order** (spec v1.2). The latest version of a decision is the unique version whose hash no other version of the same decision names as `parent`. Content-identical filings (one hash filed more than once) are one version. A chain that cannot name one tip (two versions unclaimed as parents, the store two divergent writers leave behind) has no latest: an implementation MUST NOT resolve the ambiguity by any ordering heuristic. The reference implementation reports it as `G004` (section 8.6) and refuses authoring acts against the forked decision until a recorded arbitration settles the chain.
 - **LP-8.12** (V) **A revoked acceptance is not judged** for expiry.
 - **LP-8.13** (V) **`L008` checks the pair.** An acceptance naming one decision while signing another's hash is signing nothing about the decision it claims to accept.
@@ -1425,6 +1425,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 5 October 2026 | Former sections 10 to 12 moved to The Decision Ledger Server-Client Protocol. Later sections renumbered 11 to 14; requirement identifiers unchanged. |
 | 6 October 2026 | The format document absorbed (ruling 22): this document becomes the normative format. Its content lands in sections 3 to 10 and 12, its revision history in Appendix B.1, and its migration record in Appendix C. Existing requirement ids keep their numbers; absorbed requirements take the next free number in their section. Subsections are numbered. The draft's "ground" is renamed "basis" (ruling 23), and pinned bases become tokens inside `based_on` with no `grounds` field (ruling 25). `accept_role` is described as the `ordinary` row of the class requirement table (ruling 24). Extraction markers filled. The open item on fallback ordering removed: covering scope is ruled (D9 (e)). Unimplemented requirements marked. Section order is unchanged. |
 | 7 October 2026 | The rulings of 7 October applied (27 to 48). **LP-4.18 step 2c now follows the code** (ruling 33): space, `\t`, `\n`, `\f` and `\r` are stripped and `\v` is not. This is the one place where the canonicalisation text departs from the absorbed format document, which listed `\v`; no digest moves. The pinned-basis edge is `ledger:pinnedBasis` (27). The token forms of section 7.3 are ruled, with their format rule LP-7.27 (34), and other `@sha256:` tokens take no part in convergence, LP-7.28 (35). Basis-loss past a policy deadline is a failing class, LP-7.29 (29). The verifier profile is the whole of section 8, LP-8.6 and section 1 (31). Namespace independence is stated as not implemented: section 3.6 (LP-3.30 to LP-3.33), LP-3.8, LP-3.18, the term Pin, LP-7.11, LP-7.30, LP-7.31, and authority per namespace in section 6.7 (LP-6.31, LP-6.32) with supersession notes where the implemented text stands (32, 41 to 48). Citations of the PRDs and the way-of-working document marked informative (37). Section 3.6 and section 6.7 are new subsections; no existing number moved. |
+| 7 October 2026 | Ruling 57 applied: `L006` judges an escape's `accepted_by` on every version, not only the latest (LP-8.9, LP-8.10). No class added; no digest moves. |
 
 ### B.1 Revisions of the absorbed format document
 
