@@ -201,19 +201,19 @@ impl<'a> View<'a> {
     }
 
     /// How many decisions the log holds versions of, forked ones included.
-    pub fn decision_count(&self) -> usize {
+    pub(crate) fn decision_count(&self) -> usize {
         self.latest.len() + self.forked.len()
     }
 
     /// Whether the log holds any version of this decision.
-    pub fn has_version(&self, decision: &str) -> bool {
+    pub(crate) fn has_version(&self, decision: &str) -> bool {
         self.latest.contains_key(decision) || self.is_forked(decision)
     }
 
     /// The tips of a decision: its latest version, or every tip of a
     /// forked chain in hash order. For readers that show what stands
     /// without picking among tips.
-    pub fn tips(&self, decision: &str) -> Vec<&ViewedVersion<'a>> {
+    pub(crate) fn tips(&self, decision: &str) -> Vec<&ViewedVersion<'a>> {
         let indices = match (self.latest.get(decision), self.forked.get(decision)) {
             (Some(i), _) => vec![*i],
             (None, Some(tips)) => tips.clone(),
@@ -225,7 +225,7 @@ impl<'a> View<'a> {
     /// Whether this acceptance signs a tip of its decision — the latest
     /// version, or any tip of a forked chain. A display reading; the gate
     /// asks [`View::signs_latest`], which a forked decision never satisfies.
-    pub fn signs_a_tip(&self, a: &Acceptance) -> bool {
+    pub(crate) fn signs_a_tip(&self, a: &Acceptance) -> bool {
         self.tips(&a.decision.to_string()).iter().any(|v| v.raw.hash == a.version)
     }
 

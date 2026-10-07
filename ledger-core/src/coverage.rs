@@ -36,7 +36,7 @@ pub struct CoverageReport {
     /// Decisions in scope whose chain is forked: no latest version, so no
     /// state among the seven until `ledger merge --resolve` (ruling 54).
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub forked: Vec<String>,
+    pub(crate) forked: Vec<String>,
     /// The §8 disclosure; serialized so machines carry it too.
     pub honest_limit: &'static str,
 }
