@@ -41,7 +41,7 @@ pub mod merge;
 pub mod mint;
 pub mod render;
 pub mod revision;
-pub mod scalars;
+mod scalars;
 pub mod revisit;
 pub mod set;
 pub mod show;

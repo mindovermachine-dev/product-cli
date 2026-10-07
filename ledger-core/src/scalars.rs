@@ -41,7 +41,7 @@ const REQUIRED_STRINGS: &[(&str, &[&str])] = &[
 /// Every float and every explicit null in a required string field, in one
 /// change-set file's text. Nothing when the text is not YAML: the typed
 /// parse reports that.
-pub fn faults(label: &str, text: &str) -> Vec<Finding> {
+pub(crate) fn faults(label: &str, text: &str) -> Vec<Finding> {
     let Ok(Value::Mapping(map)) = serde_yaml::from_str::<Value>(text) else { return Vec::new() };
     let mut out = Vec::new();
     for list in HASHED_LISTS {
