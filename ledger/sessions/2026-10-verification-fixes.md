@@ -10,7 +10,7 @@ One issue per code step, from the matching row of section 15 of the verification
 
 | Step | Ruling | Issue | Pull request | What it lands |
 | --- | --- | --- | --- | --- |
-| 0 | 49 to 60, 51 | — | #115 | This file, the rulings file, and the amendment of LP-9.14 and LP-9.15 |
+| 0 | 49 to 60, 51 | — | #115 (merged), #137 | The rulings file and the amendment of LP-9.14 and LP-9.15 (#115); this close-out, which landed after #115 merged (#137) |
 | 1 | 49 | #116 | #126 | A duplicate acceptance id, and a decision identity object filed more than once, are `SCHEMA` |
 | 2 | 50 | #117 | #127 | A policy whose accept role is the genesis role, and a genesis role with a decision capability, are `SCHEMA`; `init --namespace` refuses such a root role |
 | 3 | 55, 56 | #118 | #129 | A plain float in hashed content, and an explicit null in a required string field, are `SCHEMA`; one Appendix C note |
