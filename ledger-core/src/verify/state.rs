@@ -110,6 +110,13 @@ pub fn states(view: &View, today: NaiveDate) -> BTreeMap<String, StateRow> {
         .collect()
 }
 
+/// The state one tip of a forked chain gives its decision on its own, for
+/// a reader that shows each tip without picking one (ruling 54). Never a
+/// row of [`states`]: the decision itself has no state.
+pub(crate) fn tip_state(view: &View, tip: &DecisionVersion, today: NaiveDate) -> DispositionState {
+    allocation_state(view, tip, today)
+}
+
 fn allocation_state(view: &View, p: &DecisionVersion, today: NaiveDate) -> DispositionState {
     match &p.allocation {
         None => DispositionState::Undecided,

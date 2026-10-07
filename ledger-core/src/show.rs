@@ -126,10 +126,10 @@ pub struct Screen {
     /// The set's currently declared floor, which is not necessarily the
     /// floor this version pinned — a raise strands members until re-pinned.
     pub set_floor: Option<String>,
-    /// The decision's state; absent for a tip of a forked chain, which has
-    /// no latest version and so no state (ruling 54).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<DispositionState>,
+    /// The decision's state. For a tip of a forked chain, which has no
+    /// latest version (ruling 54), the state that tip's own content and
+    /// acceptances give it — one reading per tip, none picked.
+    pub state: DispositionState,
     /// Which weight class this entry falls in, so a grouped pass can say
     /// what it is reading.
     pub group: &'static str,
@@ -209,7 +209,7 @@ pub fn screen(
     let view = View::build(store);
     let rows = state::states(&view, today);
     let index = *view.latest.get(&decision.to_string())?;
-    build(store, &view, &rows, index, texts)
+    build(store, &view, (&rows, today), index, texts)
 }
 
 /// Every screen a selector covers, in decision-id order. One `View` build
@@ -229,7 +229,7 @@ pub fn screens(
     ids.into_iter()
         .flat_map(|id| {
             let indices = view.latest.get(id).map(|i| vec![*i]).or_else(|| view.forked.get(id).cloned()).unwrap_or_default();
-            indices.into_iter().filter_map(|i| build(store, &view, &rows, i, texts)).collect::<Vec<_>>()
+            indices.into_iter().filter_map(|i| build(store, &view, (&rows, today), i, texts)).collect::<Vec<_>>()
         })
         .filter(|s| matches(s, selector))
         .collect()
@@ -260,7 +260,7 @@ fn group_of(raw: &crate::version::VersionRaw) -> Group {
 fn build(
     store: &Store,
     view: &View,
-    rows: &std::collections::BTreeMap<String, state::StateRow>,
+    (rows, today): (&std::collections::BTreeMap<String, state::StateRow>, NaiveDate),
     index: usize,
     texts: &dyn BasisText,
 ) -> Option<Screen> {
@@ -280,9 +280,10 @@ fn build(
         decision: id.to_string(),
         set: raw.set.clone(),
         set_floor: store.set(&raw.set).map(|s| s.tolerance_floor.to_string()),
-        state: match view.is_forked(id) {
-            true => None,
-            false => Some(row.map(|r| r.state).unwrap_or(DispositionState::Undecided)),
+        state: match (row, viewed.parsed.as_ref()) {
+            (Some(r), _) => r.state,
+            (None, Some(tip)) if view.is_forked(id) => state::tip_state(view, tip, today),
+            (None, _) => DispositionState::Undecided,
         },
         group: group_of(raw).as_str(),
         statement: raw.statement.clone(),

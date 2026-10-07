@@ -24,8 +24,7 @@ pub fn render_all(screens: &[Screen]) -> String {
 
 /// One decision's screen, ready to print.
 pub fn render(s: &Screen) -> String {
-    let state = s.state.map_or("forked", |st| st.as_str());
-    let mut out = format!("{} — {state} [{}]\n", s.decision, s.group);
+    let mut out = format!("{} — {} [{}]\n", s.decision, s.state.as_str(), s.group);
     if s.forked {
         out.push_str(
             "  ** the version chain is forked: this is one of its tips, and none is the latest — nothing may be signed until `ledger merge --resolve` arbitrates\n",

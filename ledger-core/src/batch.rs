@@ -222,7 +222,7 @@ fn member(s: &Screen, actor: &Identity, today: NaiveDate) -> Member {
         // No latest version on a forked chain, so no version to pin.
         version: if s.forked { String::new() } else { s.hash.clone() },
         group: s.group.to_string(),
-        state: s.state.map_or("forked", |st| st.as_str()).to_string(),
+        state: s.state.as_str().to_string(),
         statement_head: head(&s.statement),
         standing: standing.as_str(),
         because,

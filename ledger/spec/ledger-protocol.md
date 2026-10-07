@@ -1122,7 +1122,7 @@ A decision's state is a function of the entities present. No entity has a state 
 - **LP-8.34** (V) **A forked decision has no state** (ruling 54). It has no latest version (LP-8.11), so it holds none of the seven states below and is never "allocated, awaiting acceptance". Readers of the latest version treat it as follows, and none picks a tip:
   - the file gate's latest-only classes skip it, and it is not live for any acceptance (LP-8.10);
   - status and coverage list it apart from the seven states, with its tips;
-  - a decision screen shows each tip, marked forked and with no state;
+  - a decision screen shows each tip, marked as one of the tips, with the state that tip's own content and acceptances would give it;
   - a batch selection holds it as one forked member, with no version to sign;
   - a semantic diff whose target settles a fork reports a tip move from the forked tips;
   - a merge plan notes a side already forked and plans nothing for it there.

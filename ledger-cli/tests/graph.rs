@@ -179,11 +179,11 @@ fn g004_a_forked_chain_fails_verify_and_names_both_tips() {
     assert!(text.contains("tips 523a5b4b0e93, a289f499364f"), "{text}");
     assert!(!text.contains("[a289f499364f]"), "no tip stands in as the latest: {text}");
 
-    // `show` gives each tip a screen, with no state; `coverage` lists the
-    // decision apart from the seven states.
+    // `show` gives each tip a screen, marked as one of its tips; `coverage`
+    // lists the decision apart from the seven states.
     let show = stdout(&ledger(&root, &["show", "dec:fixture.forked/01K2C4YQJ3F8M0PT5W7NZ9RDXV", "--today", "2026-08-10"]));
     assert!(show.starts_with("2 decision(s)"), "{show}");
-    assert_eq!(show.matches("— forked [").count(), 2, "{show}");
+    assert_eq!(show.matches("this is one of its tips, and none is the latest").count(), 2, "{show}");
     assert!(show.contains("523a5b4b0e93") && show.contains("a289f499364f"), "{show}");
     let coverage = stdout(&ledger(&root, &["coverage", "--today", "2026-08-10"]));
     assert!(coverage.contains("forked, no state until `ledger merge --resolve`: dec:fixture.forked/01K2C4YQJ3F8M0PT5W7NZ9RDXV"), "{coverage}");
