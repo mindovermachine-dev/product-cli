@@ -28,6 +28,12 @@ pub fn entities(text: &str) -> Option<BTreeMap<String, Value>> {
         let Some(name) = k.as_str() else { continue };
         match (name, v) {
             ("format", _) => {}
+            // `parents` is a header field, not an entity list: it is keyed
+            // with the header, so a landed change-set never gains or loses
+            // a parent (LP-8.25, ruling 60).
+            ("parents", v) => {
+                header.insert(k, v);
+            }
             (list, Value::Sequence(items)) => {
                 for item in items {
                     out.insert(format!("{list}/{}", item_key(&item)), item);
