@@ -44,10 +44,11 @@ impl FromStr for GrantScope {
         }
         match kind {
             "ns" => Ok(Self::Namespace(payload.to_string())),
-            "set" if payload.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-') => {
-                Ok(Self::Set(payload.to_string()))
-            }
-            "set" => Err(format!("`{t}`: a set id is lowercase alphanumerics and dashes")),
+            // A set scope names a set, so it takes the set-id rule itself:
+            // lowercase alphanumerics, dashes and dots (ruling 59).
+            "set" => crate::set::DecisionSet::validate_id(payload)
+                .map(|()| Self::Set(payload.to_string()))
+                .map_err(|why| format!("`{t}`: {why}")),
             "pattern" => Ok(Self::Pattern(payload.to_string())),
             other => Err(format!("`{other}:` is not a scope kind — expected ns, set or pattern")),
         }
@@ -223,6 +224,18 @@ mod tests {
             assert_eq!(s.parse::<GrantScope>().expect(s).to_string(), s);
         }
         for bad in ["team:foo", "ns:", "set:Upper", "everything"] {
+            assert!(bad.parse::<GrantScope>().is_err(), "{bad}");
+        }
+    }
+
+    /// Ruling 59: a set id may carry dots (section 5.2), so a set scope
+    /// accepts them, and refuses what the set-id rule refuses.
+    #[test]
+    fn a_set_scope_accepts_every_valid_set_id_dots_included() {
+        for s in ["set:money.rules", "set:a.b-c.9"] {
+            assert_eq!(s.parse::<GrantScope>().expect(s).to_string(), s);
+        }
+        for bad in ["set:Money.rules", "set:money_rules", "set:money/rules"] {
             assert!(bad.parse::<GrantScope>().is_err(), "{bad}");
         }
     }

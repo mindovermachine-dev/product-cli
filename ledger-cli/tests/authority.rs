@@ -306,3 +306,19 @@ fn a_grantor_below_star_is_refused_a_grant_over_another_scope() {
     repo.ok(&["grant", "new", "delegate", "--to", "third@customer.example", "--scope", &format!("ns:{NS}")]);
     repo.ok(&["verify", "--no-blame"]);
 }
+
+/// Ruling 59, the verification report's section 9: a set whose id carries a
+/// dot can be declared, and a grant scoped to it was refused by the writer
+/// and failed the whole change-set at parse. A `set:` scope now takes every
+/// valid set id.
+#[test]
+fn a_set_scope_with_a_dot_is_granted_and_verifies() {
+    let repo = governed();
+    repo.ok(&["declare", "--set", "money.rules", "--tolerance-floor", "T1"]);
+    let out = repo.ok(&["grant", "new", "acceptor", "--to", ARCHITECT, "--scope", "set:money.rules"]);
+    let grant = grant_id(&out);
+    let store = ledger_core::store::load(repo.path());
+    let scope = store.log.iter().flat_map(|l| l.file.grants.iter()).find(|g| g.id.to_string() == grant).map(|g| g.scope.to_string());
+    assert_eq!(scope.as_deref(), Some("set:money.rules"));
+    repo.ok(&["verify", "--no-blame"]);
+}
