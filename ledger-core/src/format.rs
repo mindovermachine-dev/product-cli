@@ -3,7 +3,7 @@
 //! Every `.decisions/` file declares `format: N`; validation is always
 //! against the declared version, never against the newest one. A schema
 //! change is a version bump with a migration note in
-//! `docs/ledger-format-migrations.md`, so existing entries never break
+//! `ledger/spec/ledger-protocol.md` Appendix C, so existing entries never break
 //! silently. Inherited from the `ddd` store's discipline (`ddd` PRD §6).
 //!
 //! Note the second, independent version: [`crate::canon::CANONICAL_FORM`]

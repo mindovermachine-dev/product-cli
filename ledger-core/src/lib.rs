@@ -7,9 +7,9 @@
 //! source of truth; everything derived is out of scope at this milestone.
 //!
 //! The load-bearing pieces are [`canon`] (the canonical form an acceptance
-//! signs, specified in `docs/ledger-format-v1.md`) and [`verify`] (the twelve
+//! signs, specified in `ledger/spec/ledger-protocol.md`) and [`verify`] (the twelve
 //! failure classes the CI gate polices). Both are stable surfaces other
-//! implementations import from the format document, not from this crate.
+//! implementations import from the ledger protocol, not from this crate.
 
 #![deny(clippy::unwrap_used)]
 

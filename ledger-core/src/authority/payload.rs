@@ -2,7 +2,7 @@
 //!
 //! Every payload is a closed field list canonicalised by the format's one
 //! canonical-JSON law ([`crate::canon::put`] / [`crate::canon::put_set`],
-//! `ledger-format-v1.md` §4.2) and digested by [`crate::hash::domain_hash`]
+//! `ledger/spec/ledger-protocol.md` §4.3) and digested by [`crate::hash::domain_hash`]
 //! under its own domain-separation prefix. Each builder destructures its
 //! record with **no `..` rest pattern**, so a field added to a record is a
 //! compile error here until someone decides whether it is hashed — the

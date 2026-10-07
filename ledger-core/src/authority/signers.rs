@@ -32,7 +32,7 @@ use super::binding::KeyBinding;
 /// The derived file's name under `.decisions/`.
 pub const FILE: &str = "allowed_signers";
 
-/// The derived file's two comment lines, as the format document states them.
+/// The derived file's two comment lines, as the ledger protocol states them (§4.9).
 pub const HEADER: &str = "# Derived from the key-binding entries in .decisions/log by `ledger identity`.\n\
 # Never edit by hand: `ledger verify` holds this file byte-identical to the log.\n";
 

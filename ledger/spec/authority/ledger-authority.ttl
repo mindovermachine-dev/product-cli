@@ -195,7 +195,7 @@ ledger:basis-fallback-of-genesis a skos:Concept ; skos:inScheme ledger:BasisSche
 #################################################################
 # Added 2026-10-02 (Session A, #69): the trust-root and policy
 # records the #65 rulings name but this draft did not yet define.
-# Projected from the format-6 log entries (ledger-format-v1.md §3.9).
+# Projected from the format-6 log entries (ledger-protocol.md §5.6).
 #################################################################
 
 ledger:KeyBinding a owl:Class ;

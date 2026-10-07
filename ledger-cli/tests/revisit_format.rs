@@ -1,4 +1,4 @@
-//! A file declares the format `revisit_if` needs (spec §3.7, #81).
+//! A file declares the format `revisit_if` needs (protocol §3.2 and §7.2, #81).
 //!
 //! Three of this repository's change-sets carried `revisit_if` under
 //! `format: 1`: `revise` wrote them before `Author::append` stamped

@@ -10,7 +10,7 @@ use crate::version::VersionRaw;
 use super::*;
 
 /// The pinned conformance vector. This constant is published in
-/// `docs/ledger-format-v1.md`: an outside implementation of the format hashes
+/// `ledger/spec/ledger-protocol.md` §4.5: an outside implementation of the format hashes
 /// the same fixture and compares. If this test fails, either the canonical
 /// form changed — which is a `CANONICAL_FORM` bump and a migration note, not
 /// a fix — or a platform is disagreeing, which is the whole reason the vector

@@ -1,7 +1,7 @@
 //! `ledger declare` — bringing a decision set into existence.
 //!
 //! A set fixes the tolerance floor, the ground state, and the owner; it
-//! never lists members (§3.5 of the format). Declaring one writes a fresh
+//! never lists members (§5.2 of the ledger protocol). Declaring one writes a fresh
 //! `sets/<id>.yml` through the same schema type the loader parses, so a
 //! declared set cannot disagree with what `verify` will read back.
 
