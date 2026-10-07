@@ -32,6 +32,7 @@ Sections 3 to 11 are normative unless marked otherwise. Section 2, sections 12 t
 - **Not implemented.** Marks a requirement that is ruled but not implemented. See the Status section.
 - **Open.** Marks a working name or form that no ruling has fixed.
 - **SPARQL and SHACL.** Normative as definitions. No requirement obliges an implementation to run them.
+- **Informative citations.** Citations of the PRDs and of the way-of-working document give rationale only and are marked *informative* (ruling 37). Anything an implementation needs is stated in this document.
 - **Two protocols.** This document is the ledger protocol. The server-client protocol is a separate document. They are versioned separately, and the second states which versions of the first it carries.
 
 | Profile | Binds | Role |
@@ -44,7 +45,7 @@ Sections 3 to 11 are normative unless marked otherwise. Section 2, sections 12 t
 
 Not protocol: command names, flags, prompts, message text, how a server stores its index, and how a hosted server obtains a signature. The outcomes a verifier reports, including their exit statuses where it reports through one, are protocol (section 8.5).
 
-**Format conformance and the graph stage.** The file format, the canonical form, the hashes, the signatures and the file gate (sections 3 to 5, 8.1 to 8.5 and 8.7) are what an outside implementation of the format reproduces. The graph stage (section 8.6) and the committed export (section 9) are described as the reference implementation runs them. An outside implementation MAY skip them without losing format conformance (LP-8.6). Whether the verifier profile requires them is an open question (section 12).
+**The verifier profile is the whole of section 8** (ruling 31): the file gate, the graph stage, the derived-file stages, and the export check of section 9.2 (LP-9.13). A verifier that runs the file gate alone does not conform (LP-8.6). The file format, the canonical form, the hashes, the signatures and the file gate (sections 3 to 5, 8.1 to 8.5 and 8.7) are what a writer or reader of the format reproduces.
 
 ### Terminology
 
@@ -60,7 +61,7 @@ Not protocol: command names, flags, prompts, message text, how a server stores i
 | Claim | A capability in the closed vocabulary that a role may exercise. The format calls it a capability (`may`). |
 | Basis | What a version rests on: a token in its `based_on` list. A pinned basis names another version or an external basis by hash (section 7). |
 | Foundation | The transitive closure of a version's pinned bases. |
-| Pin | A trusted-source declaration naming a foreign server and namespace with its key material (section 7.5). Not to be confused with a pinned basis token. |
+| Pin | A declared dependency on another namespace: a trusted-source declaration naming that namespace and the key material that verifies its acts, and no server or location (ruling 42, section 7.5). Not to be confused with a pinned basis token. |
 | Finding | A gate class id and the subject it is reported against. |
 | Notice | A statement a verifier reports that is not a finding and does not fail verification. |
 | Test case | An input and its expected result, described in a manifest. |
@@ -121,7 +122,7 @@ A store is a directory of files in a git repository, and the files are the truth
 - **LP-3.5** (W, V) An entity is immutable once landed. Every change is a new entity. The one exception is a log file's `format:` declaration, which MAY be raised to the lowest format its content needs, with nothing else in the file changed (LP-3.16).
 - **LP-3.6** (W, V, R) An identity is an email address (section 3.4). It is stored and hashed as the bare address, and emitted in the export as a `mailto:` IRI.
 - **LP-3.7** (W, V) A model is never a holder. An identity that denotes a model or a CI system (LP-3.22) MUST be refused as an acceptance's actor, an escape's `accepted_by`, a judgment's `actor`, and every identity an authority record attributes an act to or gives authority to (LP-8.9 `L006`, `L010`; LP-8.16). Who filed a change-set or a decision (`created_by`) is not refused: a model may author.
-- **LP-3.8** (W, V) **Not implemented.** A namespace is local to its store. It has no identity outside it and is referred to from elsewhere only through a pin (section 7.5). *Note: the implemented format lets a repository reference decisions in namespaces it does not own (LP-3.18); see section 12.*
+- **LP-3.8** (W, V) **Not implemented.** A namespace has no identity outside itself. A reference into another namespace has one form: a pinned token (section 7.3) under a declared dependency, a pin (section 7.5). This holds inside a repository as it does across servers (ruling 41). Until pins are implemented, LP-3.18's free reference is what the format does.
 - **LP-3.9** (W, V) A decision key matches `^[A-Z][A-Za-z0-9]{0,63}$`. It is hashed, unique among live decisions of a namespace, and immutable along a decision's chain. A superseded decision's key is free for its successor, which MAY carry it.
 
 ### 3.1 Store layout
@@ -145,7 +146,7 @@ docs/decisions/<ns>.nt        the committed export of a namespace
 | `.decisions/sig/<ulid>.<scheme>.sig` | One signature sidecar per scheme (section 4.8) |
 | `.decisions/allowed_signers` | The derived trust file (section 4.9) |
 | `.decisions/index/` | The rebuildable graph index (section 9.1) |
-| `.decisions/basis/<sha256>` | **Not implemented.** Held basis bytes, named by their digest (section 7.4) |
+| `.decisions/basis/<sha256>` | **Not implemented, open.** Held basis bytes, named by their digest (section 7.4) |
 | `docs/decisions/<ns>.nt` | The committed export of a namespace (section 9) |
 
 - **LP-3.10** (W, V) Files are read with either `.yml` or `.yaml`. Writers emit `.yml`.
@@ -186,7 +187,7 @@ sha256:<64 lowercase hex>  a version hash
 | --- | --- |
 | Hash | `sha256:` followed by 64 lowercase hex digits. A short form of the first 12 hex digits exists for display only and is never compared. |
 | ULID | 26 characters of Crockford base32, `[0-9A-HJKMNP-TV-Z]{26}`, first character at most `7` |
-| Entity ids | `dec:<ns>/<ULID>`, `cs:<ULID>`, `acc:<ULID>`, `grant:<ULID>`, `gacc:<ULID>`, `unav:<ULID>`, `avail:<ULID>`, `rev:<ULID>`, `key:<ULID>`, `pol:<ULID>`; **not implemented, open:** `basis:<ULID>` |
+| Entity ids | `dec:<ns>/<ULID>`, `cs:<ULID>`, `acc:<ULID>`, `grant:<ULID>`, `gacc:<ULID>`, `unav:<ULID>`, `avail:<ULID>`, `rev:<ULID>`, `key:<ULID>`, `pol:<ULID>`; **not implemented:** `basis:<ULID>` |
 | Set id, role id | lowercase ASCII letters, digits, dashes and dots, at least one character |
 | Namespace | dot-separated segments, each of lowercase ASCII letters, digits and dashes, none empty |
 | Scope | `*`, `ns:<namespace>`, `set:<set-id>` or `pattern:<id>` |
@@ -197,14 +198,14 @@ sha256:<64 lowercase hex>  a version hash
 | Decision key | `^[A-Z][A-Za-z0-9]{0,63}$` |
 
 - **LP-3.17** (W, V) A ULID is 26 characters of Crockford base32 (`0123456789ABCDEFGHJKMNPQRSTVWXYZ`: `I`, `L`, `O`, `U` excluded). The first character MUST NOT exceed `7`; above that overflows the 48-bit millisecond timestamp field. A ULID is generatable offline and sorts lexicographically by creation time.
-- **LP-3.18** (W, V) A namespace is an *owning scope*, not a repository path. Repositories may reference decisions in namespaces they do not own.
+- **LP-3.18** (W, V) A namespace is an *owning scope*, not a repository path. Repositories may reference decisions in namespaces they do not own. *Implemented. Superseded by ruling 41 once pins exist: a reference into another namespace then takes the one form of LP-3.8.*
 - **LP-3.19** (W, V) A decision id is permanent. Supersession mints a new id carrying a `supersedes` edge; it never mutates or reuses one.
 - **LP-3.20** (W, V) A decision's namespace is not restated as a separate field. It is inside the id, and a second spelling of one fact is a second thing that can disagree.
 - **LP-3.24** (W, V) Every instant in hashed content is RFC 3339 UTC in whole seconds with `Z`. Every date is `YYYY-MM-DD`.
 
 ### 3.4 Identities
 
-An identity is an **email address**, normalised to lowercase at parse. The PRD requires `accepted-by` to *resolve* to a human identity; an address resolves, a display name decorates. Comparing addresses also makes the blame check (`L009`) robust against the punctuation and whitespace drift real `user.name` values carry.
+An identity is an **email address**, normalised to lowercase at parse. The PRD (informative) requires `accepted-by` to *resolve* to a human identity; an address resolves, a display name decorates. Comparing addresses also makes the blame check (`L009`) robust against the punctuation and whitespace drift real `user.name` values carry.
 
 - **LP-3.21** (W, V) An identity has exactly one `@`, a non-empty local part and a non-empty domain, and no whitespace. A dotless domain is legal. It is normalised to lowercase at parse.
 - **LP-3.22** (W, V) **Model and CI identities are refused as acceptors** (`L006`). An identity is refused when any of the following holds:
@@ -221,7 +222,7 @@ The list catches the identities a CI system or an agent harness produces *by def
 
 ### 3.5 The decision key and the export flag (format 5)
 
-Spec v1.6 (2026-10-02; the ledger CLI PRD §4 as amended 2026-10-01, ruling 2). Two optional version fields:
+Spec v1.6 (2026-10-02; the ledger CLI PRD §4 as amended 2026-10-01, informative; ruling 2). Two optional version fields:
 
 - **`key`**: the decision's stable human name, the string the analyzers' generator turns into a type name. It matches `^[A-Z][A-Za-z0-9]{0,63}$`; anything else is a `SCHEMA` fault at parse.
 - **`exported`**: `true` makes the decision citable from other namespaces. Absent means `false`; an explicit `false` reads as absent.
@@ -231,6 +232,15 @@ Spec v1.6 (2026-10-02; the ledger CLI PRD §4 as amended 2026-10-01, ruling 2). 
 - **LP-3.27** (V) Both rules are file-gate classes, not graph-only: a generated type name depends on each, so an importer of this format MUST enforce them. `L014` also has a graph-stage cross-check (`G006`, section 8.6), which is never its only home.
 - **LP-3.28** (W, V) A change-set declares `format: 5` only when one of its versions carries a `key` or `exported: true`; a lower-format file carrying either is a schema fault.
 - **LP-3.29** (W, V) `key` joins the hashed field set as a string; `exported` as the string `"true"` when set and nothing when false. Absent keys are omitted, so every version written before format 5 canonicalises to the same bytes and the prefix stays `ledger.decision-version.v1`.
+
+### 3.6 Namespace independence
+
+All of section 3.6 is **not implemented**. Where the implemented format behaves otherwise, it is described where it is specified, with the ruling that will supersede it.
+
+- **LP-3.30** (W, V) **Not implemented.** A namespace verifies the same wherever it sits (ruling 32). Sharing a repository with another namespace changes no rule, so a namespace can be moved to another repository by moving its files: no hash changes, no reference changes form, and both sides still verify. Coupling between namespaces is kept as low as it can be made.
+- **LP-3.31** (W, V) **Not implemented.** Only `based_on` crosses a namespace. `supersedes` never names a decision in another namespace (ruling 43). *The implemented format does not refuse it: `G001` asks only that a `supersedes` target is a decision filed anywhere in the store, so a cross-namespace `supersedes` inside one store passes (established by reading).*
+- **LP-3.32** (W, V) **Not implemented.** Only a decision marked `exported` (section 3.5) can be pinned from another namespace (ruling 44). *Nothing in the implemented format pins, and `exported` gates nothing: it is read only by the format rule of LP-3.28 and by the export (established by reading).*
+- **LP-3.33** (W, V) **Not implemented.** No file holds entities of two namespaces (ruling 45). *The implemented format does not refuse it: no rule compares the namespaces of a change-set's entries, and the export restricts each change-set to one namespace's entries (LP-9.11), which presumes such files. Grants of scope `*` and role files belong to no namespace at all. No committed change-set in this repository holds two namespaces (established by reading).*
 
 ## 4. Canonical form, hashing and signatures
 
@@ -271,7 +281,7 @@ tolerance_override · based_on · revisit_if · supersedes · key · exported
 
 Outside the hash: the `hash` field itself (including it would be circular), everything at change-set level (`format`, `id`, `created_at`, `created_by`, `parents`, `note`), and all acceptances and revocations.
 
-- **LP-4.17** (W, V) **Both tolerance inputs are hashed, not the resolved tier.** A `T0` floor with a `T2` override and a native `T2` floor both resolve to an effective `T2`, but they are different provenance and must not collide. That is what keeps override-rate-per-set (PRD §10) computable from hashed content.
+- **LP-4.17** (W, V) **Both tolerance inputs are hashed, not the resolved tier.** A `T0` floor with a `T2` override and a native `T2` floor both resolve to an effective `T2`, but they are different provenance and must not collide. That is what keeps override-rate-per-set (PRD §10, informative) computable from hashed content.
 
 **Not implemented.** The basis rulings add `source_prefix`, `source_method` and `source_keys` to the version (section 5.7). Under LP-4.16 they are schema faults today. Each joins the hashed set, hashed when present and omitted when absent, by a format amendment with its migration note.
 
@@ -283,8 +293,8 @@ Outside the hash: the `hash` field itself (including it would be circular), ever
 2. **Normalise every string**, in this order:
    a. replace `\r\n` and lone `\r` with `\n`;
    b. normalise to Unicode NFC;
-   c. strip leading and trailing ASCII whitespace
-      (`\t \n \v \f \r` and space).
+   c. strip leading and trailing ASCII whitespace: space,
+      `\t`, `\n`, `\f` and `\r`. Vertical tab (`\v`) is not stripped.
 3. **Treat as absent**: a missing key, an explicit `null`, an empty
    collection, and any string that step 2 reduces to the empty string. Absent
    keys are omitted from the object; there is no `null` in the canonical form.
@@ -306,7 +316,7 @@ Outside the hash: the `hash` field itself (including it would be circular), ever
 
 Step 8 speaks of the version. The payloads of section 4.6 do hash instants, in the one form of LP-3.24.
 
-*Note: the reference implementation's step 2c strips space, `\t`, `\n`, `\f` and `\r`, and does not strip `\v` (U+000B). See section 12.*
+Step 2c follows the reference implementation (ruling 33). The absorbed format document listed `\v` among the stripped characters; the implementation never stripped it, so no digest moves. This is the one place where the canonicalisation text departs from the absorbed format document (Appendix B).
 
 ### 4.4 The digest
 
@@ -363,7 +373,7 @@ The reference implementation's committed fixture stores are further vectors: the
 | --- | --- | --- |
 | Version | `ledger.decision-version.v1` | LP-4.16 |
 | Acceptance | `ledger.acceptance.v1` | `decision`, `version`, `actor`, `at`, `scope` (wire form: `version` or `class:<ref>`), `expires_at` (`YYYY-MM-DD`), `under` |
-| Revocation | `ledger.revocation.v1` | `revokes`, `actor`, `at`, `reason`, `under` (the PRD §7 closed payload; `at` as RFC 3339 UTC seconds) |
+| Revocation | `ledger.revocation.v1` | `revokes`, `actor`, `at`, `reason`, `under` (the PRD §7 closed payload, informative; `at` as RFC 3339 UTC seconds, LP-3.24) |
 | Grant | `ledger.authority-grant.v1` | `id`, `role`, `scope`, `holder`, `granted_by`, `order`, `limits` (set), `genesis` (`"true"` or absent), `external_ref`, `supersedes`, `under` |
 | Key binding | `ledger.identity-binding.v1` | `id`, `act`, `principal`, `namespace`, `key_type`, `key`, `closes`, `self_bound` (`"true"` or absent), `mandate`, `by`, `at`, `under` |
 | Namespace policy | `ledger.namespace-policy.v1` | `id`, `namespace`, `schemes` (set), `require_sk` (`"true"` or absent), `accept_role`, `reaccept_within_days` (its decimal string), `replaces`, `by`, `under`, `at` |
@@ -430,7 +440,7 @@ Spec v1.8 (#70; rulings D1 to D4 of #65 and D5 to D9 of 2 October 2026). A names
 
 - **LP-4.30** (V) **Requirement.** The policy in force for the namespace at the entity's position (section 8.7), or for a policy change the policy it replaces (D1), lists the required schemes. Under `[none]` an entity needs no sidecar; under any other policy each listed scheme needs one. A policy listing `none` with another scheme is a schema fault, and a writer refuses to file one. A sidecar that is present always has to verify. An acceptance or revocation before its namespace's first policy is not checked (D5 (c)). **A key binding is never exempt** (ruled 2026-10-05, narrowing D5 (c)): one before its namespace's first policy is judged by D7 and by **that first policy's** requirement (section 4.10).
 - **LP-4.9** (W, V) A policy change MUST be signed under the policy in force before it, which is the policy it replaces.
-- **LP-4.31** (V) **A namespace's first policy** (2026-10-05, #96) replaces nothing, so no policy is in force before it. It is judged under **its own** schemes, and only when its `by` held a live trusted key at its position: bound in this namespace (in the same change-set, dated with the policy, when the namespace is opened) or in another, which for this check alone stands in this namespace as it does for the genesis holder's later first binding (section 4.10). Then a missing or invalid signature is `L011`. A first policy filed before its author held any trusted key needs none, and stands unsigned.
+- **LP-4.31** (V) **A namespace's first policy** (2026-10-05, #96) replaces nothing, so no policy is in force before it. It is judged under **its own** schemes, and only when its `by` held a live trusted key at its position: bound in this namespace (in the same change-set, dated with the policy, when the namespace is opened) or in another, which for this check alone stands in this namespace as it does for the genesis holder's later first binding (section 4.10). Then a missing or invalid signature is `L011`. A first policy filed before its author held any trusted key needs none, and stands unsigned. *Superseded by ruling 47 once implemented: a key trusted in another namespace then has no effect here (LP-6.31).*
 
 ### 4.9 Trust file
 
@@ -447,6 +457,7 @@ Spec v1.8 (#70; rulings D1 to D4 of #65 and D5 to D9 of 2 October 2026). A names
   - `valid-after` is the opening binding's `at`. `valid-before` is the `at` of the earliest `rotate` or `revoke` that closed its **key**, in any namespace, since a close ends the key, not the binding (ruled 2026-10-06, section 4.11). So every line of a closed key carries the end date.
   - Only bindings that open a window (`add`, `rotate`) give a line, and only **trusted** bindings are written (section 4.10). An unsigned or wrongly signed binding never reaches the file.
   - Lines are sorted by code point, joined by LF, and the last line ends with one LF.
+  - *Superseded by ruling 47 once implemented: `valid-before` then comes from a close in the binding's own namespace (LP-6.31).*
   - The lines follow a two-line header, each line ending with LF:
 
 ```
@@ -464,7 +475,7 @@ v1.7 wrote the options space-separated, which OpenSSH refuses as an invalid key.
 - **LP-4.34** (V) Key bindings are judged first, in order (section 8.7). A binding is **trusted** when its filer is one D7 allows and, where the policy in force requires a signature, its signature verifies against the bindings already trusted.
 - **LP-4.35** (V) **Before the first policy** (ruled 2026-10-05). A binding before its namespace's first policy (D6: landed no later, dated earlier) is judged by D7 and by the requirement of that first policy, as if it were in force. Signed, it is trusted. Unsigned where that policy requires a signature, it is `L011` and never trusted. Under a `[none]` first policy, D7 alone decides it. A binding in a namespace no policy governs at all is a schema fault. **Every filed binding is trusted or named by a finding**; none is left silently untrusted.
 - **LP-4.12** (V) D7 allows these filers:
-  - the genesis holder's **self-bound** first binding in the store, carrying the genesis grant's `external_ref` as `mandate`, signed by the key it binds. Once per store: in any later namespace the genesis holder's first binding is their own `add`, signed by a key of theirs already trusted in another namespace (for that check alone, that key stands in the new namespace). A key trusted elsewhere vouches for that **first** binding only, never a further `add` (ruled 2026-10-05). Otherwise a key closed in one namespace and live in another could re-enter the namespace it was closed in. So a further key dated before the opening binding, which would turn that binding into a further `add`, is refused;
+  - the genesis holder's **self-bound** first binding in the store, carrying the genesis grant's `external_ref` as `mandate`, signed by the key it binds. Once per store: in any later namespace the genesis holder's first binding is their own `add`, signed by a key of theirs already trusted in another namespace (for that check alone, that key stands in the new namespace). A key trusted elsewhere vouches for that **first** binding only, never a further `add` (ruled 2026-10-05). Otherwise a key closed in one namespace and live in another could re-enter the namespace it was closed in. So a further key dated before the opening binding, which would turn that binding into a further `add`, is refused. *Superseded by ruling 47 once implemented: the self-bound first binding is then once per namespace, and a key trusted in another namespace vouches for nothing here (LP-6.31);*
   - a principal's **first key** (no open window in the namespace) is filed and signed by the genesis holder: `by` the genesis holder, `principal` the new holder, `under` the genesis grant;
   - every further `add`, and every `rotate`, is the principal's own, signed by a live key of theirs (a `rotate` by the key it closes);
   - a `revoke` is the principal's, or the genesis holder's under the genesis grant.
@@ -472,14 +483,16 @@ v1.7 wrote the options space-separated, which OpenSSH refuses as an invalid key.
 - **LP-4.37** (W, V) **Which keys may be bound** (ruled 2026-10-06). A binding that opens a key is refused at filing, and at verification it is a schema fault and never trusted, when, against the bindings trusted before it:
   - **the key belongs to another principal**: it is, or was, bound to a different principal anywhere in the store. A key belongs to one principal;
   - **the key is closed** for its principal, in any namespace (section 4.11). A closed key is never bound again, the genesis holder vouching for it as someone's first key included;
+
+  *Superseded in part by ruling 47 once implemented: both bullets then look at the binding's own namespace only (LP-6.31).*
   - **the key is already open** for its principal in that namespace. A key is bound once per namespace. The same key may be bound in another namespace.
-- **LP-4.38** (W) **Opening a namespace** (2026-10-05, #96). A writer that opens a namespace files the genesis holder's self-bound binding in the same change-set as the genesis grant and the first policy, dated with the policy (so the policy is in force at it), whenever the genesis holder has no key in the store. The window in which the first self-bound binding to land for the address, anyone's, is the one trusted is then closed by the act that opens the namespace. With no usable key the writer refuses and names what is missing, unless explicitly told to proceed unbound (ruled 2026-10-05); the verifier then says the window is open (LP-8.31). In a **later namespace**, while the genesis holder holds a live key, the writer binds that key there in the same change-set: their own `add`, signed by a key of theirs already trusted, dated with the policy, so they sign in the new namespace with no separate binding act. If every key of theirs is closed, the writer refuses and names the closed keys, unless explicitly told to proceed unbound; then it warns, binds nothing and signs nothing.
+- **LP-4.38** (W) **Opening a namespace** (2026-10-05, #96). A writer that opens a namespace files the genesis holder's self-bound binding in the same change-set as the genesis grant and the first policy, dated with the policy (so the policy is in force at it), whenever the genesis holder has no key in the store. The window in which the first self-bound binding to land for the address, anyone's, is the one trusted is then closed by the act that opens the namespace. With no usable key the writer refuses and names what is missing, unless explicitly told to proceed unbound (ruled 2026-10-05); the verifier then says the window is open (LP-8.31). In a **later namespace**, while the genesis holder holds a live key, the writer binds that key there in the same change-set: their own `add`, signed by a key of theirs already trusted, dated with the policy, so they sign in the new namespace with no separate binding act. If every key of theirs is closed, the writer refuses and names the closed keys, unless explicitly told to proceed unbound; then it warns, binds nothing and signs nothing. *Superseded by ruling 47 once implemented: each namespace then has its own genesis grant and its own self-bound first binding, and a later namespace is opened as the first one is (LP-6.31).*
 
 *Note: in the reference writer the genesis holder's key is the one its git configuration names as the signing key, and "proceed unbound" is an explicit option of the command that opens a namespace.*
 
 ### 4.11 Closed keys
 
-- **LP-4.39** (V) A close ends the **key**, not the binding (ruled 2026-10-06). Closing any binding of a principal's key, by `rotate` or `revoke`, in any namespace, the target a trusted binding or not, closes that key (the principal and the key) in every namespace of the store, from the close's position (D6). Every signature check considers all bindings of the matched key, never the first it matched; with several closes, the earliest the act is not before decides. The `L011` finding names the namespace the act is refused in, the namespace of the close, and the close.
+- **LP-4.39** (V) A close ends the **key**, not the binding (ruled 2026-10-06). Closing any binding of a principal's key, by `rotate` or `revoke`, in any namespace, the target a trusted binding or not, closes that key (the principal and the key) in every namespace of the store, from the close's position (D6). Every signature check considers all bindings of the matched key, never the first it matched; with several closes, the earliest the act is not before decides. The `L011` finding names the namespace the act is refused in, the namespace of the close, and the close. *Superseded by ruling 47 once implemented: a close then takes effect in its own namespace only, and a writer MAY file a close in every namespace it holds (LP-6.32).*
 - **LP-4.13** (V) An entity signed by a closed key: dated at or after the close, it fails verification at its `at` (`L011`); landed after the close, whatever its date, it is `L011`; dated and landed before it, an acceptance is a review item ("needs re-acceptance") until a later valid acceptance of the same version by the same actor affirms it, and `L012` once the policy's `reaccept_within_days` deadline (from the close: the key's earliest, in whichever namespace) has passed.
 - **LP-4.14** (V, R) An affirmation is a new acceptance under a live key. The reader takes the latest valid acceptance of a version.
 
@@ -505,7 +518,7 @@ A store is made of the entity kinds below. The file unit is the act: one change-
 | Namespace policy | `pol:<ULID>` | Yes, `ledger.namespace-policy.v1` | By policy | Required schemes, security-key requirement, accept role, re-acceptance deadline. |
 | Signature sidecar | `<ULID>.<scheme>` of the entity it signs | No | Is a signature | One signature over one signable entity's signed bytes. |
 | Review | ULID | Yes | Yes | **Not implemented.** A holder's verdict on a version: `reject` or `changes-requested`. |
-| Basis entity | **Open:** `basis:<ULID>` | **Open:** `ledger.basis.v1` | No | **Not implemented.** A locator and the digest of the bytes it refers to. |
+| Basis entity | `basis:<ULID>` | **Open:** `ledger.basis.v1` | No | **Not implemented.** A locator and the digest of the bytes it refers to. |
 
 - **LP-5.1** (W, V) An acceptance is immutable after creation. Nothing is ever added to it, including by a revocation.
 - **LP-5.2** (W, V) A revocation is its own entity and names the acceptance or grant it revokes.
@@ -517,7 +530,7 @@ A store is made of the entity kinds below. The file unit is the act: one change-
 
 ### 5.1 Tolerance
 
-Tiers are ordered `T0 < T1 < T2` (the way-of-working document, §2.2). A set declares a **floor**. A version pins the floor it was created under and may carry an up-only `tolerance_override`:
+Tiers are ordered `T0 < T1 < T2` (the way-of-working document, §2.2, informative). A set declares a **floor**. A version pins the floor it was created under and may carry an up-only `tolerance_override`:
 
 ```
 effective_tier = tolerance_override, else tolerance_floor_at_creation
@@ -623,7 +636,7 @@ revocations:                            # formats 1–5 shape; format 6: §3.9.2
 
 *Note: the acceptance scope `class:<discharge-ref>` names a discharge pointer. It is not a decision class (section 6.4).*
 
-`signature` was reserved under `format: 1` so that a cryptographic upgrade (OD-3) would be additive rather than a migration. That upgrade shipped as spec v1.8 / `format: 7` with signatures as sidecars (section 4.8), and the field is retired (LP-4.8).
+`signature` was reserved under `format: 1` so that a cryptographic upgrade (OD-3 of the PRD, informative) would be additive rather than a migration. That upgrade shipped as spec v1.8 / `format: 7` with signatures as sidecars (section 4.8), and the field is retired (LP-4.8).
 
 ### 5.4 Discharge pointers
 
@@ -643,7 +656,7 @@ A typed pointer, wire form `scheme:payload`:
 - **LP-5.17** (W, V) `contract` is the **format 3** scheme (spec v1.4, added through this document's amendment procedure for the ddd M8 integration): the decision is discharged by the repository-diff contract check, under which a change to the named boundary in any revision range must carry a declaration signing that exact change, validated in CI by the shared classifier. A file carrying a `contract:` pointer declares `format: 3` or above; a lower-format file carrying one is a schema fault, and a store that never uses the scheme stays a pure format-1/2 store. Hashing is unaffected: a discharge pointer was always hashed by its string form.
 - **LP-5.18** (W, V) `discharge_stage` is one of `pr | dev | staging | prod`, the ground table's stages. Discharging later than the ground allowed is waste; earlier is fiction.
 
-*"The ground table" is the PRD's discharge-stage table. It is not a basis.*
+*"The ground table" is the PRD's discharge-stage table (informative). The four stage values above are all an implementation needs. It is not a basis.*
 
 ### 5.5 Decision versions and their keys
 
@@ -674,7 +687,7 @@ notes: …                       # optional
 
 *§3.9.5 in the example is section 4.9 here.*
 
-- **LP-5.19** (W, V) A role file declares `format: 6`, is named by its id, is not duplicated, and `may` do at least one thing from the closed capability vocabulary (LP-6.1).
+- **LP-5.19** (W, V) A role file declares `format: 6`, is named by its id, is not duplicated, and `may` do at least one thing from the closed capability vocabulary (LP-6.1). *Implemented as store-wide: one `roles/` directory serves every namespace. Superseded by ruling 47 once implemented (LP-6.31).*
 
 #### Log entries
 
@@ -748,7 +761,7 @@ policies:
     hash: sha256:…             # ledger.namespace-policy.v1
 ```
 
-*An unavailability's `basis` field names who may declare it (`self`, `grantor`, `fallback-of-genesis`). It is not a basis in the sense of section 7, and the export carries it as the literal-valued `ledger:basis`. Since D9 (f) the accept role is never the genesis role, so the example's `accept_role: steward` names a role that does not carry the genesis capabilities (LP-6.17).*
+*An unavailability's `basis` field names who may declare it (`self`, `grantor`, `fallback-of-genesis`). It keeps its name (ruling 28). It is not a basis in the sense of section 7, and the export carries it as the literal-valued `ledger:basis`; the pinned-basis edge is `ledger:pinnedBasis` (ruling 27). Since D9 (f) the accept role is never the genesis role, so the example's `accept_role: steward` names a role that does not carry the genesis capabilities (LP-6.17).*
 
 - **LP-5.21** (W, V) **Two revocation shapes.** Formats 1–5 carry the legacy shape `{acceptance, at, by, reason}`; format 6 carries the entity shape above, which revokes a grant or an acceptance. A file carries the shape its declared format defines; the other, or a mixture, is a schema fault. Both shapes are read forever, since a log file is never rewritten. The legacy shape names no grant and has no id for a sidecar, so it is valid only as a **pre-policy act**: one that is not before its namespace's first policy fails `A006` (LP-6.29).
 
@@ -774,10 +787,10 @@ An act is valid only when its actor holds a grant whose role carries the claim t
 - **LP-6.2** (W, V) The role check: the actor holds a live, accepted, available grant of a role that `may` the act, over a scope covering the act's target, and, for a fallback, one not limited from the act and not outranked (LP-6.16). In a governed namespace the grant is the one the act names (`under`, LP-6.19), chosen by the rules of section 6.2. The check fails on no such grant, a grant not accepted, a holder unavailable, a wrong scope, a fallback limit or a fallback outranked.
 - **LP-6.3** (V) A grant is live only once its holder has accepted it by its hash.
 - **LP-6.4** (V) A primary grant carries no limits; a primary grant with limits is a schema fault. A fallback grant MAY carry `no-grants`, `no-grant-revocations`, `no-genesis`, `no-role-edits`.
-- **LP-6.5** (V) The genesis grant is self-granted, has scope `*` and order `primary`, and carries an `external_ref`. `external_ref` appears on the genesis grant only. At most one genesis grant is live (`A005`).
+- **LP-6.5** (V) The genesis grant is self-granted, has scope `*` and order `primary`, and carries an `external_ref`. `external_ref` appears on the genesis grant only. At most one genesis grant is live (`A005`). *Implemented as one genesis grant for the store, whose scope `*` covers every namespace. Superseded by ruling 47 once implemented: each namespace then has its own (LP-6.31).*
 - **LP-6.6** (V) No two live grants share role, scope and order (`A003`). Live means unrevoked, unsuperseded, and accepted by a grant acceptance (LP-6.15).
 - **LP-6.15** (V) **Liveness.** A grant is *live* when unrevoked, unsuperseded, and accepted by its holder (a grant acceptance signing its current hash); *available* at an instant when no unavailability covers it (`[from, until)`, unless an availability ended it at or before the instant). The namespace's policy *in force* is the tip of its `replaces` chain.
-- **LP-6.16** (W, V) **The role check is verb-time.** An authoring act asks whether the actor holds a live, accepted, available grant of a role that `may` the act, over a scope covering it (`*`; a namespace scope its own namespace; a set scope its own set; namespaces match exactly), and, for a fallback, one not limited from the act while no live, available grant of the same role at a lower rank covers the act's target. Fallback order is by covering scope (D9 (e)): a `fallback-1` over a set waits on a primary over `*` in its role; another role never outranks; equal rank acts concurrently. Since v1.8 the check also runs at verification, over history, as of each act (`A006`, section 6.6).
+- **LP-6.16** (W, V) **The role check is verb-time.** An authoring act asks whether the actor holds a live, accepted, available grant of a role that `may` the act, over a scope covering it (`*`; a namespace scope its own namespace; a set scope its own set; namespaces match exactly), and, for a fallback, one not limited from the act while no live, available grant of the same role at a lower rank covers the act's target. Fallback order is by covering scope (D9 (e)): a `fallback-1` over a set waits on a primary over `*` in its role; another role never outranks; equal rank acts concurrently. Since v1.8 the check also runs at verification, over history, as of each act (`A006`, section 6.6). *A scope of `*` or `pattern:` covers every namespace of the store. Ruling 47 supersedes that once implemented; what such scopes then mean is open (section 12.3).*
 - **LP-6.17** (W, V) In a namespace with a policy, accepting and revoking an acceptance count only grants of the policy's `accept_role`, which is never the genesis role. The genesis (root) role carries `grant-role`, `revoke-grant`, `declare-unavailability` and `rotate-genesis` and none of the decision capabilities (D9 (f)). A policy whose `accept_role` is no declared role that may `accept-decision` is a schema fault.
 - **LP-6.18** (V) A namespace without a policy is a pre-v2 namespace: nothing is role-checked there.
 
@@ -830,13 +843,22 @@ LP-6.14 binds one implementation and cannot be confirmed from a store. The guara
 ### 6.6 The role check over history
 
 - **LP-6.27** (V) **`A006`** (graph stage, section 8.6). Every acceptance and every `rev:` revocation is re-judged as of its position (section 8.7): the grant it names (`under`) must be held by its actor, of a role that may do the act (in a governed namespace, the policy's `accept_role`), over a scope covering the target, live, accepted and available at its `at`, and not outranked (D9 (e)). The check never searches for another grant; a governed act with no `under` fails. An acceptance or revocation before its namespace's first policy is not checked (D5 (c)); the exemption covers those two and no key binding (section 4.10). A grant's revocation is checked once the store has a genesis.
-- **LP-6.28** (V) **A policy is the genesis holder's act** (2026-10-05). Every policy, a namespace's first or a change, is judged like any other act as of its own position: the grant it names (`under`) must be the genesis grant as of the policy, held by its `by`, live and available at its `at`, through the same role check (`A006`). **The genesis grant only:** a grant of `grant-role` over `*` that is not the genesis grant authorises no policy, signed or not. The position rule does not exempt it: a policy defines a namespace's governance, so even the first one is checked. A signature on a policy change says who filed it, not that they were the one who may.
+- **LP-6.28** (V) **A policy is the genesis holder's act** (2026-10-05). Every policy, a namespace's first or a change, is judged like any other act as of its own position: the grant it names (`under`) must be the genesis grant as of the policy, held by its `by`, live and available at its `at`, through the same role check (`A006`). **The genesis grant only:** a grant of `grant-role` over `*` that is not the genesis grant authorises no policy, signed or not. The position rule does not exempt it: a policy defines a namespace's governance, so even the first one is checked. A signature on a policy change says who filed it, not that they were the one who may. *"The genesis grant" is the store's one genesis grant; under ruling 47 it becomes the namespace's own (LP-6.31).*
 - **LP-6.30** (V) **A role takes effect from its own landing** (2026-10-05). A role file is an enabling entry, and it carries no signed `at` (`created_at` is a date in no payload), so landing alone places it (D6): it counts for an act whose position landed no earlier than the role file. Its `created_at` plays no part. An act made under a grant whose role landed after it fails `A006`; a role and an act landed in the same commit stand together.
 - **LP-6.29** (V) **An old-style revocation is a pre-policy act** (2026-10-05). A legacy revocation (`acceptance`, `by`; formats 1–5) of an acceptance is judged like a `rev:` revocation: before its namespace's first policy it stands unchecked; one that is not before that policy (D6: dated *and* landed before it) fails `A006`, because the shape cannot name a grant.
 
 Until these rules, a policy by anyone with a bound key (or, under `[none]` or for a namespace's first policy, by anyone at all) passed the gate and governed the namespace; every role file counted for every act, whenever it landed; and a legacy revocation passed the gate unchecked, unsigned, and still revoked the acceptance it named.
 
 *Note: in the reference implementation filing a policy is an act the role check maps to the `grant-role` capability every genesis role carries. That mapping does not widen who may file a policy.*
+
+### 6.7 Authority per namespace
+
+All of section 6.7 is **not implemented**.
+
+- **LP-6.31** (W, V) **Not implemented.** Authority is per namespace (ruling 47). Each namespace has its own genesis grant, roles, grants, key bindings and policy, and nothing in one namespace's authority has effect in another. It supersedes, once implemented: the store's one genesis grant of scope `*` (LP-6.5, `A005`); store-wide role files (LP-5.19, LP-6.30, LP-8.27); grant scopes that reach every namespace (LP-6.16, LP-6.28); the self-bound binding once per store and a later namespace's first key trusted through another namespace (LP-4.12, LP-4.31, LP-4.38); keys judged across namespaces (LP-4.32, LP-4.37); the store-wide genesis holder of the unbound-genesis notice (LP-8.31); and the export's reach of `*` grants (LP-9.11).
+- **LP-6.32** (W, V) **Not implemented.** A close of a key takes effect in its own namespace only. A writer MAY file a close in every namespace it holds (ruling 47). It supersedes LP-4.39 once implemented.
+
+Authority as its own unit, which namespaces depend on by pin, is intended for later and is not designed (ruling 48, section 12.3).
 
 ## 7. Basis, trusted sources and convergence
 
@@ -846,9 +868,10 @@ A version states what it rests on, its **basis**, and its hash covers that state
 
 ### 7.1 Basis pointers
 
-- **LP-7.19** (W, V) `based_on` is a list of single-token basis pointers. Its vocabulary is **open**: nothing in the file gate dereferences a basis pointer, and closing the vocabulary now would reject adopters' existing reference schemes for no gain. The PRD (§9.4) closes it at L4, as validation over an unchanged canonical form (Appendix C, "Known future migrations").
+- **LP-7.19** (W, V) `based_on` is a list of single-token basis pointers. Its vocabulary is **open**: nothing in the file gate dereferences a basis pointer, and closing the vocabulary now would reject adopters' existing reference schemes for no gain. The PRD (§9.4, informative) plans to close it at L4, as validation over an unchanged canonical form (Appendix C, "Known future migrations").
 - **LP-7.20** (W, V) `based_on` is hashed as a set (LP-4.18 step 4): deduplicated, code-point sorted, reordering is formatting.
 - **LP-7.21** (W, V) **Unpinned tokens stay valid.** `prd:…`, `mandate:…` and the rest of the open vocabulary are unchanged by section 7.3. **Not implemented:** they take no part in convergence (section 7.6).
+- **LP-7.28** (V) **Not implemented.** Tokens of other schemes that carry an `@sha256:` pin (for example `claim:…@sha256:…` and `ddd-content:…@sha256:…`) take no part in convergence for now (ruling 35). Only the two forms of section 7.3 are pinned bases.
 
 ### 7.2 The reopen edge: `revisit_if` (format 4)
 
@@ -865,7 +888,7 @@ versions:
 ```
 
 - **LP-7.22** (W, V) **A reopen edge is never a basis.** It lives in its own field with its own vocabulary, and never appears inside `based_on`. Writing one inside `based_on`, as a `watched:` token or under any other marker, is not the way to say this, and a consumer MUST NOT read `revisit_if` as a basis. In the reference implementation the two are distinct types, so the separation is not a convention anyone can forget.
-- **LP-7.23** (V) **The two report differently.** A claim on a `based_on` edge moving produces a **basis-loss** finding: the basis shifted under a standing decision. A claim on a `revisit_if` edge moving produces a **reopen** finding: the tripwire fired and the decision is due a fresh look. These are different facts about a decision, and a report that merges them tells the reader neither. Neither finding is a gate class (LP-7.26).
+- **LP-7.23** (V) **The two report differently.** A claim on a `based_on` edge moving produces a **basis-loss** finding: the basis shifted under a standing decision. A claim on a `revisit_if` edge moving produces a **reopen** finding: the tripwire fired and the decision is due a fresh look. These are different facts about a decision, and a report that merges them tells the reader neither. Neither finding is a gate class (LP-7.26). *Implemented. Superseded in part by ruling 29 once implemented: basis-loss past a policy deadline is a failing class (LP-7.29).*
 - **LP-7.24** (W, V) A file carrying `revisit_if` declares `format: 4` or above (LP-3.15), so a store that never states a `revisit_if` stays a format-1/2/3 store.
 - **LP-7.25** (W, V) **Hashing.** `revisit_if` joins the hashed field set as a list (a *set*, like `discharge` and `based_on`: deduplicated, code-point sorted, reordering is formatting). An absent key is omitted from the canonical object (LP-4.18 step 3), so every version written before the field existed canonicalises to byte-identical content: no digest moves, no acceptance is invalidated, and the prefix stays `ledger.decision-version.v1`. The two lists canonicalise under **separate keys**, so one token filed as a basis and the same token filed as a reopen edge are different content. An acceptance always names which of the two it signed.
 - **LP-7.26** (V) **Not a gate class.** Nothing in LP-7.22 to LP-7.25 fails verification. Resolving a reopen pointer (does the claim exist, has it moved) is a consumer's business, the same posture every discharge scheme and every basis pointer already has. A new class would be a further change to this document, by the `L010` mechanism (Appendix C).
@@ -876,20 +899,21 @@ Until 2026-10-05 (#81) the reference implementation's loader did not check the f
 
 ### 7.3 Pinned bases
 
-All of section 7.3 is **not implemented**. The token forms are **open**: they are working forms following the `@sha256:` pin that `revisit_if` already uses (ruling 25).
+All of section 7.3 is **not implemented**. The token forms are ruled (ruling 34) and follow the `@sha256:` pin that `revisit_if` already uses (ruling 25).
 
-| Basis | Working token form inside `based_on` |
+| Basis | Token form inside `based_on` |
 | --- | --- |
 | Pinned decision basis | `dec:<ns>/<ULID>@sha256:<version hash>` |
 | External basis | `basis:<ULID>@sha256:<basis hash>` |
 
+- **LP-7.27** (W, V) **Not implemented.** A version that carries a token of a section 7.3 form as a pinned basis declares a new format, introduced when pinning is implemented (LP-3.15). Below that format such a token is an opaque basis pointer (LP-7.19), as it is today (ruling 34).
 - **LP-7.1** (W, V) **Not implemented.** A version MAY state pinned bases, as tokens inside `based_on` (ruling 25). There is no `grounds` field. Each pinned basis is another version, by its version hash, or an external basis, by its basis hash.
 - **LP-7.2** (W, V) **Not implemented.** An acceptance covers the pinned bases through the version hash, because `based_on` is hashed. Nothing about a basis is added to the signed payload.
 - **LP-7.3** (W, V) **Not implemented.** An external basis is a basis entity carrying a locator and a digest of the bytes it refers to. Its identity excludes who pinned it and when. **Open:** whether the locator belongs in it.
 - **LP-7.4** (W) **Not implemented.** A foreign decision MUST be named as a basis by its original version hash and never re-filed. A restatement MUST rest on the original.
 - **LP-7.5** (W, V) **Not implemented.** A store MUST hold the version file of every ancestor in a basis closure, so the foundation can be enumerated offline. Each file is checked against its hash.
 
-*Note: a token of a pinned form parses today as an opaque basis pointer (LP-7.19), and no committed store carries a `dec:` or `basis:` token. Tokens of other schemes already carry `@sha256:` pins (for example `claim:` and `ddd-content:`); whether those are pinned bases in the sense of this section is open (section 12).*
+*Note: a token of a pinned form parses today as an opaque basis pointer (LP-7.19), and no committed store carries a `dec:` or `basis:` token. Tokens of other schemes that carry `@sha256:` pins are not pinned bases (LP-7.28).*
 
 ### 7.4 Held and referenced basis
 
@@ -897,7 +921,7 @@ All of section 7.3 is **not implemented**. The token forms are **open**: they ar
 
 | Bytes | Source | Result |
 | --- | --- | --- |
-| Held in the store, under `.decisions/basis/<sha256>` | Any | The verifier checks the digest. |
+| Held in the store, under `.decisions/basis/<sha256>` (**Open**) | Any | The verifier checks the digest. |
 | Referenced only | Trusted | Allowed. The digest is the pinner's attestation. |
 | Referenced only | Not trusted | Refused. |
 
@@ -911,7 +935,9 @@ All of section 7.3 is **not implemented**. The token forms are **open**: they ar
 - **LP-7.8** (W, V) **Not implemented.** A trusted source is declared by a decision proper: a version carrying `source_prefix`, accepted by a holder of `trust-source`.
 - **LP-7.9** (V) **Not implemented.** A source is trusted while the tip version declaring it has an unrevoked, unexpired acceptance. Revoking that acceptance withdraws the trust.
 - **LP-7.10** (V) **Not implemented.** Two live sources with overlapping prefixes and different methods are a conflict and fail verification.
-- **LP-7.11** (W, V) **Not implemented.** A foreign namespace is pinned by a trusted source with the `signed` method: the server and namespace as prefix, plus the key material that verifies its acts.
+- **LP-7.11** (W, V) **Not implemented.** A foreign namespace is pinned by a trusted source with the `signed` method. The pin names the namespace and the key material that verifies its acts, and no server or location: a dependency names what is trusted, not where it lives (ruling 42). **Open:** as a working form, the trusted source's prefix for a namespace is `dec:<namespace>/`. A pin is the declared dependency of LP-3.8.
+- **LP-7.30** (V) **Not implemented.** Dependencies between namespaces are acyclic. A cycle is a failing class, numbered when it is implemented (ruling 46).
+- **LP-7.31** (V) **Not implemented.** For the namespaces of one repository, a verifier reports each namespace's instability: its outgoing dependencies over its incoming plus its outgoing. The report is not a gate (ruling 46).
 
 | Method | Example | What a verifier can do offline |
 | --- | --- | --- |
@@ -926,11 +952,11 @@ All of section 7.3 is **not implemented**. The token forms are **open**: they ar
 - **LP-7.12** (V) **Not implemented.** Convergence MUST be visible: where several pinned bases of a version reach the same ancestor, that ancestor is reported once as a shared foundation.
 - **LP-7.13** (V) **Not implemented.** Pinned decision bases converge on the version hash. External bases converge on the byte digest, so mirrors and separate pinners of the same bytes count as one.
 
-The foundation of a version is the transitive closure of its pinned bases. `ledger:basis` is the **open** working name of an object-valued edge for pinned tokens; `ledger:basedOn` stays the literal the export already writes for every token (LP-9.16).
+The foundation of a version is the transitive closure of its pinned bases. `ledger:pinnedBasis` is the object-valued edge for pinned tokens (ruling 27); `ledger:basedOn` stays the literal the export already writes for every token (LP-9.16).
 
 ```sparql
 SELECT ?version ?foundation WHERE {
-  ?version ledger:basis+ ?foundation .
+  ?version ledger:pinnedBasis+ ?foundation .
 }
 ```
 
@@ -938,8 +964,8 @@ A shared foundation is an ancestor reached through more than one direct pinned b
 
 ```sparql
 SELECT ?version ?foundation (COUNT(DISTINCT ?basis) AS ?paths) WHERE {
-  ?version ledger:basis ?basis .
-  ?basis ledger:basis* ?foundation .
+  ?version ledger:pinnedBasis ?basis .
+  ?basis ledger:pinnedBasis* ?foundation .
 }
 GROUP BY ?version ?foundation
 HAVING (COUNT(DISTINCT ?basis) > 1)
@@ -947,11 +973,11 @@ HAVING (COUNT(DISTINCT ?basis) > 1)
 
 Three bases from three servers that all rest on one decision from a fourth then count as one foundation, not three.
 
-*Note: the export already emits `ledger:basis` as a literal-valued predicate on unavailability nodes (section 5.6). The working name collides with it; see section 12.*
-
 ### 7.7 Basis-loss
 
 **Implemented.** A basis-loss finding is a consumer's report, not a gate class (LP-7.23, LP-7.26): a claim on a `based_on` edge moving produces it, and verification does not fail on it.
+
+**Ruled, not implemented** (ruling 29, which is ruling 9). Basis-loss is a report until a policy deadline passes. Past the deadline it is a failing class. Where policy sets no deadline it stays a report. Ruling 29 supersedes the statement that basis-loss is never a gate class.
 
 **Not implemented.** Rulings 9 and 18 extend basis-loss to pinned decision bases, where the moved thing is a version in the store's own basis closure:
 
@@ -960,8 +986,7 @@ Three bases from three servers that all rest on one decision from a fourth then 
 - **LP-7.16** (V) **Not implemented.** One revocation entity is the single cause reported on every dependent. It is signed and MAY be relayed by anyone.
 - **LP-7.17** (W, V) **Not implemented.** A version MAY be accepted before its bases. An accepted version resting on a pinned basis that has never been accepted fails verification (ruling 10).
 - **LP-7.18** (V) **Not implemented.** When trust in a source is withdrawn, referenced bases pinned before the withdrawal are listed for review. Those pinned after it fail.
-
-Whether the listing of LP-7.14 stays a report under LP-7.26, or becomes a failing class once a policy deadline of LP-7.15 has passed, as ruling 9's "on the `L012` pattern" suggests, is not settled here (section 12).
+- **LP-7.29** (V) **Not implemented.** The listing of LP-7.14 is a report. Once a policy deadline of LP-7.15 has passed, an unaffirmed direct dependent is a failing class, added by the `L010` mechanism and numbered when it is implemented. Where policy sets no deadline, the listing stays a report (ruling 29).
 
 A copied statement with no declared basis is invisible to this graph. Only similarity hints can find it.
 
@@ -976,7 +1001,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 - **LP-8.3** (V) Cross-file properties are computed at verification time and never stored in any entity.
 - **LP-8.4** (V) The file gate's classes are `SCHEMA` (the parse gate) and `L001` to `L014`. The graph stage's classes are `G001` to `G006` and `A003`, `A005`, `A006`; a `G` class is a graph shape over the decision log, an `A` class an authority shape. The derived-file stages report as `[SIGNERS]` and `[EXPORT]`. A new class takes the next free number of its letter, and a number is never reused.
 - **LP-8.5** (V) Key immutability and key uniqueness compare across files but belong to the file gate (LP-3.27).
-- **LP-8.6** (V) **Outside the import surface.** Sections 3 to 5 and 8.1 to 8.5 are what an outside implementation of the *format* reproduces. The graph stage (section 8.6) and the committed export (section 9) describe the reference implementation's L2 stages, which an outside implementation MAY skip without losing format conformance. The file gate's closed classes are unchanged by them.
+- **LP-8.6** (V) **The verifier profile is the whole of this section** (ruling 31): the file gate, the graph stage (section 8.6), the derived-file stages, and the export check (LP-9.13). A verifier that runs the file gate alone does not conform. Sections 3 to 5 and 8.1 to 8.5 are what a writer or reader of the format reproduces. The file gate's closed classes are unchanged by the graph stage.
 
 ### 8.2 The parse gate
 
@@ -1054,7 +1079,7 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
 - **LP-8.20** (V) `G004` is the state two divergent writers leave behind: a plain git merge of two branches' logs, each having revised the same decision from the same parent. No file is malformed; the *store* cannot name a latest version, so it is non-conformant until a recorded arbitration extends one chain past the fork, closing the other tip via `merged_from`. A tip, for both `G004` and `G005`, is a version no other version of the decision claims by `parent` *or* `merged_from`.
 - **LP-8.21** (V) `G005` is the write-time one-superseder-per-decision refusal met across branches, where it cannot refuse retroactively: each side's claim was legal alone. Only live claims count. A claimant whose next version drops the edge has withdrawn, which is exactly the arbitration act recorded for the losing side.
 - **LP-8.22** (V) The graph classes are closed the same way the file classes are: `G006` arrived as a change to this section (spec v1.6), and a `G007` would be another.
-- **LP-8.23** (V) `A003` and `A005` are the authority shapes' gate classes, with two tightenings recorded in the authority shapes: `A003` counts only a grant acceptance as acceptance, and `A005` excludes a revoked genesis. `A006` is not a SPARQL shape: it is computed by the role check over the authority records as of each act, because it needs landing order (section 8.7), which the graph does not carry.
+- **LP-8.23** (V) `A003` and `A005` are the authority shapes' gate classes, with two tightenings recorded in the authority shapes: `A003` counts only a grant acceptance as acceptance, and `A005` excludes a revoked genesis. `A006` is not a SPARQL shape: it is computed by the role check over the authority records as of each act, because it needs landing order (section 8.7), which the graph does not carry. *`A005` counts genesis grants across the whole store today. Superseded by ruling 47 once implemented: it then counts per namespace (LP-6.31).*
 
 ### 8.7 What a verifier reads from git: landing and order (D6)
 
@@ -1080,13 +1105,13 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
 - **LP-8.31** (V) A verifier reports these as notices, not failures:
   - **Unchecked namespaces.** Each namespace the log speaks that has no policy.
   - **Unsigned namespaces** (2026-10-05, #96). Each namespace whose policy in force is `[none]`, with what does not hold there: an absent signature is no finding, `L012` cannot arise, key bindings are trusted unsigned, a policy change is unsigned, and no `ssh` verification runs unless an `ssh` sidecar exists. A sidecar that is present is still verified.
-  - **An unbound genesis holder** (2026-10-05, #96). While the genesis holder has no trusted key, the verifier says so, naming the governed namespaces: the first self-bound binding to land for that address will be the one trusted (D7).
+  - **An unbound genesis holder** (2026-10-05, #96). *The store's one genesis holder today; per namespace under ruling 47 (LP-6.31).* While the genesis holder has no trusted key, the verifier says so, naming the governed namespaces: the first self-bound binding to land for that address will be the one trusted (D7).
 
 *Note: the reference verifier's machine-readable report carries the second list as `unsigned` and the third as `genesis_unbound` (`holder`, `namespaces`).*
 
 ### 8.9 Classes added by the basis rulings
 
-**Not implemented.** The basis rulings add these, with numbers assigned when each lands: malformed basis token, malformed source fields, two classes on one version, policy below the floor, dangling pinned basis, untrusted referenced basis, held-bytes digest mismatch, unaccepted basis, source conflict, basis-loss past its deadline (LP-7.15, see section 12), and basis under withdrawn trust. Each is a change to this document by the `L010` mechanism (LP-8.7, LP-8.22).
+**Not implemented.** The basis rulings add these, with numbers assigned when each lands: malformed basis token, malformed source fields, two classes on one version, policy below the floor, dangling pinned basis, untrusted referenced basis, held-bytes digest mismatch, unaccepted basis, source conflict, basis-loss past its deadline (LP-7.29), basis under withdrawn trust, and a cycle in the dependencies between namespaces (LP-7.30). Each is a change to this document by the `L010` mechanism (LP-8.7, LP-8.22).
 
 ### 8.10 Derived state
 
@@ -1113,7 +1138,7 @@ A decision's state is a function of the entities present. No entity has a state 
 
 ## 9. Export and the reader profile
 
-The export is the one artefact a reader needs, and a verifier can rebuild every signed byte from it. It is derived, deterministic and held byte-identical. Like the graph stage, it is outside the import surface (LP-8.6).
+The export is the one artefact a reader needs, and a verifier can rebuild every signed byte from it. It is derived, deterministic and held byte-identical. Like the graph stage, it is part of the verifier profile (LP-8.6).
 
 ### 9.1 The graph and the index
 
@@ -1138,6 +1163,8 @@ The committed export is the read model the analyzers' generator consumes.
   - one node per sidecar of an entity in it (LP-9.3).
 
   `ledger:set` is the set IRI `<urn:ledger-set:<id>>`; a reader takes the set id from its local part.
+
+  *A grant of scope `*` reaches every namespace's export. Superseded by ruling 47 once implemented (LP-6.31); what an export carries then is open (section 12.3).*
 - **LP-9.12** (W, V) **Form.** RDF 1.2 canonical N-Triples:
   - every term written in full: no prefixes, and `rdf:type` instead of `a`;
   - literals with `ECHAR` for BS, HT, LF, FF, CR, `"` and `\`;
@@ -1167,7 +1194,7 @@ The committed export is the read model the analyzers' generator consumes.
 
   It rebuilds `allowed_signers` from the key-binding nodes (section 4.9, under the two-line header) and verifies each signature as section 4.8 says.
 - **LP-9.15** (V) **The export-only verifier's limit.** It checks signatures and key windows by `at`; it cannot check landing order (section 8.7), which a verifier checks in the repository. A committed export is held byte-identical by a verification that does check order, so an export from a green repository holds no act that fails it.
-- **LP-9.5** (W, R) **Not implemented.** The export carries each version's pinned bases as object-valued edges (working name `ledger:basis`, **open**, section 7.6), each basis entity, the source fields and the class type of every version.
+- **LP-9.5** (W, R) **Not implemented.** The export carries each version's pinned bases as object-valued edges (`ledger:pinnedBasis`, section 7.6), each basis entity, the source fields and the class type of every version.
 - **LP-9.6** (W, V) **Not implemented.** For a namespace that others pin, the export carries enough of the authority log to verify its acts from the pinned key material.
 
 ### 9.4 IRI and literal forms
@@ -1283,13 +1310,9 @@ The draft's extraction points were filled from the absorbed format document and,
 - [ ] The form of `source_keys`: what key material pins a foreign namespace.
 - [ ] Whether the locator belongs in a basis entity's identity, given that mirrors of the same bytes must converge.
 - [ ] Whether the C# implementation is the hosted server only or a full writer. That decides which vectors come first.
-- [ ] The token forms of section 7.3, and whether a version carrying one needs a format bump.
-- [ ] The edge name `ledger:basis`, which the export already uses for an unavailability's `basis` (section 7.6).
-- [ ] Whether tokens of other schemes carrying an `@sha256:` pin take part in convergence (section 7.3).
-- [ ] Whether basis-loss past a policy deadline is a failing class (section 7.7).
-- [ ] Whether the verifier profile requires the graph stage and the export, given LP-8.6.
-- [ ] How LP-3.8 (namespaces local to a store, reached only by a pin) and LP-3.18 (repositories may reference namespaces they do not own) are reconciled.
-- [ ] The whitespace set of LP-4.18 step 2c, which the reference implementation applies without `\v`.
+- [ ] The basis entity's hash prefix (`ledger.basis.v1`) and the path of held bytes (`.decisions/basis/`), both Open.
+- [ ] The prefix form of a namespace pin (working form `dec:<namespace>/`, LP-7.11).
+- [x] Ruled 7 October 2026 (rulings 27 to 48): the pinned-basis edge, the token forms and their format rule, convergence of other `@sha256:` tokens, basis-loss past a deadline, the verifier profile, namespace independence, and the whitespace set of LP-4.18 step 2c.
 
 ### 12.3 Design work
 
@@ -1298,6 +1321,9 @@ The draft's extraction points were filled from the absorbed format document and,
 - [ ] Whether a source prefix must end at a path boundary (section 13).
 - [ ] Erasure of a holder's address against immutability (section 14).
 - [ ] Freshness and non-equivocation across servers, tracked in the server-client protocol.
+- [ ] Namespace independence (section 3.6, section 6.7): how authority records are stored and scoped per namespace and what a scope of `*` or `pattern:` then means; whether each namespace gets its own directory; whether `allowed_signers` becomes one file per namespace; the migration of stores and fixtures holding authority records; the exact content of a pin and the fate of `source_prefix`; and what a namespace's export carries.
+- [ ] Authority as its own unit, which namespaces depend on by pin, is intended for later and is not designed now (ruling 48).
+- [ ] The thirteen places where the reference implementation differs from this text go to a separate verification session (ruling 40).
 
 ### 12.4 Known limits of the format
 
@@ -1306,10 +1332,10 @@ Stated so an adopter meets them in this document rather than in production.
 - **`L009` cannot see uncommitted work**, by construction (LP-8.14). A repository with no git history has the check skipped entirely.
 - **`actor:` discharge pointers are not covered by `L006` or `L010`.** The judgment-actor half of the gap v1.0 flagged here closed as `L010` in spec v1.1; a *discharge pointer* naming a model identity remains representable. A pointer is a reference to where discharge happens, not an allocation of accountability, so extending the rule there is a separate decision.
 - **The model-identity list is a floor** (section 3.4), not a proof.
-- **`constraint` carries no discharge requirement.** The PRD (§4.4) does not impose one, so neither does this format: a constraint with no encoder is possible and is not a finding.
-- **`expires_at` is optional** pending OD-6. An acceptance without one never goes stale, which is precisely the risk OD-6 has to settle.
+- **`constraint` carries no discharge requirement.** The PRD (§4.4, informative) does not impose one, so neither does this format: a constraint with no encoder is possible and is not a finding.
+- **`expires_at` is optional** pending OD-6 (a PRD open decision, informative). An acceptance without one never goes stale, which is precisely the risk OD-6 has to settle.
 - **A class-scoped acceptance still signs a version hash.** The scope widens what the acceptance covers; it does not loosen what it names. L1 owns the operational semantics of accepting by class.
-- **Nothing verifies the set.** Coverage is measured against the enumerated set (PRD §8), and enumeration completeness has no mechanical check at any milestone. Late-discovery rate is the lagging proxy.
+- **Nothing verifies the set.** Coverage is measured against the enumerated set (PRD §8, informative), and enumeration completeness has no mechanical check at any milestone. Late-discovery rate is the lagging proxy.
 - **ULID generation is not specified here.** The file gate mints no ids. A writer that files one generates a ULID of the form of LP-3.17.
 
 ### 12.5 The reference writer
@@ -1324,7 +1350,7 @@ The protocol's security rests on one thing: a signature by a key bound to a huma
 
 | Consideration | What can go wrong | What the protocol does |
 | --- | --- | --- |
-| Key compromise | A stolen key signs acceptances until its binding is closed. | A close ends the key in every namespace. Acts dated or landed after the close are invalid; acceptances dated and landed before it are listed for re-acceptance (section 4.11). |
+| Key compromise | A stolen key signs acceptances until its binding is closed. | A close ends the key in every namespace (in its own namespace, with a close filed in each, once ruling 47 is implemented). Acts dated or landed after the close are invalid; acceptances dated and landed before it are listed for re-acceptance (section 4.11). |
 | Backdating | An acceptance's time is asserted by its signer, so a stolen key can sign with an earlier date. | The landing commit bounds the time: an act landed after a close or a policy is judged against it whatever its `at` (section 8.7). An export-only verifier cannot check landing (LP-9.15). |
 | Agent-held keys | A software key readable by an agent lets it produce a valid acceptance with any implementation. | Only a hardware-key policy prevents this across implementations. Writer refusals bind one implementation. |
 | Canonical ambiguity | Two serialisations of one payload would let a signature be read two ways. | One canonical form, strings only, closed field lists, one byte grammar (section 4.3). |
@@ -1398,6 +1424,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 5 October 2026 | Restructured in W3C form: abstract, status, conformance, terminology, security and privacy considerations, references. |
 | 5 October 2026 | Former sections 10 to 12 moved to The Decision Ledger Server-Client Protocol. Later sections renumbered 11 to 14; requirement identifiers unchanged. |
 | 6 October 2026 | The format document absorbed (ruling 22): this document becomes the normative format. Its content lands in sections 3 to 10 and 12, its revision history in Appendix B.1, and its migration record in Appendix C. Existing requirement ids keep their numbers; absorbed requirements take the next free number in their section. Subsections are numbered. The draft's "ground" is renamed "basis" (ruling 23), and pinned bases become tokens inside `based_on` with no `grounds` field (ruling 25). `accept_role` is described as the `ordinary` row of the class requirement table (ruling 24). Extraction markers filled. The open item on fallback ordering removed: covering scope is ruled (D9 (e)). Unimplemented requirements marked. Section order is unchanged. |
+| 7 October 2026 | The rulings of 7 October applied (27 to 48). **LP-4.18 step 2c now follows the code** (ruling 33): space, `\t`, `\n`, `\f` and `\r` are stripped and `\v` is not. This is the one place where the canonicalisation text departs from the absorbed format document, which listed `\v`; no digest moves. The pinned-basis edge is `ledger:pinnedBasis` (27). The token forms of section 7.3 are ruled, with their format rule LP-7.27 (34), and other `@sha256:` tokens take no part in convergence, LP-7.28 (35). Basis-loss past a policy deadline is a failing class, LP-7.29 (29). The verifier profile is the whole of section 8, LP-8.6 and section 1 (31). Namespace independence is stated as not implemented: section 3.6 (LP-3.30 to LP-3.33), LP-3.8, LP-3.18, the term Pin, LP-7.11, LP-7.30, LP-7.31, and authority per namespace in section 6.7 (LP-6.31, LP-6.32) with supersession notes where the implemented text stands (32, 41 to 48). Citations of the PRDs and the way-of-working document marked informative (37). Section 3.6 and section 6.7 are new subsections; no existing number moved. |
 
 ### B.1 Revisions of the absorbed format document
 

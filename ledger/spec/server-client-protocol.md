@@ -186,7 +186,7 @@ An envelope carries one entity's payload, its signature sidecars, the target rep
 
 ### 5.3. Batch Hand-off
 
-- **SC-3.7** (S, C) A batch is an enumerated list of rows, each a repository, a decision and a version hash, pinned by a manifest digest under the canonical form of [LEDGER].
+- **SC-3.7** (S, C) A batch is the batch selection file of [LEDGER] (its Section 10.1): an enumerated list of rows pinned by a manifest digest under the canonical form of [LEDGER].
 - **SC-3.8** (C) A client signs exactly the listed rows in one signing step and refuses on any drift: a moved version hash or a missing row.
 - **SC-3.9** (S) A browser session MAY produce a batch. Only a client holding the key turns it into envelopes.
 
@@ -329,3 +329,4 @@ If it is ever submitted, it would request a grant type URI for the SSH signature
 | 5 October 2026 | Split from sections 10 to 12 of the Decision Ledger Protocol Editor's Draft and recast in RFC form. Requirement identifiers unchanged. |
 | 5 October 2026 | Added the steps of the SSH signature grant, the error conditions, and the security, privacy and IANA considerations. |
 | 6 October 2026 | SC-2.5 and step 5 of Section 3.3: the login signature is verified against the key bindings of the indexed namespaces with their validity windows, not against `allowed_signers` (ruling 26). "Ground" in the ledger protocol's sense renamed "basis" in Section 4 and SC-4.7 (ruling 23). No section number of [LEDGER] cited here moved. Requirement identifiers unchanged. |
+| 7 October 2026 | SC-3.7: the batch is the batch selection file of [LEDGER] Section 10.1 (ruling 30). No line here describes a pin as naming a server, so ruling 42 changes nothing in this document. Requirement identifiers unchanged. |
