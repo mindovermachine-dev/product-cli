@@ -13,7 +13,7 @@
 pub mod acts;
 pub mod authority;
 pub mod disposition;
-pub mod genesis_role;
+mod genesis_role;
 pub mod history;
 pub mod integrity;
 pub mod keys;

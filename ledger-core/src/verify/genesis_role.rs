@@ -19,7 +19,7 @@ use crate::landing::{relative, Landing};
 use crate::store::Store;
 
 /// Every genesis-role fault in the store.
-pub fn findings(store: &Store, landing: &Landing) -> Vec<Finding> {
+pub(crate) fn findings(store: &Store, landing: &Landing) -> Vec<Finding> {
     let mut out = decision_capable_roots(store);
     for logged in &store.log {
         let path = relative(&store.root, &logged.path);

@@ -47,7 +47,7 @@ impl Capability {
 
     /// The decision capabilities: acts on decisions, which the genesis
     /// role never carries (D9 (f), ruling 50).
-    pub const DECISION: &'static [Capability] = &[Self::AcceptDecision, Self::SignOffPattern, Self::WaiveInvalidation];
+    pub(crate) const DECISION: &'static [Capability] = &[Self::AcceptDecision, Self::SignOffPattern, Self::WaiveInvalidation];
 
     pub fn as_str(self) -> &'static str {
         match self {
@@ -115,13 +115,13 @@ impl Role {
 
     /// The decision capabilities this role carries — none, for a genesis
     /// role (D9 (f), ruling 50).
-    pub fn decision_capabilities(&self) -> Vec<Capability> {
+    pub(crate) fn decision_capabilities(&self) -> Vec<Capability> {
         Capability::DECISION.iter().copied().filter(|c| self.may(*c)).collect()
     }
 
     /// Why this role cannot be the genesis role, if it cannot: it lacks a
     /// root capability, or carries a decision capability (D9 (f), ruling 50).
-    pub fn genesis_refusal(&self) -> Option<String> {
+    pub(crate) fn genesis_refusal(&self) -> Option<String> {
         let missing: Vec<&str> = Capability::ROOT.iter().filter(|c| !self.may(**c)).map(|c| c.as_str()).collect();
         if !missing.is_empty() {
             return Some(format!(
