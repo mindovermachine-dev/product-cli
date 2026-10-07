@@ -162,7 +162,7 @@ docs/decisions/<ns>.nt        the committed export of a namespace
   - **at or above the format that retired a shape the file uses.** For example, a legacy revocation (`acceptance`, `by`) in a file declaring format 6 or above, the format that retired that shape (section 5.6).
 
   A higher declaration is otherwise not a fault.
-- **LP-3.16** (W, V) A landed file's `format:` may be corrected (ruled 2026-10-05, #81). `format` is not an entity and not hashed content, so changing it alone changes nothing the record fixed. A correction may only **raise** the declaration, only **to the lowest format the file's content needs**, and nothing else in the file may change in the same edit. Any other change is judged entity by entity (LP-8.30). Lowering a declaration, or raising it past what the content needs, is not a correction.
+- **LP-3.16** (W, V) A landed file's `format:` may be corrected (ruled 2026-10-05, #81). `format` is not an entity and not hashed content, so changing it alone changes nothing the record fixed. A correction may only **raise** the declaration, only **to the lowest format the file's content needs**, and nothing else in the file may change in the same edit. Lowering a declaration, or raising it past what the content needs, is not a correction. A verifier compares the declaration along the file's first-parent history, the working tree last, and any change of it other than a correction is `L007` (LP-8.30, ruling 58).
 
 | Format | Introduced | Spec revision |
 | --- | --- | --- |
@@ -1020,7 +1020,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 | `L004` | `tolerance_override` is at or below `tolerance_floor_at_creation` |
 | `L005` | a decision's latest effective tier is below its set's current floor |
 | `L006` | an acceptance actor, or an escape's `accepted_by`, is refused by section 3.4; extended to authority records by LP-8.16 |
-| `L007` | a stored `hash` does not equal the recomputed canonical hash; extended by LP-8.16 and LP-8.30 |
+| `L007` | a stored `hash` does not equal the recomputed canonical hash; extended by LP-8.16 and LP-8.30, landed entities and a log file's `format:` declaration included |
 | `L008` | an acceptance's `(decision, version)` pair matches no filed version |
 | `L009` | an acceptance's actor is not the author of the commit that introduced it |
 | `L010` | a `judgment`'s `actor` is refused by section 3.4 (spec v1.1) |
@@ -1098,6 +1098,8 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
   - an edited role file: **roles are write-once**, so a new role and new grants supersede.
 
   Appending a new entity to a landed file changes no other entity; the new one lands where it was appended (LP-8.24).
+
+  A log file's `format:` declaration is not an entity, but it is compared too (ruling 58): each change of it along the same history, the working tree last, MUST be a correction under LP-3.16, a raise to exactly the lowest format the content needs with no entity changed in the same step; otherwise `L007`.
 - **LP-8.32** (V) `L009` reads the author of the commit that introduced an acceptance and compares its email address, as an identity (section 3.4), with the acceptance's actor. A repository with no git history has the check skipped entirely (LP-8.14).
 
 ### 8.8 Notices
@@ -1425,6 +1427,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 5 October 2026 | Former sections 10 to 12 moved to The Decision Ledger Server-Client Protocol. Later sections renumbered 11 to 14; requirement identifiers unchanged. |
 | 6 October 2026 | The format document absorbed (ruling 22): this document becomes the normative format. Its content lands in sections 3 to 10 and 12, its revision history in Appendix B.1, and its migration record in Appendix C. Existing requirement ids keep their numbers; absorbed requirements take the next free number in their section. Subsections are numbered. The draft's "ground" is renamed "basis" (ruling 23), and pinned bases become tokens inside `based_on` with no `grounds` field (ruling 25). `accept_role` is described as the `ordinary` row of the class requirement table (ruling 24). Extraction markers filled. The open item on fallback ordering removed: covering scope is ruled (D9 (e)). Unimplemented requirements marked. Section order is unchanged. |
 | 7 October 2026 | The rulings of 7 October applied (27 to 48). **LP-4.18 step 2c now follows the code** (ruling 33): space, `\t`, `\n`, `\f` and `\r` are stripped and `\v` is not. This is the one place where the canonicalisation text departs from the absorbed format document, which listed `\v`; no digest moves. The pinned-basis edge is `ledger:pinnedBasis` (27). The token forms of section 7.3 are ruled, with their format rule LP-7.27 (34), and other `@sha256:` tokens take no part in convergence, LP-7.28 (35). Basis-loss past a policy deadline is a failing class, LP-7.29 (29). The verifier profile is the whole of section 8, LP-8.6 and section 1 (31). Namespace independence is stated as not implemented: section 3.6 (LP-3.30 to LP-3.33), LP-3.8, LP-3.18, the term Pin, LP-7.11, LP-7.30, LP-7.31, and authority per namespace in section 6.7 (LP-6.31, LP-6.32) with supersession notes where the implemented text stands (32, 41 to 48). Citations of the PRDs and the way-of-working document marked informative (37). Section 3.6 and section 6.7 are new subsections; no existing number moved. |
+| 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 
 ### B.1 Revisions of the absorbed format document
 
