@@ -96,7 +96,7 @@ Every code step was checked in three ways:
   - the gate classes skip it;
   - it is never awaiting acceptance;
   - `status` and `coverage` list it apart from the seven states, with its tips;
-  - `show` gives each tip a screen, with no state;
+  - `show` gives each tip a screen, marked as one of the tips, with the state that tip's own content and acceptances give it;
   - a batch holds it as one forked member with no version;
   - `show` and `blame` read an acceptance of a tip as live;
   - `diff` reports a settled fork as a tip move from the tips;
@@ -185,6 +185,7 @@ Two choices were made inside the rulings and are stated here for review:
 - **Step 6: the readers' behaviours.** None of these is ruled beyond "a forked decision has no latest version", so they are my proposals, now stated as LP-8.34. The one to look at:
   - **Acceptance standing.** `show` and `blame` read an acceptance of a tip as `live`, while the gate (`signs_latest`) treats no acceptance of a forked decision as live.
   - **The alternative.** Reading them as `historical` would call an acceptance of a standing tip history.
+  - **A tip's screen.** Each tip's `show` screen carries the state its own content and acceptances give it. I first made `Screen.state` optional and left it empty on a tip, but that changes the signature of a public field. The `ddd diff-contracts` gate in CI refuses that without a signed binding, which is the principal's to file, so the field kept its type.
 
 ## 5. Anything else found
 
@@ -194,7 +195,8 @@ Listed, not fixed.
 2. **Appending a later-format entity to a landed file is now always `L007`.** Under ruling 58, a raise must change no entity, and a raise past the current need is refused. So no sequence of commits can append an entity that needs a higher format to a landed file. LP-8.24 still describes appending to a landed file as legitimate, which now holds only when the file already declares a high enough format. The principal may want to say whether that is intended.
 3. **Step 3 scans change-sets only.** Set files and role files are not hashed, so they are not scanned. A float in a role's `title` or a set's `title` is still read as text.
 4. **Step 1's placement.** The duplicate check for acceptance ids and decision identity objects lives in `authority/references.rs` beside the authority-record check, though neither is an authority record. Its module doc says so. A later tidy-up might move all duplicate checks to one place; `store.rs` holds the set and change-set ones.
-5. **A shared `CARGO_TARGET_DIR` across git worktrees reuses stale artifacts.** Cargo decided a workspace crate was fresh by the dep-info of another worktree's build, so one run tested another branch's code. Every result above comes from a run in a target directory of the step's own worktree, with clippy re-run that way for steps 2 to 5. This is a property of the environment, not of the repository, but anyone running several branches side by side should know it.
-6. **`ledger verify` notes no `origin/HEAD`** in a fresh clone or worktree ("landing computed on HEAD's own first-parent line"). It did not affect any result here.
-7. **The GitHub API reports #114 as closed and not merged**, though `main` carries its merge commit `e20fadc`. The repository was taken as authoritative.
-8. **Disk.** The session ran out of its disk allowance once, building many worktrees. Clearing `target/` recovered it.
+5. **The contract-surface gate.** CI runs `ddd diff-contracts` and fails on any new `pub` item in `ledger-core` without a signed binding. Steps 2, 3 and 6 first added public items and failed it on #127 and #129. Their new items are now `pub(crate)`, since they are used inside the crate only, and the gate reports no change, checked locally on each branch before pushing.
+6. **A shared `CARGO_TARGET_DIR` across git worktrees reuses stale artifacts.** Cargo decided a workspace crate was fresh by the dep-info of another worktree's build, so one run tested another branch's code. Every result above comes from a run in a target directory of the step's own worktree, with clippy re-run that way for steps 2 to 5. This is a property of the environment, not of the repository, but anyone running several branches side by side should know it.
+7. **`ledger verify` notes no `origin/HEAD`** in a fresh clone or worktree ("landing computed on HEAD's own first-parent line"). It did not affect any result here.
+8. **The GitHub API reports #114 as closed and not merged**, though `main` carries its merge commit `e20fadc`. The repository was taken as authoritative.
+9. **Disk.** The session ran out of its disk allowance once, building many worktrees. Clearing `target/` recovered it.
