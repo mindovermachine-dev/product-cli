@@ -1,6 +1,6 @@
 # Namespace independence: design PRD
 
-First draft 7 October 2026; revised the same day after rulings 61 to 81 (`ledger/rulings/namespace-design-rulings-2026-10-07.md`).
+First draft 7 October 2026; revised the same day after rulings 61 to 81, and again after rulings 82 to 84 (`ledger/rulings/namespace-design-rulings-2026-10-07.md`).
 
 This document states the ruled design for rulings 32 and 41 to 48.
 
@@ -345,7 +345,9 @@ The root `.decisions/` holds only `ns/` and the uncommitted `index/` cache. The 
 
 #### 3.1.1 History written in the flat layout
 
-Verification reads earlier commits, and in this repository, as in every store made before v1.9, those commits use the flat layout. Ruling 63 makes the flat layout invalid at the verified commit. It cannot make it disappear from history.
+*Rulings 63 and 82.*
+
+Verification reads earlier commits, and in this repository, as in every store made before v1.9, those commits use the flat layout. Ruling 63 makes the flat layout invalid at the verified commit. It cannot make it disappear from history. Ruling 82 makes reading it a **legacy capability**: an implementation may have it, and it is not part of the verifier profile.
 
 **What verification reads from history today** *(read)*:
 
@@ -360,7 +362,13 @@ Verification reads earlier commits, and in this repository, as in every store ma
 
 `revision::load_at`, used by `ledger diff` and `ledger merge`, also reads whole stores at a revision. It is not part of verification.
 
-**What an implementation must do.**
+**What every verifier must do**, with or without the capability:
+
+- **At the verified commit and in the working tree**, read only `ns/`. Refuse the flat paths (above).
+- **Before reading history, look for the flat layout in it.** One path-limited query does it: `git log --first-parent --format=%H -- .decisions/log .decisions/roles .decisions/sig` over the verified commit and, when given, the base. If that names any commit, the history predates v1.9.
+- **A verifier without the capability refuses such a repository** (82). It reports that it cannot verify it, with exit status 2 ("the gate could not run", LP-8.18), and names the first flat commit. It never reports the repository conformant, and it never passes it by treating the re-layout commit as every entity's landing (the collapse of §2.3). Exit 2 is this design's reading of "refuses"; a finding would say the store is wrong, when it is the verifier that lacks the means.
+
+**What the legacy capability does**, in a verifier that has it:
 
 1. **At the verified commit and in the working tree**, read only `ns/`. Refuse the flat paths (above).
 2. **In history**, recognise both path patterns, and read nothing of the flat layout but its files' entities:
@@ -386,11 +394,11 @@ Verification reads earlier commits, and in this repository, as in every store ma
 - **Rewrite history so that it was always in the new layout.** That changes every commit id. It also breaks the assumption D6 rests on: `landing.rs` states that the default branch's history is not rewritten.
 
 **What it costs.**
-- *For implementations.* Every implementation that verifies a repository whose history predates v1.9 carries the flat path pattern in its history reader for good. It is used by landing, immutability, the `format:` comparison, `L009` and the base overlay. The cost is bounded: three path patterns and a file grammar it already reads, with no flat semantics.
+- *For implementations.* Ruling 82 makes the cost optional. A verifier that wants to verify repositories whose history predates v1.9, as the reference implementation must for this one, carries the flat path pattern in its history reader for good. A verifier without it costs only the detection query, and refuses those repositories. It is used by landing, immutability, the `format:` comparison, `L009` and the base overlay. The cost is bounded: three path patterns and a file grammar it already reads, with no flat semantics.
 - *For new stores.* A store created at v1.9 or later never meets it.
-- *For test vectors.* Any test vector built on a pre-v1.9 history has to exercise it.
+- *For test vectors.* A test vector built on a pre-v1.9 history belongs to the legacy capability, not to the verifier profile. The profile's own vectors are: a pre-v1.9 history is refused, never passed.
 
-This is question N-Q1 (§7).
+Ruling 82 answers N-Q1.
 
 ### 3.2 Authority records
 
@@ -447,7 +455,7 @@ One derived file per namespace, `ns/<ns>/allowed_signers`. It holds today's line
 
 ### 3.5 Landing order and the move
 
-*Rulings 64, 65, 66, 77 and 79.*
+*Rulings 64, 65, 66, 77, 79, 83 and 84.*
 
 **Before a move.** Order is read from the holding repository's history, as D6 says (64), with landing keyed by entity (§3.1.1). There is no record.
 
@@ -463,11 +471,11 @@ sequenceDiagram
   participant N as ns/B/
   participant T as Target repository
   Note over S: before the move: order from S's history (D6)
-  S->>N: one change-set: move act move:M (signed) + record landing/M, written from S's history
+  S->>N: one change-set: move act move:M (signed where policy requires) + record landing/M, written from S's history
   S->>S: the commit where move:M lands: A007 checks the record against S's history, once
   S->>T: ns/B/ and docs/decisions/B.nt reach T (copy, filter-repo, merge)
   S->>S: remove ns/B/ and B.nt in one commit (ruling 65)
-  Note over T: arrived entities: ordinals and authors from landing/M (A007 checks digest, manifest, signature)
+  Note over T: arrived entities: ordinals and authors from landing/M (A007 checks digest and manifest, and the signature where policy requires it)
   Note over T: later entities: ordinals from T's history, after move:M
 ```
 
@@ -477,7 +485,9 @@ sequenceDiagram
 - `manifest`: the digest of the sorted list of every file path under `ns/<ns>/` with each file's SHA-256, excluding the act's own change-set file, its sidecar and the record;
 - `by`, `under` and `at`.
 
-It is the genesis holder's act, made under the genesis grant and judged by `A006` like a policy (LP-6.28). It is signed when policy requires (but see N-Q4 for a namespace with no policy).
+**Every move has a move act** (84), whatever the namespace's governance.
+- *In a namespace under policy*, it is the genesis holder's act, made under the genesis grant and judged by `A006` like a policy (LP-6.28). It is signed where the policy requires a signature, and under `[none]` it is governed and unsigned.
+- *In a namespace with no policy*, it is unsigned and unchecked, like every act there (84): no `under`, no role check, no sidecar. Anyone may file it.
 
 **The record: when it is written.** Once, at departure. The writer that files the move act also writes `ns/<ns>/landing/<move-ulid>`, in the same commit. The file is named by the move act's ULID, so a later move adds a file and never edits one. It has one line per landed entity of the namespace, each with:
 - the entity's key;
@@ -492,11 +502,11 @@ The writer derives it from the history its checkout stands on, and refuses while
 - the manifest is the namespace's files at that commit;
 - nothing of the namespace lands at that commit but the act, its sidecar and the record.
 
-Any entity of the namespace landing after that commit is also A007, because the namespace is frozen in the source from its move act on (N-Q3).
+**The namespace is frozen in its source from its move act on** (83). Any entity of it that lands there after that commit is `A007`. It is filed again in the target, after arrival.
 
 Later verifications of the source reach the same answer from the same history, so this is one check, made once in substance. After the removal (below), nothing of the record is re-read.
 
-On a pull request, the check runs against the base (LP-8.29) and gives what the merge will give. If another pull request lands an entity of the namespace first, the move act's pull request fails A007 and is refiled on the new tip. That is the one place where ruling 64's merge-order point remains: confined to the move, not spread over every pull request.
+On a pull request, the check runs against the base (LP-8.29) and gives what the merge will give. If another pull request lands an entity of the namespace first, the move act's pull request fails `A007` and the move act is refiled on the new tip (83): a new move act and a new record, written from the history that now includes that entity. That is the one place where ruling 64's merge-order point remains: confined to the move, not spread over every pull request.
 
 **Departure** (65). After a landed move act, removing every file of `ns/<ns>/` and `docs/decisions/<ns>.nt` in one commit is not `L007`. Removing part of a namespace stays `L007`. The source's history keeps the act, and `verify::history` reads it through `content_at`. Adding the move act is within "no hash changes" (65).
 
@@ -506,7 +516,7 @@ On a pull request, the check runs against the base (LP-8.29) and gives what the 
   - the record's digest is that act's `landing`;
   - the arrived files match its `manifest`;
   - every arrived entity, other than the move acts, their sidecars and the records, has a row;
-  - the move act verifies under the namespace's own authority as judged in record order.
+  - where the namespace is under policy, the move act verifies under the namespace's own authority as judged in record order.
 
   The move act's ordinal is one after the record's last. Every check of section 8 then runs on those positions, as at the source. `L009` compares an arrived acceptance's actor with the record's author (79).
 - *For entities that land later*, ordinals come from the target's history: the move act's ordinal plus the dense rank of each entity's landing commit among the namespace's later landing commits. `L009` reads the target's git.
@@ -522,7 +532,12 @@ The new act's digest covers it. Earlier records and move acts stay as landed fil
 - in the target, at arrival;
 - between successive records.
 
-**A namespace with no policy.** Order decides nothing there except `L007`, and `L007` restarts at arrival. Ruling 64 calls the move act signed, but nothing in such a namespace can be signed: a key binding needs a policy (`authority::references::binding_refs`). That is N-Q4.
+**A namespace with no policy** (84). Order decides nothing there except `L007`, and `L007` restarts at arrival. Nothing in such a namespace can be signed, because a key binding needs a policy (`authority::references::binding_refs`), so its move act is unsigned and unchecked.
+
+What still runs is everything that checks the record rather than the act. This is this design's reading of "unchecked": it applies to who filed the act, not to whether the record is true.
+- In the source, the record must equal git at the act's landing commit, and the namespace is frozen after it (83).
+- In the target, the record's digest and the manifest must match.
+- `L009` reads the record's authors (79). Those rows are unattested, as is every act in such a namespace.
 
 ### 3.6 The dependency declaration (pin)
 
@@ -616,7 +631,7 @@ Once ruling 47 is implemented, ruling 51's one remaining difference (a close in 
 5. whether anything changed in the pinned namespace after the snapshot: a revocation, a close or a move;
 6. whether a move act in the snapshot matched its record.
 
-No fix is designed here. This is question N-Q2, for the pinning design. It also bears on LP-9.6 (N-Q5).
+No fix is designed here. This is question N-Q2, open for the pinning design. It also bears on LP-9.6 (N-Q5, open too).
 
 ### 3.10 Format and classes
 
@@ -624,7 +639,7 @@ No fix is designed here. This is question N-Q2, for the pinning design. It also 
 
 | Change | Kind | Format | Digests |
 | --- | --- | --- | --- |
-| Layout under `ns/`; flat refused at the verified commit; both patterns read in history | Store property | Revision v1.9, no format number (66) | None |
+| Layout under `ns/`; flat refused at the verified commit; flat history detected, and read only by the legacy capability (82) | Store property | Revision v1.9, no format number (66) | None |
 | Sets, roles and authority per namespace; scopes read inside it | Rule change | None | None. Scope strings are unchanged (67). |
 | Keys per namespace | Rule change | None | None |
 | `allowed_signers` per namespace | Derived file | None | None |
@@ -670,7 +685,7 @@ No fix is designed here. This is question N-Q2, for the pinning design. It also 
 - `.decisions/sets/ledger-design.yml` and the other 23 log files go to `.decisions/ns/hafeok.ledger/`;
 - both exports are regenerated, with namespaced set IRIs (74).
 
-No record is written, and no move act is filed. Landing and `L009` hold because §3.1.1 keys landing by entity and reads both path patterns. *Inference: not run, because today's loader reads only the flat layout.* The full history is needed. CI checks out full history (D6 note), and the local clone here was shallow.
+No record is written, and no move act is filed. Landing and `L009` hold for a verifier with the legacy capability of ruling 82, which keys landing by entity and reads both path patterns (§3.1.1). The reference implementation needs that capability, because this repository's history will always predate v1.9. A verifier without it refuses this repository. *Inference: not run, because today's loader reads only the flat layout.* The full history is needed. CI checks out full history (D6 note), and the local clone here was shallow.
 
 **The fixtures.**
 - The 15 committed stores under `ledger-cli/tests/fixtures/` each hold one namespace (`fixture.ledger`, `fixture.coverage`, `fixture.forked`, `fixture.two-clocks`) and no authority records. Each moves its `sets/` and `log/` under `.decisions/ns/<namespace>/`. File contents and digests are unchanged, so `UPDATE_FIXTURES=1` should find nothing to refresh.
@@ -754,14 +769,15 @@ Not done here: a pin that carries authority, or one namespace's grant acting in 
 
 **AC-1. The experiment, as a test** (`ledger-cli/tests/namespace_move.rs`, proposed).
 - *Setup.* Take a copy of this repository's store with full history, re-laid out (§3.11).
-- *Move.* File a move act and its record in `hafeok.ddd`, then move `.decisions/ns/hafeok.ddd/` and `docs/decisions/hafeok.ddd.nt` into a fresh repository by plain copy in one commit, by someone who is not the acceptor. Remove both from the source in one commit.
+- *Move.* File a move act and its record in `hafeok.ddd`. The namespace has no policy, so the act is unsigned and unchecked (84): no `under`, no sidecar. Then move `.decisions/ns/hafeok.ddd/` and `docs/decisions/hafeok.ddd.nt` into a fresh repository by plain copy in one commit, by someone who is not the acceptor. Remove both from the source in one commit.
 - *Pass when:*
   - `ledger verify --export` is conformant on both repositories;
   - every file that existed before the move is byte-identical on the side that holds it, so no hash changed and no reference was rewritten;
   - the move act and its record are the only files added (65);
   - the source's `hafeok.ledger` verdicts, notices and export are identical to before.
 - *Must also hold:* the test passes again when the move is made by `git filter-repo`, and by merging carried history into a repository with history of its own.
-- *Depends on N-Q4:* `hafeok.ddd` has no policy, so its move act cannot be signed.
+- *Also checked:* the source's record equals what git gives at the act's landing commit, and an entity of `hafeok.ddd` landed in the source after the act is `A007` (83).
+- *The verifier used* has the legacy capability of ruling 82, because this repository's history predates v1.9.
 
 **AC-32.**
 - E3's store, rebuilt with a genesis per namespace, with `beta.ns` moved by the three means: each side's findings, review items and notices equal what the namespace had before the move.
@@ -788,15 +804,25 @@ Not done here: a pin that carries authority, or one namespace's grant acting in 
 
 **AC-48.** No grant payload gains a namespace field, and authority records stay in change-sets that hold no decision.
 
-**AC-63.**
-- A store with any flat path at the verified commit is a schema fault.
-- This repository's history, re-laid out in one commit, verifies with every entity's landing index, `L009` author and immutability verdict the same as before the re-layout.
+**AC-63.** A store with any flat path at the verified commit is a schema fault.
+
+**AC-82.**
+- With the legacy capability, this repository's history, re-laid out in one commit, verifies with every entity's landing index, `L009` author and immutability verdict the same as before the re-layout.
+- Without it, the same repository is refused with exit 2, naming the first flat commit, and is never reported conformant.
 
 **AC-64.**
 - Two pull requests open at once, each adding an entity to one namespace, merge in either order with no conflict in any derived file and no red default branch.
 - A move act whose pull request merges after another lands an entity of its namespace fails `A007`.
 
-**AC-65.** Removing part of a namespace is `L007`. Removing all of it after a landed move act is not. An entity of the namespace landing after its move act is `A007`.
+**AC-65.** Removing part of a namespace is `L007`. Removing all of it after a landed move act is not.
+
+**AC-83.**
+- An entity of a namespace landing in its source after its move act is `A007`.
+- A move act refiled on the new tip after that failure lands green.
+
+**AC-84.**
+- A namespace under an `ssh` policy cannot move without a signed move act: an unsigned one is `L011`, and one not made under the genesis grant is `A006`.
+- A namespace with no policy moves with an unsigned move act, and its record is still checked.
 
 **AC-68.** A store with two governed namespaces built under today's rules fails v1.9 verification as the draft Appendix C note says.
 
@@ -813,7 +839,7 @@ These are proposals only. Each lands with the implementation that makes it true,
 - **LP-3.18:** mark superseded by LP-3.8 once pins exist.
 - **LP-3.30 to LP-3.33:** remove "Not implemented" as each lands, and drop the italic notes on today's behaviour.
 - **LP-3.34 (new):** "A store holds each namespace under `.decisions/ns/<namespace>/`, with its own `sets/`, `roles/`, `log/`, `sig/`, `allowed_signers`, and, after a move act, `landing/`. A file's namespace is its directory. At the verified commit, a file under `.decisions/` outside `ns/` and `index/` is a schema fault."
-- **LP-3.35 (new):** "In history, a verifier reads change-set, role and sidecar files at both the flat paths of revision v1.8 (`.decisions/log/`, `.decisions/roles/`, `.decisions/sig/`) and the paths of LP-3.34, told apart by path. It reads only their entities."
+- **LP-3.35 (new):** "A verifier looks for the flat paths of revision v1.8 (`.decisions/log/`, `.decisions/roles/`, `.decisions/sig/`) on the first-parent history it reads. A verifier with the legacy capability then reads change-set, role and sidecar files at both those paths and the paths of LP-3.34, told apart by path, and only their entities. The capability is not part of the verifier profile (ruling 82). A verifier without it refuses a repository whose history holds a flat path, with exit status 2, and never passes it by collapsing landing order."
 - **LP-3.36 (new):** "Ids, set ids, role ids and file names are unique within a namespace."
 
 **Keys (§4)**
@@ -835,7 +861,7 @@ These are proposals only. Each lands with the implementation that makes it true,
 - **LP-6.16:** "A grant's scope is read in its own namespace. `ns:<other>` is a schema fault."
 - **LP-6.28:** "the genesis grant" is the namespace's.
 - **LP-6.31, LP-6.32:** remove "Not implemented" as they land.
-- **LP-6.33 (new):** "A namespace move is the genesis holder's act, judged like a policy (`A006`)."
+- **LP-6.33 (new):** "Every move has a move act. In a namespace under policy it is the genesis holder's act, judged like a policy (`A006`), and signed where the policy requires a signature. In a namespace with no policy it is unsigned and unchecked, like every act there (ruling 84)."
 - **LP-6.34 (new):** "A writer that closes a key in every namespace it holds files one change-set per namespace, in one commit."
 
 **Basis and pins (§7)**
@@ -855,14 +881,14 @@ These are proposals only. Each lands with the implementation that makes it true,
 - **LP-8.31:** notices per namespace, plus the two key notices.
 - **LP-8.32:** "…for an arrived acceptance, the author in the landing record."
 - **LP-8.34 (new):** "**Landing record.** A writer filing a move act writes, in the same commit, `ns/<ns>/landing/<move-ulid>`: one line per landed entity of the namespace, with its ordinal and, for an acceptance, its introducing author, read from the history the act was filed on. The source checks it against git at the commit where the act lands. The target reads it for arrived entities. A mismatch is `A007`. No record is held before a move."
-- **LP-8.35 (new):** "**Departure.** From a landed move act on, no entity of its namespace may land in the source (`A007`)."
+- **LP-8.35 (new):** "**Departure.** A namespace is frozen in its source from its move act on: an entity of it that lands there afterwards is `A007`, and a move act that lands after another entity of its namespace is refiled (ruling 83)."
 
 **Export (§9)**
 - **LP-9.1, LP-9.11:** "The export of a namespace carries every entity of its directory except its landing records, and no fact read from git: no landing ordinal and no introducing author." Delete the `*` reach.
 - **LP-9.4 table:** `urn:ledger-set:<ns>/<id>` and `urn:ledger-role:<ns>/<id>`.
 - **LP-9.14:** a policy's `accept_role` is the `ledger:acceptRole` IRI's local part after `urn:ledger-role:<ns>/`.
 - **LP-9.15:** as amended by ruling 51, with these added to what it cannot check: D7 trust; `L009`; landed immutability; `A007`; and whether the store verified green. Once LP-6.32 lands, delete the bullet on a close in another namespace.
-- **LP-9.6:** depends on N-Q5.
+- **LP-9.6:** unchanged, with this note added: *"Ruling 81 narrows what this can deliver. An export carries no fact read from git, so it supports signatures and key windows, but not the role check as of each act (`A006`) or D7's trust. What a pin or snapshot should carry beyond the export is open for the pinning design."*
 
 **Appendix C notes:**
 - v1.9, the layout and the re-founding (§3.11's draft);
@@ -878,7 +904,7 @@ One per unit of work, in order. Sizes are S, M and L.
 | # | Title | Cites | Size | Depends on | Appendix C note |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Load every store from `ns/<ns>/`; refuse flat paths at the verified commit | §3.1 | L | — | Yes (v1.9) |
-| 2 | Read both path patterns in history; key landing, immutability, the `format:` comparison, `L009` and the base overlay by entity | §3.1.1 | L | 1 | Yes (v1.9) |
+| 2 | Detect flat history and refuse it with exit 2; the legacy capability (82): read both path patterns in history, and key landing, immutability, the `format:` comparison, `L009` and the base overlay by entity | §3.1.1 | L | 1 | Yes (v1.9) |
 | 3 | Refuse an entity outside its directory's namespace, including revocation targets (ruling 45) | §3.7 | S | 1 | Yes |
 | 4 | Refuse `supersedes` into another namespace on live claims (rulings 43, 75) | §3.7 | S | 1 | No |
 | 5 | Authority per namespace: genesis, roles, grants; scopes read inside it; graph stage per namespace | §3.2 | L | 1 | Yes |
@@ -888,7 +914,7 @@ One per unit of work, in order. Sizes are S, M and L.
 | 9 | Re-lay out the fixtures; rewrite the tests of §3.11; the re-founding note | §3.11 | M | 1 to 8 | Yes (the re-founding note) |
 | 10 | Re-lay out this repository's store and regenerate its exports | §3.11 | S | 2, 9 | No |
 | 11 | Namespace move act (format 8) with its landing record, written at departure: the source check, departure, arrival, successive records, `A007` | §3.5 | L | 2, 5 | Yes (format 8) |
-| 12 | Acceptance tests AC-1, AC-32, AC-63 to AC-65 | §4 | S | 3, 10, 11 | No |
+| 12 | Acceptance tests AC-1, AC-32, AC-63 to AC-65, AC-82 to AC-84 | §4 | S | 3, 10, 11 | No |
 | 13 | Export per namespace: drop `*` reach; namespaced set and role IRIs | §3.9 | S | 5 | Yes; the analyzers' reader is told |
 | 14 | Ship the export-only verifier (ruling 51), with LP-9.15's limits | §3.9 | M | 13 | No |
 | 15 | Pins as trusted-source decisions with two key tokens; vendored snapshots; one pin per name; ungoverned not pinnable (the pinning format) | §3.6 | L | 13; the basis work | Yes |
@@ -933,13 +959,17 @@ The nineteen questions of the first draft are ruled:
 
 Ruling 81 follows from 64: the export carries no ordinals or authors.
 
-### Questions the rulings raise
+### The questions the rulings raised
 
-**N-Q1. The flat layout in history** (ruling 63; §3.1.1). One layout at the verified commit cannot be had without reading the flat layout in history. The alternatives are a permissive collapse, a record at re-layout, or rewritten history. As specified, every implementation that verifies a repository whose history predates v1.9 reads the flat path pattern in history, for good. Is that accepted?
+| Question | Ruling | In short |
+| --- | --- | --- |
+| N-Q1 the flat layout in history | 82 | A legacy capability, outside the verifier profile. A verifier without it refuses pre-v1.9 history and never passes it by collapsing landing order. (§3.1.1) |
+| N-Q3 frozen at the move act | 83 | Frozen in the source from the move act on. A later entity is `A007`; a move act landing after another entity is refiled. (§3.5) |
+| N-Q4 a move act with no policy | 84 | A move act always exists. It is signed where policy requires a signature, and unsigned and unchecked in a namespace with no policy. (§3.5) |
 
-If not, the remaining choice is between rulings: a record at re-layout, which the reply of 7 October excludes, or a collapse at re-layout, which reopens the laundering path of §2.3.
+### Open, for the pinning design
 
-**N-Q2. What a pinned snapshot cannot tell its holder** (ruling 81; §3.9). This is for the pinning design. A dependent holding a snapshot cannot know:
+**N-Q2. What a pinned snapshot cannot tell its holder** (ruling 81; §3.9). A dependent holding a snapshot cannot know:
 - whether the pinned namespace's repository was green when the snapshot was taken;
 - any order-dependent verdict on a pinned act;
 - trust beyond the anchor;
@@ -949,20 +979,7 @@ If not, the remaining choice is between rulings: a record at re-layout, which th
 
 What, if anything, should a pin or a snapshot carry so that a dependent can know the first and the fifth? No fix is designed here.
 
-**N-Q3. A namespace frozen at its move act** (ruling 65; §3.5). The record is written at departure and checked at the commit where the act lands, so two things follow:
-- any entity of the namespace landing after the act in the source is `A007`, and is filed again in the target;
-- a move act whose pull request merges after another landing in its namespace fails `A007` and is refiled.
-
-Is freezing the namespace from its move act on what ruling 65 intends?
-
-**N-Q4. A move act in a namespace with no policy** (rulings 64 and 65 against LP-4.35 and `authority::references::binding_refs`). Ruling 64 fixes the record by a signed move act. A namespace with no policy can bind no key, so it can sign nothing. AC-1 moves `hafeok.ddd`, which has no policy. The two rulings cannot both hold for it as written. Options:
-- (a) in a namespace with no policy the move act is unsigned and unchecked, as every act there is;
-- (b) a namespace is put under policy before it may move;
-- (c) a namespace with no policy moves with no move act and no record, and ruling 65's departure rule is extended to it.
-
-**N-Q5. LP-9.6 against ruling 81.** LP-9.6 (not implemented, from the accepted points of 5 October) says the export of a pinned namespace carries "enough of the authority log to verify its acts from the pinned key material". Without landing order, an export can show that signatures hold, but not `A006` as of each act or D7's trust (§3.9). Both cannot hold in full. Options:
-- narrow LP-9.6 to signatures and key windows;
-- or leave it for the pinning design, with N-Q2.
+**N-Q5. LP-9.6 against ruling 81.** LP-9.6 (not implemented) says the export of a pinned namespace carries "enough of the authority log to verify its acts from the pinned key material". Without facts read from git, an export can show that signatures and key windows hold, but not `A006` as of each act or D7's trust (§3.9). LP-9.6 is left as it is, with a note that ruling 81 narrows what it can deliver (§5). How far it can be delivered is for the pinning design, with N-Q2.
 
 ---
 

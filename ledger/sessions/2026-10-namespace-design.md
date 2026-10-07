@@ -928,6 +928,33 @@ This covers `ledger:set` on every version, the set nodes, `ledger:acceptRole` on
 
 **When.** The change lands with issue 13 of the PRD (export per namespace), after the layout and authority work. Exports regenerate in the same change.
 
+## Principal's replies to the questions the rulings raised, 2026-10-07
+
+Three of the five questions are ruled, as rulings 82 to 84 under a new heading "Questions the rulings raised" in `ledger/rulings/namespace-design-rulings-2026-10-07.md`. N-Q2 and N-Q5 go to the pinning design.
+
+| Ruling | Answers | In short |
+| --- | --- | --- |
+| 82 | N-Q1 | Reading the flat layout in history is a legacy capability, not part of the verifier profile. A verifier without it refuses a repository whose history predates v1.9, and never passes one by collapsing landing order. |
+| 83 | N-Q3 | A namespace is frozen in its source from its move act on. A later entity of it there is `A007`, and a move act landing after another entity of its namespace is refiled. |
+| 84 | N-Q4 | A move act always exists. It is signed where the namespace's policy requires a signature, and is unsigned and unchecked in a namespace with no policy. |
+
+### What changed in the PRD
+
+- **§3.1.1 (ruling 82).**
+  - Every verifier detects flat history, with one path-limited `git log --first-parent` over the flat paths.
+  - A verifier without the capability refuses such a repository with exit status 2, naming the first flat commit. Exit 2 rather than a finding is this design's reading of "refuses", and the PRD says so.
+  - The six readers of history are now the legacy capability, and the cost of that capability is optional.
+  - The reference implementation needs the capability, because this repository's history predates v1.9.
+- **§3.5 (rulings 83 and 84).**
+  - Every move has a move act. Under policy it is the genesis holder's act, judged by `A006` and signed where the policy requires. With no policy it is unsigned and unchecked.
+  - The namespace is frozen from the move act on. A move act whose pull request lands after another entity is refiled with a new record.
+  - In a namespace with no policy, the checks on the record still run: against git in the source, and on its digest and manifest in the target. "Unchecked" is read as applying to who filed the act, not to whether the record is true. That reading is this design's, and the PRD marks it so.
+- **AC-1** moves `hafeok.ddd` with an unsigned, unchecked move act, uses a verifier with the legacy capability, and checks the freeze. The dependency on N-Q4 is gone.
+- **New acceptance criteria.** AC-82 (with and without the capability), AC-83 (the freeze and the refiled act) and AC-84 (the signed act under policy, the unsigned act without). AC-63 keeps only the schema fault at the verified commit.
+- **§5.** LP-3.35 states the capability and the refusal, LP-6.33 states ruling 84, and LP-8.35 states ruling 83. LP-9.6 is left as it is, with a note that ruling 81 narrows what it can deliver.
+- **§6.** Issue 2 now covers the detection, the refusal and the capability. Issue 12 adds the new criteria.
+- **§7** maps N-Q1, N-Q3 and N-Q4 to rulings 82 to 84, and lists N-Q2 and N-Q5 as open for the pinning design.
+
 ## Checks
 
 ### First draft (commit `4a35c9b`)
@@ -952,6 +979,15 @@ This covers `ledger:set` on every version, the set nodes, `ledger:acceptRole` on
   - `cargo clippy -- -D warnings -D clippy::unwrap_used`: exit 0.
   - `cargo t`: exit 0. 2,083 passed, 0 failed and 2 ignored, over 90 `test result:` lines.
 - **`ledger verify --export`**, built from this branch and run on this branch and on a worktree of `main` at `846975a`: exit 0 on both, and byte-identical output, shown below.
+
+### Second revision (rulings 82 to 84)
+
+- **What changed.** The rulings file gains rulings 82 to 84. The PRD and this record are updated. Nothing else changed, and `main` has not moved from `846975a`.
+- **Gates**, with the four git-identity variables unset:
+  - `cargo build`: exit 0.
+  - `cargo clippy -- -D warnings -D clippy::unwrap_used`: exit 0.
+  - `cargo t`: exit 0. 2,083 passed, 0 failed and 2 ignored, over 90 `test result:` lines.
+- **`ledger verify --export`**: byte-identical output on this branch and on a worktree of `main` at `846975a`, the same as shown below.
 
 The first draft's `verify` output:
 

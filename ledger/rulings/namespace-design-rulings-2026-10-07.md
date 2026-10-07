@@ -47,3 +47,11 @@ Ruled by the principal on 7 October 2026. The numbers continue `verification-rul
 **80.** A namespace with no dependency in either direction is reported as "isolated".
 
 **81.** The export carries no landing ordinals and no introducing authors. Facts read from git stay out of the export, as ruled on 1 October.
+
+## Questions the rulings raised
+
+**82.** An implementation may read the flat layout in history, as a legacy capability. It is not part of the verifier profile. A verifier without it refuses a repository whose history predates v1.9; it never passes one by collapsing landing order. (N-Q1)
+
+**83.** A namespace is frozen in its source from its move act on. An entity of it that lands there afterwards is `A007`, and a move act that lands after another entity of its namespace is refiled. (N-Q3)
+
+**84.** A move act always exists and is signed where the namespace's policy requires a signature. In a namespace with no policy it is unsigned and unchecked, like every act there. (N-Q4)
