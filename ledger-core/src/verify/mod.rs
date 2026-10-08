@@ -277,3 +277,7 @@ mod duplicate_tests;
 #[path = "genesis_role_tests.rs"]
 #[cfg(test)]
 mod genesis_role_tests;
+
+#[path = "escape_acceptor_tests.rs"]
+#[cfg(test)]
+mod escape_acceptor_tests;
