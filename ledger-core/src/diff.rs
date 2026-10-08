@@ -116,6 +116,19 @@ fn diff_decisions(report: &mut DiffReport, from: &View, to: &View) {
     for (decision, &i) in &to.latest {
         let tip = &to.versions[i];
         let Some(&j) = from.latest.get(decision) else {
+            // Forked in `from`, settled in `to`: no latest to move from
+            // (ruling 54), so the move names the tips it left.
+            if from.is_forked(decision) {
+                let tips: Vec<String> = from.tips(decision).iter().map(|v| v.raw.hash.short().to_string()).collect();
+                report.tips_moved.push(TipMovement {
+                    decision: decision.clone(),
+                    from: format!("forked: {}", tips.join(", ")),
+                    to: tip.raw.hash.short().to_string(),
+                    fast_forward: false,
+                    allocation: None,
+                });
+                continue;
+            }
             let set = tip.parsed.as_ref().map(|p| p.set.as_str()).unwrap_or("?");
             report.decisions_added.push(format!("{decision} to `{set}`"));
             continue;
@@ -132,7 +145,8 @@ fn diff_decisions(report: &mut DiffReport, from: &View, to: &View) {
         }
     }
     for decision in from.latest.keys() {
-        if !to.latest.contains_key(decision) {
+        // A decision forked in `to` is still there; it is reported below.
+        if !to.has_version(decision) {
             report.decisions_removed.push(decision.clone());
         }
     }
