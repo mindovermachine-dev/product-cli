@@ -200,3 +200,21 @@ Listed, not fixed.
 7. **`ledger verify` notes no `origin/HEAD`** in a fresh clone or worktree ("landing computed on HEAD's own first-parent line"). It did not affect any result here.
 8. **The GitHub API reports #114 as closed and not merged**, though `main` carries its merge commit `e20fadc`. The repository was taken as authoritative.
 9. **Disk.** The session ran out of its disk allowance once, building many worktrees. Clearing `target/` recovered it.
+
+## 6. Merging
+
+The principal accepted all ten code pull requests on 8 October. They merged in step order: #126, #127, #129, #130, #131, #136, #132, #133, #134 and #135.
+
+Each branch was merged onto the one before it, so that each was tested in the state `main` would reach. CI then ran on all of them in parallel, and each merged once it was green. The final tree was checked locally before the last merges: clippy clean, `cargo t` 2,121 passed and 2 ignored, `ledger verify --export` identical to `main`, and `ddd diff-contracts` reporting no change. `main` after #135 is byte-identical to it.
+
+Stacking needed five fixes, each committed on the branch where it arose:
+
+- **LP-8.8** was edited by steps 1 and 4. Stacking kept both versions; one line now carries rulings 49 and 52.
+- **LP-8.10 and LP-8.11** were edited by steps 7 and 6. Each paragraph now carries both rulings, 57 and 54.
+- **The `L006` and `L007` rows** were edited by steps 7 and 8. One row each.
+- **LP-3.3 and LP-3.4** were edited by steps 9 and 3. One line each.
+- **Code.**
+  - `ledger-cli/tests/authority.rs`: steps 2 and 9 both appended tests there, and the resolution lost a closing brace. The full suite caught it before merge.
+  - `verify/mod_tests.rs` reached 411 lines with the tests of steps 6 and 7, so step 7's test moved to `verify/escape_acceptor_tests.rs`.
+
+A check that every protocol line each step added is present on `main`, and every line it replaced is gone, found nothing missing.
