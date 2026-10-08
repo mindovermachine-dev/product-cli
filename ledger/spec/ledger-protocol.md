@@ -1022,8 +1022,6 @@ Two verifiers conform when they report the same set of findings for the same sto
 | `L004` | `tolerance_override` is at or below `tolerance_floor_at_creation` |
 | `L005` | a decision's latest effective tier is below its set's current floor |
 | `L006` | an acceptance actor, or an escape's `accepted_by` on any version, is refused by section 3.4; extended to authority records by LP-8.16 |
-| `L007` | a stored `hash` does not equal the recomputed canonical hash; extended by LP-8.16 and LP-8.30 |
-| `L006` | an acceptance actor, or an escape's `accepted_by`, is refused by section 3.4; extended to authority records by LP-8.16 |
 | `L007` | a stored `hash` does not equal the recomputed canonical hash; extended by LP-8.16 and LP-8.30, landed entities and a log file's `format:` declaration included |
 | `L008` | an acceptance's `(decision, version)` pair matches no filed version |
 | `L009` | an acceptance's actor is not the author of the commit that introduced it |
