@@ -1021,7 +1021,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 | `L003` | a live acceptance of a decision's current version has `expires_at` before today |
 | `L004` | `tolerance_override` is at or below `tolerance_floor_at_creation` |
 | `L005` | a decision's latest effective tier is below its set's current floor |
-| `L006` | an acceptance actor, or an escape's `accepted_by`, is refused by section 3.4; extended to authority records by LP-8.16 |
+| `L006` | an acceptance actor, or an escape's `accepted_by` on any version, is refused by section 3.4; extended to authority records by LP-8.16 |
 | `L007` | a stored `hash` does not equal the recomputed canonical hash; extended by LP-8.16 and LP-8.30 |
 | `L008` | an acceptance's `(decision, version)` pair matches no filed version |
 | `L009` | an acceptance's actor is not the author of the commit that introduced it |
@@ -1033,7 +1033,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 
 These notes are part of the specification, not implementation detail:
 
-- **LP-8.10** (V) **Only the latest version of a decision is judged** by `L001`, `L003`, `L005`, `L010` and `L014`. (`L013` judges every version against its predecessors: a rename anywhere in the chain is a rename.) An acceptance of a superseded version was already invalidated when the hash moved; reporting it again is noise on a resolved fact.
+- **LP-8.10** (V) **Only the latest version of a decision is judged** by `L001`, `L003`, `L005`, `L010` and `L014`. (`L013` judges every version against its predecessors: a rename anywhere in the chain is a rename. `L006` judges an escape's `accepted_by` on every version, ruling 57: a model is never an escape's acceptor, in history either.) An acceptance of a superseded version was already invalidated when the hash moved; reporting it again is noise on a resolved fact.
 - **LP-8.11** (V) **"Latest" derives from the parent DAG, never from file or ULID order** (spec v1.2). The latest version of a decision is the unique version whose hash no other version of the same decision names as `parent`. Content-identical filings (one hash filed more than once) are one version. A chain that cannot name one tip (two versions unclaimed as parents, the store two divergent writers leave behind) has no latest: an implementation MUST NOT resolve the ambiguity by any ordering heuristic. The classes LP-8.10 names skip a forked decision, and `G004` (section 8.6) is its one finding (ruling 54). The reference implementation refuses authoring acts against the forked decision until a recorded arbitration settles the chain.
 - **LP-8.12** (V) **A revoked acceptance is not judged** for expiry.
 - **LP-8.13** (V) **`L008` checks the pair.** An acceptance naming one decision while signing another's hash is signing nothing about the decision it claims to accept.
@@ -1451,6 +1451,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 52 applied: a sidecar on an act no policy governs is a schema fault (LP-4.7, LP-4.30, LP-8.8). Such a sidecar was never opened, and the export carried it as a signature. No class added; no digest moves. |
 | 7 October 2026 | Ruling 53 applied: a `rotate` verifies only against the key it closes, and a writer signs a `rotate` with that key (LP-4.12). The reference had accepted any live key of the principal. No class added; no digest moves. |
 | 7 October 2026 | Ruling 54 applied: a forked decision has no latest version; the latest-only classes skip it and `G004` is its one finding (LP-8.10, LP-8.11). New LP-8.34 states what each reader of the latest version does for a decision that has none. The reference had judged a smallest-hash stand-in tip. No class added; no digest moves. |
+| 7 October 2026 | Ruling 57 applied: `L006` judges an escape's `accepted_by` on every version, not only the latest (LP-8.9, LP-8.10). No class added; no digest moves. |
 
 ### B.1 Revisions of the absorbed format document
 
