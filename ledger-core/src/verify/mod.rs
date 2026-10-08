@@ -13,6 +13,7 @@
 pub mod acts;
 pub mod authority;
 pub mod disposition;
+mod genesis_role;
 pub mod history;
 pub mod integrity;
 pub mod keys;
@@ -171,6 +172,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     let signing = crate::signing::check::check(store, &landing, opts.today);
     findings.extend(signing.findings.iter().cloned());
     findings.extend(history::findings(store, &landing));
+    findings.extend(genesis_role::findings(store, &landing));
 
     let mut report = Report {
         entries: store.entry_count(),
@@ -271,3 +273,7 @@ mod tests;
 #[path = "duplicate_tests.rs"]
 #[cfg(test)]
 mod duplicate_tests;
+
+#[path = "genesis_role_tests.rs"]
+#[cfg(test)]
+mod genesis_role_tests;
