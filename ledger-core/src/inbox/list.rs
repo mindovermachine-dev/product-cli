@@ -229,6 +229,8 @@ pub fn grant_on(index: &Index, branch: &Branch, holder: &Identity, decision: &st
     let path = index.path(&branch.repository)?;
     let store = crate::revision::load_at(&path, &branch.rev).ok()?;
     let view = crate::verify::view::View::build(&store);
+    // A forked decision has no latest version (ruling 54), so no set to
+    // check the role against: it is not offered for affirmation.
     let set = view.latest.get(decision).and_then(|i| view.versions.get(*i)).map(|v| v.raw.set.clone())?;
     let ns = decision.strip_prefix("dec:")?.split('/').next()?.to_string();
     holder_grant(&Authority::build(&store), holder, &ns, &set, as_role)

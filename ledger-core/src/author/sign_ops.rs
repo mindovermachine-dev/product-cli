@@ -7,7 +7,8 @@
 //! verb refuses:
 //!
 //! - a configured key that is not the signer's live key in the namespace
-//!   (or, for a self-bound binding, the key being bound);
+//!   (or, for a self-bound binding, the key being bound; for a `rotate`,
+//!   the key it closes);
 //! - a software key where the policy requires hardware-backed (`-sk`) keys;
 //! - an **agent-reported unconfirmed key**: a software key whose private
 //!   half only an agent holds (the configured file is a public key). Nothing
@@ -31,7 +32,9 @@ pub(crate) struct ToSign<'a> {
     pub namespace: &'a str,
     pub ulid: &'a str,
     pub bytes: Vec<u8>,
-    /// The key a self-bound binding binds — it signs itself.
+    /// The one key that must sign, as `(key_type, key)`: the key a
+    /// self-bound binding binds (it signs itself), or the key a `rotate`
+    /// closes (LP-4.12, ruling 53).
     pub own_key: Option<(&'a str, &'a str)>,
     /// The genesis holder's first key in a later namespace (D7): signed by
     /// a live key of theirs bound in any namespace.
@@ -87,7 +90,13 @@ impl Author {
             )));
         }
         let bound = match what.own_key {
-            Some((t, k)) => t == key_type && k == blob,
+            Some((t, k)) if t != key_type || k != blob => {
+                return Err(AuthorError::Unauthorized(format!(
+                    "{} is not the key this act must be signed by: a self-bound binding is signed by the key it binds, and a `rotate` by the key it closes (LP-4.12) — set `git config user.signingkey` to that key",
+                    key.display()
+                )));
+            }
+            Some(_) => true,
             None => self.live_key(store, (!what.any_namespace).then_some(what.namespace), &key_type, &blob),
         };
         if !bound {
