@@ -99,8 +99,12 @@ pub fn acceptance(version: &VersionRaw) -> Acceptance {
 }
 
 pub fn changeset(versions: Vec<VersionRaw>, acceptances: Vec<Acceptance>) -> ChangeSet {
+    // One identity object per decision, however many of its versions the
+    // change-set carries: a decision is introduced once (LP-5.11).
+    let mut introduced = std::collections::BTreeSet::new();
     let decisions = versions
         .iter()
+        .filter(|v| introduced.insert(v.decision.to_string()))
         .map(|v| DecisionRecord {
             id: v.decision.clone(),
             created_at: stamp("2026-08-10T09:14:22Z"),

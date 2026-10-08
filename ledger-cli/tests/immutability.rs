@@ -72,7 +72,11 @@ fn an_acceptance_appended_to_a_landed_file_after_the_close_fails_l011() {
     assert_eq!(code, 1, "{text}");
     assert!(text.contains("[L011]") && text.contains("not dated and landed before the close"), "{text}");
     assert!(!text.contains("need re-acceptance"), "it lands where it was appended, not with its file: {text}");
-    assert!(!text.contains("[L007]"), "appending changes no landed entity, and the format bump alone is none: {text}");
+    assert!(!text.contains("has changed") && !text.contains("is gone"), "appending changes no landed entity: {text}");
+    // The append needs format 7 and raised the declaration in the same step,
+    // which is not a correction (LP-3.16, ruling 58): `L007` on the
+    // declaration, beside the `L011` the appended act earns.
+    assert!(text.contains("[L007]") && text.contains("its format declaration was 6 at"), "{text}");
 }
 
 #[test]

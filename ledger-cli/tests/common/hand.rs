@@ -172,7 +172,9 @@ pub fn file_holding(repo: &Repo, id: &str) -> std::path::PathBuf {
 
 /// Move the acceptance `id` out of its own change-set and append it to the
 /// landed file `into` — as a hand editing a landed file would. The target's
-/// `format:` is raised to 7 when lower, which by itself changes no entity.
+/// `format:` is raised to 7 when lower: that changes no entity, but a raise
+/// in the same step as an append is no correction (LP-3.16, ruling 58), so
+/// `verify` reports it as `L007` on the declaration.
 pub fn append_into(repo: &Repo, id: &str, into: &std::path::Path) {
     use serde_yaml::Value;
     let from = file_holding(repo, id);

@@ -4,7 +4,9 @@
 //! held on the verified commit's first-parent line must be present, and
 //! identical to what landed, at the verified commit (the working tree
 //! included). An entity is an item of an entity list, or the change-set's
-//! header ([`crate::landed`]); re-declaring `format:` alone changes none.
+//! header ([`crate::landed`]); re-declaring `format:` alone changes none,
+//! but the declaration itself is compared along the file's history: the
+//! one change it may undergo is a correction (LP-3.16, ruling 58).
 //! Appending a new entity to a landed file is not a change to any other
 //! one — it lands where it was appended ([`Landing::entity_index`]).
 //!
@@ -40,6 +42,7 @@ pub fn findings(store: &Store, landing: &Landing) -> Vec<Finding> {
         let now = std::fs::read_to_string(store.root.join(&path)).ok();
         if path.starts_with(".decisions/log/") {
             out.extend(log_file(&store.root, &path, &versions, now.as_deref()));
+            out.extend(format_changes(&store.root, &path, &versions, now.as_deref()));
         } else if let Some(landed) = content_at(&store.root, first, &path) {
             out.extend(whole_file(&path, first, &landed, now.as_deref()));
         }
@@ -78,6 +81,47 @@ fn log_file(root: &Path, path: &str, versions: &[String], now: Option<&str>) -> 
             ))
         })
         .collect()
+}
+
+/// Each change of the file's `format:` declaration along its history, the
+/// working tree last (ruling 58). The one change allowed is a correction
+/// (LP-3.16): a raise, to exactly the lowest format the content needs, with
+/// no entity changed in the same step. Anything else is `L007`.
+fn format_changes(root: &Path, path: &str, versions: &[String], now: Option<&str>) -> Vec<Finding> {
+    let mut steps: Vec<(String, String)> =
+        versions.iter().filter_map(|c| content_at(root, c, path).map(|t| (short(c).to_string(), t))).collect();
+    if let Some(now) = now {
+        steps.push(("the working tree".to_string(), now.to_string()));
+    }
+    steps
+        .windows(2)
+        .filter_map(|pair| {
+            let [(from_at, from), (to_at, to)] = pair else { return None };
+            let (was, is) = (declared(from)?, declared(to)?);
+            if was == is || is_correction(from, to, was, is) {
+                return None;
+            }
+            Some(Finding::new(
+                VerifyClass::L007,
+                path,
+                format!(
+                    "its format declaration was {was} at {from_at} and is {is} at {to_at} — a landed declaration only rises, \
+                     to the lowest format the content needs, with nothing else changed (LP-3.16)"
+                ),
+            ))
+        })
+        .collect()
+}
+
+/// A raise to exactly what the content needs, and nothing else changed.
+fn is_correction(from: &str, to: &str, was: u64, is: u64) -> bool {
+    let needed = serde_yaml::from_str::<crate::changeset::ChangeSet>(to).ok().map(|cs| u64::from(crate::format::needed_for(&cs)));
+    is > was && needed == Some(is) && entities(from) == entities(to)
+}
+
+/// The `format:` a file's text declares.
+fn declared(text: &str) -> Option<u64> {
+    serde_yaml::from_str::<Value>(text).ok()?.get("format")?.as_u64()
 }
 
 /// A role file or a sidecar: the file is the entity.

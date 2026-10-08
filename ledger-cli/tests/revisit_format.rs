@@ -101,6 +101,23 @@ fn a_landed_declaration_may_be_raised_but_an_entity_beside_it_may_not_change() {
     assert!(text.contains("[L007]") && text.contains("the change-set header") && text.contains("has changed"), "{text}");
 }
 
+/// Ruling 58: the correction is a raise with **nothing else** changed. The
+/// same raise in one step with an edit beside it is not a correction, and
+/// fails `L007` on the declaration as well as on the entity.
+#[test]
+fn a_raise_beside_another_edit_is_not_a_correction() {
+    let repo = Repo::human();
+    let file = revised_onto_a_reopen_edge(&repo);
+    let as_written = std::fs::read_to_string(&file).expect("read");
+    std::fs::write(&file, as_written.replacen("format: 4", "format: 1", 1)).expect("write");
+    hand::commit(&repo, "landed as the pre-#67 writer left it");
+    std::fs::write(&file, as_written.replacen("note: edge re-typed", "note: edge re-typed, quietly", 1)).expect("write");
+    hand::commit(&repo, "raised, and the note edited");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 1, "{text}");
+    assert!(text.contains("its format declaration was 1 at") && text.contains("and is 4 at"), "{text}");
+}
+
 #[test]
 fn the_corrected_files_declare_exactly_what_they_need() {
     let log = workspace().join(".decisions/log");

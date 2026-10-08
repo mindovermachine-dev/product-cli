@@ -313,7 +313,10 @@ fn latest_is_the_dag_tip_whichever_file_order_the_ulids_impose() {
 }
 
 #[test]
-fn a_forked_chain_is_recorded_and_the_representative_is_order_independent() {
+fn a_forked_chain_is_recorded_and_has_no_latest_in_any_order() {
+    // Ruling 54: a forked decision has no latest version. This test once
+    // asserted a smallest-hash stand-in; now no reading picks a tip, in
+    // either file order, and the decision still counts as one.
     let root = testkit::sealed(testkit::version());
     let mut left = testkit::version();
     left.parent = Some(root.hash.clone());
@@ -325,7 +328,6 @@ fn a_forked_chain_is_recorded_and_the_representative_is_order_independent() {
     let right = testkit::sealed(right);
 
     let id = testkit::decision_id().to_string();
-    let mut picks = Vec::new();
     for versions in [
         vec![root.clone(), left.clone(), right.clone()],
         vec![right.clone(), root.clone(), left.clone()],
@@ -334,15 +336,39 @@ fn a_forked_chain_is_recorded_and_the_representative_is_order_independent() {
         let view = crate::verify::view::View::build(&store);
         assert!(view.is_forked(&id), "two tips from one parent is a fork");
         assert_eq!(view.forked.get(&id).map(Vec::len), Some(2));
-        let pick = view
-            .latest
-            .get(&id)
-            .and_then(|i| view.versions.get(*i))
-            .map(|v| v.raw.hash.clone())
-            .expect("a representative");
-        picks.push(pick);
+        assert!(!view.latest.contains_key(&id), "a forked decision has no latest version");
+        assert_eq!(view.latest_versions().count(), 0);
+        assert_eq!(view.decision_count(), 1, "it is still a decision");
+        let tips: Vec<String> = view.tips(&id).iter().map(|v| v.raw.hash.to_string()).collect();
+        let mut expected = vec![left.hash.to_string(), right.hash.to_string()];
+        expected.sort();
+        assert_eq!(tips, expected, "both tips, in hash order, none picked");
     }
-    assert_eq!(picks[0], picks[1], "the stand-in tip does not depend on file order");
+}
+
+/// Ruling 54, the verification report's case 5b and 5c: the same defect, a
+/// tip with no allocation, drew `L001` when that tip sorted first by hash
+/// and nothing when it sorted last. The latest-only classes now skip a
+/// forked decision whichever tip carries the defect.
+#[test]
+fn latest_only_classes_skip_a_forked_decision_whichever_tip_is_defective() {
+    let root = testkit::sealed(testkit::version());
+    for statement in ["the right writer's revision", "the right writer's revision, unallocated 1", "z", "a"] {
+        let mut left = testkit::version();
+        left.parent = Some(root.hash.clone());
+        left.statement = "the left writer's revision".into();
+        let mut right = testkit::version();
+        right.parent = Some(root.hash.clone());
+        right.statement = statement.into();
+        right.allocation = None;
+        right.discharge.clear();
+        let mut cs = testkit::changeset(vec![root.clone()], Vec::new());
+        cs.versions.extend([testkit::sealed(left), testkit::sealed(right)]);
+        let report = run(cs);
+        assert!(report.findings.is_empty(), "{statement}: {:?}", report.findings);
+        assert!(report.awaiting_acceptance.is_empty(), "no latest, so not awaiting: {statement}");
+        assert_eq!(report.decisions, 1);
+    }
 }
 
 #[test]

@@ -306,3 +306,85 @@ fn a_grantor_below_star_is_refused_a_grant_over_another_scope() {
     repo.ok(&["grant", "new", "delegate", "--to", "third@customer.example", "--scope", &format!("ns:{NS}")]);
     repo.ok(&["verify", "--no-blame"]);
 }
+
+/// Ruling 50, the verification report's section 2: a hand edit made the
+/// genesis role carry `accept-decision` and named it as the policy's accept
+/// role. `verify` was conformant, and the genesis grant alone accepted. Both
+/// halves are now schema faults at verification.
+#[test]
+fn a_policy_naming_the_genesis_role_and_a_widened_genesis_role_fail_verify() {
+    use ledger_core::authority::payload::policy_hash;
+    use ledger_core::changeset::ChangeSet;
+    let repo = Repo::with_identity(OWNER);
+    repo.declare();
+    repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
+    let log = repo.path().join(".decisions/log");
+    let file = std::fs::read_dir(&log).expect("log").flatten().map(|e| e.path()).next().expect("the init change-set");
+    let mut cs: ChangeSet = serde_yaml::from_str(&std::fs::read_to_string(&file).expect("read")).expect("parse");
+    for p in &mut cs.policies {
+        p.accept_role = "steward".into();
+        p.hash = policy_hash(p);
+    }
+    std::fs::write(&file, serde_yaml::to_string(&cs).expect("yaml")).expect("write");
+    let roles = repo.path().join(".decisions/roles");
+    let steward = std::fs::read_to_string(roles.join("steward.yml")).expect("steward");
+    std::fs::write(roles.join("steward.yml"), steward.replace("- rotate-genesis\n", "- rotate-genesis\n- accept-decision\n")).expect("widen");
+    std::fs::remove_file(roles.join("acceptor.yml")).expect("acceptor");
+    common::hand::commit(&repo, "the genesis role is the accept role");
+    let out = repo.ledger(&["verify", "--no-blame"]);
+    let text = common::both(&out);
+    assert_eq!(out.status.code(), Some(1), "{text}");
+    assert!(text.contains("maps accept-decision to `steward`, the genesis role as of the policy"), "{text}");
+    assert!(text.contains("[SCHEMA] steward: is the genesis role and carries accept-decision"), "{text}");
+}
+
+/// Ruling 50 extends D9 (f) to the writer, the report's section 13.2: an
+/// existing root role that also carries a decision capability is refused as
+/// the genesis role.
+#[test]
+fn bootstrap_refuses_an_existing_root_role_that_carries_a_decision_capability() {
+    let repo = Repo::with_identity(OWNER);
+    let role = "format: 6\nid: steward\nowner: owner@customer.example\nmay: [grant-role, revoke-grant, declare-unavailability, rotate-genesis, accept-decision]\ncreated_at: 2026-10-07\n";
+    std::fs::create_dir_all(repo.path().join(".decisions/roles")).expect("roles dir");
+    std::fs::write(repo.path().join(".decisions/roles/steward.yml"), role).expect("role");
+    let refused = repo.refused(&["init", "--namespace", NS, "--external-ref", "m", "--without-key"]);
+    assert!(refused.contains("cannot be the genesis role") && refused.contains("carries accept-decision"), "{refused}");
+    assert!(repo.log_files().is_empty(), "a refused init files nothing");
+}
+
+/// No agent identity and no non-interactive session produces an
+/// acceptance, in a namespace whose accept role the genesis holder holds.
+#[test]
+fn no_agent_identity_and_no_non_interactive_session_produces_an_acceptance() {
+    let (repo, _grant) = governed_accepting();
+    let id = repo.add("Money is decimal.", &[]);
+    let before = repo.log_files();
+    let piped = repo.piped(&["accept", &id]);
+    assert_ne!(piped.status.code(), Some(0), "{}", common::both(&piped));
+    assert_eq!(repo.log_files(), before, "a piped accept files nothing");
+    for agent in ["claude@anthropic.com", "noreply@anthropic.com", "github-actions@github.com"] {
+        repo.act_as(agent);
+        let out = repo.tty(&["accept", &id]);
+        assert_ne!(out.status.code(), Some(0), "{agent}: {}", common::both(&out));
+        assert_eq!(repo.log_files(), before, "{agent}: nothing filed");
+    }
+    repo.act_as(OWNER);
+    repo.ok_tty(&["accept", &id]);
+    assert_eq!(repo.log_files().len(), before.len() + 1, "the holder, at a terminal, accepts");
+}
+
+/// Ruling 59, the verification report's section 9: a set whose id carries a
+/// dot can be declared, and a grant scoped to it was refused by the writer
+/// and failed the whole change-set at parse. A `set:` scope now takes every
+/// valid set id.
+#[test]
+fn a_set_scope_with_a_dot_is_granted_and_verifies() {
+    let repo = governed();
+    repo.ok(&["declare", "--set", "money.rules", "--tolerance-floor", "T1"]);
+    let out = repo.ok(&["grant", "new", "acceptor", "--to", ARCHITECT, "--scope", "set:money.rules"]);
+    let grant = grant_id(&out);
+    let store = ledger_core::store::load(repo.path());
+    let scope = store.log.iter().flat_map(|l| l.file.grants.iter()).find(|g| g.id.to_string() == grant).map(|g| g.scope.to_string());
+    assert_eq!(scope.as_deref(), Some("set:money.rules"));
+    repo.ok(&["verify", "--no-blame"]);
+}
