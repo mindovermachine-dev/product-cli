@@ -162,7 +162,7 @@ docs/decisions/<ns>.nt        the committed export of a namespace
   - **at or above the format that retired a shape the file uses.** For example, a legacy revocation (`acceptance`, `by`) in a file declaring format 6 or above, the format that retired that shape (section 5.6).
 
   A higher declaration is otherwise not a fault.
-- **LP-3.16** (W, V) A landed file's `format:` may be corrected (ruled 2026-10-05, #81). `format` is not an entity and not hashed content, so changing it alone changes nothing the record fixed. A correction may only **raise** the declaration, only **to the lowest format the file's content needs**, and nothing else in the file may change in the same edit. Any other change is judged entity by entity (LP-8.30). Lowering a declaration, or raising it past what the content needs, is not a correction.
+- **LP-3.16** (W, V) A landed file's `format:` may be corrected (ruled 2026-10-05, #81). `format` is not an entity and not hashed content, so changing it alone changes nothing the record fixed. A correction may only **raise** the declaration, only **to the lowest format the file's content needs**, and nothing else in the file may change in the same edit. Lowering a declaration, or raising it past what the content needs, is not a correction. A verifier compares the declaration along the file's first-parent history, the working tree last, and any change of it other than a correction is `L007` (LP-8.30, ruling 58).
 
 | Format | Introduced | Spec revision |
 | --- | --- | --- |
@@ -1022,7 +1022,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 | `L004` | `tolerance_override` is at or below `tolerance_floor_at_creation` |
 | `L005` | a decision's latest effective tier is below its set's current floor |
 | `L006` | an acceptance actor, or an escape's `accepted_by` on any version, is refused by section 3.4; extended to authority records by LP-8.16 |
-| `L007` | a stored `hash` does not equal the recomputed canonical hash; extended by LP-8.16 and LP-8.30 |
+| `L007` | a stored `hash` does not equal the recomputed canonical hash; extended by LP-8.16 and LP-8.30, landed entities and a log file's `format:` declaration included |
 | `L008` | an acceptance's `(decision, version)` pair matches no filed version |
 | `L009` | an acceptance's actor is not the author of the commit that introduced it |
 | `L010` | a `judgment`'s `actor` is refused by section 3.4 (spec v1.1) |
@@ -1100,6 +1100,8 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
   - an edited role file: **roles are write-once**, so a new role and new grants supersede.
 
   Appending a new entity to a landed file changes no other entity; the new one lands where it was appended (LP-8.24).
+
+  A log file's `format:` declaration is not an entity, but it is compared too (ruling 58): each change of it along the same history, the working tree last, MUST be a correction under LP-3.16, a raise to exactly the lowest format the content needs with no entity changed in the same step; otherwise `L007`.
 - **LP-8.32** (V) `L009` reads the author of the commit that introduced an acceptance and compares its email address, as an identity (section 3.4), with the acceptance's actor. A repository with no git history has the check skipped entirely (LP-8.14).
 
 ### 8.8 Notices
@@ -1452,6 +1454,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 53 applied: a `rotate` verifies only against the key it closes, and a writer signs a `rotate` with that key (LP-4.12). The reference had accepted any live key of the principal. No class added; no digest moves. |
 | 7 October 2026 | Ruling 54 applied: a forked decision has no latest version; the latest-only classes skip it and `G004` is its one finding (LP-8.10, LP-8.11). New LP-8.34 states what each reader of the latest version does for a decision that has none. The reference had judged a smallest-hash stand-in tip. No class added; no digest moves. |
 | 7 October 2026 | Ruling 57 applied: `L006` judges an escape's `accepted_by` on every version, not only the latest (LP-8.9, LP-8.10). No class added; no digest moves. |
+| 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 
 ### B.1 Revisions of the absorbed format document
 
