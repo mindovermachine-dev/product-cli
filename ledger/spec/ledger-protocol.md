@@ -1086,7 +1086,7 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
 ### 8.7 What a verifier reads from git: landing and order (D6)
 
 - **LP-8.24** (V) An entity's **landing commit** is the first commit on the first-parent history of the verified commit whose version of the entity's file contains the entity. For a file never modified after it was added, that is the commit that added it. For a file modified since, its first-parent history is walked and each entity lands at the first version holding it, so an entry appended to a landed file lands where it was appended, never with the file. Its **position** is (landing index, `at`). An entity no commit holds (uncommitted) lands at the tip.
-- **LP-8.25** (V) An entity of a change-set file is one item of one entity list, keyed by its list and its `id` (a version by its `hash`, a legacy revocation by the acceptance it revokes), or the file's header fields (`id`, `created_at`, `created_by`, `parents`, `note`) taken together. `format:` is not an entity: changing a file's format declaration alone changes no entity. A role file and a sidecar are each one entity.
+- **LP-8.25** (V) An entity of a change-set file is one item of one entity list, keyed by its list and its `id` (a version by its `hash`, a legacy revocation by the acceptance it revokes), or the file's header fields (`id`, `created_at`, `created_by`, `parents`, `note`) taken together. `parents` is a list but not an entity list: adding or removing a parent changes the header, so a landed change-set's `parents` is immutable (ruling 60). `format:` is not an entity: changing a file's format declaration alone changes no entity. A role file and a sidecar are each one entity.
 - **LP-8.26** (V) Order:
   - **Before.** An act is before a terminating entry (a key's close, a grant's revocation) when it landed no later and its `at` is earlier. In one commit, `at` decides.
   - **Enabling entries** (a key's binding, a grant, a grant acceptance) cover an act when they are not after it: landed no later, `at` no later.
@@ -1456,6 +1456,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 57 applied: `L006` judges an escape's `accepted_by` on every version, not only the latest (LP-8.9, LP-8.10). No class added; no digest moves. |
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
+| 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
 
 ### B.1 Revisions of the absorbed format document
 
