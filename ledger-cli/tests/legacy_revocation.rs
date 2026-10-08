@@ -107,3 +107,39 @@ fn an_old_style_revocation_before_the_first_policy_stands() {
     assert_eq!(code, 0, "{text}");
     assert!(text.contains(&id), "the acceptance stays revoked, so the decision awaits acceptance: {text}");
 }
+
+/// Ruling 49, the verification report's case 3c. A hand-written change-set
+/// with an earlier ULID files a decision in an ungoverned namespace, an
+/// acceptance of it that reuses the governed acceptance's id, and an
+/// old-style revocation of that id by someone holding nothing. Resolved to
+/// the first filing, the revocation was judged in the ungoverned namespace,
+/// needed no grant and no signature, and unsaid the signed acceptance: the
+/// store was conformant. The duplicate id is now a schema fault.
+#[test]
+fn an_acceptance_id_reused_in_an_ungoverned_namespace_is_a_schema_fault() {
+    const EARLY: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDZ0";
+    const MALLORY: &str = "mallory@example";
+    let repo = Repo::with_identity(OWNER);
+    let acc = governed_and_accepted(&repo);
+    let dec = "dec:open.ns/01K2C4YQJ3F8M0PT5W7NZ9RDZ1";
+    let version = format!(
+        "decision: {dec}\nhash: sha256:{zero}\nset: ledger-design\nstatement: Anything at all.\nallocation: constraint\ndischarge: [analyzer:X]\ntolerance_floor_at_creation: T1\n",
+        zero = "0".repeat(64)
+    );
+    let raw: ledger_core::version::VersionRaw = serde_yaml::from_str(&version).expect("version");
+    let hash = ledger_core::hash::version_hash(&raw).to_string();
+    let text = format!(
+        "format: 1\nid: cs:{EARLY}\ncreated_at: 2026-08-10T09:14:22Z\ncreated_by: {MALLORY}\n\
+decisions:\n- id: {dec}\n  created_at: 2026-08-10T09:14:22Z\n  created_by: {MALLORY}\n\
+versions:\n- decision: {dec}\n  hash: {hash}\n  set: ledger-design\n  statement: Anything at all.\n  allocation: constraint\n  discharge: [analyzer:X]\n  tolerance_floor_at_creation: T1\n\
+acceptances:\n- id: {acc}\n  decision: {dec}\n  version: {hash}\n  actor: {MALLORY}\n  at: 2026-08-10T09:20:00Z\n\
+revocations:\n- acceptance: {acc}\n  at: 2026-08-10T09:30:00Z\n  by: {MALLORY}\n  reason: withdrawn\n"
+    );
+    std::fs::write(repo.path().join(format!(".decisions/log/{EARLY}.yml")), text).expect("write");
+    repo.act_as(MALLORY);
+    hand::commit(&repo, "a reused acceptance id in an ungoverned namespace");
+    let (code, text) = verify(&repo);
+    assert_eq!(code, 1, "{text}");
+    assert!(text.contains(&format!("[SCHEMA] {acc}: this id is filed twice")), "{text}");
+    assert!(!text.contains(&format!("[SCHEMA] {dec}")), "the decision itself is introduced once: {text}");
+}

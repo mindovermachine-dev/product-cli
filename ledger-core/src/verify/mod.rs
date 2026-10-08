@@ -270,6 +270,10 @@ mod order_tests;
 #[cfg(test)]
 mod tests;
 
+#[path = "duplicate_tests.rs"]
+#[cfg(test)]
+mod duplicate_tests;
+
 #[path = "genesis_role_tests.rs"]
 #[cfg(test)]
 mod genesis_role_tests;
