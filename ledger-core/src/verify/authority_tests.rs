@@ -12,7 +12,9 @@ fn run(store: &crate::store::Store) -> Report {
 }
 
 fn steward() -> Vec<crate::authority::Role> {
-    vec![role("steward", Capability::ALL)]
+    // The root role: the genesis role carries no decision capability
+    // (D9 (f)), and a genesis role that did would be a schema fault (ruling 50).
+    vec![role("steward", Capability::ROOT)]
 }
 
 fn messages(report: &Report) -> String {
@@ -113,7 +115,7 @@ fn every_authority_node_is_emitted_with_its_shape_triples() {
     cs.unavailabilities.push(away("3", &g, "2026-10-10T00:00:00Z", Some("2026-10-12T00:00:00Z")));
     let ttl = crate::graph::turtle::emit(&fixture::store(steward(), cs));
     for needle in [
-        "<urn:ledger-role:steward>", "ledger:may \"accept-decision\"", "a ledger:Grant",
+        "<urn:ledger-role:steward>", "ledger:may \"grant-role\"", "a ledger:Grant",
         "ledger:genesis \"true\"", "ledger:rank \"0\"^^xsd:integer", "a ledger:GrantAcceptance",
         "ledger:signsHash", "a ledger:Unavailability", "ledger:basis \"self\"",
     ] {
