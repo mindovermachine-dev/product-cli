@@ -56,18 +56,18 @@ impl Author {
     ) -> Result<Applied, AuthorError> {
         let store = self.load();
         let auth = Authority::build(&store);
-        let (namespace, principal) = match &closes {
-            Some(id) => auth
-                .bindings
-                .iter()
-                .find(|b| b.id == *id && b.act.opens())
-                .map(|b| (b.namespace.clone(), b.principal.clone()))
-                .ok_or_else(|| AuthorError::Usage(format!("{id} opens no key window")))?,
+        let target = closes.as_ref().map(|id| {
+            auth.bindings.iter().copied().find(|b| b.id == *id && b.act.opens()).ok_or_else(|| AuthorError::Usage(format!("{id} opens no key window")))
+        }).transpose()?;
+        let (namespace, principal) = match target {
+            Some(b) => (b.namespace.clone(), b.principal.clone()),
             None => {
                 let k = key.as_ref().ok_or_else(|| AuthorError::Usage("`add` names a key".into()))?;
                 (k.namespace.clone(), k.principal.clone().unwrap_or_else(|| self.who.clone()))
             }
         };
+        // A `rotate` is signed by the key it closes (LP-4.12, ruling 53).
+        let closed_key = target.filter(|_| act == BindingAct::Rotate).and_then(|b| b.key_type.clone().zip(b.key.clone()));
         let policy = auth.policy(&namespace).cloned().ok_or_else(|| {
             AuthorError::Usage(format!("namespace `{namespace}` has no policy — `ledger init --namespace {namespace}` first"))
         })?;
@@ -108,7 +108,7 @@ impl Author {
             namespace: &binding.namespace,
             ulid: &ulid,
             bytes: crate::authority::payload::binding_bytes(&binding),
-            own_key: own.as_ref().filter(|_| self_bound).map(|(t, k)| (t.as_str(), k.as_str())),
+            own_key: own.as_ref().filter(|_| self_bound).or(closed_key.as_ref()).map(|(t, k)| (t.as_str(), k.as_str())),
             any_namespace,
         };
         self.sign_under(&store, Some(&policy), what)?;

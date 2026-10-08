@@ -12,10 +12,11 @@
 //! other version of the same decision names as `parent`. A chain with more
 //! than one such tip is *forked* — two writers diverged — which the graph
 //! stage reports as `G004` and only `ledger merge --resolve` may settle.
-//! For a forked decision the map still holds a deterministic representative
-//! (the tip with the lexically smallest hash — clock-free, so the reading
-//! is stable under any file ordering), but nothing may treat that pick as
-//! a resolution: the store is non-conformant until a human arbitrates.
+//! **A forked decision has no latest version** (LP-8.11, ruling 54): it is
+//! absent from [`View::latest`] and its tips are in [`View::forked`], so no
+//! reading of the store picks one. Every reader of the latest version
+//! states what it does for a decision that has none: the latest-only gate
+//! classes skip it, and `G004` is its one finding.
 //!
 //! Assembling each wire version into its domain form happens here too, so a
 //! file that cannot describe a version reports once rather than once per
@@ -47,7 +48,8 @@ pub struct ViewedAcceptance<'a> {
 pub struct View<'a> {
     pub versions: Vec<ViewedVersion<'a>>,
     /// Decision id to the index of its latest version in `versions` — the
-    /// tip of the parent DAG, not the last file visited.
+    /// tip of the parent DAG, not the last file visited. A forked decision
+    /// has no entry: it has no latest version (ruling 54).
     pub latest: BTreeMap<String, usize>,
     /// Decisions whose parent DAG carries more than one tip: two writers
     /// diverged, and no reading of the store may resolve that silently.
@@ -112,10 +114,10 @@ impl<'a> View<'a> {
     /// hash as `parent`. Content-identical filings (one hash filed twice —
     /// both sides of a merge carrying the same act) collapse to their first
     /// appearance. One tip is the latest; several tips are a fork, recorded
-    /// for `G004` and the merge machinery, with the lexically smallest hash
-    /// standing in so every reading of the store stays total and
-    /// order-independent. No tip at all is only representable when stored
-    /// hashes lie (`L007` fails such a store); the last filing stands in.
+    /// for `G004` and the merge machinery, and the decision then has no
+    /// latest version: no ordering heuristic may pick one (LP-8.11). No tip
+    /// at all is only representable when stored hashes lie (`L007` fails
+    /// such a store); the last filing stands in.
     fn derive_latest(&mut self) {
         let mut by_decision: BTreeMap<String, Vec<usize>> = BTreeMap::new();
         for (i, viewed) in self.versions.iter().enumerate() {
@@ -151,8 +153,7 @@ impl<'a> View<'a> {
                 [tip] => {
                     self.latest.insert(decision, *tip);
                 }
-                [first, ..] => {
-                    self.latest.insert(decision.clone(), *first);
+                [_, _, ..] => {
                     self.forked.insert(decision, tips);
                 }
             }
@@ -199,13 +200,43 @@ impl<'a> View<'a> {
         self.forked.contains_key(decision)
     }
 
+    /// How many decisions the log holds versions of, forked ones included.
+    pub(crate) fn decision_count(&self) -> usize {
+        self.latest.len() + self.forked.len()
+    }
+
+    /// Whether the log holds any version of this decision.
+    pub(crate) fn has_version(&self, decision: &str) -> bool {
+        self.latest.contains_key(decision) || self.is_forked(decision)
+    }
+
+    /// The tips of a decision: its latest version, or every tip of a
+    /// forked chain in hash order. For readers that show what stands
+    /// without picking among tips.
+    pub(crate) fn tips(&self, decision: &str) -> Vec<&ViewedVersion<'a>> {
+        let indices = match (self.latest.get(decision), self.forked.get(decision)) {
+            (Some(i), _) => vec![*i],
+            (None, Some(tips)) => tips.clone(),
+            (None, None) => Vec::new(),
+        };
+        indices.into_iter().filter_map(|i| self.versions.get(i)).collect()
+    }
+
+    /// Whether this acceptance signs a tip of its decision — the latest
+    /// version, or any tip of a forked chain. A display reading; the gate
+    /// asks [`View::signs_latest`], which a forked decision never satisfies.
+    pub(crate) fn signs_a_tip(&self, a: &Acceptance) -> bool {
+        self.tips(&a.decision.to_string()).iter().any(|v| v.raw.hash == a.version)
+    }
+
     /// Whether this acceptance has been revoked.
     pub fn is_revoked(&self, a: &Acceptance) -> bool {
         self.revoked.contains(&a.id.to_string())
     }
 
     /// Whether this acceptance signs the current state of its decision.
-    /// An acceptance of a superseded version is history, not a live claim.
+    /// An acceptance of a superseded version is history, not a live claim,
+    /// and a forked decision has no current state to sign.
     pub fn signs_latest(&self, a: &Acceptance) -> bool {
         self.latest
             .get(&a.decision.to_string())

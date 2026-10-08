@@ -149,7 +149,8 @@ impl Author {
     }
 
     /// The genesis records: the root role (if new), grant, its acceptance.
-    /// An existing role of the root id must carry every root capability.
+    /// An existing role of the root id must carry every root capability and
+    /// no decision capability (D9 (f), extended by ruling 50).
     fn bootstrap(
         &mut self,
         store: &Store,
@@ -161,19 +162,10 @@ impl Author {
         })?;
         let new_roles = match store.role(&args.role) {
             None => vec![self.new_role(&args.role, "Genesis steward", Capability::ROOT)],
-            Some(existing) => {
-                let missing: Vec<&str> =
-                    Capability::ROOT.iter().filter(|c| !existing.may(**c)).map(|c| c.as_str()).collect();
-                if !missing.is_empty() {
-                    return Err(AuthorError::Conflict(format!(
-                        "role `{}` cannot be the genesis role: it lacks {} — the root role carries grant-role, \
-                         revoke-grant, declare-unavailability and rotate-genesis (D9 (f))",
-                        args.role,
-                        missing.join(", ")
-                    )));
-                }
-                Vec::new()
-            }
+            Some(existing) => match existing.genesis_refusal() {
+                Some(why) => return Err(AuthorError::Conflict(format!("role `{}` cannot be the genesis role: {why}", args.role))),
+                None => Vec::new(),
+            },
         };
         let grant = self.seal_grant(&GrantArgs {
             role: args.role.clone(),
