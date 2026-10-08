@@ -267,3 +267,7 @@ mod order_tests;
 #[path = "mod_tests.rs"]
 #[cfg(test)]
 mod tests;
+
+#[path = "duplicate_tests.rs"]
+#[cfg(test)]
+mod duplicate_tests;
