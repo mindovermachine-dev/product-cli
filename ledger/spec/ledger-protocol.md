@@ -118,7 +118,7 @@ A store is a directory of files in a git repository, and the files are the truth
 - **LP-3.1** (W, V) Every entity MUST be a file, or an item of an entity list in a file. No fact may exist only in a read model.
 - **LP-3.2** (V) A store MUST be verifiable from the repository and its git history alone. A verifier MUST NOT fetch anything.
 - **LP-3.3** (W, V) A version is identified by its content hash. A decision is identified by `dec:<namespace>/<ULID>`. Every other log entity is identified by a ULID with its type prefix (section 3.3). A set and a role are identified by an id of the set-id form, which is also the stem of their file.
-- **LP-3.4** (W, V) Hashed content is strings only. A floating-point value is a schema fault. An explicit `null` is absent. A flag is hashed as the string `"true"` when set and omitted otherwise. An integer field of a payload is hashed as its decimal string (section 4.6). The one numeric field in the format, `format`, is not hashed.
+- **LP-3.4** (W, V) Hashed content is strings only. A floating-point value is a schema fault: a plain (unquoted) YAML scalar that resolves to a float under the YAML 1.2 core schema, anywhere in a hashed entity, is refused, while a quoted one is text (ruling 55). An explicit `null` is absent, so an explicit `null` or `~` in a required string field is a schema fault (ruling 56). A flag is hashed as the string `"true"` when set and omitted otherwise. An integer field of a payload is hashed as its decimal string (section 4.6). The one numeric field in the format, `format`, is not hashed.
 - **LP-3.5** (W, V) An entity is immutable once landed. Every change is a new entity. The one exception is a log file's `format:` declaration, which MAY be raised to the lowest format its content needs, with nothing else in the file changed (LP-3.16).
 - **LP-3.6** (W, V, R) An identity is an email address (section 3.4). It is stored and hashed as the bare address, and emitted in the export as a `mailto:` IRI.
 - **LP-3.7** (W, V) A model is never a holder. An identity that denotes a model or a CI system (LP-3.22) MUST be refused as an acceptance's actor, an escape's `accepted_by`, a judgment's `actor`, and every identity an authority record attributes an act to or gives authority to (LP-8.9 `L006`, `L010`; LP-8.16). Who filed a change-set or a decision (`created_by`) is not refused: a model may author.
@@ -315,6 +315,8 @@ Outside the hash: the `hash` field itself (including it would be circular), ever
    normalisation never arises.
 
 Step 8 speaks of the version. The payloads of section 4.6 do hash instants, in the one form of LP-3.24.
+
+Steps 3 and 7 read the file's YAML, not only the typed record: a typed string field holds a plain scalar as its source text, so `statement: 1.5` and `statement: null` would otherwise hash as the texts `1.5` and `null`. A plain scalar that YAML resolves to a float, and an explicit null in a required string field, are schema faults (rulings 55 and 56, Appendix C).
 
 Step 2c follows the reference implementation (ruling 33). The absorbed format document listed `\v` among the stripped characters; the implementation never stripped it, so no digest moves. This is the one place where the canonicalisation text departs from the absorbed format document (Appendix B).
 
@@ -791,7 +793,7 @@ An act is valid only when its actor holds a grant whose role carries the claim t
 - **LP-6.6** (V) No two live grants share role, scope and order (`A003`). Live means unrevoked, unsuperseded, and accepted by a grant acceptance (LP-6.15).
 - **LP-6.15** (V) **Liveness.** A grant is *live* when unrevoked, unsuperseded, and accepted by its holder (a grant acceptance signing its current hash); *available* at an instant when no unavailability covers it (`[from, until)`, unless an availability ended it at or before the instant). The namespace's policy *in force* is the tip of its `replaces` chain.
 - **LP-6.16** (W, V) **The role check is verb-time.** An authoring act asks whether the actor holds a live, accepted, available grant of a role that `may` the act, over a scope covering it (`*`; a namespace scope its own namespace; a set scope its own set; namespaces match exactly), and, for a fallback, one not limited from the act while no live, available grant of the same role at a lower rank covers the act's target. Fallback order is by covering scope (D9 (e)): a `fallback-1` over a set waits on a primary over `*` in its role; another role never outranks; equal rank acts concurrently. Since v1.8 the check also runs at verification, over history, as of each act (`A006`, section 6.6). *A scope of `*` or `pattern:` covers every namespace of the store. Ruling 47 supersedes that once implemented; what such scopes then mean is open (section 12.3).*
-- **LP-6.17** (W, V) In a namespace with a policy, accepting and revoking an acceptance count only grants of the policy's `accept_role`, which is never the genesis role. The genesis (root) role carries `grant-role`, `revoke-grant`, `declare-unavailability` and `rotate-genesis` and none of the decision capabilities (D9 (f)). A policy whose `accept_role` is no declared role that may `accept-decision` is a schema fault.
+- **LP-6.17** (W, V) In a namespace with a policy, accepting and revoking an acceptance count only grants of the policy's `accept_role`, which is never the genesis role. The genesis (root) role carries `grant-role`, `revoke-grant`, `declare-unavailability` and `rotate-genesis` and none of the decision capabilities (D9 (f)). A policy whose `accept_role` is no declared role that may `accept-decision` is a schema fault. So is a policy whose `accept_role` is the genesis role, which at a policy's position is the role of the genesis grant live as of that policy (section 8.7), and a genesis role that carries any decision capability (`accept-decision`, `sign-off-pattern`, `waive-invalidation`) (ruling 50). A writer that opens a namespace refuses an existing root role that lacks a root capability or carries a decision capability (D9 (f), extended by ruling 50).
 - **LP-6.18** (V) A namespace without a policy is a pre-v2 namespace: nothing is role-checked there.
 
 ### 6.2 The grant an act is made under (D9)
@@ -1044,7 +1046,7 @@ ULIDs order by one clock, and two writers' clocks prove nothing about parenthood
 ### 8.4 What the gate checks in the authority records
 
 - **LP-8.16** (V) No file-gate class is added for the authority records. They are policed by the classes that already mean what is wrong:
-  - **`SCHEMA`**: every rule of section 5.6 a single record states (a primary grant with limits; a genesis grant not self-granted, `*`, primary and carrying `external_ref`; `external_ref` off the genesis; `until` not after `from`; a binding carrying fields its `act` does not define; a policy with no scheme), and every cross-record rule: a grant naming an undeclared role or superseding no filed grant; a grant acceptance not by the holder or not signing the grant's hash; an unavailability whose declarer does not stand in its `basis`; an availability not by the holder, not after `from`, or ending an interval twice; a revocation naming no filed grant or acceptance, or a second revocation of one record; a binding in a namespace with no policy, closing what opens no window, another principal's window, or one already closed, or a self-bound binding whose mandate is no genesis `external_ref`; a namespace with two root policies or a forked `replaces` chain; a policy whose `accept_role` is no declared role that may `accept-decision`; an id filed twice; a role file that is not format 6, misnamed, duplicated, or may do nothing.
+  - **`SCHEMA`**: every rule of section 5.6 a single record states (a primary grant with limits; a genesis grant not self-granted, `*`, primary and carrying `external_ref`; `external_ref` off the genesis; `until` not after `from`; a binding carrying fields its `act` does not define; a policy with no scheme), and every cross-record rule: a grant naming an undeclared role or superseding no filed grant; a grant acceptance not by the holder or not signing the grant's hash; an unavailability whose declarer does not stand in its `basis`; an availability not by the holder, not after `from`, or ending an interval twice; a revocation naming no filed grant or acceptance, or a second revocation of one record; a binding in a namespace with no policy, closing what opens no window, another principal's window, or one already closed, or a self-bound binding whose mandate is no genesis `external_ref`; a namespace with two root policies or a forked `replaces` chain; a policy whose `accept_role` is no declared role that may `accept-decision`, or is the genesis role as of the policy; a genesis role that carries a decision capability (LP-6.17, ruling 50); an id filed twice; a role file that is not format 6, misnamed, duplicated, or may do nothing.
   - **`L006`** (extended, stricter, additive): every identity an authority record attributes an act to or gives authority to: a grant's holder and grantor, a grant acceptance's actor, an unavailability's and an availability's declarer, a revocation's actor, a binding's principal and filer, a policy's author. A model is never a holder.
   - **`L007`** (extended): a stored grant, revocation, binding or policy hash that does not equal its recomputed payload digest.
 
@@ -1436,6 +1438,8 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | The rulings of 7 October applied (27 to 48). **LP-4.18 step 2c now follows the code** (ruling 33): space, `\t`, `\n`, `\f` and `\r` are stripped and `\v` is not. This is the one place where the canonicalisation text departs from the absorbed format document, which listed `\v`; no digest moves. The pinned-basis edge is `ledger:pinnedBasis` (27). The token forms of section 7.3 are ruled, with their format rule LP-7.27 (34), and other `@sha256:` tokens take no part in convergence, LP-7.28 (35). Basis-loss past a policy deadline is a failing class, LP-7.29 (29). The verifier profile is the whole of section 8, LP-8.6 and section 1 (31). Namespace independence is stated as not implemented: section 3.6 (LP-3.30 to LP-3.33), LP-3.8, LP-3.18, the term Pin, LP-7.11, LP-7.30, LP-7.31, and authority per namespace in section 6.7 (LP-6.31, LP-6.32) with supersession notes where the implemented text stands (32, 41 to 48). Citations of the PRDs and the way-of-working document marked informative (37). Section 3.6 and section 6.7 are new subsections; no existing number moved. |
 | 7 October 2026 | The verification findings ruled (rulings 49 to 60, `ledger/rulings/verification-rulings-2026-10-07.md`). LP-9.14 and LP-9.15 amended to what one namespace's export supports (51): a key's `valid-before` comes from the closes in that export, and the export-only verifier's limits are stated: a close in another namespace, and trust, which it does not judge. The export-only verifier is marked not implemented. The other rulings are applied with the code that carries them out. |
 | 7 October 2026 | Ruling 49 applied: a duplicate acceptance id, and a decision identity object filed more than once, are schema faults at verification (LP-5.11, LP-8.8). No class added; no digest moves. |
+| 7 October 2026 | Ruling 50 applied: a policy whose accept role is the genesis role, and a genesis role that carries a decision capability, are schema faults at verification; a writer that opens a namespace refuses an existing root role that carries a decision capability, extending D9 (f) (LP-6.17, LP-8.16). The genesis role at a policy's position is defined as the role of the genesis grant live as of that policy. No class added; no digest moves. |
+| 7 October 2026 | Rulings 55 and 56 applied: a plain scalar that resolves to a float in hashed content, and an explicit null in a required string field, are schema faults (LP-3.4, LP-4.18 steps 3 and 7), with one Appendix C note. No digest moves; a file that verified may now be refused. No class added. |
 | 7 October 2026 | Ruling 52 applied: a sidecar on an act no policy governs is a schema fault (LP-4.7, LP-4.30, LP-8.8). Such a sidecar was never opened, and the export carried it as a signature. No class added; no digest moves. |
 
 ### B.1 Revisions of the absorbed format document
@@ -1578,6 +1582,34 @@ or is normalised differently. It is *not* required for a `format` bump that
 only adds an unhashed field.
 
 ---
+
+#### A float or an explicit null in hashed content is refused (2026-10-07, no format change)
+
+**Ruled 2026-10-07** (rulings 55 and 56, #118). The reference loader read
+every scalar of a typed string field as its source text. A plain `1.5` in
+`statement` therefore hashed as the text `1.5`, `1.50` as `1.50`, and an
+explicit `null` or `~` as the text `null` or `~`. LP-3.4 and LP-4.18 steps
+3 and 7 say otherwise: a float is a schema fault, and an explicit null is
+absent. A second implementation with a typed loader would have hashed
+something else, or refused the file.
+
+The loader now reads each change-set a second time as untyped YAML, where a
+quoted scalar is always a string and a plain one is resolved. Two schema
+faults follow:
+
+1. a plain scalar that resolves to a float, anywhere in an item of a hashed
+   entity list (every list but `decisions`). Quote it to keep it as text;
+2. an explicit `null` or `~` in a required string field: a version's `set`
+   or `statement`, a revocation's `reason`, a grant's `role`, a key binding's
+   `namespace`, a policy's `namespace` or `accept_role`.
+
+**No digest moves.** No input that verified hashes differently, and
+`CANONICAL_FORM` stays `v1`. **A file that verified may now be refused**:
+one that carries such a scalar fails verification until its content is
+corrected, which, for a version, is a new version. No committed store in
+this repository carried one: none of the 3,480 plain scalars scanned in
+the verification session, and none of the stores this change was checked
+against.
 
 #### A close ends the key, not the binding (2026-10-06, no format change)
 
