@@ -39,6 +39,15 @@ pub fn status(store: &Store, today: NaiveDate) -> String {
             row.state.as_str()
         ));
     }
+    // A forked decision has no latest version, so no state (ruling 54): it
+    // is listed with its tips, apart from the seven states.
+    if !view.forked.is_empty() {
+        lines.push(format!("{} forked — no latest version until `ledger merge --resolve` arbitrates:", view.forked.len()));
+        for decision in view.forked.keys() {
+            let tips: Vec<String> = view.tips(decision).iter().map(|v| v.raw.hash.short().to_string()).collect();
+            lines.push(format!("  - {decision}: tips {}", tips.join(", ")));
+        }
+    }
     let awaiting: Vec<_> = rows
         .values()
         .filter(|r| r.state == DispositionState::AwaitingAcceptance)
@@ -66,12 +75,6 @@ fn member_line(view: &View, row: &crate::verify::state::StateRow) -> String {
     let mut line = format!("  {} [{}] {}", row.decision, short, row.state.as_str());
     if let Some(by) = &row.superseded_by {
         line.push_str(&format!(" by {by}"));
-    }
-    if view.is_forked(&row.decision) {
-        line.push_str(&format!(
-            " — chain forked into {} tips, awaiting `ledger merge --resolve`",
-            view.forked.get(&row.decision).map(Vec::len).unwrap_or_default()
-        ));
     }
     line
 }
@@ -113,12 +116,6 @@ pub fn log(store: &Store, set: Option<&str>) -> String {
 /// version, whether it still stands, and who actually committed it.
 pub fn blame(store: &Store, decision: &DecisionId) -> String {
     let view = View::build(store);
-    let id = decision.to_string();
-    let latest_hash = view
-        .latest
-        .get(&id)
-        .and_then(|i| view.versions.get(*i))
-        .map(|v| v.raw.hash.clone());
     let mut lines = vec![format!("{decision}")];
     let mut any = false;
     for viewed in view.acceptances.iter().filter(|a| a.acceptance.decision == *decision) {
@@ -126,7 +123,8 @@ pub fn blame(store: &Store, decision: &DecisionId) -> String {
         let a = viewed.acceptance;
         let standing = if view.is_revoked(a) {
             "revoked"
-        } else if latest_hash.as_ref() == Some(&a.version) {
+        } else if view.signs_a_tip(a) {
+            // A tip of a forked chain counts: nothing is picked among tips.
             "live"
         } else {
             "historical"
