@@ -371,6 +371,7 @@ fn no_agent_identity_and_no_non_interactive_session_produces_an_acceptance() {
     repo.act_as(OWNER);
     repo.ok_tty(&["accept", &id]);
     assert_eq!(repo.log_files().len(), before.len() + 1, "the holder, at a terminal, accepts");
+}
 
 /// Ruling 59, the verification report's section 9: a set whose id carries a
 /// dot can be declared, and a grant scoped to it was refused by the writer
