@@ -178,6 +178,7 @@ pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str
                 store.schema_findings.extend(faults.into_iter().map(|m| Finding::schema(&r.subject(), m)));
             }
             store.schema_findings.extend(format_faults(label, &file));
+            store.schema_findings.extend(crate::scalars::faults(label, text));
             store.log.push(LoggedChangeSet { path, file });
         }
         Err(e) => store.schema_findings.push(parse_fault("change-set", label, &e.to_string())),
