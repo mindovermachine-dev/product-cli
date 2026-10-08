@@ -117,7 +117,7 @@ A store is a directory of files in a git repository, and the files are the truth
 
 - **LP-3.1** (W, V) Every entity MUST be a file, or an item of an entity list in a file. No fact may exist only in a read model.
 - **LP-3.2** (V) A store MUST be verifiable from the repository and its git history alone. A verifier MUST NOT fetch anything.
-- **LP-3.3** (W, V) A version is identified by its content hash. A decision is identified by `dec:<namespace>/<ULID>`. Every other log entity is identified by a ULID with its type prefix (section 3.3). A set and a role are identified by an id of the set-id form, which is also the stem of their file.
+- **LP-3.3** (W, V) A version is identified by its content hash. A decision is identified by `dec:<namespace>/<ULID>`. Every other log entity is identified by a ULID with its type prefix (section 3.3). A set and a role are identified by an id of the set-id form, which is also the stem of their file. A `set:` grant scope names a set by that id, so it accepts every valid set id, dots included (ruling 59).
 - **LP-3.4** (W, V) Hashed content is strings only. A floating-point value is a schema fault: a plain (unquoted) YAML scalar that resolves to a float under the YAML 1.2 core schema, anywhere in a hashed entity, is refused, while a quoted one is text (ruling 55). An explicit `null` is absent, so an explicit `null` or `~` in a required string field is a schema fault (ruling 56). A flag is hashed as the string `"true"` when set and omitted otherwise. An integer field of a payload is hashed as its decimal string (section 4.6). The one numeric field in the format, `format`, is not hashed.
 - **LP-3.5** (W, V) An entity is immutable once landed. Every change is a new entity. The one exception is a log file's `format:` declaration, which MAY be raised to the lowest format its content needs, with nothing else in the file changed (LP-3.16).
 - **LP-3.6** (W, V, R) An identity is an email address (section 3.4). It is stored and hashed as the bare address, and emitted in the export as a `mailto:` IRI.
@@ -1455,6 +1455,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 54 applied: a forked decision has no latest version; the latest-only classes skip it and `G004` is its one finding (LP-8.10, LP-8.11). New LP-8.34 states what each reader of the latest version does for a decision that has none. The reference had judged a smallest-hash stand-in tip. No class added; no digest moves. |
 | 7 October 2026 | Ruling 57 applied: `L006` judges an escape's `accepted_by` on every version, not only the latest (LP-8.9, LP-8.10). No class added; no digest moves. |
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
+| 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 
 ### B.1 Revisions of the absorbed format document
 
