@@ -33,6 +33,10 @@ pub struct CoverageReport {
     pub states: BTreeMap<String, DispositionState>,
     /// Supersession chains, root first, walked to the tip.
     pub chains: Vec<Vec<String>>,
+    /// Decisions in scope whose chain is forked: no latest version, so no
+    /// state among the seven until `ledger merge --resolve` (ruling 54).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub(crate) forked: Vec<String>,
     /// The §8 disclosure; serialized so machines carry it too.
     pub honest_limit: &'static str,
 }
@@ -62,6 +66,12 @@ pub fn coverage(store: &Store, today: NaiveDate, set: Option<&str>) -> CoverageR
         by_namespace,
         states,
         chains: chains(&view, &rows),
+        forked: view
+            .forked
+            .keys()
+            .filter(|d| set.is_none_or(|s| view.tips(d).iter().any(|v| v.raw.set == s)))
+            .cloned()
+            .collect(),
         honest_limit: HONEST_LIMIT,
     }
 }
@@ -93,6 +103,9 @@ pub fn render(report: &CoverageReport) -> String {
         for chain in &report.chains {
             lines.push(format!("  {}", chain.join(" -> ")));
         }
+    }
+    if !report.forked.is_empty() {
+        lines.push(format!("forked, no state until `ledger merge --resolve`: {}", report.forked.join(", ")));
     }
     lines.push(format!("the honest limit: {HONEST_LIMIT} (PRD §8)"));
     lines.join("\n")

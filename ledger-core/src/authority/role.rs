@@ -45,6 +45,10 @@ impl Capability {
     pub const ROOT: &'static [Capability] =
         &[Self::GrantRole, Self::RevokeGrant, Self::DeclareUnavailability, Self::RotateGenesis];
 
+    /// The decision capabilities: acts on decisions, which the genesis
+    /// role never carries (D9 (f), ruling 50).
+    pub(crate) const DECISION: &'static [Capability] = &[Self::AcceptDecision, Self::SignOffPattern, Self::WaiveInvalidation];
+
     pub fn as_str(self) -> &'static str {
         match self {
             Self::AcceptDecision => "accept-decision",
@@ -107,6 +111,31 @@ impl Role {
     /// Whether this role carries a capability.
     pub fn may(&self, capability: Capability) -> bool {
         self.may.contains(&capability)
+    }
+
+    /// The decision capabilities this role carries — none, for a genesis
+    /// role (D9 (f), ruling 50).
+    pub(crate) fn decision_capabilities(&self) -> Vec<Capability> {
+        Capability::DECISION.iter().copied().filter(|c| self.may(*c)).collect()
+    }
+
+    /// Why this role cannot be the genesis role, if it cannot: it lacks a
+    /// root capability, or carries a decision capability (D9 (f), ruling 50).
+    pub(crate) fn genesis_refusal(&self) -> Option<String> {
+        let missing: Vec<&str> = Capability::ROOT.iter().filter(|c| !self.may(**c)).map(|c| c.as_str()).collect();
+        if !missing.is_empty() {
+            return Some(format!(
+                "it lacks {} — the root role carries grant-role, revoke-grant, declare-unavailability and rotate-genesis (D9 (f))",
+                missing.join(", ")
+            ));
+        }
+        let decision: Vec<&str> = self.decision_capabilities().into_iter().map(Capability::as_str).collect();
+        (!decision.is_empty()).then(|| {
+            format!(
+                "it carries {} — the root role carries none of the decision capabilities; accepting is a separate role (D9 (f), ruling 50)",
+                decision.join(", ")
+            )
+        })
     }
 
     /// The filename this role belongs in, relative to `roles/`.

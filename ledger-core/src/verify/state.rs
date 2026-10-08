@@ -4,7 +4,9 @@
 //! `escaped-priced`, `escape-review-due`, `expired`, `superseded`. They are
 //! derived from the same [`View`] the gate rules read, so `status`,
 //! `coverage` and `verify` can never disagree about what a decision's
-//! situation is. Judged on latest versions only, like the gate; supersession
+//! situation is. A forked decision has no latest version (ruling 54), so it
+//! has no state in the seven: `states` leaves it out, and `status` and
+//! `coverage` list it apart. Judged on latest versions only, like the gate; supersession
 //! is terminal and overrides every other reading, because a superseded
 //! decision's disposition is a resolved fact, not a pending one.
 
@@ -106,6 +108,13 @@ pub fn states(view: &View, today: NaiveDate) -> BTreeMap<String, StateRow> {
             (id, row)
         })
         .collect()
+}
+
+/// The state one tip of a forked chain gives its decision on its own, for
+/// a reader that shows each tip without picking one (ruling 54). Never a
+/// row of [`states`]: the decision itself has no state.
+pub(crate) fn tip_state(view: &View, tip: &DecisionVersion, today: NaiveDate) -> DispositionState {
+    allocation_state(view, tip, today)
 }
 
 fn allocation_state(view: &View, p: &DecisionVersion, today: NaiveDate) -> DispositionState {

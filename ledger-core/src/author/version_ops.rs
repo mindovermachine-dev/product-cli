@@ -118,7 +118,7 @@ impl Author {
         }
         let store = self.load();
         let view = View::build(&store);
-        if !view.latest.contains_key(&args.superseded.to_string()) {
+        if !view.has_version(&args.superseded.to_string()) {
             return Err(AuthorError::Usage(format!(
                 "{} has no filed version — a supersession target must exist",
                 args.superseded
