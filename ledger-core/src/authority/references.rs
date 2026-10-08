@@ -1,5 +1,9 @@
 //! Cross-entry schema rules for the authority records — what each record names must exist.
 //!
+//! The duplicate-id rule also covers the two ids outside the authority
+//! records that a revocation or a reference resolves by: an acceptance's
+//! id, and a decision's identity object (ruling 49).
+//!
 //! The authority twin of "a revocation naming an acceptance nobody filed":
 //! every reference resolves, every acceptance of a grant is the holder's
 //! and signs the grant's own hash, every unavailability is declared on the
@@ -34,10 +38,19 @@ fn fault(subject: &str, message: impl Into<String>) -> Finding {
     Finding::schema(subject, message)
 }
 
+/// Every id filed more than once: an authority record's, an acceptance's
+/// (LP-8.8), or a decision identity object's, which appears in the one
+/// change-set that introduces the decision (LP-5.11). An id that is not
+/// unique cannot name what a revocation or a reference reaches (ruling 49).
 fn duplicate_ids(store: &Store) -> Vec<Finding> {
     let mut seen: BTreeMap<String, usize> = BTreeMap::new();
+    let mut introduced: BTreeMap<String, usize> = BTreeMap::new();
     for cs in store.log.iter().map(|l| &l.file) {
-        let ids = cs.grants.iter().map(|g| g.id.to_string())
+        for d in &cs.decisions {
+            *introduced.entry(d.id.to_string()).or_default() += 1;
+        }
+        let ids = cs.acceptances.iter().map(|a| a.id.to_string())
+            .chain(cs.grants.iter().map(|g| g.id.to_string()))
             .chain(cs.grant_acceptances.iter().map(|g| g.id.to_string()))
             .chain(cs.unavailabilities.iter().map(|u| u.id.to_string()))
             .chain(cs.availabilities.iter().map(|a| a.id.to_string()))
@@ -48,7 +61,11 @@ fn duplicate_ids(store: &Store) -> Vec<Finding> {
             *seen.entry(id).or_default() += 1;
         }
     }
-    seen.into_iter().filter(|(_, n)| *n > 1).map(|(id, _)| fault(&id, "this id is filed twice")).collect()
+    let ids = seen.into_iter().filter(|(_, n)| *n > 1).map(|(id, _)| fault(&id, "this id is filed twice"));
+    let decisions = introduced.into_iter().filter(|(_, n)| *n > 1).map(|(id, _)| {
+        fault(&id, "this decision identity object is filed twice — a decision is introduced in one change-set only")
+    });
+    ids.chain(decisions).collect()
 }
 
 fn grant_refs(auth: &Authority<'_>) -> Vec<Finding> {
