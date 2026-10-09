@@ -44,17 +44,23 @@ pub struct Options {
     pub history: bool,
     /// The base the landing is computed against (`verify --base`).
     pub base: Option<String>,
+    /// Whether the history readers follow a file across the flat paths of
+    /// revision v1.8 (the legacy capability, LP-3.35; rulings 82, 97). The
+    /// reference implementation has it; `verify --no-legacy-layout` shows
+    /// what an implementation without it does, and refuses a flat history
+    /// before any of this runs.
+    pub legacy_layout: bool,
 }
 
 impl Options {
     /// Every class, as of `today`, with blame and landing consulted.
     pub fn full(today: NaiveDate) -> Self {
-        Self { gate: None, today, blame: true, history: true, base: None }
+        Self { gate: None, today, blame: true, history: true, base: None, legacy_layout: true }
     }
 
     /// Every class as of `today`, without git: the write-time gate.
     pub fn offline(today: NaiveDate) -> Self {
-        Self { gate: None, today, blame: false, history: false, base: None }
+        Self { gate: None, today, blame: false, history: false, base: None, legacy_layout: true }
     }
 }
 
@@ -183,7 +189,7 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
         ..Report::default()
     };
     if opts.blame {
-        let outcome = integrity::blame_consistency(&view, store);
+        let outcome = integrity::blame_consistency(&view, store, opts.legacy_layout);
         findings.extend(outcome.findings);
         report.blame_uncommitted = outcome.uncommitted;
         report.blame_unavailable = outcome.no_repository;
@@ -211,7 +217,7 @@ fn graph_stage(store: &Store, landing: &crate::landing::Landing) -> Vec<crate::g
 /// Landing order from git when the run consults history (D6), else none.
 fn landing(store: &Store, opts: &Options) -> crate::landing::Landing {
     match opts.history {
-        true => crate::landing::Landing::compute(&store.root, opts.base.as_deref()).unwrap_or_default(),
+        true => crate::landing::Landing::compute(&store.root, opts.base.as_deref(), opts.legacy_layout).unwrap_or_default(),
         false => crate::landing::Landing::unknown(),
     }
 }

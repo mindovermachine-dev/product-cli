@@ -21,17 +21,24 @@ pub struct Args {
     /// The base landing is computed against (D6); default `origin/HEAD`
     /// when the clone has it.
     pub base: Option<String>,
+    /// Whether this run has the legacy capability of ruling 82 (LP-3.35):
+    /// without it, a history holding the flat layout is refused with exit 2.
+    pub legacy_layout: bool,
 }
 
 pub fn run(root: Option<PathBuf>, args: Args) -> Result<i32, String> {
     let repo_root = resolve_root(root)?;
     let base = args.base.or_else(|| ledger_core::landing::Landing::default_base(&repo_root));
+    if !args.legacy_layout {
+        refuse_flat_history(&repo_root, base.as_deref())?;
+    }
     let options = Options {
         gate: args.gate.as_deref().map(parse_gate).transpose()?,
         today: parse_today(args.today.as_deref())?,
         blame: args.blame,
         history: true,
         base: base.clone(),
+        legacy_layout: args.legacy_layout,
     };
     let mut loaded = store::load(&repo_root);
     match &base {
@@ -62,6 +69,24 @@ pub fn run(root: Option<PathBuf>, args: Args) -> Result<i32, String> {
         eprintln!("{}", render(&report));
     }
     Ok(if report.is_conformant() { EXIT_OK } else { EXIT_VIOLATIONS })
+}
+
+/// A verifier without the legacy capability cannot verify a repository
+/// whose history holds the flat layout of revision v1.8: it refuses before
+/// reading anything, names the first flat commit, and never reports the
+/// repository conformant (LP-3.35; rulings 82, 97). Exit 2: the gate could
+/// not run, which is the verifier's limit and not a finding about the store.
+fn refuse_flat_history(root: &std::path::Path, base: Option<&str>) -> Result<(), String> {
+    let mut revs = vec!["HEAD"];
+    revs.extend(base);
+    match ledger_core::layout::flat_history(root, &revs) {
+        None => Ok(()),
+        Some(commit) => Err(format!(
+            "this repository's history holds the flat layout of revision v1.8, first at commit {commit}, and this run has no \
+             legacy capability to read it (ruling 82) — the repository cannot be verified by it; a verifier with the capability \
+             (this one, without `--no-legacy-layout`) reads both path patterns in history (LP-3.35)"
+        )),
+    }
 }
 
 fn parse_gate(name: &str) -> Result<Gate, String> {
