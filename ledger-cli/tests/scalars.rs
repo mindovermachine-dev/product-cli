@@ -17,7 +17,7 @@ const CS: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXW";
 /// the loader computes, committed beside the `pass` fixture's set.
 fn committed(scalar: &str) -> (i32, String) {
     let repo = Repo::human();
-    let sets = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/pass/.decisions/sets");
+    let sets = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/pass/.decisions/ns/fixture.ledger/sets");
     std::fs::create_dir_all(repo.sets_dir("fixture.ledger")).expect("sets dir");
     for entry in std::fs::read_dir(sets).expect("fixture").flatten() {
         std::fs::copy(entry.path(), repo.sets_dir("fixture.ledger").join(entry.file_name())).expect("copy");

@@ -18,7 +18,7 @@ const CS: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXW";
 /// The `pass` fixture's store (its change-set needs format 1), landed
 /// declaring `format: N`. Returns the log file.
 fn landed_at(repo: &Repo, n: u32) -> PathBuf {
-    common::stage_fixture_into("pass", repo.path());
+    common::copy_fixture_into("pass", repo.path());
     let file = repo.log_dir("fixture.ledger").join(format!("{CS}.yml"));
     redeclare(&file, 1, n);
     hand::commit(repo, &format!("landed at format {n}"));

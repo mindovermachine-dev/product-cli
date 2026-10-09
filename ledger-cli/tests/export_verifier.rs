@@ -73,11 +73,11 @@ fn bytes_rebuilt_from_the_export_equal_the_signed_bytes_over_every_fixture() {
     let fixtures = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
     let mut names: Vec<String> = std::fs::read_dir(&fixtures).expect("fixtures").flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect();
     names.sort();
-    // Each fixture staged under `ns/<namespace>/`, the signed store, and
-    // this repository's own store: 91 acceptances signed by nobody yet,
+    // Each fixture, the signed store, and this repository's own store: 91
+    // acceptances signed by nobody yet,
     // whose bytes the export must still rebuild exactly.
-    let mut staged: Vec<tempfile::TempDir> = names.iter().map(|n| common::stage_fixture(n)).collect();
-    staged.push(common::stage_workspace());
+    let mut staged: Vec<tempfile::TempDir> = names.iter().map(|n| common::fixture_copy(n)).collect();
+    staged.push(common::workspace_copy());
     let mut roots: Vec<std::path::PathBuf> = staged.iter().map(|d| d.path().to_path_buf()).collect();
     roots.push(signed.path().to_path_buf());
     let mut checked = 0;

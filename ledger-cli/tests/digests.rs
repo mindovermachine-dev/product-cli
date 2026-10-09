@@ -19,19 +19,13 @@ fn workspace() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
 }
 
-/// Every log directory of a store: `.decisions/ns/<ns>/log` (LP-3.34), or
-/// the flat `.decisions/log` of a store not yet re-laid out.
+/// Every log directory of a store: `.decisions/ns/<ns>/log` (LP-3.34).
 fn log_dirs_of(root: &Path) -> Vec<PathBuf> {
-    let mut out: Vec<PathBuf> = ledger_core::layout::namespaces(root)
+    ledger_core::layout::namespaces(root)
         .into_iter()
         .map(|ns| ledger_core::layout::log_dir(root, &ns))
         .filter(|d| d.is_dir())
-        .collect();
-    let flat = root.join(".decisions/log");
-    if flat.is_dir() {
-        out.push(flat);
-    }
-    out
+        .collect()
 }
 
 fn log_dirs() -> Vec<PathBuf> {

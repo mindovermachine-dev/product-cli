@@ -149,7 +149,7 @@ fn the_corrected_files_declare_exactly_what_they_need() {
 /// acceptance of their own hash, and the gate finds nothing about them.
 #[test]
 fn the_four_acceptances_still_verify() {
-    let staged = common::stage_workspace();
+    let staged = common::workspace_copy();
     let store = ledger_core::store::load(staged.path());
     let view = View::build(&store);
     let report = verify::verify(&store, &Options::offline(chrono::Utc::now().date_naive()));

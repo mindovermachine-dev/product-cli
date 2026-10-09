@@ -25,7 +25,7 @@ fn stdout(out: &Output) -> String {
 
 /// A scratch copy of the coverage fixture, so tests can write an index.
 fn scratch_coverage() -> tempfile::TempDir {
-    common::stage_fixture("coverage")
+    common::fixture_copy("coverage")
 }
 
 #[test]
@@ -46,7 +46,7 @@ fn the_rebuild_is_byte_identical_after_deleting_the_index() {
 
 #[test]
 fn coverage_distinguishes_all_seven_states_on_the_fixture() {
-    let staged = common::stage_fixture("coverage");
+    let staged = common::fixture_copy("coverage");
     let root = staged.path().to_path_buf();
     let out = ledger(&root, &["coverage", "--today", TODAY]);
     assert_eq!(out.status.code(), Some(0), "{}", String::from_utf8_lossy(&out.stderr));
@@ -70,7 +70,7 @@ fn coverage_distinguishes_all_seven_states_on_the_fixture() {
 
 #[test]
 fn coverage_json_carries_the_states_and_the_chain_machine_readably() {
-    let staged = common::stage_fixture("coverage");
+    let staged = common::fixture_copy("coverage");
     let root = staged.path().to_path_buf();
     let out = ledger(&root, &["coverage", "--today", TODAY, "--json"]);
     let parsed: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("json");
@@ -84,7 +84,7 @@ fn coverage_json_carries_the_states_and_the_chain_machine_readably() {
 fn a_superseded_versions_acceptances_are_historical_in_blame_and_status() {
     // d7 (the chain root) is superseded; the fixture's `decided` decision
     // d3 stays live. Status renders the supersession terminally.
-    let staged = common::stage_fixture("coverage");
+    let staged = common::fixture_copy("coverage");
     let root = staged.path().to_path_buf();
     let out = ledger(&root, &["status", "--today", TODAY]);
     let text = stdout(&out);
@@ -128,7 +128,7 @@ fn latest_follows_the_parent_dag_when_ulid_order_contradicts_it() {
     // a writer whose clock runs ahead. ULID order would call the root
     // latest and the signed revision historical; the parent DAG knows the
     // revision is the tip, so the store is conformant and decided.
-    let staged = common::stage_fixture("two-clocks");
+    let staged = common::fixture_copy("two-clocks");
     let root = staged.path().to_path_buf();
     let out = ledger(&root, &["verify", "--today", "2026-08-10", "--no-blame"]);
     assert_eq!(out.status.code(), Some(0), "{}", String::from_utf8_lossy(&out.stderr));
@@ -150,7 +150,7 @@ fn g004_a_forked_chain_fails_verify_and_names_both_tips() {
     // produces: one parent, two divergent revisions. No file is malformed;
     // the graph stage names the fork and the store is non-conformant until
     // a human arbitrates.
-    let staged = common::stage_fixture("forked");
+    let staged = common::fixture_copy("forked");
     let root = staged.path().to_path_buf();
     let out = ledger(&root, &["verify", "--today", "2026-08-10", "--no-blame"]);
     assert_eq!(out.status.code(), Some(1), "{}", String::from_utf8_lossy(&out.stderr));

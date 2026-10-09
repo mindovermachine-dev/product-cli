@@ -28,7 +28,7 @@ fn text(out: &Output) -> String {
 
 /// A scratch copy of the conformant fixture, so tests can write exports.
 fn scratch() -> tempfile::TempDir {
-    common::stage_fixture("pass")
+    common::fixture_copy("pass")
 }
 
 fn namespace_of_fixture(dir: &Path) -> String {
