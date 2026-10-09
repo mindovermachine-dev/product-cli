@@ -1651,9 +1651,12 @@ namespace its entities belong to, each set to the namespace whose versions
 name it, each role file to the namespace whose grants and policies name
 it. A governed store with more than one namespace is not moved but
 re-founded (ruling 68); its note lands with issue 9. This repository's
-own store and the committed fixture stores are re-laid out by issues 10
-and 9; until then a verifier of this revision refuses them, as LP-3.34
-says.
+own store was re-laid out in one commit on 9 October 2026 (issue 10):
+`hafeok.ddd`'s 164 change-sets and its set to `ns/hafeok.ddd/`,
+`hafeok.ledger`'s 23 and its set to `ns/hafeok.ledger/`, every file byte
+for byte, both exports unchanged. The committed fixture stores are
+re-laid out by issue 9; until then a verifier of this revision refuses
+them, as LP-3.34 says.
 
 **The flat layout in history** (rulings 82 and 97; LP-3.35). The
 re-layout cannot make the flat paths disappear from history, and
