@@ -314,87 +314,43 @@ pub fn both(out: &Output) -> String {
     format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr))
 }
 
-/// A scratch copy of a committed fixture store, laid out under
-/// `.decisions/ns/<namespace>/` (LP-3.34). The fixtures under
-/// `tests/fixtures/` are still in the flat layout until issue 9 re-lays
-/// them out; until then this stages each one the way the loader reads.
-pub fn stage_fixture(name: &str) -> tempfile::TempDir {
+/// A scratch copy of a committed fixture store under `tests/fixtures/`,
+/// laid out as the loader reads it, `.decisions/ns/<namespace>/` (LP-3.34).
+pub fn fixture_copy(name: &str) -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
-    stage_fixture_into(name, dir.path());
+    copy_fixture_into(name, dir.path());
     dir
 }
 
-/// Stage the fixture `name` into `root`'s store; returns its one namespace.
-pub fn stage_fixture_into(name: &str, root: &Path) -> String {
+/// Copy the fixture `name` into `root`'s store, byte for byte; returns its
+/// one namespace.
+pub fn copy_fixture_into(name: &str, root: &Path) -> String {
     let from = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name).join(".decisions");
-    let namespaces = stage_store_into(&from, root);
+    let namespaces = copy_store_into(&from, root);
     assert_eq!(namespaces.len(), 1, "a fixture holds one namespace: {namespaces:?}");
     namespaces.into_iter().next().expect("one namespace")
 }
 
-/// A scratch copy of this repository's own store, staged the same way: the
-/// store is flat until issue 10 re-lays it out, and the loader reads only
-/// `ns/<namespace>/`.
-pub fn stage_workspace() -> tempfile::TempDir {
+/// A scratch copy of this repository's own store.
+pub fn workspace_copy() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let from = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".decisions");
-    stage_store_into(&from, dir.path());
+    copy_store_into(&from, dir.path());
     dir
 }
 
-/// Stage the store at `from` (a `.decisions/` directory, flat or per
-/// namespace) into `root`'s store under `ns/<namespace>/`: a change-set
-/// goes to the namespace its decisions name, a set to the namespace whose
-/// versions name it. Bytes are copied, never rewritten. Returns the
-/// namespaces staged.
-pub fn stage_store_into(from: &Path, root: &Path) -> Vec<String> {
-    if from.join("ns").is_dir() {
-        let mut out = Vec::new();
-        for ns in std::fs::read_dir(from.join("ns")).expect("ns").flatten().filter(|e| e.path().is_dir()) {
-            let name = ns.file_name().to_string_lossy().into_owned();
-            copy_tree(&ns.path(), &ledger_core::layout::namespace_dir(root, &name));
-            out.push(name);
-        }
-        out.sort();
-        return out;
+/// Copy the store at `from` (a `.decisions/` directory) into `root`'s
+/// store, namespace by namespace. Bytes are copied, never rewritten.
+/// Returns the namespaces copied, sorted.
+pub fn copy_store_into(from: &Path, root: &Path) -> Vec<String> {
+    let mut out = Vec::new();
+    for ns in std::fs::read_dir(from.join("ns")).expect("a store under ns/").flatten().filter(|e| e.path().is_dir()) {
+        let name = ns.file_name().to_string_lossy().into_owned();
+        copy_tree(&ns.path(), &ledger_core::layout::namespace_dir(root, &name));
+        out.push(name);
     }
-    let mut namespaces: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    let mut set_homes: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
-    let mut logs: Vec<(std::path::PathBuf, String)> = Vec::new();
-    for entry in std::fs::read_dir(from.join("log")).into_iter().flatten().flatten() {
-        let text = std::fs::read_to_string(entry.path()).expect("read");
-        let cs: ledger_core::changeset::ChangeSet = serde_yaml::from_str(&text).expect("a change-set");
-        let ns = cs
-            .decisions
-            .iter()
-            .map(|d| d.id.namespace().to_string())
-            .chain(cs.versions.iter().map(|v| v.decision.namespace().to_string()))
-            .chain(cs.acceptances.iter().map(|a| a.decision.namespace().to_string()))
-            .next()
-            .unwrap_or_else(|| panic!("{} names no namespace", entry.path().display()));
-        for v in &cs.versions {
-            set_homes.entry(v.set.clone()).or_insert_with(|| ns.clone());
-        }
-        namespaces.insert(ns.clone());
-        logs.push((entry.path(), ns));
-    }
-    for (path, ns) in logs {
-        let target = ledger_core::layout::log_dir(root, &ns);
-        std::fs::create_dir_all(&target).expect("mkdir");
-        std::fs::copy(&path, target.join(path.file_name().expect("name"))).expect("copy");
-    }
-    for entry in std::fs::read_dir(from.join("sets")).into_iter().flatten().flatten() {
-        let stem = entry.path().file_stem().expect("stem").to_string_lossy().into_owned();
-        let ns = set_homes
-            .get(&stem)
-            .cloned()
-            .or_else(|| (namespaces.len() == 1).then(|| namespaces.iter().next().cloned()).flatten())
-            .unwrap_or_else(|| panic!("set `{stem}` is named by no version, and the store speaks several namespaces"));
-        let target = ledger_core::layout::sets_dir(root, &ns);
-        std::fs::create_dir_all(&target).expect("mkdir");
-        std::fs::copy(entry.path(), target.join(entry.file_name())).expect("copy");
-    }
-    namespaces.into_iter().collect()
+    out.sort();
+    out
 }
 
 fn copy_tree(from: &Path, to: &Path) {

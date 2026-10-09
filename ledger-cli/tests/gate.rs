@@ -32,11 +32,11 @@ fn fixtures() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")
 }
 
-/// Run the gate over a fixture store, staged under `.decisions/ns/<ns>/`
-/// (`common::stage_fixture`). Blame is off: these stores live inside
+/// Run the gate over a scratch copy of a fixture store
+/// (`common::fixture_copy`). Blame is off: these stores live inside
 /// this repository, so their history attributes to whoever committed them.
 fn gate(fixture: &str, extra: &[&str]) -> Output {
-    let staged = common::stage_fixture(fixture);
+    let staged = common::fixture_copy(fixture);
     let mut cmd = Command::cargo_bin("ledger").expect("binary");
     cmd.arg("--root")
         .arg(staged.path())
@@ -201,7 +201,7 @@ mod blame {
         }
 
         fn copy_pass_fixture(&self) {
-            common::stage_fixture_into("pass", self.path());
+            common::copy_fixture_into("pass", self.path());
         }
 
         fn git(&self, args: &[&str]) {
@@ -284,13 +284,14 @@ fn fixture_hashes_are_current() {
     );
 }
 
-/// The log files of one fixture store: `.decisions/ns/<ns>/log/*` (LP-3.34)
-/// or, until issue 9 re-lays the fixtures out, the flat `.decisions/log/*`.
+/// The log files of one fixture store: `.decisions/ns/<ns>/log/*` (LP-3.34).
 fn fixture_log_files(root: &Path) -> Vec<std::fs::DirEntry> {
-    let mut dirs: Vec<PathBuf> =
-        ledger_core::layout::namespaces(root).iter().map(|ns| ledger_core::layout::log_dir(root, ns)).collect();
-    dirs.push(root.join(".decisions/log"));
-    dirs.into_iter().filter(|d| d.is_dir()).flat_map(|d| std::fs::read_dir(d).expect("log").flatten()).collect()
+    ledger_core::layout::namespaces(root)
+        .iter()
+        .map(|ns| ledger_core::layout::log_dir(root, ns))
+        .filter(|d| d.is_dir())
+        .flat_map(|d| std::fs::read_dir(d).expect("log").flatten())
+        .collect()
 }
 
 /// Rewrite the stored hashes in one log file. Returns whether it was stale.
