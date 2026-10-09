@@ -14,7 +14,7 @@ const CS: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXW";
 /// The `pass` fixture's store, committed.
 fn landed() -> Repo {
     let repo = Repo::human();
-    common::stage_fixture_into("pass", repo.path());
+    common::copy_fixture_into("pass", repo.path());
     hand::commit(&repo, "landed");
     repo
 }

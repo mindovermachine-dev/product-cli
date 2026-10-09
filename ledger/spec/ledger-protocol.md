@@ -1476,6 +1476,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 | 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
+| 9 October 2026 | **Rulings 63 and 68 applied: the fixtures re-laid out; the re-founding note** (PRD §3.11; issue 9). The fifteen committed fixture stores of the reference test suite move their `sets/` and `log/` under `ns/<namespace>/`, no file's content or digest changed; the test helpers that staged a flat fixture into the layout go. The Appendix C note "Namespaces become independent; a store with shared authority is re-founded" is added as the PRD drafted it, headed with no format number. No class added; no digest moves. |
 | 9 October 2026 | **Ruling 69 applied: a close in every namespace held** (PRD §3.3; issue 8). LP-6.34 (new): a writer closes a key in every namespace its principal holds it open in with one change-set per namespace, the same act with the same `at`, to land in one commit; LP-6.32 loses its note. The writer's opening of every namespace on its own genesis (LP-4.38) landed with issues 5 and 6. No class added; no digest moves; no Appendix C note. |
 | 9 October 2026 | **Ruling 47 applied: `allowed_signers` per namespace** (PRD §3.4; issue 7). LP-4.10 loses its note: each namespace's file holds that namespace's trusted bindings, a line ended by a close in that namespace only (LP-4.32), a namespace that binds nothing has no file, and a writer that regenerates the files removes a stale one; LP-4.33 names the namespace a `[SIGNERS]` finding is about. No class added; no digest moves. The Appendix C note "A stale `allowed_signers` is removed" is added. |
 | 9 October 2026 | **Rulings 47 and 69 applied: keys per namespace** (PRD §3.3; issue 6). LP-6.32 loses its not-implemented mark: a close ends the key in its own namespace only; LP-4.37's three rules, LP-4.39 (with ruling 101's wording) and LP-4.13's deadline look at the binding's own namespace; the genesis holder's first key in a namespace is that namespace's self-bound binding, once per namespace, and a key trusted elsewhere vouches for nothing here (LP-4.12, LP-4.31, LP-4.38 — the later-namespace paragraph goes, with the reference's `carried_over`); `allowed_signers` ends a line at a close in its own namespace (LP-4.32); LP-8.31 gains the two notices of ruling 69. LP-6.31 drops its keys note. No class added; no digest moves. The Appendix C note "Keys are per namespace" is added. |
@@ -1627,6 +1628,45 @@ only adds an unhashed field.
 
 ---
 
+#### Namespaces become independent; a store with shared authority is re-founded (spec v1.9, no format change)
+
+From v1.9 every store holds each namespace under
+`.decisions/ns/<namespace>/`. Each namespace has its own genesis grant,
+roles, grants, key bindings, policy and `allowed_signers`, and nothing in
+one namespace's authority has effect in another (rulings 47, 62, 63; the
+notes "Authority is per namespace" and "Keys are per namespace" below).
+
+**Who must act.** A store whose log holds a policy for more than one
+namespace, filed before v1.9, shared one genesis grant, one set of role
+files and one set of trusted keys across them. Its namespaces cannot be
+split, and no migration path is provided (ruling 68). Under v1.9 rules
+such a store fails verification: each namespace after the first has no
+genesis grant of its own (`A006` on its policy, D7 on its first key
+binding).
+
+**What to do.** Re-found each namespace:
+
+1. Open it in a fresh directory, `.decisions/ns/<namespace>/`, with
+   `ledger init --namespace <namespace> --external-ref <mandate>`. That
+   files its own genesis grant, roles, first policy and self-bound key.
+2. Grant its roles again.
+3. File each decision's latest version again, with its key carried, and
+   accept it again under the new authority.
+
+**What is not carried over.** Acceptances, grants and key windows of the
+old store. The old store's history stays in git as the record of what was
+accepted under it. Re-founding is a new start, not a migration, and no
+digest of the old store is reused by the new one.
+
+**A store with one namespace, or with none under policy,** is not
+re-founded. It moves its files under `ns/<namespace>/` in one commit, and
+landing follows each entity across the move (the note "Spec v1.9 — one
+directory per namespace" below).
+
+*The PRD's draft of this note (§3.11) is headed "spec v1.9 and format 8";
+no format number changes here (ruling 66 as amended by 87), and format 8
+arrives with the issues that follow.*
+
 #### A stale `allowed_signers` is removed; a close reaches its own namespace's file only (2026-10-09, no format change)
 
 **Ruled 7 October 2026** (ruling 47; `ledger/prd/namespace-independence-prd.md`
@@ -1720,7 +1760,8 @@ be split, and no migration path is provided (ruling 68). Under these rules
 such a store fails verification: each namespace after the first has no
 genesis grant of its own (`A006` on its policy) and its first key binding
 leans on no other namespace (D7 on that binding). It is re-founded per
-namespace; the re-founding note is added with issue 9 of the PRD's §6.
+namespace: the note "Namespaces become independent; a store with shared
+authority is re-founded" above.
 
 **Keys are not yet per namespace.** A key is still bound, closed and
 trusted store-wide (LP-4.12, LP-4.31, LP-4.32, LP-4.37, LP-4.38, LP-4.39):
@@ -1786,13 +1827,14 @@ No class is added: the refusal is `SCHEMA`.
 namespace its entities belong to, each set to the namespace whose versions
 name it, each role file to the namespace whose grants and policies name
 it. A governed store with more than one namespace is not moved but
-re-founded (ruling 68); its note lands with issue 9. This repository's
-own store was re-laid out in one commit on 9 October 2026 (issue 10):
-`hafeok.ddd`'s 164 change-sets and its set to `ns/hafeok.ddd/`,
-`hafeok.ledger`'s 23 and its set to `ns/hafeok.ledger/`, every file byte
-for byte, both exports unchanged. The committed fixture stores are
-re-laid out by issue 9; until then a verifier of this revision refuses
-them, as LP-3.34 says.
+re-founded (ruling 68; the note "Namespaces become independent; a store
+with shared authority is re-founded"). This repository's own store was
+re-laid out in one commit on 9 October 2026 (issue 10): `hafeok.ddd`'s
+164 change-sets and its set to `ns/hafeok.ddd/`, `hafeok.ledger`'s 23
+and its set to `ns/hafeok.ledger/`, every file byte for byte, both
+exports unchanged. The fifteen committed fixture stores under
+`ledger-cli/tests/fixtures/` were re-laid out the same way (issue 9), each
+under its one namespace, no file's content or digest changed.
 
 **The flat layout in history** (rulings 82 and 97; LP-3.35). The
 re-layout cannot make the flat paths disappear from history, and
