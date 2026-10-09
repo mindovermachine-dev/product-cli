@@ -86,8 +86,8 @@ fn status_lines(report: &Report) -> Vec<String> {
     out
 }
 
-/// The governance notices: unchecked and unsigned namespaces, and an
-/// unbound genesis holder. Never a failure.
+/// The governance notices: unchecked and unsigned namespaces, unbound
+/// genesis holders, and the two key notices of ruling 69. Never a failure.
 fn notices(n: &crate::verify::Notices, out: &mut Vec<String>) {
     for ns in &n.unchecked {
         out.push(format!(
@@ -104,6 +104,17 @@ fn notices(n: &crate::verify::Notices, out: &mut Vec<String>) {
             "notice: the genesis holder {} has no trusted key — governed namespace `{}`: the first self-bound binding to land for that address will be the one trusted (D7); bind one with `ledger identity add --namespace {}`",
             u.holder, u.namespace, u.namespace
         ));
+    }
+    let quoted = |ns: &[String]| ns.iter().map(|n| format!("`{n}`")).collect::<Vec<_>>().join(", ");
+    for k in &n.key_split {
+        out.push(format!(
+            "notice: key {} of {} is closed in {} and open in {} — a close ends the key in its own namespace (LP-6.32); `ledger identity revoke` closes it there too",
+            k.key, k.holder, quoted(&k.closed_in), quoted(&k.open_in)
+        ));
+    }
+    for k in &n.key_shared {
+        let who = k.bound_to.iter().map(|(p, ns)| format!("{p} in `{ns}`")).collect::<Vec<_>>().join(" and ");
+        out.push(format!("notice: key {} is bound to {who} — one key, two principals, two namespaces (ruling 69)", k.key));
     }
 }
 

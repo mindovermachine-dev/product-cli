@@ -3,8 +3,9 @@
 //! An acceptance dated *and* landed before its key's close is a review item
 //! ("needs re-acceptance") until a later valid acceptance of the same
 //! version by the same actor affirms it, and `L012` once the policy's
-//! re-acceptance deadline has passed. The close is the key's earliest, in
-//! any namespace (ruled 2026-10-06), as the signature check found it.
+//! re-acceptance deadline has passed. The close is the key's earliest in
+//! its own namespace (ruled 2026-10-06; per namespace by ruling 47), as the
+//! signature check found it.
 
 use std::collections::BTreeMap;
 

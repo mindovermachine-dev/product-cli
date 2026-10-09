@@ -73,7 +73,6 @@ impl Author {
             ulid: &ulid,
             bytes: crate::authority::payload::policy_bytes(&next),
             own_key: None,
-            any_namespace: false,
         };
         self.sign_under(&store, Some(&current), what)?;
         let mut candidate = self.shell(None)?;
