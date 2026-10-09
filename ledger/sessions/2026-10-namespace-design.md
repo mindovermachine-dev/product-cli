@@ -2230,3 +2230,135 @@ exit 0
 ```
 - **Pushed** to `origin/claude/focused-goodall-qh7sm7` on 9 October 2026, as one commit on top of `918a08d`, for the principal to review and merge. Merging is his.
 - **Moved**, later on 9 October 2026, to `claude/zealous-cannon-da2epc-act-ordering`, a new branch from `main` at `fac640d` (the merge of #139, which changes tests only), because `claude/focused-goodall-qh7sm7` is #128's branch and #128 had merged. The commit is carried over unchanged; this note and the two sentences above that said the pull request was on that branch are the only additions. The rulings file is untouched: rulings 82 to 84 stand on `main` until the principal supersedes them. `ledger verify --export`, built from and run on the new branch: exit 0, the output above. The pull request revises the design merged in #128.
+
+## Principal's replies, 2026-10-09
+
+The design is accepted: position D. Every lean in §7 of the third revision is ruled as leaned, and one question the review raised is ruled too, as rulings 85 to 101 in `ledger/rulings/order-from-the-acts-rulings-2026-10-09.md`, a file this pull request adds. They supersede D6 of 2 October and rulings 64, 65, 79, 83 and 84; amend rulings 66 and 77, D7's first filer and LP-4.39's "a window closes once"; ruling 82 stands. The earlier rulings files are not edited.
+
+### Rulings, by number
+
+| Ruling | Answers | In short |
+| --- | --- | --- |
+| 85 | Q1, Q11 | Order comes from the acts: before means named by the entry and dated strictly earlier; unnamed is after; enabling by signed `at`; landing decides nothing. Supersedes D6 and 64 |
+| 86 | Q2, Q3, Q4 | Names are `<id>@sha256:<hash>`, in the set `after` in the signed payload; policies too |
+| 87 | Q5, Q6 | Format 8 is `after`, `anchor`, `role_hash`; no move act; a pre-8 entry names nothing. Amends 66 |
+| 88 | Q7 | A policy change names the acts since the policy it replaces; the earliest namer governs; unnamed is under the tip |
+| 89 | Q8 | The genesis grant names its anchor; no "first to land"; `init` refuses without a key, `--without-key` removed; a second genesis is `A005`, cleared by revocation; one pin token or two is the pinning design's. Amends D7 |
+| 90 | Q9 | Grants, grant acceptances, unavailabilities and availabilities signed with `at` first (#82); `A006` on the grantor |
+| 91 | Q10 | `role_hash` under `ledger.role.v1`; a role's position plays no part |
+| 92 | Q12 | Stray and dangling names are notices |
+| 93 | Q13 | Whole-namespace removal in one commit is a notice; part stays `L007`. Supersedes 65 |
+| 94 | Q14 | `L009` judges only acts no signature covers. Supersedes 79 |
+| 95 | Q15 | A move is a copy; no act, record or freeze; an ungoverned namespace carries its history or is governed first. Supersedes 83, 84 |
+| 96 | Q16 | `A007` unused. Amends 77 |
+| 97 | Q17 | Ruling 82 stands; the capability shrinks to `L007`, `L009` and the base overlay |
+| 98 | Q18 | The genesis holder's revoke takes an `at`, bounded below by the closed binding's |
+| 99 | Q19 | A writer names what the checkout holds, committed or not; a name that never lands is ignored |
+| 100 | Q20 | Case H is closed by the anchor; no separate fix |
+| 101 | the review's | The genesis holder's revoke may close a key a `rotate` closed; an act stands only if before each close; a thief's names do not keep forged acts standing. Amends "a window closes once" |
+
+### Case L: ruling 101's store
+
+Built after the rulings, with the helpers of "Order from the acts": the thief, holding K1, files a forged acceptance backdated inside K1's window, rotates K1 to K2, and accepts with K2; the genesis holder then files a second close of K1 by hand, a `revoke` dated at the compromise. Today the second close is refused: `authority::references::binding_refs` ("already closed — a window closes once") and `authority::filing::closing` ("window is already closed"), and the rotate itself falls to the same D7 rule because the revoke, dated earlier, is in `Authority::as_of` at the rotate's position; the K2 act is `L011` as signed by a key bound to nobody. Ruling 101 allows the second close and reads every close of the key together; the ruled verdicts are in PRD §3.5, row L, and §3.5.1.
+
+The script, `case_l.sh`:
+
+```bash
+#!/bin/bash
+# Case L (ruling 101): the thief's rotate closes K1 and signs forged acts with K1 (backdated) and K2;
+# the genesis holder's revoke of K1, dated at the compromise, closes K1 a second time.
+source "$(dirname "$0")/lib.sh"
+R=$SP/attacks/repos/l; G=genesis@customer.example; H=holder@customer.example; NS=fixture.ledger
+mkrepo "$R" $G
+GK=$(keygen "$R" genesis); use_key "$R" "$GK"
+tty "$R" init --namespace $NS --external-ref "$MANDATE" >/dev/null
+GENESIS=$(grants "$R" | head -1)
+GRANT=$(tty "$R" grant new acceptor --to $H --scope "ns:$NS" | word grant:)
+act_as "$R" $H; tty "$R" grant accept "$GRANT" >/dev/null; act_as "$R" $G
+KH=$(keygen "$R" holder)
+tty "$R" identity add --namespace $NS --for $H --key-file "$KH.pub" >/dev/null
+KHID=$(bindings "$R" | tail -1)
+act_as "$R" $H; use_key "$R" "$KH"
+D1=$(add_decision "$R" $NS "Money is decimal."); D2=$(add_decision "$R" $NS "Time is UTC."); D3=$(add_decision "$R" $NS "Names are unique.")
+sleep 1.1; tty "$R" accept "$D1" >/dev/null; A1=$(acceptances "$R" | tail -1)
+commit "$R" "legit: $A1 by K1"
+T1=$(at_of "$R" "$A1")
+section "holder $H, K1=$KHID; legit $A1 at $T1"
+sleep 2.1
+section "the thief, with K1: a forged acceptance signed by K1 dated one second after the legit one, then rotate K1 to K2, then an acceptance with K2"
+AF=$($HAND accept --root "$R" --decision "$D2" --actor $H --at "$(plus "$T1" 1)" --under "$GRANT" --key "$KH")
+K2=$(keygen "$R" thief)
+tty "$R" identity rotate "$KHID" --key-file "$K2.pub" | head -1
+ROT=$(bindings "$R" | tail -1); TROT=$(at_of "$R" "$ROT")
+use_key "$R" "$K2"
+tty "$R" accept "$D3" >/dev/null; A3=$(acceptances "$R" | tail -1)
+commit "$R" "compromise: forged $AF (K1, backdated), rotate $ROT at $TROT, $A3 (K2)"
+verify "$R"
+section "the genesis holder's second close of K1, hand-filed: a revoke of $KHID dated at the compromise ($(plus "$T1" 1)), under the genesis grant, signed with the genesis key"
+act_as "$R" $G
+REV=$($HAND close --root "$R" --act revoke --closes "$KHID" --by $G --at "$(plus "$T1" 1)" --under "$GENESIS" --sign "$GK")
+commit "$R" "genesis re-closes K1 ($REV)"
+verify "$R"
+```
+
+Its output, today's `ledger` from `918a08d`:
+
+```text
+
+## holder holder@customer.example, K1=key:01M4GDF54P26QZTFZ5J1XQJ2M2; legit acc:01M4GDF754AFTHASS4EYADBQ6G at 2026-10-09T13:26:03.631360004Z
+
+## the thief, with K1: a forged acceptance signed by K1 dated one second after the legit one, then rotate K1 to K2, then an acceptance with K2
+identity rotate: holder@customer.example in `fixture.ledger` — key:01M4GDF9R0WYFJEJ75TQRK4DY5
+landing computed on HEAD's own first-parent line — no base (no `--base`, and no `origin/HEAD` in this clone)
+conformant — 20 entries, 3 decision(s)
+2 acceptance(s) under a since-closed key need re-acceptance (L012 after the deadline):
+  - acc:01M4GDF754AFTHASS4EYADBQ6G (holder@customer.example): key key:01M4GDF54P26QZTFZ5J1XQJ2M2 closed by key:01M4GDF9R0WYFJEJ75TQRK4DY5 — re-accept or affirm
+  - acc:01M4GDF9P7J3ZDRN87241DMJKG (holder@customer.example): key key:01M4GDF54P26QZTFZ5J1XQJ2M2 closed by key:01M4GDF9R0WYFJEJ75TQRK4DY5 — re-accept or affirm
+exit 0
+
+## the genesis holder's second close of K1, hand-filed: a revoke of key:01M4GDF54P26QZTFZ5J1XQJ2M2 dated at the compromise (2026-10-09T13:26:04Z), under the genesis grant, signed with the genesis key
+landing computed on HEAD's own first-parent line — no base (no `--base`, and no `origin/HEAD` in this clone)
+non-conformant — 5 finding(s):
+  - [SCHEMA] key:01M4GDF9R0WYFJEJ75TQRK4DY5: D7: key:01M4GDF54P26QZTFZ5J1XQJ2M2's window is already closed
+  - [SCHEMA] key:01M4GDFB5JJSW9KWATEV6APFAB: key:01M4GDF54P26QZTFZ5J1XQJ2M2 is already closed — a window closes once
+  - [SCHEMA] key:01M4GDFB5JJSW9KWATEV6APFAB: D7: key:01M4GDF54P26QZTFZ5J1XQJ2M2's window is already closed
+  - [L011] acc:01M4GDFACM6DXCJWQN1DRK54YQ: its `ssh` signature does not hold: signed by SHA256:z+9hGi+zNuvucO6qrEuTpo8XxxjnXASBj2zNkcOb6kg, which is no key bound to holder@customer.example in `fixture.ledger`
+trust-root stage — 1 finding(s):
+  - [SIGNERS] .decisions/allowed_signers: does not match the key bindings in the log — regenerate it with `ledger identity sync` — it is never edited by hand
+exit 1
+```
+
+### What changed in the PRD
+
+- **Header.** The fourth revision, its base (#142's branch merged with `main` at `17f9656`), and what the rulings supersede and amend.
+- **§3.5** states the ruled design, citing a ruling at each point: the attack table gains row L and its "Ruled" column; §3.5.1 states ruling 101 (which close the thief's `rotate` makes and which the genesis holder's `revoke` makes, how LP-4.39's "every close" reading judges an act named by one and not the other, and that the thief's new key falls with the untrusted `rotate`); §3.5.2 to §3.5.8 state rulings 86 to 95 and 98, 99; §3.5.9 the export; §3.5.10 stays open; §3.5.11 the cost. The option tables are gone; the options not chosen are one row each in Appendix A.
+- **§3.1, §3.1.1, §3.9, §3.10, §3.11, §3.13** carry no "as ruled / under D" split any more: format 8 is `after`, `anchor`, `role_hash` and the signed records (87, 90); `A007` is unused (96); the classes and notices follow 92 and 93; the tests to rewrite include every `--without-key` test (89).
+- **§4** is one list: AC-1 as a copy (93, 94, 95); the attack rows AC-85-A to AC-101-L, the new row L included; one criterion per ruling. The superseded criteria stay in Appendix A.1.2.
+- **§5** is one list, citing rulings: LP-4.12, LP-4.13, LP-4.22 (with the three new payloads of ruling 90), LP-4.38, LP-4.39 (ruling 101), LP-5.23, LP-6.27, LP-6.29, LP-6.33 to LP-6.37, LP-8.24, LP-8.26, LP-8.28 to LP-8.32, LP-8.34, LP-9.6, LP-9.14, LP-9.15, and the Appendix C note for format 8. The superseded proposals stay in Appendix A.1.3.
+- **§6** keeps the order (layout and authority, #82, order from the acts and the move, the export, pins) and re-sizes nothing; issues 11, 15, 17 and 20 gain the intervals, `--at` and the second close, row L, and the pin's tokens.
+- **§7** maps the twenty questions to rulings 85 to 100 and the review's question to 101; keeps the comparison of C and D as the record; lists what each ruling of 9 October replaces; leaves N-Q2, the freshness question and the pin's tokens open for the pinning design; and asks two questions the rulings themselves raise, on ruling 90's new payloads and on which verbs take `--at`.
+- **Appendix A** lists the options not chosen, one row each, and marks A.1 as superseded by rulings 85, 93, 94 and 95.
+
+### Checks
+
+- **What changed.** #142's branch, `claude/zealous-cannon-da2epc-act-ordering`, merged with `main` at `17f9656` (the merge of #141, which changes tests and one protocol note). Against that, the pull request now adds `ledger/rulings/order-from-the-acts-rulings-2026-10-09.md` and changes `ledger/prd/namespace-independence-prd.md` and this record. Nothing else: no code, test, fixture, protocol text, store, export or `.ddd/` file, and no earlier rulings file. Case L's store, script and output live in the scratchpad beside the others and are not committed.
+- **Gates**, with the four git-identity variables unset, on the merged branch's code:
+  - `cargo build`: exit 0.
+  - `cargo clippy -- -D warnings -D clippy::unwrap_used`: exit 0.
+  - `cargo t`: exit 0. 2,126 passed, 0 failed and 2 ignored, summed over the 96 `test result:` lines.
+  - `dotnet test` was not run, since no .NET code is touched.
+- **`ledger verify --export`**, built from the merged branch and run on it and on a worktree of `origin/main` at `17f9656`: exit 0 on both, and byte-identical output:
+
+```text
+landing computed on HEAD's own first-parent line — no base (no `--base`, and no `origin/HEAD` in this clone)
+conformant — 284 entries, 93 decision(s)
+3 allocated, awaiting acceptance:
+  - dec:hafeok.ddd/01KZTGGMEACBFMTC1RJJ8T90GS
+  - dec:hafeok.ddd/01KZTGGX5ABSQ2PVTQ32NPKVNE
+  - dec:hafeok.ledger/01KZXJX693301CZSY4XNP643XY
+notice: namespace `hafeok.ddd` has no policy — nothing in it is role-checked or signature-checked (`ledger init --namespace hafeok.ddd` opts it in)
+notice: namespace `hafeok.ledger` has no policy — nothing in it is role-checked or signature-checked (`ledger init --namespace hafeok.ledger` opts it in)
+export: every committed export matches the log byte for byte
+exit 0
+```
+- **Pushed** to `origin/claude/zealous-cannon-da2epc-act-ordering`, #142's branch, on 9 October 2026, for the principal to merge.
