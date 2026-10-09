@@ -37,11 +37,7 @@ pub fn git_identity(root: &Path) -> Result<Identity, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn git(dir: &Path, args: &[&str]) {
-        let out = Command::new("git").arg("-C").arg(dir).args(args).output().expect("git");
-        assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
-    }
+    use crate::testkit::git;
 
     #[test]
     fn the_identity_is_read_from_local_git_config() {

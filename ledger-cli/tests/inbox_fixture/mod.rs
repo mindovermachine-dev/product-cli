@@ -4,7 +4,6 @@
 #![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use crate::common::{self, Repo};
 
@@ -18,9 +17,7 @@ pub struct Fixture {
 }
 
 pub fn git(dir: &Path, args: &[&str]) -> String {
-    let out = Command::new("git").arg("-C").arg(dir).args(args).output().expect("git");
-    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
-    String::from_utf8_lossy(&out.stdout).into_owned()
+    String::from_utf8_lossy(&common::git(dir, args).stdout).into_owned()
 }
 
 pub fn ledger_ok(dir: &Path, args: &[&str]) -> String {

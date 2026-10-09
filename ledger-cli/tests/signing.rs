@@ -303,11 +303,8 @@ fn a_missing_ssh_keygen_is_a_named_finding_never_a_skipped_check() {
     let git = std::process::Command::new("sh").args(["-c", "command -v git"]).output().expect("which git");
     let git = String::from_utf8_lossy(&git.stdout).trim().to_string();
     std::os::unix::fs::symlink(&git, bin.join("git")).expect("link git");
-    let out = assert_cmd::Command::cargo_bin("ledger")
-        .expect("binary")
+    let out = common::ledger_command(repo.path())
         .env("PATH", &bin)
-        .args(["--root"])
-        .arg(repo.path())
         .args(["verify", "--no-blame"])
         .output()
         .expect("run");

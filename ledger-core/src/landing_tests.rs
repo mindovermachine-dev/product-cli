@@ -1,14 +1,9 @@
 //! Landing on the first-parent line, including the branch/merge agreement.
 
 use std::path::Path;
-use std::process::Command;
 
 use super::*;
-
-fn git(root: &Path, args: &[&str]) {
-    let out = Command::new("git").arg("-C").arg(root).args(args).output().expect("git");
-    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
-}
+use crate::testkit::git;
 
 fn file(root: &Path, name: &str) {
     let path = root.join(".decisions/log").join(name);

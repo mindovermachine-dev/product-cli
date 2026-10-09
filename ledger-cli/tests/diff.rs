@@ -25,13 +25,7 @@ impl Repo {
     }
 
     fn git(&self, args: &[&str]) {
-        let out = std::process::Command::new("git")
-            .arg("-C")
-            .arg(self.path())
-            .args(args)
-            .output()
-            .expect("git");
-        assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+        common::git(self.path(), args);
     }
 
     fn commit(&self, message: &str) {

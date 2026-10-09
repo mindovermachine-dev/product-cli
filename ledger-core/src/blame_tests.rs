@@ -1,9 +1,9 @@
 //! Blame cases against real git repositories built in a temp directory.
 
 use std::path::PathBuf;
-use std::process::Command;
 
 use super::*;
+use crate::testkit::git as run;
 
 struct Repo {
     dir: tempfile::TempDir,
@@ -32,11 +32,6 @@ impl Repo {
         );
         file
     }
-}
-
-fn run(dir: &Path, args: &[&str]) {
-    let out = Command::new("git").arg("-C").arg(dir).args(args).output().expect("git");
-    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
 }
 
 #[test]

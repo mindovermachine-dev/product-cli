@@ -159,3 +159,41 @@ pub fn legacy_revocation(at: &str, reason: &str) -> crate::acceptance::Revocatio
 pub fn acceptance_id() -> AcceptanceId {
     format!("acc:{ACC_ULID}").parse().expect("acceptance id")
 }
+
+/// The git identity variables a caller's environment may export. Each one
+/// overrides the `user.name` / `user.email` a fixture configures for its own
+/// commits, so every git the tests spawn clears them (#138): the author of a
+/// fixture commit is the repository's, never the container's.
+pub(crate) const GIT_IDENTITY_VARS: [&str; 4] =
+    ["GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"];
+
+/// A `git -C dir` command that takes its identity from the repository's own
+/// configuration alone.
+pub(crate) fn git_command(dir: &std::path::Path) -> std::process::Command {
+    let mut cmd = std::process::Command::new("git");
+    cmd.arg("-C").arg(dir);
+    for var in GIT_IDENTITY_VARS {
+        cmd.env_remove(var);
+    }
+    cmd
+}
+
+/// Run git in `dir`, failing the test on a non-zero exit; returns its output.
+pub(crate) fn git(dir: &std::path::Path, args: &[&str]) -> std::process::Output {
+    let out = git_command(dir).args(args).output().expect("git");
+    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    out
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_git_the_tests_run_has_the_callers_identity_variables_cleared() {
+        let cmd = git_command(std::path::Path::new("."));
+        let cleared: Vec<_> = cmd.get_envs().filter(|(_, v)| v.is_none()).map(|(k, _)| k.to_os_string()).collect();
+        for var in GIT_IDENTITY_VARS {
+            assert!(cleared.iter().any(|k| k == var), "{var} is not cleared");
+        }
+    }
+}
