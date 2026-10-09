@@ -117,7 +117,9 @@ impl Author {
         candidate.key_bindings.push(binding);
         self.refusal_check(&store, &candidate, |_| false)?;
         let path = self.append_signed(&candidate)?;
-        crate::authority::signers::write(&self.load()).map_err(AuthorError::Io)?;
-        Ok(Applied { path, lines: vec![line, format!("regenerated {}", crate::authority::signers::FILE)] })
+        let synced = crate::authority::signers::write(&self.load()).map_err(AuthorError::Io)?;
+        let mut lines = vec![line];
+        lines.extend(synced.lines());
+        Ok(Applied { path, lines })
     }
 }
