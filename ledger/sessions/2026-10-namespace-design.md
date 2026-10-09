@@ -2256,6 +2256,7 @@ The design is accepted: position D. Every lean of the third revision's §7 is ru
 | 99 | Q19 | A writer names the acts of the family the checkout holds, committed or not; a name that never lands is ignored under 92 |
 | 100 | Q20 | Two trusted self-bound bindings: closed by the anchor; no separate fix under D6 |
 | 101 | the review | The genesis holder's revoke may close a key a `rotate` already closed; where several closes end one key an act stands only if before each (LP-4.39); a thief's `rotate` naming forged acts does not keep them standing once the revoke at the compromise does not name them. Amends "a window closes once" for this case. |
+| 102 | the fourth revision's §7 | A terminating entry may name less than ruling 99's default. The genesis holder's `identity revoke --at <instant> --trusted-to <commit>` names the family as it stood at the last commit the holder trusts; git is read by the writer only, as a suggestion, and the verifier reads the names; the confirmation shows the list and the holder may strike further ids before signing; refused in a non-interactive session. Ruled 9 October 2026, after the fourth revision merged (#142). |
 
 ### Ruling 101, read against case B
 
