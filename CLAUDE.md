@@ -340,8 +340,10 @@ store (`.decisions/`), separate ontology.
   namespace (`A003`/`A005` count one trust root each). Keys are per
   namespace too (ruling 47): `init --namespace` self-binds the holder's
   configured key in every namespace it opens, a close ends a key in its
-  own namespace only, and a key closed in one namespace and open in
-  another is a `verify` notice (ruling 69), never a finding. `allowed_signers` is derived (never hand-edited) and held by
+  own namespace only (`identity revoke|rotate --everywhere` files one
+  change-set per namespace the holder has the key open in, to land in one
+  commit), and a key closed in one namespace and open in another is a
+  `verify` notice (ruling 69), never a finding. `allowed_signers` is derived (never hand-edited) and held by
   `verify`'s `[SIGNERS]` stage. Graph classes `A003`/`A005`; `A006` deferred.
 - **Signing (format 7 / spec v1.8, #70)** — `ledger-core/src/signing/`.
   A namespace's policy lists the required schemes; a signature is a sidecar
