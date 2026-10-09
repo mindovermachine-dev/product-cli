@@ -5,12 +5,13 @@
 //! the log, so the derived file always matches what `verify` re-derives.
 //! Who may file which binding is D7's rule, [`crate::authority::filing::may_file`]
 //! — the one `verify` re-judges every filed binding with: the genesis
-//! holder's self-bound first binding (signed by the key it binds), a
-//! principal's first key filed and signed by the genesis holder
-//! (`identity add --for <principal>`), and every further `add`, `rotate`
-//! and `revoke` the principal's own, signed by a live key — or a `revoke`
-//! by the genesis holder. A namespace whose policy requires `-sk` keys
-//! refuses a software key.
+//! holder's self-bound first binding in the namespace (signed by the key
+//! it binds), a principal's first key filed and signed by the genesis
+//! holder (`identity add --for <principal>`), and every further `add`,
+//! `rotate` and `revoke` the principal's own, signed by a key of theirs
+//! live in the namespace — or a `revoke` by the genesis holder. Keys are
+//! per namespace (ruling 47): nothing bound elsewhere counts here. A
+//! namespace whose policy requires `-sk` keys refuses a software key.
 
 use crate::authority::filing::may_file;
 use crate::authority::{Authority, BindingAct, KeyBinding};
@@ -81,13 +82,10 @@ impl Author {
             )));
         }
         let genesis = auth.genesis().filter(|g| g.holder == self.who);
-        // D7: the genesis holder self-binds once per store; in a later
-        // namespace their first key is signed by a key of theirs already
-        // bound elsewhere.
-        let first_in_store = auth.bindings.iter().all(|b| b.principal != principal);
-        let first_in_ns = auth.bindings.iter().all(|b| b.namespace != namespace || b.principal != principal);
-        let self_bound = act == BindingAct::Add && principal == self.who && first_in_store && genesis.is_some();
-        let any_namespace = act == BindingAct::Add && principal == self.who && first_in_ns && !self_bound;
+        // D7: the genesis holder's first key in the namespace is self-bound
+        // (ruling 47: once per namespace, whatever they hold elsewhere).
+        let first_in_ns = auth.bindings.iter().all(|b| b.principal != principal);
+        let self_bound = act == BindingAct::Add && principal == self.who && first_in_ns && genesis.is_some();
         let mut binding = KeyBinding {
             id: self.mint.mint_id("key").map_err(AuthorError::Io)?,
             act,
@@ -112,7 +110,6 @@ impl Author {
             ulid: &ulid,
             bytes: crate::authority::payload::binding_bytes(&binding),
             own_key: own.as_ref().filter(|_| self_bound).or(closed_key.as_ref()).map(|(t, k)| (t.as_str(), k.as_str())),
-            any_namespace,
         };
         self.sign_under(&store, Some(&policy), what)?;
         let line = format!("identity {act}: {} in `{}` — {}", binding.principal, binding.namespace, binding.id);

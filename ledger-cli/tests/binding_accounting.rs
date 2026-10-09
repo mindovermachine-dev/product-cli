@@ -70,13 +70,30 @@ fn governed() -> (Repo, String) {
 /// A hand-filed binding for `principal` by `by` in `ns`, dated `at`,
 /// signed by `signer` when given.
 fn by_hand(repo: &Repo, by: &str, principal: &str, ns: &str, at: chrono::DateTime<Utc>, signer: Option<&str>) -> String {
+    hand_binding(repo, by, principal, ns, at, signer, false)
+}
+
+/// The genesis holder's self-bound first binding in a namespace `hand::found`
+/// opened (its mandate is that namespace's), dated `at`, signed by the key
+/// it binds when `signed` — keys are per namespace (ruling 47), so a key
+/// trusted elsewhere signs nothing here.
+fn self_bound_by_hand(repo: &Repo, ns: &str, at: chrono::DateTime<Utc>, signed: bool) -> String {
+    hand_binding(repo, OWNER, OWNER, ns, at, None, signed)
+}
+
+fn hand_binding(repo: &Repo, by: &str, principal: &str, ns: &str, at: chrono::DateTime<Utc>, signer: Option<&str>, self_signed: bool) -> String {
     let id: ledger_core::id::KeyBindingId = UlidMint::system().mint_id("key").expect("id");
     let key = repo.keygen(&format!("k{}", id.ulid()));
     let mut b = hand::binding(BindingAct::Add, principal, by, ns, Some(&format!("{key}.pub")), None, None);
     b.at = at;
+    if self_signed || (signer.is_none() && by == OWNER && principal == OWNER && ns != NS && ns != "third.ledger") {
+        b.self_bound = true;
+        b.mandate = Some(format!("mandate for {ns}"));
+    }
     b.hash = ledger_core::authority::payload::binding_hash(&b);
     let ulid = b.id.ulid().to_string();
-    let signers: Vec<(&str, &str)> = signer.map(|s| vec![(ulid.as_str(), s)]).unwrap_or_default();
+    let own = self_signed.then_some(key.as_str());
+    let signers: Vec<(&str, &str)> = signer.or(own).map(|s| vec![(ulid.as_str(), s)]).unwrap_or_default();
     hand::file(repo, vec![b], Vec::new(), &signers);
     blob(&key)
 }
@@ -102,13 +119,17 @@ fn every_filed_binding_is_trusted_or_named_by_a_finding() {
     let refused = by_hand(&repo, OTHER, OTHER, NS, Utc::now(), None);
     // Ungoverned: a binding in a namespace no policy governs.
     let ungoverned = by_hand(&repo, OWNER, OWNER, "third.ledger", Utc::now(), Some(&owner));
-    // Before a signed first policy: one signed, one unsigned.
-    let at = first_policy(&repo, SECOND, vec![Scheme::Ssh], Some(&owner));
-    let before_signed = by_hand(&repo, OWNER, OWNER, SECOND, at - Duration::seconds(1), Some(&owner));
-    let before_unsigned = by_hand(&repo, OWNER, OWNER, SECOND, at - Duration::seconds(1), None);
+    // Before a signed first policy, the genesis holder's self-bound first
+    // binding in that namespace (ruling 47): one signed by the key it
+    // binds, one unsigned — each in a namespace of its own, since a
+    // namespace has one first binding.
+    let at = first_policy(&repo, SECOND, vec![Scheme::Ssh], None);
+    let before_signed = self_bound_by_hand(&repo, SECOND, at - Duration::seconds(1), true);
+    let at = first_policy(&repo, "fifth.ledger", vec![Scheme::Ssh], None);
+    let before_unsigned = self_bound_by_hand(&repo, "fifth.ledger", at - Duration::seconds(1), false);
     // Before a `[none]` first policy, unsigned.
     let at = first_policy(&repo, "fourth.ledger", vec![Scheme::None], None);
-    let before_none = by_hand(&repo, OWNER, OWNER, "fourth.ledger", at - Duration::seconds(1), None);
+    let before_none = self_bound_by_hand(&repo, "fourth.ledger", at - Duration::seconds(1), false);
     hand::commit(&repo, "every way a binding is filed");
 
     let cases = [

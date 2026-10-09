@@ -14,6 +14,7 @@ pub mod acts;
 pub mod authority;
 pub mod belonging;
 pub mod crossing;
+pub mod key_notices;
 pub mod disposition;
 mod genesis_role;
 pub mod history;
@@ -120,6 +121,13 @@ pub struct Notices {
     /// (LP-8.31, ruling 47).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub genesis_unbound: Vec<GenesisUnbound>,
+    /// A key closed in one namespace and open in another (ruling 69): a
+    /// close ends the key in its own namespace only (LP-6.32).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub key_split: Vec<key_notices::KeySplit>,
+    /// One key bound to two principals in two namespaces (ruling 69).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub key_shared: Vec<key_notices::KeyShared>,
 }
 
 /// A namespace whose genesis holder has no trusted key.
@@ -130,18 +138,25 @@ pub struct GenesisUnbound {
 }
 
 fn notices(store: &Store, trusted: &[&crate::authority::KeyBinding]) -> Notices {
-    Notices { unchecked: unchecked(store), unsigned: unsigned(store), genesis_unbound: genesis_unbound(store, trusted) }
+    Notices {
+        unchecked: unchecked(store),
+        unsigned: unsigned(store),
+        genesis_unbound: genesis_unbound(store, trusted),
+        key_split: key_notices::split(store),
+        key_shared: key_notices::shared(store),
+    }
 }
 
 /// Each namespace with a live genesis grant whose holder has no trusted
-/// key (a trusted key is store-wide until issue 6).
+/// key bound in that namespace (ruling 47: a key is trusted where it is
+/// bound).
 fn genesis_unbound(store: &Store, trusted: &[&crate::authority::KeyBinding]) -> Vec<GenesisUnbound> {
     store
         .namespaces()
         .into_iter()
         .filter_map(|ns| {
             let genesis = crate::authority::Authority::of(store, &ns).genesis()?;
-            let bound = trusted.iter().any(|k| k.principal == genesis.holder && k.act.opens());
+            let bound = trusted.iter().any(|k| k.namespace == ns && k.principal == genesis.holder && k.act.opens());
             (!bound).then(|| GenesisUnbound { namespace: ns, holder: genesis.holder.to_string() })
         })
         .collect()
