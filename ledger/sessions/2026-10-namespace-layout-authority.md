@@ -42,7 +42,7 @@ are named in those issues' bodies.
 - #154 and #155 are red on `ledger verify --export` by design: at those
   commits the loader refuses the repository's own flat store. The pull
   requests say so; the series merges in order.
-- #157 to #162 (and #163, when its run completes) are red on **one step
+- #157 to #163 are red on **one step
   only**: the contract-surface gate, `ddd diff-contracts <base>..HEAD`,
   which demands a signed seam binding for every exposed Rust surface
   change (a `pub` item added, removed or re-signed; test helpers in
