@@ -308,3 +308,21 @@ fn key_and_exported_are_omitted_when_absent_and_exported_hashes_as_a_string() {
             .expect("parse");
     assert_eq!(version_hash(&parsed), version_hash(&base()), "false is the absent default");
 }
+
+/// The Unicode version behind step 2b of LP-4.18. The protocol names it so a
+/// second implementation has a version to match; the crate is pinned to the
+/// release that carries these tables (`ledger-core/Cargo.toml`). A later
+/// Unicode version may assign a code point this one leaves unassigned, and
+/// NFC may then compose or decompose it differently, so a move is a
+/// canonical-form question for the principal, never a dependency bump.
+const UNICODE_VERSION: (u8, u8, u8) = (17, 0, 0);
+
+#[test]
+fn the_unicode_tables_behind_nfc_are_the_version_the_protocol_names() {
+    assert_eq!(
+        unicode_normalization::UNICODE_VERSION,
+        UNICODE_VERSION,
+        "the resolved unicode-normalization release carries other Unicode tables than LP-4.18 names: \
+         a move is a canonical-form question for the principal, not a dependency bump"
+    );
+}

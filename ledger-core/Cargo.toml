@@ -23,7 +23,12 @@ serde_json = "1"
 serde_yaml = "0.9"
 sha2       = "0.10"
 chrono     = { version = "0.4", features = ["serde"] }
-unicode-normalization = "0.1"
+# Pinned exactly: every version hash depends on NFC (LP-4.18 step 2b), and
+# Cargo.lock is not committed, so the release decides which Unicode tables
+# two builds normalise with. 0.1.25 carries Unicode 17.0.0, the version the
+# protocol names; a test on UNICODE_VERSION holds the two together. A move is
+# a canonical-form question for the principal, not a dependency bump.
+unicode-normalization = "=0.1.25"
 # DSSE verification (#70, D4): the open CLI verifies the hosted service's
 # envelopes and never signs them. std has no ed25519; the crate is already
 # in the workspace through spec-core.

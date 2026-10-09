@@ -292,7 +292,11 @@ Outside the hash: the `hash` field itself (including it would be circular), ever
 1. Parse the file. Take only the hashed field set.
 2. **Normalise every string**, in this order:
    a. replace `\r\n` and lone `\r` with `\n`;
-   b. normalise to Unicode NFC;
+   b. normalise to Unicode NFC, with the tables of **Unicode 17.0.0**. A
+      move to a later Unicode version is a canonical-form question for the
+      principal, never a dependency bump: a later version may assign a code
+      point this one leaves unassigned, and NFC may then treat it
+      differently;
    c. strip leading and trailing ASCII whitespace: space,
       `\t`, `\n`, `\f` and `\r`. Vertical tab (`\v`) is not stripped.
 3. **Treat as absent**: a missing key, an explicit `null`, an empty
@@ -1457,6 +1461,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 | 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
+| 9 October 2026 | The Unicode version behind LP-4.18 step 2b is named: 17.0.0. The tables were unpinned — the reference accepted any `unicode-normalization` 0.1.x and commits no lockfile, and a second implementation had no version to match. The reference now pins the release that carries these tables (`=0.1.25`), held by a test on its `UNICODE_VERSION`. A move to a later Unicode version is a canonical-form question for the principal. No class added; no digest moves; `CANONICAL_FORM` stays `v1`. (#140) |
 
 ### B.1 Revisions of the absorbed format document
 
