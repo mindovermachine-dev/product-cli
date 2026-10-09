@@ -13,6 +13,7 @@
 pub mod acts;
 pub mod authority;
 pub mod belonging;
+pub mod crossing;
 pub mod disposition;
 mod genesis_role;
 pub mod history;
@@ -162,9 +163,11 @@ impl Report {
 }
 
 /// The file-gate findings that need no landing order: the view's own, the
-/// disposition classes, integrity, keys, authority records and belonging.
+/// crossing, the disposition classes, integrity, keys, authority records
+/// and belonging.
 fn file_findings(store: &Store, view: &View, today: NaiveDate) -> Vec<Finding> {
     let mut findings = view.findings.clone();
+    findings.extend(crossing::findings(view));
     findings.extend(disposition::unallocated(view));
     findings.extend(disposition::expired(view, today));
     findings.extend(disposition::stranded(view, store));
