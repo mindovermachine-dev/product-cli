@@ -5,8 +5,10 @@
 //! untouched (AC-47, second bullet), and `verify` reports the split as a
 //! notice, never a finding. Within a namespace the rules of 2026-10-06
 //! stand: a key is bound once there, a closed key is never bound again
-//! there, and every check asks over all bindings of the key there. The
-//! writer's close in every namespace it holds is issue 8's.
+//! there, and every check asks over all bindings of the key there. A close
+//! in every namespace the holder has the key open in is one invocation,
+//! `--everywhere`: one change-set per namespace, each with the same `at`,
+//! to land in one commit (LP-6.34; AC-47, third bullet).
 
 mod common;
 
@@ -258,17 +260,91 @@ fn no_agent_identity_and_no_non_interactive_session_produces_a_key_close() {
     let before = repo.log_files();
     for ns in [A, B] {
         let id = bindings(&repo, ns)[0].id.to_string();
-        let piped = repo.piped(&["identity", "revoke", &id]);
-        assert_ne!(piped.status.code(), Some(0), "{}", common::both(&piped));
-        for agent in ["claude@anthropic.com", "noreply@anthropic.com", "github-actions@github.com"] {
-            repo.act_as(agent);
-            let out = repo.tty(&["identity", "revoke", &id]);
-            assert_ne!(out.status.code(), Some(0), "{agent} in `{ns}`: {}", common::both(&out));
+        for args in [vec!["identity", "revoke", &id], vec!["identity", "revoke", &id, "--everywhere"]] {
+            let piped = repo.piped(&args);
+            assert_ne!(piped.status.code(), Some(0), "{}", common::both(&piped));
+            for agent in ["claude@anthropic.com", "noreply@anthropic.com", "github-actions@github.com"] {
+                repo.act_as(agent);
+                let out = repo.tty(&args);
+                assert_ne!(out.status.code(), Some(0), "{agent} in `{ns}`: {}", common::both(&out));
+            }
+            repo.act_as(OWNER);
         }
-        repo.act_as(OWNER);
     }
     assert_eq!(repo.log_files(), before, "nothing filed");
     let in_a = bindings(&repo, A)[0].id.to_string();
     repo.ok(&["identity", "revoke", &in_a]);
     assert_eq!(repo.log_files().len(), before.len() + 1, "the holder, at a terminal, closes");
+}
+
+/// The log files of `ns`, sorted.
+fn log_files_in(repo: &Repo, ns: &str) -> Vec<String> {
+    let mut out: Vec<String> = std::fs::read_dir(repo.log_dir(ns)).map(|d| d.flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect()).unwrap_or_default();
+    out.sort();
+    out
+}
+
+/// AC-47, third bullet: one invocation closes the key in every namespace
+/// the holder has it open in — one change-set per namespace, the same
+/// `at`, landing in one commit — and no split is left to notice.
+#[test]
+fn a_revoke_everywhere_files_one_change_set_per_namespace_with_one_at_in_one_commit() {
+    let (repo, _) = a_then_b();
+    let (in_a, in_b) = (bindings(&repo, A)[0].clone(), bindings(&repo, B)[0].clone());
+    let (before_a, before_b) = (log_files_in(&repo, A), log_files_in(&repo, B));
+    let out = repo.ok(&["identity", "revoke", &in_a.id.to_string(), "--everywhere"]);
+    assert!(out.contains(&format!("closing {OWNER}'s key in 2 namespace(s): `{A}`, `{B}`")), "{out}");
+    assert_eq!(out.matches("filed ").count(), 2, "one file per namespace named: {out}");
+    assert_eq!(log_files_in(&repo, A).len(), before_a.len() + 1, "one change-set in A");
+    assert_eq!(log_files_in(&repo, B).len(), before_b.len() + 1, "one change-set in B");
+    let closes: Vec<ledger_core::authority::KeyBinding> = ledger_core::store::load(repo.path())
+        .log
+        .iter()
+        .flat_map(|l| l.file.key_bindings.iter())
+        .filter(|b| b.closes.is_some())
+        .cloned()
+        .collect();
+    assert_eq!(closes.len(), 2, "{closes:?}");
+    assert_eq!(closes[0].at, closes[1].at, "the same `at` in each namespace");
+    assert!(closes.iter().any(|c| c.namespace == A && c.closes.as_ref() == Some(&in_a.id)), "A's close names A's binding");
+    assert!(closes.iter().any(|c| c.namespace == B && c.closes.as_ref() == Some(&in_b.id)), "B's close names B's binding");
+    hand::commit(&repo, "closed everywhere, one commit");
+    let (code, text) = verify(&repo, &[]);
+    assert_eq!(code, 0, "{text}");
+    assert!(!text.contains("is closed in"), "no split to notice: {text}");
+    for ns in [A, B] {
+        assert!(repo.signers(ns).lines().filter(|l| !l.starts_with('#')).all(|l| l.contains("valid-before=")), "{ns}: {}", repo.signers(ns));
+    }
+    // Closed everywhere, there is nothing left to close.
+    let again = repo.ledger(&["identity", "revoke", &in_b.id.to_string(), "--everywhere"]);
+    assert_eq!(again.status.code(), Some(1), "{}", common::both(&again));
+    assert!(common::both(&again).contains("nothing to close"), "{}", common::both(&again));
+}
+
+#[test]
+fn a_rotate_everywhere_closes_the_key_and_binds_the_new_one_in_each_namespace() {
+    let (repo, key) = a_then_b();
+    let in_a = bindings(&repo, A)[0].id.to_string();
+    let next = repo.keygen("owner-next");
+    repo.use_key(&key);
+    let out = repo.ok(&["identity", "rotate", &in_a, "--key-file", &format!("{next}.pub"), "--everywhere"]);
+    assert!(out.contains("2 namespace(s)"), "{out}");
+    let blob = std::fs::read_to_string(format!("{next}.pub")).expect("pub").split_whitespace().nth(1).map(str::to_string).expect("blob");
+    for ns in [A, B] {
+        let here = bindings(&repo, ns);
+        let rotate = here.iter().find(|b| b.act == BindingAct::Rotate).expect("a rotate in each namespace");
+        assert_eq!(rotate.key.as_deref(), Some(blob.as_str()), "{ns}: the new key");
+        assert_eq!(rotate.closes.as_ref(), Some(&here[0].id), "{ns}: closes that namespace's binding");
+    }
+    hand::commit(&repo, "rotated everywhere, one commit");
+    let (code, text) = verify(&repo, &[]);
+    assert_eq!(code, 0, "{text}");
+    assert!(!text.contains("is closed in"), "{text}");
+    // The new key signs in B straight away; the old one does not.
+    let id = decision(&repo, B, "Signed with the rotated key.");
+    hand::commit(&repo, "a decision in B");
+    let refused = refusal(&repo, &["accept", &id]);
+    assert!(refused.contains("it was closed in"), "{refused}");
+    repo.use_key(&next);
+    repo.ok_tty(&["accept", &id]);
 }

@@ -28,6 +28,9 @@ fn two_bound() -> (Repo, String) {
     repo.ok(&["init", "--namespace", A, "--external-ref", MANDATE]);
     repo.ok(&["init", "--namespace", B, "--external-ref", MANDATE]);
     hand::commit(&repo, "two namespaces, one key bound in each");
+    // A later act in the same second as the policies would sit at the
+    // policies' second: `ssh-keygen` reads windows at second granularity.
+    std::thread::sleep(std::time::Duration::from_millis(1100));
     (repo, key)
 }
 
