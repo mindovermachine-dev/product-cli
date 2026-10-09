@@ -32,18 +32,24 @@ pub enum Attribution {
 /// Uses the pickaxe (`-S`) rather than `git blame` on purpose: an acceptance
 /// is a block of lines whose exact position moves with formatting, but the
 /// change-set the acceptance id first appears in does not move at all.
-pub fn introducing_author(root: &Path, file: &Path, needle: &str) -> Attribution {
+///
+/// With `legacy` (LP-3.35), the pickaxe names both the file's path and the
+/// flat path it had before the re-layout: `-S` matches the re-layout commit
+/// too, where the id leaves one path and enters the other, but `--reverse`
+/// puts the original introduction first.
+pub fn introducing_author(root: &Path, file: &Path, needle: &str, legacy: bool) -> Attribution {
     if !is_repository(root) {
         return Attribution::NoRepository;
     }
-    let relative = file.strip_prefix(root).unwrap_or(file);
+    let relative = file.strip_prefix(root).unwrap_or(file).to_string_lossy().replace('\\', "/");
+    let paths = crate::landing::lineage(&relative, legacy);
     let out = Command::new("git")
         .arg("-C")
         .arg(root)
         .args(["log", "--reverse", "--format=%ae"])
         .arg(format!("-S{needle}"))
         .arg("--")
-        .arg(relative)
+        .args(&paths)
         .output();
     let Ok(out) = out else {
         return Attribution::NoRepository;

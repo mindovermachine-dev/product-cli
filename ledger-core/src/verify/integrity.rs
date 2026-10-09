@@ -82,11 +82,11 @@ pub struct BlameOutcome {
 /// not failed: it is the state every acceptance passes through on its way
 /// into history. The check therefore lands on the next run over committed
 /// history, which in practice is CI.
-pub fn blame_consistency(view: &View, store: &Store) -> BlameOutcome {
+pub fn blame_consistency(view: &View, store: &Store, legacy: bool) -> BlameOutcome {
     let mut out = BlameOutcome::default();
     for viewed in &view.acceptances {
         let a = viewed.acceptance;
-        match introducing_author(&store.root, viewed.path, &a.id.to_string()) {
+        match introducing_author(&store.root, viewed.path, &a.id.to_string(), legacy) {
             Attribution::Author(email) if email != a.actor.as_str() => {
                 out.findings.push(Finding::new(
                     VerifyClass::L009,
