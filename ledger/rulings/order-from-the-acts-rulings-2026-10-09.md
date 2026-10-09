@@ -35,3 +35,7 @@ Ruled by the principal on 9 October 2026. The numbers continue `namespace-design
 **100.** The case of two trusted self-bound bindings is closed by the anchor (ruling 89). It gets no separate fix under D6. (Q20)
 
 **101.** The genesis holder's revoke may close a key that a `rotate` has already closed. Where several closes end one key, an act stands only if it is before each of them, as LP-4.39 says. So a thief's `rotate` that names forged acts does not keep them standing once the genesis holder's revoke, dated at the compromise, does not name them. This amends "a window closes once" for this case.
+
+## A question the rulings raised
+
+**102.** A terminating entry may name less than ruling 99's default. Ruling 99 sets that default for every close: the acts of the entry's family that the checkout holds. A genesis holder's revoke of a compromised key chooses its names as follows. `ledger identity revoke --at <instant> --trusted-to <commit>` names the family as it stood at the last commit the genesis holder trusts. Git is read here by the writer only, as a suggestion; the verifier reads the names and nothing else. The confirmation shows the list, and the holder may strike further ids from it before signing. Like every signed act, it is refused in a non-interactive session. This answers the question that rulings 99 and 101 raised (PRD §7).

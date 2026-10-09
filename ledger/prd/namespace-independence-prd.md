@@ -1,8 +1,8 @@
 # Namespace independence: design PRD
 
-First draft 7 October 2026; revised the same day after rulings 61 to 81, and again after rulings 82 to 84 (`ledger/rulings/namespace-design-rulings-2026-10-07.md`). Third revision, 9 October 2026: the order of acts comes from the acts, put to the principal as position D with twenty questions. **Fourth revision, 9 October 2026: position D is ruled.** Rulings 85 to 101 (`ledger/rulings/order-from-the-acts-rulings-2026-10-09.md`) answer the twenty questions and one the review raised, and §3.5 now states the ruled design.
+First draft 7 October 2026; revised the same day after rulings 61 to 81, and again after rulings 82 to 84 (`ledger/rulings/namespace-design-rulings-2026-10-07.md`). Third revision, 9 October 2026: the order of acts comes from the acts, put to the principal as position D with twenty questions. **Fourth revision, 9 October 2026: position D is ruled.** Rulings 85 to 101 (`ledger/rulings/order-from-the-acts-rulings-2026-10-09.md`) answer the twenty questions and one the review raised, and §3.5 now states the ruled design. Ruling 102 (same file, 9 October 2026) answers the one question the fourth revision raised, in §3.5.6.
 
-This document states the ruled design for rulings 32, 41 to 48, 61 to 63, 66 to 78, 80 to 82 and 85 to 101. Rulings 64, 65, 79, 83 and 84 are superseded (by 85, 93, 94 and 95) and rulings 66 and 77 amended (by 87 and 96); the move design they ruled is kept whole in Appendix A.1 as the record of what was weighed.
+This document states the ruled design for rulings 32, 41 to 48, 61 to 63, 66 to 78, 80 to 82 and 85 to 102. Rulings 64, 65, 79, 83 and 84 are superseded (by 85, 93, 94 and 95) and rulings 66 and 77 amended (by 87 and 96); the move design they ruled is kept whole in Appendix A.1 as the record of what was weighed.
 
 - **Section 3** gives the design topic by topic, each with the rulings it rests on.
 - **Points not separately ruled** are the first draft's leans, which the principal accepted as the basis of the design. They are marked "accepted with the design".
@@ -27,7 +27,7 @@ The session record is `ledger/sessions/2026-10-namespace-design.md`. It holds wh
 6. Issues
 7. Rulings, and the questions they raise
    - Position C and position D, the record of what was weighed
-   - Questions the rulings raise
+   - The question the rulings raised, ruled
 
 Appendix A. Options considered
    - A.1 The move act, the landing record, the freeze and arrival (rulings 64, 65, 77, 79, 83, 84; superseded by rulings 85, 93, 94 and 95)
@@ -526,7 +526,7 @@ Two things the stores showed about today's writers, both *(run)*: no verb takes 
 
 **Several closes of one key** (101; case L). A stolen key K1 can be closed twice.
 - *The thief's `rotate`* is a binding signed by K1: it closes K1 and opens K2, and its `after` names what the thief chooses. Named by digest, a forged acceptance signed by K1, dated inside K1's window and filed with the rotate is before that close (case G).
-- *The genesis holder's `revoke`* is the genesis holder's act, signed by a key of theirs (case B's genesis key), made under the genesis grant. It may close K1 although the rotate already closed it (101), dated at the time of compromise (98) and no earlier than K1's binding's `at`. Its `after` names the holder's legitimate acts and not the thief's. How the writer arrives at that set is the one question the rulings raise (§3.5.6, §7).
+- *The genesis holder's `revoke`* is the genesis holder's act, signed by a key of theirs (case B's genesis key), made under the genesis grant. It may close K1 although the rotate already closed it (101), dated at the time of compromise (98) and no earlier than K1's binding's `at`. Its `after` names the holder's legitimate acts and not the thief's. How the writer arrives at that set is ruled (102, §3.5.6).
 - *LP-4.39's "every close" reading.* Every signature check considers all closes of the matched key. An act stands only if it is before each close. A forged act named by the rotate and not by the revoke is before one close and after the other: `L011`. A legitimate act named by both and dated before both stands, as a review item until re-accepted, as today. An act named by neither is after both: `L011`.
 - *The thief's new key.* The rotate is an act K1 signed. The genesis holder's revoke does not name it, so it is after the revoke: its signature does not hold (`L011`), the binding it carries is never trusted, and K2 opens no window. Every act signed by K2 is then unsigned by a trusted key and fails as case B's forged act does. The genesis holder may also revoke K2 naming nothing (case B); the verdicts are the same either way. *(Inference: read from 85 and 101 over case L's store. Today's refusal of the second close is run, session record "Case L, built and run"; the ruled verdict is not.)*
 
@@ -611,7 +611,7 @@ D7's other filers are judged as today, against the bindings trusted before them 
 
 #### 3.5.6 The writer
 
-*Rulings 98, 99 and 101.*
+*Rulings 98, 99, 101 and 102.*
 
 How `ledger` computes the names when it files a terminating entry.
 
@@ -621,7 +621,7 @@ How `ledger` computes the names when it files a terminating entry.
 - **When the base moves.** An act of the family merges after the entry was written and before it lands: the act is unnamed, so after the entry, and `main` carries a finding once the entry merges (case E2). Put right by re-accepting the act under the live key, or by refiling the entry before it merges: running the verb again on the updated checkout files a new entry naming the current family, and replaces the first while it is uncommitted. Once committed, the first entry stands and a second close is refused ("a window closes once", `binding_refs`), except for the genesis holder's revoke of a rotated key (101, below), so the remedy is re-acceptance. There is no freeze: nothing stops the namespace while the entry is in flight.
 - **The genesis holder's revoke takes an `at`** (98): `identity revoke --at <instant>`, the time of compromise, for the genesis holder's revoke. It is refused before the `at` of the binding it closes (98; case B2's bound, `authority::filing::closing`). Acts of the family dated after `--at` are named too (99); they are after the close by date, which is what a close dated at the compromise is for. No other verb takes a time.
 - **Closing a key a `rotate` has closed** (101). The genesis holder's `revoke` of a key K1 that a `rotate` already closed files a second close of K1. `binding_refs`' "a window closes once" admits this one case: a `revoke` by the genesis holder, under the genesis grant, of a key whose only close so far is a `rotate`. It does not name the rotate, which is the thief's act.
-- **What that revoke names: the question the rulings raise.** Ruling 99 has the writer name every act of the family the checkout holds. In case L the checkout holds the thief's forged acts, signed by K1, and a thief who backdates them to before the compromise puts them inside the window and before `--at` as well, so a revoke that named everything in the checkout would keep them standing. Ruling 101 has the revoke not name them. The two hold together only if the genesis holder's revoke can leave acts of the family out, which neither ruling states. The writer could name what the checkout holds and let the genesis holder strike acts at the confirmation, or take an explicit list, or name only acts dated before `--at` (which the backdating defeats). This is put to the principal in §7 and not picked here.
+- **What that revoke names** (102). A terminating entry may name less than ruling 99's default, which is the acts of the entry's family that the checkout holds. The genesis holder's revoke of a compromised key chooses its names as follows: `ledger identity revoke --at <instant> --trusted-to <commit>` names the family as it stood at the last commit the genesis holder trusts. Git is read here by the writer only, as a suggestion; the verifier reads the names and nothing else. The confirmation shows the list, and the holder may strike further ids from it before signing. Like every signed act, it is refused in a non-interactive session. In case L the thief's forged acts, filed after the trusted commit, are not named, however they are dated; a forged act the thief managed to land before it is struck at the confirmation. This answers the question rulings 99 and 101 raised, and issue 15 carries it.
 
 #### 3.5.7 What git still does
 
@@ -1133,7 +1133,7 @@ One per unit of work, in order. Sizes are S, M and L. The order is kept: layout 
 | 12 | Order from the acts (format 8; rulings 85 to 88, 92): `after` on key closes, revocations, superseding grants and policies; `Authority::as_of` by names and `at`, every close of a key applied (101); `L011`/`A006` messages; names outside the family and dangling names as notices; an entry below format 8 names nothing | §3.5.1 to §3.5.3 | L | 2, 5, 11 | Yes (format 8) |
 | 13 | The founding (rulings 89, 100): `anchor` on the genesis grant; `init` refuses without a usable key; `--without-key` removed; `A005` cleared by revoking an impostor's genesis | §3.5.5 | S | 12 | With 12 |
 | 14 | `role_hash` on grants, `ledger.role.v1`; roles leave `Authority::as_of`'s landing (ruling 91) | §3.5.4 | S | 12 | With 12 |
-| 15 | Writers compute the names (ruling 99): `identity rotate` and `identity revoke`, `grant revoke`, `grant new --supersedes`, `policy set`, `init --namespace`; print and confirm the ids; `identity revoke --at` for the genesis holder, bounded below by the closed binding's `at` (98), admitted over a key a `rotate` closed (101); how that revoke leaves the thief's acts unnamed, once §7's question is ruled | §3.5.6 | M | 12 to 14 | No |
+| 15 | Writers compute the names (ruling 99): `identity rotate` and `identity revoke`, `grant revoke`, `grant new --supersedes`, `policy set`, `init --namespace`; print and confirm the ids; `identity revoke --at` for the genesis holder, bounded below by the closed binding's `at` (98), admitted over a key a `rotate` closed (101); how that revoke leaves the thief's acts unnamed: `--trusted-to <commit>` and striking ids at the confirmation (102) | §3.5.6 | M | 12 to 14 | No |
 | 16 | The move (rulings 93 to 95): whole-namespace removal as a notice; `L009` scoped to acts no signature covers; a namespace with no policy moves with its history or is governed first; AC-1 | §3.5.8 | S | 10, 12 | Yes (`L007`, `L009` scope) |
 | 17 | Rewrite the D6 tests of §3.5.11; the attack-row tests AC-D-A to AC-D-L; AC-D-1 to AC-D-7 | §4.2 | M | 12 to 16 | No |
 | 18 | Export per namespace: drop `*` reach; namespaced set and role IRIs; the new literals | §3.9 | S | 5, 12 | Yes; the analyzers' reader is told |
@@ -1144,7 +1144,7 @@ One per unit of work, in order. Sizes are S, M and L. The order is kept: layout 
 
 **What changed from the third revision.** The twenty-two issues and their order stand; the rulings settled what each one builds, and none changed size.
 - Issue 12 gains the "every close" reading of ruling 101: `Authority::as_of` applies each close of a key. Within L.
-- Issue 15 gains `identity revoke --at` as ruled (98), its admission over a rotated key (101), and the writer's treatment of a thief's acts, which waits on §7's question. Within M.
+- Issue 15 gains `identity revoke --at` as ruled (98), its admission over a rotated key (101), and the writer's treatment of a thief's acts: `--trusted-to <commit>` and the confirmation's strike list (102). Within M.
 - Issue 16 cites rulings 93 to 95 in place of the leans.
 - Issue 17 gains the attack-row test AC-D-L.
 - Issue 20 carries the pin's token count to the pinning design (89).
@@ -1285,11 +1285,13 @@ Side by side, as the third revision put them. Position D is ruled (85); this is 
 
 D6, D7 and D9 of 2 October: D6 is superseded by 85; D7 is amended in its first filer (89) and keeps the other three; D9 is untouched, and `A006`'s named-grant check gains the grant's own `A006` with #82 (90). D5 (c)'s position rule becomes "named by the first policy" (88). D8 is untouched.
 
-### Questions the rulings raise
+### The question the rulings raised, ruled
 
-One. Nothing else in rulings 85 to 101 conflicts with a standing ruling or with another of them; where a ruling supersedes or amends an earlier one, it says so.
+One question was raised, and it is ruled. Nothing else in rulings 85 to 101 conflicts with a standing ruling or with another of them; where a ruling supersedes or amends an earlier one, it says so.
 
-1. **What the genesis holder's revoke names, under rulings 99 and 101** (§3.5.6; case L). Ruling 99: a writer that files a terminating entry names the acts of its family that the checkout holds. Ruling 101: the genesis holder's revoke of a key a thief's `rotate` closed does not name the thief's forged acts. In case L the checkout holds those forged acts, signed by the closed key and so of its family, and a thief who backdates them to before the compromise puts them before `--at` as well. A revoke that names everything the checkout holds, as 99 says, keeps them standing; a revoke that leaves them out, as 101 needs, departs from 99. Both hold only if that one revoke may name less than the checkout holds. The writer could name the family and let the genesis holder strike acts at the confirmation; take an explicit list; or name only acts dated before `--at`, which the backdating defeats. Not picked here; issue 15 waits on it.
+| Question | Ruling | In short |
+| --- | --- | --- |
+| What the genesis holder's revoke names, under rulings 99 and 101 (§3.5.6; case L). Ruling 99 has the writer name the acts of the family the checkout holds; ruling 101 has the revoke of a key a thief's `rotate` closed not name the thief's forged acts, which the checkout holds and which a thief can backdate to before `--at`. | 102 | A terminating entry may name less than ruling 99's default. `identity revoke --at <instant> --trusted-to <commit>` names the family as it stood at the last commit the genesis holder trusts; git is the writer's suggestion only, the verifier reads the names; the confirmation shows the list and the holder may strike further ids; refused in a non-interactive session. |
 
 ### Open, for the pinning design
 
