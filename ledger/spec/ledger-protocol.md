@@ -249,7 +249,7 @@ All of section 3.6 is **not implemented**. Where the implemented format behaves 
 - **LP-3.30** (W, V) **Not implemented.** A namespace verifies the same wherever it sits (ruling 32). Sharing a repository with another namespace changes no rule, so a namespace can be moved to another repository by moving its files: no hash changes, no reference changes form, and both sides still verify. Coupling between namespaces is kept as low as it can be made.
 - **LP-3.31** (W, V) **Not implemented.** Only `based_on` crosses a namespace. `supersedes` never names a decision in another namespace (ruling 43). *The implemented format does not refuse it: `G001` asks only that a `supersedes` target is a decision filed anywhere in the store, so a cross-namespace `supersedes` inside one store passes (established by reading).*
 - **LP-3.32** (W, V) **Not implemented.** Only a decision marked `exported` (section 3.5) can be pinned from another namespace (ruling 44). *Nothing in the implemented format pins, and `exported` gates nothing: it is read only by the format rule of LP-3.28 and by the export (established by reading).*
-- **LP-3.33** (W, V) **Not implemented.** No file holds entities of two namespaces (ruling 45). *The implemented format does not refuse it: no rule compares the namespaces of a change-set's entries, and the export restricts each change-set to one namespace's entries (LP-9.11), which presumes such files. Grants of scope `*` and role files belong to no namespace at all. No committed change-set in this repository holds two namespaces (established by reading).*
+- **LP-3.33** (W, V) No file holds entities of two namespaces (ruling 45). A file's namespace is its directory (LP-3.34), and every entity under `ns/<ns>/` belongs to `<ns>`: a decision id, the decision a version or an acceptance names, a binding's or a policy's `namespace`, a revocation's target, the grant a grant acceptance or an interval names, the interval an availability ends, and a sidecar's entity. One that belongs elsewhere is a schema fault at verification (LP-8.8), and a writer never files one: a change-set is homed by the one namespace its entities name, and a mixed one is refused before it is written.
 
 ## 4. Canonical form, hashing and signatures
 
@@ -1022,7 +1022,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 ### 8.2 The parse gate
 
 - **LP-8.7** (V) Verification fails for a **schema fault** or one of **fourteen classes**, and for nothing else. A new reason is a change to this document: `L010` arrived that way, as the spec v1.1 amendment, `L013`/`L014` as spec v1.6, and the signing classes `L011`/`L012` (numbers reserved for them by #65, ruling D3) as spec v1.8.
-- **LP-8.8** (V) `SCHEMA` covers: a file that does not parse against the format it declares; an unknown `format`; an unknown key; an unknown discharge scheme; a file stem disagreeing with its declared id; a duplicate id, an acceptance's included, anywhere in the store; a decision identity object filed more than once (LP-5.11, ruling 49); a per-allocation obligation from section 5.3 that is not met (except the escape's, which is `L002`); a non-empty `signature`; a version naming an undeclared set; a revocation naming an acceptance nobody filed; a `key` not matching `^[A-Z][A-Za-z0-9]{0,63}$`; `under` in a file below format 7; a sidecar that is misnamed, names no signable entity, or is on an act no policy governs (ruling 52); a key binding filed by a party D7 does not allow (section 4.10); a format declaration below what a field needs or at or above the format that retired a shape the file uses (LP-3.15); a binding of a key that LP-4.37 refuses; a policy listing `none` with another scheme (LP-4.29); and the authority rules of section 8.4.
+- **LP-8.8** (V) `SCHEMA` covers: a file that does not parse against the format it declares; an unknown `format`; an unknown key; an unknown discharge scheme; a file stem disagreeing with its declared id; a duplicate id, an acceptance's included, anywhere in the store; a decision identity object filed more than once (LP-5.11, ruling 49); a per-allocation obligation from section 5.3 that is not met (except the escape's, which is `L002`); a non-empty `signature`; a version naming an undeclared set; a revocation naming an acceptance nobody filed; a `key` not matching `^[A-Z][A-Za-z0-9]{0,63}$`; `under` in a file below format 7; a sidecar that is misnamed, names no signable entity, or is on an act no policy governs (ruling 52); an entity under a namespace's directory that belongs to another namespace, a revocation's target and a sidecar's entity included (LP-3.33, ruling 45); a key binding filed by a party D7 does not allow (section 4.10); a format declaration below what a field needs or at or above the format that retired a shape the file uses (LP-3.15); a binding of a key that LP-4.37 refuses; a policy listing `none` with another scheme (LP-4.29); and the authority rules of section 8.4.
 
 ### 8.3 The fourteen
 
@@ -1473,6 +1473,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 | 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
+| 9 October 2026 | **Ruling 45 applied** (PRD §3.7; issue 3). LP-3.33 loses its not-implemented mark and its note on the implemented format: every entity under `ns/<ns>/` belongs to `<ns>`, a revocation's target and a sidecar's entity included, and one that belongs elsewhere is a schema fault (LP-8.8). Closes N12's cross-namespace half with ruling 49, and N14. No class added; no digest moves; no committed file in this repository is mixed (0 of 187). |
 | 9 October 2026 | **Spec v1.9: the flat layout in history** (rulings 82 and 97; PRD §3.1.1, §3.5.7; issue 2). LP-3.35 loses its not-implemented mark: a verifier detects the flat paths of revision v1.8 on the first-parent history it reads; with the legacy capability it follows each tracked file along its lineage, the flat path and the namespaced one, for `L007`, LP-3.16's `format:` comparison, `L009` and the base overlay, and reads no flat semantics; without it, it refuses with exit 2 naming the first flat commit. LP-8.30 gains the re-layout exception, LP-8.32 the lineage. No class added; no digest moves. The Appendix C note of v1.9 gains its history paragraph. |
 | 9 October 2026 | **Spec v1.9: one directory per namespace** (rulings 62, 63, 66 as amended by 87; PRD §3.1; issue 1). Section 3.1 gives the layout: every namespace under `.decisions/ns/<namespace>/` with its own `sets/`, `roles/`, `log/`, `sig/` and `allowed_signers`; the flat paths of revision v1.8 are a schema fault at the verified commit (LP-3.34, new). LP-3.35 (new) states what a verifier does with the flat layout in history and is marked not implemented until issue 2. LP-3.36 (new): ids, set ids, role ids and file names are unique within a namespace. LP-5.22 (new): a version names a set of its own namespace. LP-4.10 and sections 5.2, 5.3 and 5.6 name the new paths. No class added; no digest moves; no format number; `CANONICAL_FORM` stays `v1`. The Appendix C note "Spec v1.9 — one directory per namespace" is added. |
 | 9 October 2026 | The Unicode version behind LP-4.18 step 2b is named: 17.0.0. The tables were unpinned — the reference accepted any `unicode-normalization` 0.1.x and commits no lockfile, and a second implementation had no version to match. The reference now pins the release that carries these tables (`=0.1.25`), held by a test on its `UNICODE_VERSION`. A move to a later Unicode version is a canonical-form question for the principal. No class added; no digest moves; `CANONICAL_FORM` stays `v1`. (#140) |
@@ -1617,6 +1618,29 @@ or is normalised differently. It is *not* required for a `format` bump that
 only adds an unhashed field.
 
 ---
+
+#### An entity outside its namespace's directory is refused (2026-10-09, no format change)
+
+**Ruled 7 October 2026** (ruling 45; `ledger/prd/namespace-independence-prd.md`
+§3.7; issue 3 of its §6). A file's namespace is its directory (LP-3.34),
+and every entity under `ns/<ns>/` belongs to `<ns>`. From this change a
+verifier refuses, as a `SCHEMA` fault naming the entity: a decision id of
+another namespace; a version or an acceptance of such a decision; a key
+binding or a policy whose `namespace` is another; a revocation of an
+acceptance or a grant filed under another namespace's directory; a grant
+acceptance or an unavailability naming a grant filed elsewhere, and an
+availability ending an interval filed elsewhere; and a sidecar under a
+namespace other than its entity's. Together with ruling 49 (a duplicate
+acceptance id is a schema fault) this closes the case in which a
+revocation hand-filed in an ungoverned namespace reused a governed
+acceptance's id and revoked it with no grant and no signature
+(`ledger/sessions/2026-10-verification.md`, case 3c).
+
+**No digest moves** and no class is added. The writers never filed a
+mixed change-set, and no committed file in this repository holds two
+namespaces (0 of 187, scanned), so no stored verdict changes. A
+hand-written store that did is refused until each entity is filed under
+its own namespace's directory.
 
 #### Spec v1.9 — one directory per namespace (2026-10-09, no format change)
 
