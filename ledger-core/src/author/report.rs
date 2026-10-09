@@ -130,7 +130,7 @@ pub fn blame(store: &Store, decision: &DecisionId) -> String {
         } else {
             "historical"
         };
-        let committed = match introducing_author(&store.root, viewed.path, &a.id.to_string()) {
+        let committed = match introducing_author(&store.root, viewed.path, &a.id.to_string(), true) {
             Attribution::Author(email) => format!("committed by {email}"),
             Attribution::NotCommitted => "not yet committed".to_string(),
             Attribution::NoRepository => "no repository to corroborate".to_string(),

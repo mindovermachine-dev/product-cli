@@ -49,7 +49,7 @@ fn when(at: &DateTime<Utc>) -> String {
 /// gate trusts (an unsigned or wrongly signed binding never enters one,
 /// spec v1.8). A namespace that binds nothing has no entry.
 pub fn derive(store: &Store) -> BTreeMap<String, String> {
-    let landing = crate::landing::Landing::compute(&store.root, None).unwrap_or_default();
+    let landing = crate::landing::Landing::compute(&store.root, None, true).unwrap_or_default();
     derive_each(&crate::signing::check::trusted_bindings(store, &landing), &filed(store))
 }
 

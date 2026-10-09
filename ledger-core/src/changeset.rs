@@ -102,6 +102,21 @@ impl ChangeSet {
         }
     }
 
+    /// The namespace this change-set's entities name, where one does: a
+    /// decision id, a version's or an acceptance's decision, a binding's or
+    /// a policy's `namespace`. What the legacy capability homes a flat-era
+    /// file by (LP-3.35); a file of the layout is homed by its directory.
+    pub fn namespace_hint(&self) -> Option<&str> {
+        self.decisions
+            .iter()
+            .map(|d| d.id.namespace())
+            .chain(self.versions.iter().map(|v| v.decision.namespace()))
+            .chain(self.acceptances.iter().map(|a| a.decision.namespace()))
+            .chain(self.key_bindings.iter().map(|b| b.namespace.as_str()))
+            .chain(self.policies.iter().map(|p| p.namespace.as_str()))
+            .next()
+    }
+
     /// How many entries the act filed, of every kind.
     pub fn entry_count(&self) -> usize {
         self.decisions.len()

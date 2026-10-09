@@ -19,6 +19,14 @@
 //! would revive what it ended), an edited role. All are `L007` by the
 //! `L010` amendment mechanism: the stored content no longer matches content
 //! the record already fixed.
+//!
+//! **Across the re-layout** (LP-3.35, rulings 82 and 97). With the legacy
+//! capability a file is judged along its lineage: the flat path it had in
+//! revision v1.8 and its path under its namespace's directory, one history.
+//! The re-layout commit deletes every flat file; that is no removal when
+//! each entity is present, unchanged, under its namespace's directory, so a
+//! deleted flat path whose file moved is judged through the moved file, and
+//! anything else stays `L007`.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -27,7 +35,7 @@ use serde_yaml::Value;
 
 use crate::finding::{Finding, VerifyClass};
 use crate::landed::entities;
-use crate::landing::{content_at, file_versions, touched_after_landing, Landing};
+use crate::landing::{content_at_any, lineage, lineage_versions, touched_after_landing, Landing};
 use crate::store::Store;
 
 /// Every history finding, when git answered.
@@ -36,25 +44,44 @@ pub fn findings(store: &Store, landing: &Landing) -> Vec<Finding> {
         return Vec::new();
     }
     let mut out = Vec::new();
-    for path in touched_after_landing(&store.root) {
-        let versions = file_versions(&store.root, "HEAD", &path);
+    // A flat file the re-layout deleted is judged through the file it
+    // became, under its namespace's directory, along their one lineage;
+    // one that went nowhere is a removal like any other.
+    let mut touched = std::collections::BTreeSet::new();
+    for path in touched_after_landing(&store.root, landing.legacy) {
+        let moved = if landing.legacy && crate::layout::classify_flat(&path).is_some() {
+            crate::layout::moved_to(&store.root, &path)
+        } else {
+            Vec::new()
+        };
+        if moved.is_empty() {
+            touched.insert(path);
+        } else {
+            touched.extend(moved);
+        }
+    }
+    for path in touched {
+        let paths = lineage(&path, landing.legacy);
+        let versions = lineage_versions(&store.root, "HEAD", &paths);
         let Some(first) = versions.first() else { continue };
         let now = std::fs::read_to_string(store.root.join(&path)).ok();
-        if crate::layout::is_log(&path) {
-            out.extend(log_file(&store.root, &path, &versions, now.as_deref()));
-            out.extend(format_changes(&store.root, &path, &versions, now.as_deref()));
-        } else if let Some(landed) = content_at(&store.root, first, &path) {
+        let is_log = crate::layout::is_log(&path) || crate::layout::classify_flat(&path) == Some(crate::layout::Kind::Log);
+        if is_log {
+            out.extend(log_file(&store.root, &path, &paths, &versions, now.as_deref()));
+            out.extend(format_changes(&store.root, &path, &paths, &versions, now.as_deref()));
+        } else if let Some(landed) = content_at_any(&store.root, first, &paths) {
             out.extend(whole_file(&path, first, &landed, now.as_deref()));
         }
     }
     out
 }
 
-/// Each entity any landed version of the file held, against the file now.
-fn log_file(root: &Path, path: &str, versions: &[String], now: Option<&str>) -> Vec<Finding> {
+/// Each entity any landed version of the file held, along its lineage,
+/// against the file now.
+fn log_file(root: &Path, path: &str, paths: &[String], versions: &[String], now: Option<&str>) -> Vec<Finding> {
     let mut held: BTreeMap<String, (Value, &str)> = BTreeMap::new();
     for commit in versions {
-        let Some(text) = content_at(root, commit, path) else { continue };
+        let Some(text) = content_at_any(root, commit, paths) else { continue };
         for (key, value) in entities(&text).unwrap_or_default() {
             held.entry(key).or_insert((value, commit.as_str()));
         }
@@ -87,9 +114,9 @@ fn log_file(root: &Path, path: &str, versions: &[String], now: Option<&str>) -> 
 /// working tree last (ruling 58). The one change allowed is a correction
 /// (LP-3.16): a raise, to exactly the lowest format the content needs, with
 /// no entity changed in the same step. Anything else is `L007`.
-fn format_changes(root: &Path, path: &str, versions: &[String], now: Option<&str>) -> Vec<Finding> {
+fn format_changes(root: &Path, path: &str, paths: &[String], versions: &[String], now: Option<&str>) -> Vec<Finding> {
     let mut steps: Vec<(String, String)> =
-        versions.iter().filter_map(|c| content_at(root, c, path).map(|t| (short(c).to_string(), t))).collect();
+        versions.iter().filter_map(|c| content_at_any(root, c, paths).map(|t| (short(c).to_string(), t))).collect();
     if let Some(now) = now {
         steps.push(("the working tree".to_string(), now.to_string()));
     }
@@ -128,19 +155,24 @@ fn declared(text: &str) -> Option<u64> {
 fn whole_file(path: &str, commit: &str, landed: &str, now: Option<&str>) -> Option<Finding> {
     let same = match now {
         None => false,
-        Some(now) if crate::layout::is_role(path) => without_format(now) == without_format(landed),
+        Some(now) if is_role(path) => without_format(now) == without_format(landed),
         Some(now) => now == landed,
     };
     if same {
         return None;
     }
     let what = if now.is_some() { "changed" } else { "removed" };
-    let rule = if crate::layout::is_role(path) {
+    let rule = if is_role(path) {
         "roles are write-once; a new role and new grants supersede"
     } else {
         "a landed signature is never edited or removed"
     };
     Some(Finding::new(VerifyClass::L007, path, format!("{what} since it landed in {} — {rule}", short(commit))))
+}
+
+/// A role file of either layout.
+fn is_role(path: &str) -> bool {
+    crate::layout::is_role(path) || crate::layout::classify_flat(path) == Some(crate::layout::Kind::Role)
 }
 
 fn without_format(text: &str) -> Option<Value> {
