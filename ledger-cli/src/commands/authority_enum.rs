@@ -94,6 +94,10 @@ pub enum IdentityCmd {
     Revoke {
         /// `key:<ulid>` — the binding to close
         binding: String,
+        /// Close the key in every namespace its principal holds it open in:
+        /// one change-set per namespace, to land in one commit (ruling 69)
+        #[arg(long)]
+        everywhere: bool,
     },
     /// Close one of your bindings and bind a new key in the same act
     Rotate {
@@ -101,6 +105,10 @@ pub enum IdentityCmd {
         binding: String,
         #[arg(long, value_name = "PATH")]
         key_file: std::path::PathBuf,
+        /// Rotate in every namespace you hold the closed key open in: one
+        /// change-set per namespace, to land in one commit (ruling 69)
+        #[arg(long)]
+        everywhere: bool,
     },
     /// Rewrite each namespace's allowed_signers from the log (after a merge)
     Sync,

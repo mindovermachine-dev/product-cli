@@ -84,10 +84,10 @@ pub fn identity(root: Option<PathBuf>, cmd: IdentityCmd) -> Result<i32, String> 
             args.principal = principal.as_deref().map(str::parse).transpose()?;
             finish(author.identity_add(args))
         }
-        IdentityCmd::Revoke { binding } => finish(author.identity_revoke(&binding.parse()?)),
-        IdentityCmd::Rotate { binding, key_file: path } => {
+        IdentityCmd::Revoke { binding, everywhere } => finish(author.identity_revoke(&binding.parse()?, everywhere)),
+        IdentityCmd::Rotate { binding, key_file: path, everywhere } => {
             let closes = binding.parse()?;
-            finish(author.identity_rotate(&closes, key_file(&path, String::new())?))
+            finish(author.identity_rotate(&closes, key_file(&path, String::new())?, everywhere))
         }
         IdentityCmd::Sync => Ok(EXIT_OK),
     }

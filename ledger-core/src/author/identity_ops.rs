@@ -22,6 +22,7 @@ use super::sign_ops::ToSign;
 use super::{Applied, Author, AuthorError};
 
 /// A public key, as OpenSSH writes it: type then base64.
+#[derive(Clone)]
 pub struct KeyArgs {
     pub namespace: String,
     pub key_type: String,
@@ -39,14 +40,69 @@ impl Author {
     }
 
     /// Close one of the actor's open bindings and open a new key in one act.
-    pub fn identity_rotate(&mut self, closes: &KeyBindingId, args: KeyArgs) -> Result<Applied, AuthorError> {
-        self.bind(BindingAct::Rotate, Some(closes.clone()), Some(args))
+    /// With `everywhere`, in every namespace the principal holds the closed
+    /// key open in (LP-6.34).
+    pub fn identity_rotate(&mut self, closes: &KeyBindingId, args: KeyArgs, everywhere: bool) -> Result<Applied, AuthorError> {
+        match everywhere {
+            true => self.close_everywhere(BindingAct::Rotate, closes, Some(&args)),
+            false => self.bind(BindingAct::Rotate, Some(closes.clone()), Some(args)),
+        }
     }
 
     /// Close a binding's window — the principal's act, or the genesis
     /// holder's (a compromised key's owner may not be the one to notice).
-    pub fn identity_revoke(&mut self, closes: &KeyBindingId) -> Result<Applied, AuthorError> {
-        self.bind(BindingAct::Revoke, Some(closes.clone()), None)
+    /// With `everywhere`, in every namespace the principal holds the key
+    /// open in (LP-6.34).
+    pub fn identity_revoke(&mut self, closes: &KeyBindingId, everywhere: bool) -> Result<Applied, AuthorError> {
+        match everywhere {
+            true => self.close_everywhere(BindingAct::Revoke, closes, None),
+            false => self.bind(BindingAct::Revoke, Some(closes.clone()), None),
+        }
+    }
+
+    /// A close in every namespace the key's principal holds it open in
+    /// (ruling 69, LP-6.34): one change-set per namespace, each the same
+    /// act with the same `at`, signed in its own namespace and gated as it
+    /// is filed, in the order of the namespaces' names. A close ends the key
+    /// in its own namespace only (LP-6.32), so this is how one invocation
+    /// ends a key everywhere; the files land in one commit.
+    fn close_everywhere(&mut self, act: BindingAct, closes: &KeyBindingId, key: Option<&KeyArgs>) -> Result<Applied, AuthorError> {
+        let store = self.load();
+        let all = Authority::build(&store);
+        let target = all
+            .bindings
+            .iter()
+            .copied()
+            .find(|b| b.id == *closes && b.act.opens())
+            .ok_or_else(|| AuthorError::Usage(format!("{closes} opens no key window")))?;
+        let mut open: Vec<&KeyBinding> = all
+            .bindings
+            .iter()
+            .copied()
+            .filter(|o| o.act.opens() && o.principal == target.principal && o.key == target.key)
+            .filter(|o| !crate::authority::key_close::is_closed(&all.bindings, o))
+            .collect();
+        open.sort_by(|a, b| a.namespace.cmp(&b.namespace));
+        if open.is_empty() {
+            return Err(AuthorError::Conflict(format!("{closes}'s key is closed in every namespace it was bound in — nothing to close")));
+        }
+        let mut lines = vec![format!(
+            "closing {}'s key in {} namespace(s): {}",
+            target.principal,
+            open.len(),
+            open.iter().map(|o| format!("`{}`", o.namespace)).collect::<Vec<_>>().join(", ")
+        )];
+        let mut last = None;
+        for o in open {
+            let key = key.map(|k| KeyArgs { namespace: o.namespace.clone(), ..k.clone() });
+            let applied = self.bind(act, Some(o.id.clone()), key)?;
+            lines.extend(applied.lines);
+            if let Some(previous) = last.replace(applied.path) {
+                lines.push(format!("filed {}", previous.display()));
+            }
+        }
+        let path = last.ok_or_else(|| AuthorError::Io("nothing filed".into()))?;
+        Ok(Applied { path, lines })
     }
 
     fn bind(
