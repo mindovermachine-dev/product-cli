@@ -185,7 +185,7 @@ fn ordered(mut all: Vec<Subject<'_>>) -> Vec<Subject<'_>> {
 /// The policy a subject is judged under: a policy change under the one it
 /// replaces; anything else under the policy in force at its position.
 fn governing(store: &Store, landing: &Landing, s: &Subject<'_>) -> Option<Policy> {
-    let auth = Authority::as_of(store, landing, s.position);
+    let auth = Authority::as_of(store, landing, s.position, &s.namespace);
     match s.policy.and_then(|p| p.replaces.as_ref()) {
         Some(prior) => Authority::build(store).policies.iter().find(|p| p.hash == *prior).map(|p| (*p).clone()),
         None => auth.policy(&s.namespace).cloned(),
@@ -201,7 +201,7 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
             out.findings.push(Finding::schema(&s.id, rule));
             continue;
         }
-        let auth = Authority::as_of(store, landing, s.position);
+        let auth = Authority::as_of(store, landing, s.position, &s.namespace);
         if let Err(rule) = may_file(&auth, b) {
             out.findings.push(Finding::schema(&s.id, format!("D7: {rule}")));
             continue;

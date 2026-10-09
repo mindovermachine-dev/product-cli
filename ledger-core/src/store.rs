@@ -68,9 +68,10 @@ impl Store {
         out
     }
 
-    /// The role with this id, when one is declared.
-    pub fn role(&self, id: &str) -> Option<&crate::authority::Role> {
-        self.roles.iter().find(|r| r.id == id)
+    /// The role with this id declared under `namespace`'s `roles/`, when one
+    /// is: roles are per namespace (LP-5.19, ruling 47).
+    pub fn role_in(&self, namespace: &str, id: &str) -> Option<&crate::authority::Role> {
+        self.roles.iter().find(|r| r.id == id && r.namespace == namespace)
     }
 
     /// How many entries loaded cleanly, for the summary line.

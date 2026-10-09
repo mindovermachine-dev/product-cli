@@ -68,6 +68,9 @@ impl Author {
         };
         // A `rotate` is signed by the key it closes (LP-4.12, ruling 53).
         let closed_key = target.filter(|_| act == BindingAct::Rotate).and_then(|b| b.key_type.clone().zip(b.key.clone()));
+        // The namespace's own authority decides who its genesis holder is
+        // (ruling 47); its bindings still range over the store (issue 6).
+        let auth = Authority::of(&store, &namespace);
         let policy = auth.policy(&namespace).cloned().ok_or_else(|| {
             AuthorError::Usage(format!("namespace `{namespace}` has no policy — `ledger init --namespace {namespace}` first"))
         })?;

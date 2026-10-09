@@ -26,7 +26,7 @@ pub(crate) fn findings(store: &Store, landing: &Landing) -> Vec<Finding> {
         for p in &logged.file.policies {
             let id = p.id.to_string();
             let pos = landing.position(&path, &crate::landed::key("policies", &id), p.at);
-            let Some(genesis) = Authority::as_of(store, landing, pos).genesis() else { continue };
+            let Some(genesis) = Authority::as_of(store, landing, pos, &p.namespace).genesis() else { continue };
             if genesis.role == p.accept_role {
                 out.push(Finding::schema(&id, format!(
                     "maps accept-decision to `{}`, the genesis role as of the policy ({}) — the accept role is never the genesis role (LP-6.17, D9 (f))",
@@ -38,13 +38,19 @@ pub(crate) fn findings(store: &Store, landing: &Landing) -> Vec<Finding> {
     out
 }
 
-/// Each role a genesis grant names that carries a decision capability.
+/// Each role a genesis grant names, in the grant's own namespace, that
+/// carries a decision capability.
 fn decision_capable_roots(store: &Store) -> Vec<Finding> {
-    let roots: BTreeSet<&str> =
-        store.log.iter().flat_map(|l| l.file.grants.iter()).filter(|g| g.genesis).map(|g| g.role.as_str()).collect();
+    let roots: BTreeSet<(&str, &str)> = store
+        .log
+        .iter()
+        .flat_map(|l| l.file.grants.iter().map(move |g| (l.namespace.as_str(), g)))
+        .filter(|(_, g)| g.genesis)
+        .map(|(ns, g)| (ns, g.role.as_str()))
+        .collect();
     roots
         .into_iter()
-        .filter_map(|id| store.role(id))
+        .filter_map(|(ns, id)| store.role_in(ns, id))
         .filter_map(|role| {
             let decision: Vec<&str> = role.decision_capabilities().into_iter().map(|c| c.as_str()).collect();
             (!decision.is_empty()).then(|| {

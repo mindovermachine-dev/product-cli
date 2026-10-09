@@ -4,6 +4,9 @@
 //! records that a revocation or a reference resolves by: an acceptance's
 //! id, and a decision's identity object (ruling 49).
 //!
+//! Every reference resolves inside the namespace whose directory holds the
+//! record (ruling 47): a grant of another namespace is, here, not filed.
+//!
 //! The authority twin of "a revocation naming an acceptance nobody filed":
 //! every reference resolves, every acceptance of a grant is the holder's
 //! and signs the grant's own hash, every unavailability is declared on the
@@ -23,14 +26,19 @@ use super::revocation::Revocable;
 use super::role::Capability;
 use super::view::Authority;
 
-/// Every cross-entry authority fault in the store.
-pub fn faults(store: &Store, auth: &Authority<'_>) -> Vec<Finding> {
+/// Every cross-entry authority fault in the store: ids are unique across
+/// the store (ruling 49); everything else resolves inside one namespace's
+/// authority (ruling 47).
+pub fn faults(store: &Store) -> Vec<Finding> {
     let mut out = duplicate_ids(store);
-    out.extend(grant_refs(auth));
-    out.extend(unavailability_refs(auth));
-    out.extend(revocation_refs(store, auth));
-    out.extend(binding_refs(auth));
-    out.extend(policy_refs(auth));
+    for ns in store.namespaces() {
+        let auth = Authority::of(store, &ns);
+        out.extend(grant_refs(&auth));
+        out.extend(unavailability_refs(&auth));
+        out.extend(revocation_refs(store, &auth));
+        out.extend(binding_refs(&auth, &ns));
+        out.extend(policy_refs(&auth));
+    }
     out
 }
 
@@ -174,12 +182,15 @@ fn revocation_refs(store: &Store, auth: &Authority<'_>) -> Vec<Finding> {
     out
 }
 
-fn binding_refs(auth: &Authority<'_>) -> Vec<Finding> {
+/// The bindings of `ns` against its own authority: its policy, its genesis
+/// mandate. Bindings range over the store (view note), so only `ns`'s own
+/// are judged here.
+fn binding_refs(auth: &Authority<'_>, ns: &str) -> Vec<Finding> {
     let mut out = Vec::new();
     let mut closed: BTreeSet<String> = BTreeSet::new();
     let mandates: BTreeSet<&str> =
         auth.grants.values().filter(|g| g.genesis).filter_map(|g| g.external_ref.as_deref()).collect();
-    for b in &auth.bindings {
+    for b in auth.bindings.iter().filter(|b| b.namespace == ns) {
         let id = b.id.to_string();
         if auth.policies_of(&b.namespace).is_empty() {
             out.push(fault(&id, format!("binds a key in `{}`, a namespace with no policy — `ledger init --namespace` first", b.namespace)));

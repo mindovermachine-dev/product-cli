@@ -64,7 +64,7 @@ impl Author {
         decision: &DecisionId,
         act: Act,
     ) -> Result<Option<Authorized>, AuthorError> {
-        let auth = Authority::build(store);
+        let auth = Authority::of(store, decision.namespace());
         let Some(policy) = auth.policy(decision.namespace()) else { return Ok(None) };
         let set = view
             .latest
@@ -73,7 +73,7 @@ impl Author {
             .map(|v| v.raw.set.clone())
             .unwrap_or_default();
         let target = Target::Decision { namespace: decision.namespace(), set: &set };
-        self.authorized(store, act, target, Some(&policy.accept_role)).map(Some)
+        self.authorized(store, decision.namespace(), act, target, Some(&policy.accept_role)).map(Some)
     }
 
     /// Sign the latest version of a decision as the configured identity.
@@ -91,7 +91,7 @@ impl Author {
             at: self.now,
             scope: AcceptanceScope::Version,
             expires_at: args.expires_at,
-            under: held.as_ref().map(super::authority_ops::under_of).transpose()?,
+            under: held.as_ref().map(super::grant_ops::under_of).transpose()?,
             signature: String::new(),
         };
         let policy = Authority::build(&store).policy(args.decision.namespace()).cloned();
@@ -169,7 +169,7 @@ impl Author {
             Some(acceptance) => self.decision_authority(&store, &view, &acceptance.decision, Act::RevokeAcceptance)?,
             None => None,
         };
-        let under = held.as_ref().map(super::authority_ops::under_of).transpose()?;
+        let under = held.as_ref().map(super::grant_ops::under_of).transpose()?;
         let revocation = self.revocation(Revocable::Acceptance(args.acceptance.clone()), args.reason.clone(), under)?;
         let id = revocation.id.as_ref().map(ToString::to_string).unwrap_or_default();
         if let Some(acceptance) = revoked {

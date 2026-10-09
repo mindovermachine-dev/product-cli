@@ -61,12 +61,13 @@ pub fn write(path: &Path, text: &str) -> Result<(), String> {
 /// The store restricted to one namespace: its decisions, their versions,
 /// the acceptances of those decisions, the revocations of those
 /// acceptances, the sets those versions name, and the change-sets that
-/// filed any of it (each holding only what belongs here). The authority
-/// records that reach the namespace come too (spec v1.7): its policy
-/// versions and key bindings, the grants whose scope covers it (`*`, its
-/// `ns:`, or a set its versions name) with their acceptances,
-/// unavailability, availability and revocations, and the roles those
-/// grants and policies name.
+/// filed any of it (each holding only what belongs here). Its authority
+/// records come too, and only its own (LP-9.11, ruling 47): the policy
+/// versions and key bindings that carry its name, the grants filed under
+/// its directory with their acceptances, unavailability, availability and
+/// revocations, and the roles declared under its `roles/` that those
+/// grants and policies name. A grant of another namespace reaches it
+/// whatever its scope says — a scope is read inside its own namespace.
 pub fn select(store: &Store, namespace: &str) -> Store {
     let ours = |id: &crate::id::DecisionId| id.namespace() == namespace;
     let named: BTreeSet<String> = store
@@ -76,7 +77,7 @@ pub fn select(store: &Store, namespace: &str) -> Store {
         .filter(|v| ours(&v.decision))
         .map(|v| v.set.clone())
         .collect();
-    let reach = Reach::of(store, namespace, &named);
+    let reach = Reach::of(store, namespace);
     let log: Vec<LoggedChangeSet> = store
         .log
         .iter()
@@ -92,7 +93,7 @@ pub fn select(store: &Store, namespace: &str) -> Store {
         root: store.root.clone(),
         dir: store.dir.clone(),
         sets: store.sets.iter().filter(|s| s.namespace == namespace && named.contains(&s.id)).cloned().collect(),
-        roles: store.roles.iter().filter(|r| roles.contains(&r.id)).cloned().collect(),
+        roles: store.roles.iter().filter(|r| r.namespace == namespace && roles.contains(&r.id)).cloned().collect(),
         log,
         sidecars: store.sidecars.clone(),
         schema_findings: Vec::new(),
@@ -108,22 +109,19 @@ struct Reach<'n> {
 }
 
 impl<'n> Reach<'n> {
-    fn of(store: &Store, namespace: &'n str, named: &BTreeSet<String>) -> Self {
-        use crate::authority::GrantScope;
+    fn of(store: &Store, namespace: &'n str) -> Self {
         let files = || store.log.iter().map(|c| &c.file);
         let acceptances = files()
             .flat_map(|c| c.acceptances.iter())
             .filter(|a| a.decision.namespace() == namespace)
             .map(|a| a.id.to_string())
             .collect();
-        let grants: BTreeSet<String> = files()
-            .flat_map(|c| c.grants.iter())
-            .filter(|g| match &g.scope {
-                GrantScope::All => true,
-                GrantScope::Namespace(n) => n == namespace,
-                GrantScope::Set(s) => named.contains(s),
-                GrantScope::Pattern(_) => false,
-            })
+        // A grant belongs to the namespace whose directory holds it.
+        let grants: BTreeSet<String> = store
+            .log
+            .iter()
+            .filter(|l| l.namespace == namespace)
+            .flat_map(|l| l.file.grants.iter())
             .map(|g| g.id.to_string())
             .collect();
         let intervals = files()

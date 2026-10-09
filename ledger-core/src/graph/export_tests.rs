@@ -185,16 +185,31 @@ fn a_namespace_export_carries_its_own_authority_records_only() {
     use crate::authority::fixture::{self, accepted, genesis, grant, role};
     use crate::authority::Capability;
     let g = genesis("1", "steward");
-    let elsewhere = grant("2", "steward", "other@x", "ns:hafeok.other", 0);
-    let mut cs = fixture::changeset(vec![g.clone(), elsewhere.clone()], vec![accepted("3", &g)]);
+    let mut cs = fixture::changeset(vec![g.clone()], vec![accepted("3", &g)]);
     let sealed = testkit::sealed(testkit::version());
     cs.decisions = testkit::changeset(vec![sealed.clone()], Vec::new()).decisions;
     cs.versions = vec![sealed];
     let mut store = fixture::store(vec![role("steward", Capability::ALL)], cs);
     store.roles.push(role("unrelated", &[Capability::AcceptDecision]));
+    // Another namespace's directory holds a `*` grant and a `steward` role of
+    // its own: a scope is read inside its own namespace, so neither reaches
+    // this export (LP-9.11, ruling 47).
+    let elsewhere = grant("2", "steward", "other@x", "*", 0);
+    let mut theirs = fixture::changeset(vec![elsewhere.clone()], Vec::new());
+    theirs.id = "cs:01K2C4YQJ3F8M0PT5W7NZ9RDY2".parse().expect("id");
+    store.log.push(crate::store::LoggedChangeSet {
+        namespace: "hafeok.other".into(),
+        path: "/fixture/.decisions/ns/hafeok.other/log/01K2C4YQJ3F8M0PT5W7NZ9RDY2.yml".into(),
+        file: theirs,
+    });
+    let mut their_role = role("steward", Capability::ALL);
+    their_role.namespace = "hafeok.other".into();
+    store.roles.push(their_role);
     let text = super::export::export(&store, "hafeok.ledger").expect("the namespace is spoken");
-    assert!(text.contains(&format!("<urn:{}>", g.id)), "the genesis (*) reaches every namespace");
+    assert!(text.contains(&format!("<urn:{}>", g.id)), "its own genesis");
     assert!(text.contains("<urn:ledger-role:steward>"), "the role its grant names");
-    assert!(!text.contains(&format!("<urn:{}>", elsewhere.id)), "another namespace's grant stays out");
+    assert!(!text.contains(&format!("<urn:{}>", elsewhere.id)), "another namespace's `*` grant stays out");
     assert!(!text.contains("ledger-role:unrelated"), "a role nothing here names stays out");
+    let owners = text.lines().filter(|l| l.starts_with("<urn:ledger-role:steward> ") && l.contains("owner")).count();
+    assert_eq!(owners, 1, "the other namespace's role of the same id stays out:\n{text}");
 }

@@ -3,8 +3,8 @@
 //! `verify` is the only gate that sees a file nobody made with the verb, so
 //! the role check the verbs run is run again here, over history: every
 //! acceptance and every revocation, against the authority records as they
-//! stood at the act's position (D6, [`crate::authority::Authority::as_of`]),
-//! through the same function the verbs call
+//! stood at the act's position (D6, [`crate::authority::Authority::as_of`])
+//! in the act's own namespace (ruling 47), through the same function the verbs call
 //! ([`crate::authority::authorize_named`]). It checks the grant the act
 //! names and never searches for another; a governed act that names none
 //! fails. A policy, first or change, is the genesis holder's act: the
@@ -33,8 +33,8 @@ pub fn unauthorised(store: &Store, landing: &Landing) -> Vec<GraphFinding> {
         let path = relative(&store.root, &logged.path);
         for a in &logged.file.acceptances {
             let pos = landing.position(&path, &crate::landed::key("acceptances", &a.id.to_string()), a.at);
-            let auth = Authority::as_of(store, landing, pos);
             let ns = a.decision.namespace();
+            let auth = Authority::as_of(store, landing, pos, ns);
             let Some(policy) = auth.policy(ns) else { continue };
             let set = sets.get(&a.decision.to_string()).map(String::as_str).unwrap_or_default();
             let target = Target::Decision { namespace: ns, set };
@@ -43,7 +43,7 @@ pub fn unauthorised(store: &Store, landing: &Landing) -> Vec<GraphFinding> {
             out.extend(judge(&auth, &act, target, Some(&policy.accept_role)));
         }
         for r in &logged.file.revocations {
-            out.extend(revocation_verdict(store, landing, &sets, &path, r));
+            out.extend(revocation_verdict(store, landing, &sets, (&path, &logged.namespace), r));
         }
         for p in &logged.file.policies {
             out.extend(policy_verdict(store, landing, &path, p));
@@ -59,11 +59,11 @@ pub fn unauthorised(store: &Store, landing: &Landing) -> Vec<GraphFinding> {
 fn policy_verdict(store: &Store, landing: &Landing, path: &str, p: &crate::authority::Policy) -> Option<GraphFinding> {
     let id = p.id.to_string();
     let pos = landing.position(path, &crate::landed::key("policies", &id), p.at);
-    let auth = Authority::as_of(store, landing, pos);
+    let auth = Authority::as_of(store, landing, pos, &p.namespace);
     let Some(genesis) = auth.genesis().map(|g| g.id.clone()) else {
         return Some(finding(&id, format!(
-            "{} sets `{}`'s policy with no live genesis grant as of the policy — a policy is the genesis holder's act",
-            p.by, p.namespace
+            "{} sets `{}`'s policy with no live genesis grant of `{}` as of the policy — a policy is the genesis holder's act, and each namespace has its own genesis (LP-6.31, ruling 47)",
+            p.by, p.namespace, p.namespace
         )));
     };
     if let Some(under) = p.under.as_ref().filter(|u| **u != genesis) {
@@ -81,22 +81,24 @@ fn policy_verdict(store: &Store, landing: &Landing, path: &str, p: &crate::autho
 /// revocation (`acceptance`, `by`) names no grant and can carry no
 /// signature, so it is valid only before its namespace's first policy; one
 /// that is not before it (D6) fails like a `rev:` revocation naming none.
+/// `(path, dir)` is the revocation's file and the namespace whose directory
+/// holds it: a grant's revocation is judged in that namespace's authority.
 fn revocation_verdict(
     store: &Store,
     landing: &Landing,
     sets: &std::collections::BTreeMap<String, String>,
-    path: &str,
+    (path, dir): (&str, &str),
     r: &crate::authority::Revocation,
 ) -> Option<GraphFinding> {
     let (Some(target), Some(actor)) = (r.target(), r.actor()) else { return None };
     let id = r.subject();
     let act = |kind| ActRef { subject: &id, actor, under: r.under.as_ref(), act: kind, at: r.at };
     let pos = landing.position(path, &crate::landed::revocation_key(r), r.at);
-    let auth = Authority::as_of(store, landing, pos);
     match &target {
         Revocable::Acceptance(acc) => {
             let revoked = store.log.iter().flat_map(|l| l.file.acceptances.iter()).find(|a| a.id == *acc)?;
             let ns = revoked.decision.namespace();
+            let auth = Authority::as_of(store, landing, pos, ns);
             let policy = auth.policy(ns)?;
             if !r.is_entity() {
                 return Some(finding(&id, format!(
@@ -108,6 +110,7 @@ fn revocation_verdict(
             judge(&auth, &act(Act::RevokeAcceptance), t, Some(&policy.accept_role))
         }
         Revocable::Grant(g) => {
+            let auth = Authority::as_of(store, landing, pos, dir);
             let grant = auth.grants.get(&g.to_string()).copied()?;
             auth.genesis()?;
             judge(&auth, &act(Act::RevokeGrant), Target::Scope(&grant.scope), None)

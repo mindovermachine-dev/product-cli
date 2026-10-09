@@ -233,5 +233,5 @@ pub fn grant_on(index: &Index, branch: &Branch, holder: &Identity, decision: &st
     // check the role against: it is not offered for affirmation.
     let set = view.latest.get(decision).and_then(|i| view.versions.get(*i)).map(|v| v.raw.set.clone())?;
     let ns = decision.strip_prefix("dec:")?.split('/').next()?.to_string();
-    holder_grant(&Authority::build(&store), holder, &ns, &set, as_role)
+    holder_grant(&Authority::of(&store, &ns), holder, &ns, &set, as_role)
 }
