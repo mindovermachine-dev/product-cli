@@ -68,8 +68,13 @@ fn key_file(path: &Path, namespace: String) -> Result<KeyArgs, String> {
 pub fn identity(root: Option<PathBuf>, cmd: IdentityCmd) -> Result<i32, String> {
     if let IdentityCmd::Sync = cmd {
         let store = ledger_core::store::load(&resolve_root(root)?);
-        ledger_core::authority::signers::write(&store)?;
-        println!("{} rewritten from the log", ledger_core::authority::signers::FILE);
+        let synced = ledger_core::authority::signers::write(&store)?;
+        for line in synced.lines() {
+            println!("{line}");
+        }
+        if synced.written.is_empty() && synced.removed.is_empty() {
+            println!("no namespace binds a key — no {} to derive", ledger_core::authority::signers::FILE);
+        }
         return Ok(EXIT_OK);
     }
     let mut author = open_author(root)?;
