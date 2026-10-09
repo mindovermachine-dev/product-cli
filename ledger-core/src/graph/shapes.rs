@@ -214,7 +214,7 @@ const SHAPES: &[Shape] = &[
         message: |row| {
             (
                 term(row, "g"),
-                format!("is a live genesis grant beside {} — the store has one trust root", term(row, "other")),
+                format!("is a live genesis grant beside {} — a namespace has one trust root (LP-6.5, ruling 47)", term(row, "other")),
             )
         },
     },
@@ -251,26 +251,45 @@ fn short_hash(term: &str) -> String {
     hex.get(..12).unwrap_or(hex).to_string()
 }
 
-/// Run every shape over the store's emitted graph. An engine fault surfaces
-/// as a finding on the shape itself rather than a panic or a silent pass —
-/// a shape that cannot run must never read as a passing one.
+/// Whether a shape is one of the authority shapes (`A003`, `A005`), which
+/// hold per namespace: authority is per namespace (LP-6.31, ruling 47).
+fn is_authority(class: GraphClass) -> bool {
+    matches!(class, GraphClass::A003 | GraphClass::A005)
+}
+
+/// Run every shape over the store (LP-8.19). The decision shapes run over
+/// the store's graph: a `based_on` edge may cross a namespace, and a
+/// `supersedes` edge in history is not judged (ruling 75). The authority
+/// shapes run over each namespace's emitted graph alone — the graph the
+/// namespace's export carries — so `A005` counts one trust root per
+/// namespace. An engine fault surfaces as a finding on the shape itself
+/// rather than a panic or a silent pass — a shape that cannot run must
+/// never read as a passing one.
 pub fn graph_findings(store: &Store) -> Vec<GraphFinding> {
-    let ttl = emit(store);
-    run(|query| product_core::pf::sparql_rules::select(&ttl, query))
+    let whole = emit(store);
+    let mut out = run(|query| product_core::pf::sparql_rules::select(&whole, query), |c| !is_authority(c));
+    for ns in store.namespaces() {
+        let ttl = emit(&super::export::select(store, &ns));
+        out.extend(run(|query| product_core::pf::sparql_rules::select(&ttl, query), is_authority));
+    }
+    out.sort_by(|a, b| (a.class, &a.subject).cmp(&(b.class, &b.subject)));
+    out.dedup();
+    out
 }
 
 /// Every shape over one named graph of a dataset — that graph alone, never
-/// the union: the shapes hold per store (one genesis per store, `A005`), and
-/// a graph is one store's committed export (the inbox index, #79).
+/// the union: a graph is one namespace's committed export (the inbox index,
+/// #79), and the authority shapes hold per namespace (one genesis each,
+/// `A005`).
 pub fn graph_findings_in(dataset: &product_core::pf::sparql_dataset::Dataset, graph: &str) -> Vec<GraphFinding> {
-    run(|query| dataset.select_in(graph, query))
+    run(|query| dataset.select_in(graph, query), |_| true)
 }
 
 type Rows = Vec<std::collections::BTreeMap<String, String>>;
 
-fn run(select: impl Fn(&str) -> Result<Rows, String>) -> Vec<GraphFinding> {
+fn run(select: impl Fn(&str) -> Result<Rows, String>, wanted: impl Fn(GraphClass) -> bool) -> Vec<GraphFinding> {
     let mut out = Vec::new();
-    for shape in SHAPES {
+    for shape in SHAPES.iter().filter(|s| wanted(s.class)) {
         match select(shape.select) {
             Ok(rows) => {
                 for row in rows {

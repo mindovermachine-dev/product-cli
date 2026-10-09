@@ -33,8 +33,9 @@ pub fn role(root: Option<PathBuf>, cmd: RoleCmd) -> Result<i32, String> {
 pub fn grant(root: Option<PathBuf>, cmd: GrantCmd) -> Result<i32, String> {
     match cmd {
         GrantCmd::Accept { grant } => finish(open_author(root)?.accept_grant(&grant.parse()?)),
-        GrantCmd::New { role, to, scope, order, limits, supersedes, as_role } => {
+        GrantCmd::New { role, to, scope, namespace, order, limits, supersedes, as_role } => {
             let args = GrantArgs {
+                namespace,
                 role,
                 holder: to.parse()?,
                 scope: scope.parse()?,

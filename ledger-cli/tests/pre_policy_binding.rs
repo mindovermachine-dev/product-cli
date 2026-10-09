@@ -3,13 +3,13 @@
 //! and by the signature requirement of that first policy. The pre-policy
 //! exemption covers acceptances and revocations only.
 //!
-//! **How one arises.** In a fresh store the genesis grant carries the first
-//! policy's `at`, so a binding dated before the policy is also before the
-//! grant, and D7 refuses it. In a later namespace the grant is older than
-//! the policy, and no verb compares a binding's `at` with the policy's. A
-//! binding filed on a clock behind the policy's, and committed with it, is
-//! *before* the policy by D6 (same landing, earlier `at`). By hand, any
-//! writer can file the same.
+//! **How one arises.** `init` dates a namespace's genesis grant with its
+//! first policy — every namespace, since each has its own genesis (ruling
+//! 47) — so a binding dated before the policy is also before the grant, and
+//! D7 refuses it. By hand a namespace can be founded with a genesis older
+//! than its policy (`hand::found`), and a binding dated between them is
+//! *before* the policy by D6 (same landing, earlier `at`) yet after the
+//! grant: that is the store the ruling's cases reach.
 //!
 //! **What the ruling gives.**
 //! - A signed binding before the policy is trusted.
@@ -18,9 +18,9 @@
 //! - Under a `[none]` first policy, D7 alone decides it.
 //! - A binding in a namespace no policy governs at all stays a schema fault.
 //!
-//! Since `init --namespace` binds the holder's key in the same act, even in
-//! a later namespace, a skewed further key dated before that binding is
-//! refused for what it would do to `init`'s own binding (asserted below).
+//! Since `init --namespace` binds the holder's key in the same act, dated
+//! with the policy and the genesis, a skewed further key dated before them
+//! is refused by D7: as of it the namespace has no genesis (asserted below).
 
 mod common;
 
@@ -91,38 +91,14 @@ fn in_a_fresh_store_d7_refuses_a_binding_dated_before_the_first_policy() {
     assert!(format!("{refused:?}").contains("D7"), "{refused:?}");
 }
 
-/// The second namespace's first policy as an earlier CLI filed it — no key
-/// binding in the same act — signed by the owner's key trusted in `NS`.
-fn legacy_second_policy(repo: &Repo, key: &str) -> Policy {
-    let store = ledger_core::store::load(repo.path());
-    let genesis = store.log.iter().flat_map(|l| l.file.grants.iter()).find(|g| g.genesis).cloned().expect("genesis");
-    let mut policy = Policy {
-        id: UlidMint::system().mint_id("pol").expect("id"),
-        namespace: SECOND.into(),
-        schemes: vec![Scheme::Ssh],
-        require_sk: false,
-        accept_role: "acceptor".into(),
-        reaccept_within_days: None,
-        replaces: None,
-        by: OWNER.parse().expect("id"),
-        under: Some(genesis.id.clone()),
-        at: chrono::Utc::now(),
-        hash: ledger_core::hash::VersionHash::zero(),
-    };
-    policy.hash = ledger_core::authority::payload::policy_hash(&policy);
-    let ulid = policy.id.ulid().to_string();
-    hand::file(repo, Vec::new(), vec![policy.clone()], &[(&ulid, key)]);
-    policy
-}
-
 #[test]
 fn a_signed_binding_before_the_first_policy_is_trusted_and_signs() {
     let repo = governed();
     let owner = repo.path().join("keys/owner").display().to_string();
-    // A namespace opened before `init` bound the holder's key in the same
-    // act; then a key added on a clock behind its policy, signed by the
-    // owner's key trusted in the first namespace.
-    legacy_second_policy(&repo, &owner);
+    // A namespace founded by hand with its genesis older than its policy;
+    // then a key added on a clock behind the policy, signed by the owner's
+    // key trusted in the first namespace (keys are store-wide until issue 6).
+    hand::found(&repo, SECOND, OWNER, vec![Scheme::Ssh], Some(&owner));
     let next = repo.keygen("owner-second");
     let (key_type, blob) = public(&next);
     bind_behind(&repo, SECOND, Duration::seconds(1), key_type, blob.clone()).expect("D7 admits it, and it is signed");
@@ -145,28 +121,28 @@ fn a_signed_binding_before_the_first_policy_is_trusted_and_signs() {
     repo.ok_tty(&["accept", &common::decision_id(&out)]);
 }
 
-/// Since `init` binds the holder's key in the same act, a further key dated
-/// before that binding takes the namespace's first-key place. `init`'s own
-/// binding — signed by the holder's key from another namespace — is then a
-/// further `add`, which must be signed by a key of theirs in this namespace,
-/// and it would fail `L011`. The verb refuses to introduce that.
+/// `init` dates a later namespace's genesis with its policy (ruling 47), so
+/// a further key dated before that policy is before the genesis too, and D7
+/// refuses it: as of the binding nobody is the genesis holder there.
 #[test]
-fn a_skewed_add_dated_before_inits_binding_is_refused_for_what_it_would_do_to_it() {
+fn a_skewed_add_dated_before_inits_genesis_is_refused_by_d7() {
     let repo = governed();
     repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
     let next = repo.keygen("owner-second");
     let (key_type, blob) = public(&next);
     let refused = bind_behind(&repo, SECOND, Duration::seconds(1), key_type, blob).expect_err("refused");
     let text = format!("{refused:?}");
-    assert!(text.contains("L011") && text.contains("no key bound to"), "{text}");
+    assert!(text.contains("D7") && text.contains(&format!("no live key in `{SECOND}`")), "{text}");
 }
 
 #[test]
 fn an_unsigned_binding_before_a_signed_first_policy_fails_l011_and_is_never_trusted() {
     let repo = governed();
-    // Filed with the policy, dated a second before it.
-    repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
-    let (id, blob) = unsigned_before(&repo, SECOND, policy_of(&repo, SECOND).at);
+    let owner = repo.path().join("keys/owner").display().to_string();
+    // A namespace founded by hand, its genesis older than its signed first
+    // policy; a binding filed with the policy, dated a second before it.
+    let policy = hand::found(&repo, SECOND, OWNER, vec![Scheme::Ssh], Some(&owner));
+    let (id, blob) = unsigned_before(&repo, SECOND, policy.at);
     hand::commit(&repo, "second namespace, with a hand-filed binding");
     let out = repo.ledger(&["verify", "--no-blame"]);
     let text = common::both(&out);
@@ -177,7 +153,7 @@ fn an_unsigned_binding_before_a_signed_first_policy_fails_l011_and_is_never_trus
 }
 
 #[test]
-fn a_binding_in_a_namespace_no_policy_governs_is_a_schema_fault_and_init_will_not_govern_it() {
+fn a_binding_in_a_namespace_no_policy_governs_is_a_schema_fault_and_init_does_not_launder_it() {
     let repo = governed();
     let (id, _) = unsigned_before(&repo, SECOND, chrono::Utc::now());
     hand::commit(&repo, "a binding in a namespace nobody governs");
@@ -185,35 +161,24 @@ fn a_binding_in_a_namespace_no_policy_governs_is_a_schema_fault_and_init_will_no
     let text = common::both(&out);
     assert_eq!(out.status.code(), Some(1), "{text}");
     assert!(text.contains("[SCHEMA]") && text.contains(&id) && text.contains("a namespace with no policy"), "{text}");
-    // Opting the namespace in would turn it into L011 — judged under the new
-    // first policy, unsigned — which init's gate refuses to introduce.
-    let refused = repo.refused(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
-    assert!(refused.contains("L011") && refused.contains(&id), "{refused}");
+    // Opening the namespace dates its genesis with its policy, after the
+    // binding (ruling 47): the binding is then before the genesis, and D7
+    // refuses it — still a schema fault, now for that reason.
+    repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
+    hand::commit(&repo, "opened after the fact");
+    let out = repo.ledger(&["verify", "--no-blame"]);
+    let text = common::both(&out);
+    assert_eq!(out.status.code(), Some(1), "{text}");
+    assert!(text.contains(&format!("[SCHEMA] {id}")) && text.contains("D7"), "{text}");
 }
 
 #[test]
 fn under_a_none_first_policy_d7_alone_decides_a_binding_before_it() {
     let repo = governed();
-    let store = ledger_core::store::load(repo.path());
-    let genesis = store.log.iter().flat_map(|l| l.file.grants.iter()).find(|g| g.genesis).cloned().expect("genesis");
-    let mut mint = UlidMint::system();
-    let mut policy = Policy {
-        id: mint.mint_id("pol").expect("id"),
-        namespace: SECOND.into(),
-        schemes: vec![Scheme::None],
-        require_sk: false,
-        accept_role: "acceptor".into(),
-        reaccept_within_days: None,
-        replaces: None,
-        by: OWNER.parse().expect("id"),
-        under: Some(genesis.id.clone()),
-        at: chrono::Utc::now(),
-        hash: ledger_core::hash::VersionHash::zero(),
-    };
-    policy.hash = ledger_core::authority::payload::policy_hash(&policy);
-    let at = policy.at;
-    hand::file(&repo, Vec::new(), vec![policy], &[]);
-    let (id, blob) = unsigned_before(&repo, SECOND, at);
+    // A namespace founded by hand with a `[none]` first policy, its genesis
+    // older; an unsigned binding dated before the policy, after the genesis.
+    let policy = hand::found(&repo, SECOND, OWNER, vec![Scheme::None], None);
+    let (id, blob) = unsigned_before(&repo, SECOND, policy.at);
     hand::commit(&repo, "a [none] first policy, and an unsigned binding before it");
     repo.ok(&["identity", "sync"]);
     let out = repo.ledger(&["verify", "--no-blame"]);

@@ -23,8 +23,9 @@ pub struct PolicyArgs {
 }
 
 impl Author {
-    /// A policy change is the live, available genesis holder's act, and it
-    /// never maps acceptance to the genesis role (D9 (f)).
+    /// A policy change is the act of the namespace's own live, available
+    /// genesis holder (LP-6.28, ruling 47), and it never maps acceptance to
+    /// the genesis role (D9 (f)).
     fn refuse_policy_change(&self, auth: &Authority<'_>, args: &PolicyArgs) -> Result<(), AuthorError> {
         let genesis_now = auth.genesis().is_some_and(|g| g.holder == self.who && auth.is_available(g, self.now));
         if !genesis_now {
@@ -44,7 +45,7 @@ impl Author {
     /// File the namespace's next policy.
     pub fn policy_set(&mut self, args: PolicyArgs) -> Result<Applied, AuthorError> {
         let store = self.load();
-        let auth = Authority::build(&store);
+        let auth = Authority::of(&store, &args.namespace);
         let current = auth.policy(&args.namespace).cloned().ok_or_else(|| {
             AuthorError::Usage(format!("namespace `{}` has no policy — `ledger init --namespace` first", args.namespace))
         })?;

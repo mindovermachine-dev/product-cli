@@ -26,13 +26,16 @@ impl Author {
     /// File an unavailability interval on a grant.
     pub fn unavailable(&mut self, args: UnavailableArgs) -> Result<Applied, AuthorError> {
         let store = self.load();
-        let auth = Authority::build(&store);
+        let ns = super::home::grant_namespace(&store, &args.grant.to_string()).ok_or_else(|| {
+            AuthorError::Usage(format!("{} is not a filed grant", args.grant))
+        })?;
+        let auth = Authority::of(&store, &ns);
         let grant = auth.grants.get(&args.grant.to_string()).copied().cloned().ok_or_else(|| {
             AuthorError::Usage(format!("{} is not a filed grant", args.grant))
         })?;
         let basis = self.basis(&auth, &grant)?;
         if basis != Basis::SelfDeclared {
-            self.authorized(&store, Act::DeclareUnavailability, Target::Scope(&grant.scope), None)?;
+            self.authorized(&store, &ns, Act::DeclareUnavailability, Target::Scope(&grant.scope), None)?;
         }
         let interval = Unavailability {
             id: self.mint.mint_id("unav").map_err(AuthorError::Io)?,

@@ -3,7 +3,8 @@
 //! What one record must say about itself, judged without reading any other
 //! record: a primary grant carries no limits; the genesis grant is
 //! self-granted, scope `*`, primary, with an external reference, and only
-//! the genesis carries one; an interval ends after it starts; a key-binding
+//! the genesis carries one; a `ns:` scope names the namespace the grant is
+//! filed in (ruling 47); an interval ends after it starts; a key-binding
 //! act carries exactly the fields its act defines; a policy names at least
 //! one scheme. Every fault is a `SCHEMA` finding — the shapes in
 //! `ledger/spec/authority/ledger-authority-shapes.ttl`, enforced where an
@@ -30,8 +31,8 @@ pub fn role_faults(role: &Role, stem: &str, store: &Store) -> Vec<String> {
     if stem != role.id {
         out.push(format!("declares id `{}` but is filed as `{stem}`", role.id));
     }
-    if store.roles.iter().any(|r| r.id == role.id) {
-        out.push(format!("role `{}` is declared twice", role.id));
+    if store.roles.iter().any(|r| r.id == role.id && r.namespace == role.namespace) {
+        out.push(format!("role `{}` is declared twice in `{}`", role.id, role.namespace));
     }
     if role.may.is_empty() {
         out.push("a role that may do nothing grants nothing — `may` names at least one capability".to_string());
@@ -39,11 +40,19 @@ pub fn role_faults(role: &Role, stem: &str, store: &Store) -> Vec<String> {
     out
 }
 
-/// Faults every authority record in one change-set carries on its own.
-pub fn entry_faults(cs: &ChangeSet) -> Vec<Finding> {
+/// Faults every authority record in one change-set carries on its own,
+/// read under the namespace `ns` whose directory holds the file.
+pub fn entry_faults(cs: &ChangeSet, ns: &str) -> Vec<Finding> {
     let mut out = Vec::new();
     for g in &cs.grants {
         out.extend(grant_faults(g).into_iter().map(|m| Finding::schema(&g.id.to_string(), m)));
+        if let GrantScope::Namespace(other) = &g.scope {
+            if other != ns {
+                out.push(Finding::schema(&g.id.to_string(), format!(
+                    "is scoped `ns:{other}` but filed under `{ns}` — a scope is read inside its own namespace, so the grant could never have effect (LP-6.16, ruling 47); `*` or `ns:{ns}` is the whole of it"
+                )));
+            }
+        }
     }
     for u in &cs.unavailabilities {
         if u.until.is_some_and(|until| until <= u.from) {

@@ -40,9 +40,14 @@ pub enum GrantCmd {
         /// The holder
         #[arg(long, value_name = "IDENTITY")]
         to: String,
-        /// `*`, `ns:<namespace>`, `set:<set-id>` or `pattern:<id>`
+        /// `*`, `ns:<namespace>`, `set:<set-id>` or `pattern:<id>` — read
+        /// inside the grant's own namespace
         #[arg(long)]
         scope: String,
+        /// The namespace whose directory holds the grant; inferred from a
+        /// `ns:` scope, else when the store has one namespace
+        #[arg(long)]
+        namespace: Option<String>,
         /// `primary` or `fallback-N`
         #[arg(long, default_value = "primary")]
         order: String,

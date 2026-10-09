@@ -18,7 +18,8 @@ use crate::signing::Sidecar;
 use crate::store::Store;
 use crate::testkit;
 
-pub(super) const NS: &str = "fixture.ledger";
+/// One namespace throughout: the fixture change-set is filed under `testkit::NS`, and authority is per namespace (ruling 47).
+pub(super) const NS: &str = testkit::NS;
 /// The fixture change-set's repo-relative path, under its namespace's directory.
 pub(super) fn path() -> String {
     format!(".decisions/ns/{}/log/{}.yml", testkit::NS, testkit::CS_ULID)

@@ -165,16 +165,19 @@ fn the_genesis_holders_first_binding_in_a_second_namespace_vouched_by_the_closed
     repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
     hand::commit(&repo, "second namespace");
     let fresh = repo.keygen("owner-second");
+    // Dated after the second namespace's policy and genesis (ruling 47: a
+    // binding before its namespace's genesis is D7's, whatever signs it), so
+    // the only question left is the signature — and the closed key answers
+    // for nothing.
+    let policy_at = store(&repo).log.iter().flat_map(|l| l.file.policies.iter()).find(|p| p.namespace == SECOND).map(|p| p.at).expect("policy");
     let mut b = hand::binding(BindingAct::Add, OWNER, OWNER, SECOND, Some(&format!("{fresh}.pub")), None, None);
-    b.at = inside;
+    b.at = policy_at + Duration::seconds(1);
     b.hash = binding_hash(&b);
     let id = b.id.to_string();
     let signed = vec![(b.id.ulid().to_string(), SECOND.to_string(), binding_bytes(&b))];
     let mut cs = change_set(inside);
     cs.key_bindings.push(b);
     file_signed(&repo, cs, &signed, &key);
-    // Dated before the second namespace's first policy but landed after it,
-    // so the policy governs it (D5 (c), D6) — it is no pre-policy act.
     fails_with(&repo, &id, "L011");
     let signers = derived_signers(&repo);
     assert!(!signers.contains(&public(&fresh)), "{signers}");

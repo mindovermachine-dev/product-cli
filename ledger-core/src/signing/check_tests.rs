@@ -16,7 +16,8 @@ use crate::testkit;
 
 use super::check;
 
-const NS: &str = "fixture.ledger";
+/// One namespace throughout: the fixture change-set is filed under `testkit::NS`, and authority is per namespace (ruling 47).
+const NS: &str = testkit::NS;
 
 fn envelope(key: &SigningKey, bytes: &[u8]) -> Vec<u8> {
     let sig = key.sign(&pae(PAYLOAD_TYPE, bytes));

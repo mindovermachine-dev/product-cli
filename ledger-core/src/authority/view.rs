@@ -6,6 +6,21 @@
 //! namespace, which grant is the genesis. The role check
 //! ([`super::check::authorize`]), the schema rules and the emitter all read
 //! the same answers from here.
+//!
+//! **Authority is per namespace** (LP-6.31, ruling 47). A grant, grant
+//! acceptance, interval, revocation or role belongs to the namespace whose
+//! directory holds it, and nothing in one namespace's authority has effect
+//! in another: [`Authority::of`] and [`Authority::as_of`] read one
+//! namespace's records, and every role check, genesis lookup and policy
+//! verdict goes through them. [`Authority::build`] is the store-wide union,
+//! for readings that are namespace-independent (a policy by its own
+//! `namespace`, the bindings a key question ranges over); its `roles` map
+//! collides across namespaces and its `genesis` is undefined with more than
+//! one, so neither is read off it.
+//!
+//! *Key bindings are the one list not yet filtered by namespace:* a key is
+//! still bound, closed and trusted store-wide until issue 6 (LP-6.32,
+//! LP-4.37) scopes them. Every other list is the namespace's own.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -35,41 +50,68 @@ pub struct Authority<'a> {
 }
 
 impl<'a> Authority<'a> {
-    /// Read every authority record the store holds.
+    /// Every authority record the store holds, whichever namespace: the
+    /// store-wide union (see the module note on what may be read off it).
     pub fn build(store: &'a Store) -> Self {
+        Self::gather(store, None)
+    }
+
+    /// Every authority record of one namespace: the records its directory
+    /// holds, and the roles declared under its `roles/` (ruling 47).
+    pub fn of(store: &'a Store, namespace: &str) -> Self {
+        Self::gather(store, Some(namespace))
+    }
+
+    fn gather(store: &'a Store, namespace: Option<&str>) -> Self {
         let mut a = Self::default();
-        for role in &store.roles {
+        for role in store.roles.iter().filter(|r| namespace.is_none_or(|ns| r.namespace == ns)) {
             a.roles.insert(role.id.clone(), role);
         }
-        for cs in store.log.iter().map(|l| &l.file) {
+        for logged in &store.log {
+            let cs = &logged.file;
+            // Keys range over the store until issue 6 (module note).
+            a.bindings.extend(&cs.key_bindings);
+            if namespace.is_some_and(|ns| logged.namespace != ns) {
+                continue;
+            }
             a.grants.extend(cs.grants.iter().map(|g| (g.id.to_string(), g)));
             a.grant_acceptances.extend(&cs.grant_acceptances);
             a.unavailabilities.extend(cs.unavailabilities.iter().map(|u| (u.id.to_string(), u)));
             a.availabilities.extend(&cs.availabilities);
             a.revocations.extend(&cs.revocations);
-            a.bindings.extend(&cs.key_bindings);
             a.policies.extend(&cs.policies);
         }
         a
     }
 
-    /// The records as they stood at `pos` (D6): role files landed no later
-    /// (landing alone: a role file has no signed `at`); enabling entries
-    /// (grants, grant acceptances, key bindings that open a key) that are
-    /// not after it; terminating ones (revocations, key closes) and governing ones
-    /// (policies) unless the act is before them; and the
-    /// availability intervals landed no later (their clock decides). This
-    /// is what `verify` judges a historic act against (`A006`, D7).
-    pub fn as_of(store: &'a Store, landing: &Landing, pos: Position) -> Self {
+    /// One namespace's records as they stood at `pos` (D6): role files
+    /// landed no later (landing alone: a role file has no signed `at`);
+    /// enabling entries (grants, grant acceptances, key bindings that open a
+    /// key) that are not after it; terminating ones (revocations, key
+    /// closes) and governing ones (policies) unless the act is before them;
+    /// and the availability intervals landed no later (their clock
+    /// decides). This is what `verify` judges a historic act against
+    /// (`A006`, D7). Key bindings of every namespace are read (module note).
+    pub fn as_of(store: &'a Store, landing: &Landing, pos: Position, namespace: &str) -> Self {
         let mut a = Self::default();
-        for role in store.roles.iter().filter(|r| role_landing(landing, r) <= pos.index) {
+        for role in store.roles.iter().filter(|r| r.namespace == namespace && role_landing(landing, r) <= pos.index) {
             a.roles.insert(role.id.clone(), role);
         }
         for logged in &store.log {
             let path = relative(&store.root, &logged.path);
+            let cs = &logged.file;
+            let at_key = |id: String, t| landing.position(&path, &crate::landed::key("key_bindings", &id), t);
+            // A key's close is terminating, like a revocation: it applies
+            // unless the act is before it. An opening binding enables.
+            a.bindings.extend(cs.key_bindings.iter().filter(|b| {
+                let here = at_key(b.id.to_string(), b.at);
+                if b.closes.is_some() { !pos.before(&here) } else { here.not_after(&pos) }
+            }));
+            if logged.namespace != namespace {
+                continue;
+            }
             let at = |list: &str, id: String, t| landing.position(&path, &crate::landed::key(list, &id), t);
             let landed = |list: &str, id: String| landing.entity_index(&path, &crate::landed::key(list, &id)) <= pos.index;
-            let cs = &logged.file;
             a.grants.extend(
                 cs.grants.iter().filter(|g| at("grants", g.id.to_string(), g.at).not_after(&pos)).map(|g| (g.id.to_string(), g)),
             );
@@ -84,12 +126,6 @@ impl<'a> Authority<'a> {
             // earlier — either way the act is not before it, so it holds.
             a.revocations.extend(cs.revocations.iter().filter(|r| {
                 !pos.before(&landing.position(&path, &crate::landed::revocation_key(r), r.at))
-            }));
-            // A key's close is terminating, like a revocation: it applies
-            // unless the act is before it. An opening binding enables.
-            a.bindings.extend(cs.key_bindings.iter().filter(|b| {
-                let here = at("key_bindings", b.id.to_string(), b.at);
-                if b.closes.is_some() { !pos.before(&here) } else { here.not_after(&pos) }
             }));
             // A policy governs every act not before it (D5 (c), D6): an act
             // that landed after a policy is under it, however it is dated.
@@ -138,7 +174,8 @@ impl<'a> Authority<'a> {
         })
     }
 
-    /// The live genesis grant, when the store has one.
+    /// The namespace's live genesis grant, when it has one (LP-6.5). Read
+    /// off a per-namespace view only: each namespace has its own.
     pub fn genesis(&self) -> Option<&'a Grant> {
         self.grants.values().copied().find(|g| g.genesis && self.is_live(g))
     }
