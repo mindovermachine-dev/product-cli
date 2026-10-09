@@ -24,7 +24,7 @@ impl Repo {
         repo.git(&["config", "user.email", "fixture-human@example"]);
         repo.git(&["config", "user.name", "Fixture Human"]);
         repo.ok(&["init"]);
-        repo.ok(&["declare", "--set", "shown", "--tolerance-floor", "T1"]);
+        repo.ok(&["declare", "--set", "shown", "--namespace", "fixture.shown", "--tolerance-floor", "T1"]);
         repo
     }
 
@@ -128,7 +128,7 @@ fn a_reopen_edge_declares_format_four_and_nothing_else_does() {
     repo.add("A decision that states one.", &[
         "--revisit-if", "claim:DDD-gates-01@sha256:6f500ee8",
     ]);
-    let mut formats: Vec<u32> = std::fs::read_dir(repo.path().join(".decisions/log"))
+    let mut formats: Vec<u32> = std::fs::read_dir(ledger_core::layout::log_dir(repo.path(), "fixture.shown"))
         .expect("log dir")
         .filter_map(|e| e.ok())
         .filter_map(|e| std::fs::read_to_string(e.path()).ok())

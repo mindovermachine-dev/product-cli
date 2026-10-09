@@ -154,8 +154,8 @@ fn plan_supersessions(out: &mut MergePlan, ours: &View, theirs: &View) {
 
 fn plan_sets(out: &mut MergePlan, ours: &Store, theirs: &Store, base: &Store) {
     for set in &theirs.sets {
-        let ours_set = ours.sets.iter().find(|s| s.id == set.id);
-        let base_set = base.sets.iter().find(|s| s.id == set.id);
+        let ours_set = ours.sets.iter().find(|s| s.id == set.id && s.namespace == set.namespace);
+        let base_set = base.sets.iter().find(|s| s.id == set.id && s.namespace == set.namespace);
         match (ours_set, base_set) {
             (None, _) => out.mechanical.push(format!("set `{}`: theirs only — declared by merge", set.id)),
             (Some(o), _) if o == set => {}

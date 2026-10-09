@@ -69,8 +69,8 @@ fn dispatch(command: Commands, root: Option<PathBuf>) -> Result<i32, String> {
         Commands::Allocate { decision, store, discharge, stage, expectation, actor } => {
             evolve::allocate(root, &decision, &store, &discharge, stage.as_deref(), expectation, actor.as_deref())
         }
-        Commands::Declare { set, title, tolerance_floor, ground, owner, notes } => {
-            declare::run(root, declare::Flags { set, title, tolerance_floor, ground, owner, notes })
+        Commands::Declare { set, namespace, title, tolerance_floor, ground, owner, notes } => {
+            declare::run(root, declare::Flags { set, namespace, title, tolerance_floor, ground, owner, notes })
         }
         Commands::Escape { decision, exposure, review_by } => {
             evolve::escape(root, &decision, exposure, &review_by)

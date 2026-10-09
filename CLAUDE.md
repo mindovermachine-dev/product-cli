@@ -322,7 +322,7 @@ store (`.decisions/`), separate ontology.
   `--namespace` writes every namespace) and commit the result.
   Allocated-awaiting-acceptance is *status*, not a failure.
 - **Authority (format 6 / spec v1.7, #69)** — roles
-  (`.decisions/roles/<id>.yml`), grants + grant acceptances, unavailability
+  (`.decisions/ns/<ns>/roles/<id>.yml`), grants + grant acceptances, unavailability
   / availability, key bindings, namespace policy, and the `rev:` revocation
   entity, all in `ledger-core/src/authority/`. `ledger init --namespace
   <ns> --external-ref <mandate>` bootstraps the genesis; `role declare`,
@@ -334,7 +334,7 @@ store (`.decisions/`), separate ontology.
   `verify`'s `[SIGNERS]` stage. Graph classes `A003`/`A005`; `A006` deferred.
 - **Signing (format 7 / spec v1.8, #70)** — `ledger-core/src/signing/`.
   A namespace's policy lists the required schemes; a signature is a sidecar
-  `.decisions/sig/<ulid>.<scheme>.sig` over the entity's signed bytes
+  `.decisions/ns/<ns>/sig/<ulid>.<scheme>.sig` over the entity's signed bytes
   (`hash::signed_bytes`: prefix, `0x0A`, canonical JSON — what the digest
   digests). The verbs sign with `git config user.signingkey` (`ssh`);
   `dsse` is verified, never signed. Every act names its grant (`under`,

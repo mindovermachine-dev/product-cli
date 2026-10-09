@@ -1,9 +1,10 @@
 //! Scaffolding a `.decisions/` store.
 //!
-//! §5's layout is three directories, one of them derived. L0 builds none of
-//! the derived one — there is no index at this milestone — but the ignore
-//! line goes in now so an L2 rebuild cache can never be committed by
-//! accident. Adopting the format from `ledger/spec/ledger-protocol.md` alone
+//! The layout is one directory per namespace under `.decisions/ns/`
+//! (LP-3.34), each made on its first write, plus the derived `index/`. L0
+//! builds none of the derived one — there is no index at this milestone —
+//! but the ignore line goes in now so an L2 rebuild cache can never be
+//! committed by accident. Adopting the format from `ledger/spec/ledger-protocol.md` alone
 //! should not require anyone to guess at directory names.
 
 use std::path::{Path, PathBuf};
@@ -30,7 +31,7 @@ pub struct InitPlan {
 /// Read the repo and decide what is missing.
 pub fn plan_init(root: &Path) -> InitPlan {
     let store = root.join(STORE_DIR);
-    let directories = [store.join("sets"), store.join("log")]
+    let directories = [store.join(crate::layout::NS_DIR)]
         .into_iter()
         .filter(|d| !d.is_dir())
         .collect::<Vec<_>>();
@@ -79,15 +80,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_fresh_repo_needs_both_directories_plus_the_ignore_line() {
+    fn a_fresh_repo_needs_the_namespace_directory_plus_the_ignore_line() {
         let dir = tempfile::tempdir().expect("tempdir");
         let plan = plan_init(dir.path());
-        assert_eq!(plan.directories.len(), 2);
+        assert_eq!(plan.directories.len(), 1);
         assert!(plan.add_ignore_line);
         assert!(!plan.already_initialised);
         apply_init(dir.path(), &plan).expect("apply");
-        assert!(dir.path().join(".decisions/sets").is_dir());
-        assert!(dir.path().join(".decisions/log").is_dir());
+        assert!(dir.path().join(".decisions/ns").is_dir());
+        assert!(!dir.path().join(".decisions/sets").exists() && !dir.path().join(".decisions/log").exists(), "no flat path");
     }
 
     #[test]

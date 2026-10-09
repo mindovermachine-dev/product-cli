@@ -18,13 +18,8 @@ const CS: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXW";
 /// The `pass` fixture's store (its change-set needs format 1), landed
 /// declaring `format: N`. Returns the log file.
 fn landed_at(repo: &Repo, n: u32) -> PathBuf {
-    let from = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/pass/.decisions");
-    for dir in ["sets", "log"] {
-        for entry in std::fs::read_dir(from.join(dir)).expect("fixture").flatten() {
-            std::fs::copy(entry.path(), repo.path().join(".decisions").join(dir).join(entry.file_name())).expect("copy");
-        }
-    }
-    let file = repo.path().join(format!(".decisions/log/{CS}.yml"));
+    common::stage_fixture_into("pass", repo.path());
+    let file = repo.log_dir("fixture.ledger").join(format!("{CS}.yml"));
     redeclare(&file, 1, n);
     hand::commit(repo, &format!("landed at format {n}"));
     file

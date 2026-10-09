@@ -46,7 +46,7 @@ fn legacy_revocation(repo: &Repo, acceptance: &str, by: &str, at: &str) {
     let text = format!(
         "format: 1\nid: cs:{CS}\ncreated_at: {at}\ncreated_by: {by}\nrevocations:\n- acceptance: {acceptance}\n  at: {at}\n  by: {by}\n  reason: not mine to revoke\n"
     );
-    std::fs::write(repo.path().join(format!(".decisions/log/{CS}.yml")), text).expect("write");
+    std::fs::write(repo.log_dir(NS).join(format!("{CS}.yml")), text).expect("write");
 }
 
 fn export(repo: &Repo) -> String {
@@ -135,7 +135,10 @@ versions:\n- decision: {dec}\n  hash: {hash}\n  set: ledger-design\n  statement:
 acceptances:\n- id: {acc}\n  decision: {dec}\n  version: {hash}\n  actor: {MALLORY}\n  at: 2026-08-10T09:20:00Z\n\
 revocations:\n- acceptance: {acc}\n  at: 2026-08-10T09:30:00Z\n  by: {MALLORY}\n  reason: withdrawn\n"
     );
-    std::fs::write(repo.path().join(format!(".decisions/log/{EARLY}.yml")), text).expect("write");
+    // The file belongs to `open.ns`, whose set it names (LP-3.34, LP-5.22).
+    repo.declare_in("open.ns");
+    std::fs::create_dir_all(repo.log_dir("open.ns")).expect("log dir");
+    std::fs::write(repo.log_dir("open.ns").join(format!("{EARLY}.yml")), text).expect("write");
     repo.act_as(MALLORY);
     hand::commit(&repo, "a reused acceptance id in an ungoverned namespace");
     let (code, text) = verify(&repo);

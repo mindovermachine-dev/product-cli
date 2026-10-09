@@ -83,7 +83,7 @@ impl Repo {
     }
 
     fn declare(&self) {
-        self.ok(&["declare", "--set", "verbs", "--tolerance-floor", "T1"]);
+        self.ok(&["declare", "--set", "verbs", "--namespace", "fixture.verbs", "--tolerance-floor", "T1"]);
     }
 
     /// Add a constraint-allocated decision; returns its id.

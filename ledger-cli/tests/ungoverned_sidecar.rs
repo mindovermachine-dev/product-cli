@@ -21,7 +21,7 @@ fn accepted_with_a_false_sidecar(repo: &Repo) -> String {
     repo.ok_tty(&["accept", &id]);
     let store = ledger_core::store::load(repo.path());
     let acc = store.log.iter().flat_map(|l| l.file.acceptances.iter()).next().expect("acceptance").id.ulid().to_string();
-    let dir = repo.path().join(".decisions/sig");
+    let dir = repo.sig_dir(NS);
     std::fs::create_dir_all(&dir).expect("sig dir");
     let name = format!("{acc}.ssh.sig");
     std::fs::write(dir.join(&name), "not a signature\n").expect("sidecar");

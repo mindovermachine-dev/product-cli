@@ -27,8 +27,9 @@ fn pause() {
     std::thread::sleep(std::time::Duration::from_millis(1100));
 }
 
+/// Every namespace's derived `allowed_signers`, concatenated.
 fn signers(repo: &Repo) -> String {
-    std::fs::read_to_string(repo.path().join(".decisions/allowed_signers")).unwrap_or_default()
+    ledger_core::layout::namespaces(repo.path()).into_iter().map(|ns| repo.signers(&ns)).collect()
 }
 
 fn verify(repo: &Repo, extra: &[&str]) -> (i32, String) {
@@ -80,6 +81,7 @@ fn a_then_b() -> (Repo, String) {
     hand::commit(&repo, "A");
     pause();
     repo.ok(&["init", "--namespace", B, "--external-ref", MANDATE]);
+    repo.declare_in(B);
     acceptor(&repo, B);
     hand::commit(&repo, "B, the same key bound");
     pause();
@@ -97,6 +99,7 @@ fn b_then_a() -> (Repo, String) {
     pause();
     repo.use_key(&key);
     repo.ok(&["init", "--namespace", B, "--external-ref", MANDATE]);
+    repo.declare_in(B);
     acceptor(&repo, B);
     hand::commit(&repo, "B");
     pause();
@@ -155,7 +158,7 @@ fn bound_in_b_then_a_and_closed_in_a_the_key_is_closed_in_b_and_vouches_in_no_th
 /// it, as the holder's own further `add`.
 fn bound_twice() -> (Repo, String, String, String) {
     let repo = Repo::with_identity(OWNER);
-    repo.declare();
+    repo.declare_in(A);
     let key = repo.keygen("owner");
     repo.use_key(&key);
     repo.ok(&["init", "--namespace", A, "--external-ref", MANDATE]);

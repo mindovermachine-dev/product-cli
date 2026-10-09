@@ -181,10 +181,14 @@ impl<'a> View<'a> {
     fn check_sets(&mut self, store: &Store) {
         for v in &self.versions {
             let Some(parsed) = &v.parsed else { continue };
-            if store.set(&parsed.set).is_none() {
+            if store.set_in(parsed.decision.namespace(), &parsed.set).is_none() {
                 self.findings.push(Finding::schema(
                     &parsed.decision.to_string(),
-                    format!("names set `{}`, which is not declared under sets/", parsed.set),
+                    format!(
+                        "names set `{}`, which is not declared under `{}`'s sets/ — a version names a set of its own namespace (LP-5.22)",
+                        parsed.set,
+                        parsed.decision.namespace()
+                    ),
                 ));
             }
         }

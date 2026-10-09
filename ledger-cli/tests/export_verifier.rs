@@ -50,11 +50,11 @@ fn the_export_and_the_sidecars_alone_verify_and_rebuild_allowed_signers() {
     repo.ok(&["export", "--format", "ntriples", "--namespace", NS, "--out", &export.display().to_string()]);
     std::fs::create_dir_all(input.path().join("sig")).expect("sig dir");
     let mut sidecars = 0;
-    for entry in std::fs::read_dir(repo.path().join(".decisions/sig")).expect("sig").flatten() {
+    for entry in std::fs::read_dir(repo.sig_dir(NS)).expect("sig").flatten() {
         std::fs::copy(entry.path(), input.path().join("sig").join(entry.file_name())).expect("copy");
         sidecars += 1;
     }
-    let committed = std::fs::read_to_string(repo.path().join(".decisions/allowed_signers")).expect("derived");
+    let committed = std::fs::read_to_string(repo.signers_path(NS)).expect("derived");
     // The verifier's input is fixed: nothing under `.decisions/`, no git.
     std::fs::remove_dir_all(repo.path().join(".decisions")).expect("remove store");
     std::fs::remove_dir_all(repo.path().join(".git")).expect("remove git");
@@ -71,12 +71,15 @@ fn the_export_and_the_sidecars_alone_verify_and_rebuild_allowed_signers() {
 fn bytes_rebuilt_from_the_export_equal_the_signed_bytes_over_every_fixture() {
     let signed = signed_store();
     let fixtures = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
-    let mut roots: Vec<std::path::PathBuf> = std::fs::read_dir(&fixtures).expect("fixtures").flatten().map(|e| e.path()).collect();
-    roots.sort();
-    roots.push(signed.path().to_path_buf());
-    // And this repository's own store: 91 acceptances signed by nobody yet,
+    let mut names: Vec<String> = std::fs::read_dir(&fixtures).expect("fixtures").flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect();
+    names.sort();
+    // Each fixture staged under `ns/<namespace>/`, the signed store, and
+    // this repository's own store: 91 acceptances signed by nobody yet,
     // whose bytes the export must still rebuild exactly.
-    roots.push(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(".."));
+    let mut staged: Vec<tempfile::TempDir> = names.iter().map(|n| common::stage_fixture(n)).collect();
+    staged.push(common::stage_workspace());
+    let mut roots: Vec<std::path::PathBuf> = staged.iter().map(|d| d.path().to_path_buf()).collect();
+    roots.push(signed.path().to_path_buf());
     let mut checked = 0;
     for root in roots {
         let store = ledger_core::store::load(&root);

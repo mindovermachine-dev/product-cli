@@ -34,6 +34,10 @@ pub enum Ground {
 pub struct DecisionSet {
     pub format: u32,
     pub id: String,
+    /// The namespace whose directory holds the file (LP-3.34): not a field
+    /// of the file, so a set id is unique within a namespace (LP-3.36).
+    #[serde(skip)]
+    pub namespace: String,
     pub title: String,
     /// The floor, not a default. A member may override up, never down.
     pub tolerance_floor: Tier,

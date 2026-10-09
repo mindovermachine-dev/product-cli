@@ -2,17 +2,15 @@
 //! `verify --export` holds it byte-identical to the log — a hand edit, a
 //! stale file, or no file at all fails the gate with exit 1.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Output;
 
 use assert_cmd::Command;
 
+mod common;
+
 const TODAY: &str = "2026-08-10";
 const EXPORT: &str = "docs/decisions/fixture.ledger.nt";
-
-fn fixtures() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")
-}
 
 fn ledger(root: &Path, args: &[&str]) -> Output {
     let mut cmd = Command::cargo_bin("ledger").expect("binary");
@@ -30,16 +28,7 @@ fn text(out: &Output) -> String {
 
 /// A scratch copy of the conformant fixture, so tests can write exports.
 fn scratch() -> tempfile::TempDir {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let from = fixtures().join("pass/.decisions");
-    let to = dir.path().join(".decisions");
-    for sub in ["sets", "log"] {
-        std::fs::create_dir_all(to.join(sub)).expect("mkdir");
-        for entry in std::fs::read_dir(from.join(sub)).expect("read").flatten() {
-            std::fs::copy(entry.path(), to.join(sub).join(entry.file_name())).expect("copy");
-        }
-    }
-    dir
+    common::stage_fixture("pass")
 }
 
 fn namespace_of_fixture(dir: &Path) -> String {

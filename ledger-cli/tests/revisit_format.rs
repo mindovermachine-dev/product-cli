@@ -51,7 +51,7 @@ fn revised_onto_a_reopen_edge(repo: &Repo) -> PathBuf {
     repo.ok(&["revise", &id, "--statement", "Money is decimal.", "--revisit-if", REOPEN, "--note", "edge re-typed"]);
     let file = repo.log_files().into_iter().find(|f| !before.contains(f)).expect("the revision's file");
     repo.ok_tty(&["accept", &id]);
-    repo.path().join(".decisions/log").join(file)
+    repo.log_dir("fixture.ledger").join(file)
 }
 
 /// Before #67 every next-version verb wrote `format: 1`, an inherited edge
@@ -66,7 +66,7 @@ fn every_version_carrying_a_reopen_edge_is_written_at_format_4() {
     let before = repo.log_files();
     repo.ok(&["revise", &id, "--statement", "Money is decimal, always."]);
     let inherited = repo.log_files().into_iter().find(|f| !before.contains(f)).expect("file");
-    assert_eq!(declared(&repo.path().join(".decisions/log").join(inherited)), "format: 4", "inherited");
+    assert_eq!(declared(&repo.log_dir("fixture.ledger").join(inherited)), "format: 4", "inherited");
     let (code, text) = verify(&repo);
     assert_eq!(code, 0, "{text}");
 }
@@ -120,15 +120,25 @@ fn a_raise_beside_another_edit_is_not_a_correction() {
 
 #[test]
 fn the_corrected_files_declare_exactly_what_they_need() {
-    let log = workspace().join(".decisions/log");
+    // This repository's store: `.decisions/ns/<ns>/log` (LP-3.34), or the
+    // flat `.decisions/log` until it is re-laid out.
+    let log = |stem: &str| {
+        let root = workspace();
+        ledger_core::layout::namespaces(&root)
+            .into_iter()
+            .map(|ns| ledger_core::layout::log_dir(&root, &ns).join(format!("{stem}.yml")))
+            .chain(std::iter::once(root.join(".decisions/log").join(format!("{stem}.yml"))))
+            .find(|p| p.is_file())
+            .unwrap_or_else(|| panic!("{stem} is not in this repository's store"))
+    };
     for stem in CORRECTED {
-        let path = log.join(format!("{stem}.yml"));
+        let path = log(stem);
         let cs: ledger_core::changeset::ChangeSet =
             serde_yaml::from_str(&std::fs::read_to_string(&path).expect("read")).expect("parse");
         assert_eq!(cs.format, format::REVISIT_FORMAT, "{stem}");
         assert_eq!(format::needed_for(&cs), cs.format, "{stem}: raised past what it needs");
     }
-    let path = log.join(format!("{NOT_REOPENING}.yml"));
+    let path = log(NOT_REOPENING);
     let cs: ledger_core::changeset::ChangeSet =
         serde_yaml::from_str(&std::fs::read_to_string(&path).expect("read")).expect("parse");
     assert!(cs.versions.iter().all(|v| v.revisit_if.is_empty()), "{NOT_REOPENING} carries no reopen edge");
@@ -139,7 +149,8 @@ fn the_corrected_files_declare_exactly_what_they_need() {
 /// acceptance of their own hash, and the gate finds nothing about them.
 #[test]
 fn the_four_acceptances_still_verify() {
-    let store = ledger_core::store::load(&workspace());
+    let staged = common::stage_workspace();
+    let store = ledger_core::store::load(staged.path());
     let view = View::build(&store);
     let report = verify::verify(&store, &Options::offline(chrono::Utc::now().date_naive()));
     let mut seen = 0;

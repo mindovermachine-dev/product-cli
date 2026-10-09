@@ -12,6 +12,8 @@ use super::payload::grant_hash;
 use super::role::{Capability, Role};
 
 pub const GENESIS_HOLDER: &str = "owner@customer.example";
+/// The namespace the fixture roles and policies belong to.
+pub const NS: &str = "hafeok.ledger";
 
 /// A ULID ending in `tail`, distinct per record in one test.
 pub fn ulid(tail: &str) -> String {
@@ -20,6 +22,7 @@ pub fn ulid(tail: &str) -> String {
 
 pub fn role(id: &str, may: &[Capability]) -> Role {
     Role {
+        namespace: NS.to_string(),
         format: 6,
         id: id.into(),
         title: None,

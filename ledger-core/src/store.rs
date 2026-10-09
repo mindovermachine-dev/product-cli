@@ -5,18 +5,28 @@
 //! that will not parse becomes a named `SCHEMA` finding so `verify` reports
 //! the whole store in one pass rather than one file per run. Same discipline
 //! as the `ddd` store, for the same reason.
+//!
+//! **One directory per namespace** (LP-3.34, rulings 62 and 63). Each
+//! namespace's sets, roles, change-sets and sidecars are read from
+//! `.decisions/ns/<namespace>/`, and a file's namespace is its directory
+//! ([`crate::layout`]). The flat paths of revision v1.8 are read nowhere:
+//! a file there, or anywhere under `.decisions/` outside `ns/` and `index/`,
+//! is a schema fault.
 
 use std::path::{Path, PathBuf};
 
 use crate::changeset::ChangeSet;
 use crate::finding::Finding;
 use crate::format;
+use crate::layout;
 use crate::set::DecisionSet;
 use crate::STORE_DIR;
 
-/// A log file with the path it came from, so findings can name it.
+/// A log file with the path it came from, so findings can name it, and
+/// the namespace whose directory holds it (LP-3.34).
 #[derive(Debug, Clone)]
 pub struct LoggedChangeSet {
+    pub namespace: String,
     pub path: PathBuf,
     pub file: ChangeSet,
 }
@@ -37,9 +47,25 @@ pub struct Store {
 }
 
 impl Store {
-    /// The set with this id, when one is declared.
-    pub fn set(&self, id: &str) -> Option<&DecisionSet> {
-        self.sets.iter().find(|s| s.id == id)
+    /// The set with this id declared in `namespace`, when one is: a version
+    /// names a set of its own namespace (LP-5.22).
+    pub fn set_in(&self, namespace: &str, id: &str) -> Option<&DecisionSet> {
+        self.sets.iter().find(|s| s.id == id && s.namespace == namespace)
+    }
+
+    /// The namespaces the store has a directory for, sorted.
+    pub fn namespaces(&self) -> Vec<String> {
+        let mut out: Vec<String> = self
+            .sets
+            .iter()
+            .map(|s| s.namespace.clone())
+            .chain(self.roles.iter().map(|r| r.namespace.clone()))
+            .chain(self.log.iter().map(|l| l.namespace.clone()))
+            .chain(self.sidecars.iter().map(|c| c.namespace.clone()))
+            .collect();
+        out.sort();
+        out.dedup();
+        out
     }
 
     /// The role with this id, when one is declared.
@@ -67,7 +93,9 @@ pub fn find_root(start: &Path) -> Option<PathBuf> {
     None
 }
 
-/// Load the store rooted at `repo_root`.
+/// Load the store rooted at `repo_root`: every namespace directory under
+/// `.decisions/ns/`, then the faults for anything under `.decisions/` that
+/// the layout does not hold (LP-3.34).
 pub fn load(repo_root: &Path) -> Store {
     let dir = repo_root.join(STORE_DIR);
     let mut store = Store {
@@ -75,40 +103,109 @@ pub fn load(repo_root: &Path) -> Store {
         dir: dir.clone(),
         ..Store::default()
     };
-    load_sets(&dir.join("sets"), &mut store);
-    load_roles(&dir.join("roles"), &mut store);
-    load_log(&dir.join("log"), &mut store);
-    let (sidecars, faults) = crate::signing::load(&dir.join(crate::signing::SIG_DIR));
-    store.sidecars = sidecars;
-    store.schema_findings.extend(faults);
-    store.sets.sort_by(|a, b| a.id.cmp(&b.id));
-    store.roles.sort_by(|a, b| a.id.cmp(&b.id));
+    for namespace in layout::namespaces(repo_root) {
+        load_namespace(repo_root, &namespace, &mut store);
+    }
+    store.schema_findings.extend(layout_faults(&dir));
+    store.sets.sort_by(|a, b| (&a.namespace, &a.id).cmp(&(&b.namespace, &b.id)));
+    store.roles.sort_by(|a, b| (&a.namespace, &a.id).cmp(&(&b.namespace, &b.id)));
     store.log.sort_by(|a, b| a.file.id.cmp(&b.file.id));
     store
 }
 
-fn load_sets(dir: &Path, store: &mut Store) {
-    for path in yaml_files(dir) {
+/// One namespace's directory: its sets, roles, change-sets and sidecars.
+fn load_namespace(root: &Path, namespace: &str, store: &mut Store) {
+    if let Err(e) = crate::id::validate_namespace(namespace) {
+        store.schema_findings.push(Finding::schema(&format!("{}/{}", layout::NS_DIR, namespace), format!("is not a namespace directory: {e}")));
+    }
+    for path in yaml_files(&layout::sets_dir(root, namespace)) {
         match std::fs::read_to_string(&path) {
-            Ok(text) => take_set(store, &file_label(&path), &stem(&path), &text),
+            Ok(text) => take_set(store, namespace, &file_label(&path), &stem(&path), &text),
             Err(e) => store.schema_findings.push(Finding::schema(&file_label(&path), e.to_string())),
         }
     }
+    for path in yaml_files(&layout::roles_dir(root, namespace)) {
+        match std::fs::read_to_string(&path) {
+            Ok(text) => take_role(store, namespace, &file_label(&path), &stem(&path), &text),
+            Err(e) => store.schema_findings.push(Finding::schema(&file_label(&path), e.to_string())),
+        }
+    }
+    for path in yaml_files(&layout::log_dir(root, namespace)) {
+        match std::fs::read_to_string(&path) {
+            Ok(text) => take_log(store, namespace, path.clone(), &file_label(&path), &stem(&path), &text),
+            Err(e) => store.schema_findings.push(Finding::schema(&file_label(&path), e.to_string())),
+        }
+    }
+    let (sidecars, faults) = crate::signing::load(&layout::sig_dir(root, namespace), namespace);
+    store.sidecars.extend(sidecars);
+    store.schema_findings.extend(faults);
 }
 
-fn load_roles(dir: &Path, store: &mut Store) {
-    for path in yaml_files(dir) {
-        match std::fs::read_to_string(&path) {
-            Ok(text) => take_role(store, &file_label(&path), &stem(&path), &text),
-            Err(e) => store.schema_findings.push(Finding::schema(&file_label(&path), e.to_string())),
+/// A schema fault for every file under `.decisions/` the layout does not
+/// hold: the flat paths of revision v1.8 (`sets/`, `roles/`, `log/`,
+/// `sig/`, `allowed_signers`) and anything else outside `ns/` and `index/`
+/// (LP-3.34, ruling 63). A file directly under `ns/` is one too: a
+/// namespace is a directory.
+fn layout_faults(dir: &Path) -> Vec<Finding> {
+    let mut out = Vec::new();
+    let Ok(entries) = std::fs::read_dir(dir) else { return out };
+    let mut paths: Vec<PathBuf> = entries.flatten().map(|e| e.path()).collect();
+    paths.sort();
+    for path in paths {
+        let name = file_label(&path);
+        if name == layout::NS_DIR && path.is_dir() {
+            let Ok(inner) = std::fs::read_dir(&path) else { continue };
+            for stray in inner.flatten().map(|e| e.path()).filter(|p| !p.is_dir()) {
+                out.push(stray_fault(&format!("{STORE_DIR}/{}/{}", layout::NS_DIR, file_label(&stray))));
+            }
+            continue;
+        }
+        if name == layout::INDEX_DIR || name == ".gitattributes" {
+            continue;
+        }
+        if path.is_dir() {
+            for file in files_under(&path) {
+                out.push(stray_fault(&format!("{STORE_DIR}/{name}/{file}")));
+            }
+        } else {
+            out.push(stray_fault(&format!("{STORE_DIR}/{name}")));
         }
     }
+    out
+}
+
+fn stray_fault(path: &str) -> Finding {
+    Finding::schema(
+        path,
+        "is outside the layout — every namespace lives under `.decisions/ns/<namespace>/` with its own \
+         `sets/`, `roles/`, `log/`, `sig/` and `allowed_signers`, and the flat paths of revision v1.8 are \
+         not read (LP-3.34, ruling 63)",
+    )
+}
+
+/// Every file under `dir`, recursively, as paths relative to `dir`.
+fn files_under(dir: &Path) -> Vec<String> {
+    fn walk(dir: &Path, base: &Path, out: &mut Vec<String>) {
+        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        for path in entries.flatten().map(|e| e.path()) {
+            if path.is_dir() {
+                walk(&path, base, out);
+            } else {
+                out.push(path.strip_prefix(base).unwrap_or(&path).to_string_lossy().replace('\\', "/"));
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(dir, dir, &mut out);
+    out.sort();
+    out
 }
 
 /// Parse one role file's text into the store. Shared like [`take_set`].
-pub(crate) fn take_role(store: &mut Store, label: &str, stem: &str, text: &str) {
+pub(crate) fn take_role(store: &mut Store, namespace: &str, label: &str, stem: &str, text: &str) {
     match serde_yaml::from_str::<crate::authority::Role>(text) {
-        Ok(role) => {
+        Ok(mut role) => {
+            role.namespace = namespace.to_string();
             check_format(label, role.format, store);
             let faults = crate::authority::structure::role_faults(&role, stem, store);
             store.schema_findings.extend(faults.into_iter().map(|m| Finding::schema(label, m)));
@@ -118,20 +215,13 @@ pub(crate) fn take_role(store: &mut Store, label: &str, stem: &str, text: &str) 
     }
 }
 
-fn load_log(dir: &Path, store: &mut Store) {
-    for path in yaml_files(dir) {
-        match std::fs::read_to_string(&path) {
-            Ok(text) => take_log(store, path.clone(), &file_label(&path), &stem(&path), &text),
-            Err(e) => store.schema_findings.push(Finding::schema(&file_label(&path), e.to_string())),
-        }
-    }
-}
-
 /// Parse one set file's text into the store. Shared by the disk loader and
-/// the at-revision loader, so both readings apply identical rules.
-pub(crate) fn take_set(store: &mut Store, label: &str, stem: &str, text: &str) {
+/// the at-revision loader, so both readings apply identical rules. A set id
+/// is unique within its namespace (LP-3.36).
+pub(crate) fn take_set(store: &mut Store, namespace: &str, label: &str, stem: &str, text: &str) {
     match serde_yaml::from_str::<DecisionSet>(text) {
-        Ok(set) => {
+        Ok(mut set) => {
+            set.namespace = namespace.to_string();
             check_format(label, set.format, store);
             if let Err(e) = DecisionSet::validate_id(&set.id) {
                 store.schema_findings.push(Finding::schema(label, e));
@@ -142,10 +232,10 @@ pub(crate) fn take_set(store: &mut Store, label: &str, stem: &str, text: &str) {
                     format!("declares id `{}` but is filed as `{stem}`", set.id),
                 ));
             }
-            if store.sets.iter().any(|s| s.id == set.id) {
+            if store.sets.iter().any(|s| s.id == set.id && s.namespace == namespace) {
                 store
                     .schema_findings
-                    .push(Finding::schema(label, format!("set `{}` is declared twice", set.id)));
+                    .push(Finding::schema(label, format!("set `{}` is declared twice in `{namespace}`", set.id)));
             }
             store.sets.push(set);
         }
@@ -154,7 +244,7 @@ pub(crate) fn take_set(store: &mut Store, label: &str, stem: &str, text: &str) {
 }
 
 /// Parse one change-set file's text into the store. Shared like [`take_set`].
-pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str, text: &str) {
+pub(crate) fn take_log(store: &mut Store, namespace: &str, path: PathBuf, label: &str, stem: &str, text: &str) {
     match serde_yaml::from_str::<ChangeSet>(text) {
         Ok(file) => {
             check_format(label, file.format, store);
@@ -179,7 +269,7 @@ pub(crate) fn take_log(store: &mut Store, path: PathBuf, label: &str, stem: &str
             }
             store.schema_findings.extend(format_faults(label, &file));
             store.schema_findings.extend(crate::scalars::faults(label, text));
-            store.log.push(LoggedChangeSet { path, file });
+            store.log.push(LoggedChangeSet { namespace: namespace.to_string(), path, file });
         }
         Err(e) => store.schema_findings.push(parse_fault("change-set", label, &e.to_string())),
     }

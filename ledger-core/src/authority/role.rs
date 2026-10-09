@@ -98,6 +98,10 @@ pub struct Role {
     pub format: u32,
     /// Lowercase alphanumerics, dashes and dots — the set-id rule.
     pub id: String,
+    /// The namespace whose directory holds the file (LP-3.34); not a field
+    /// of the file.
+    #[serde(skip)]
+    pub namespace: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     pub owner: Identity,

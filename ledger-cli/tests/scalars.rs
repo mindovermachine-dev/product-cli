@@ -18,9 +18,11 @@ const CS: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXW";
 fn committed(scalar: &str) -> (i32, String) {
     let repo = Repo::human();
     let sets = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/pass/.decisions/sets");
+    std::fs::create_dir_all(repo.sets_dir("fixture.ledger")).expect("sets dir");
     for entry in std::fs::read_dir(sets).expect("fixture").flatten() {
-        std::fs::copy(entry.path(), repo.path().join(".decisions/sets").join(entry.file_name())).expect("copy");
+        std::fs::copy(entry.path(), repo.sets_dir("fixture.ledger").join(entry.file_name())).expect("copy");
     }
+    std::fs::create_dir_all(repo.log_dir("fixture.ledger")).expect("log dir");
     let file = |hash: &str| {
         format!(
             "format: 1\nid: cs:{CS}\ncreated_at: 2026-08-10T09:14:22Z\ncreated_by: fixture-human@example\n\
@@ -31,7 +33,7 @@ versions:\n  - decision: dec:fixture.ledger/01K2C4YQJ3F8M0PT5W7NZ9RDXV\n    hash
     };
     let draft: ledger_core::changeset::ChangeSet = serde_yaml::from_str(&file(&format!("sha256:{}", "0".repeat(64)))).expect("parse");
     let hash = ledger_core::hash::version_hash(&draft.versions[0]).to_string();
-    std::fs::write(repo.path().join(format!(".decisions/log/{CS}.yml")), file(&hash)).expect("write");
+    std::fs::write(repo.log_dir("fixture.ledger").join(format!("{CS}.yml")), file(&hash)).expect("write");
     hand::commit(&repo, "a version");
     let out = repo.ledger(&["verify", "--no-blame"]);
     (out.status.code().unwrap_or(-1), common::both(&out))

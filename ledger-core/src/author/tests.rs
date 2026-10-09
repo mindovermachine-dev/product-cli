@@ -25,6 +25,7 @@ fn author(dir: &Path) -> Author {
 
 fn declare(a: &mut Author) {
     a.declare(DeclareArgs {
+        namespace: Some("fixture.verbs".into()),
         id: "verbs".into(),
         title: "Verb round-trips".into(),
         tolerance_floor: Tier::T1,
