@@ -81,6 +81,7 @@ pub fn select(store: &Store, namespace: &str) -> Store {
         .log
         .iter()
         .map(|logged| LoggedChangeSet {
+            namespace: logged.namespace.clone(),
             path: logged.path.clone(),
             file: restrict(&logged.file, &ours, &reach),
         })
@@ -90,7 +91,7 @@ pub fn select(store: &Store, namespace: &str) -> Store {
     Store {
         root: store.root.clone(),
         dir: store.dir.clone(),
-        sets: store.sets.iter().filter(|s| named.contains(&s.id)).cloned().collect(),
+        sets: store.sets.iter().filter(|s| s.namespace == namespace && named.contains(&s.id)).cloned().collect(),
         roles: store.roles.iter().filter(|r| roles.contains(&r.id)).cloned().collect(),
         log,
         sidecars: store.sidecars.clone(),

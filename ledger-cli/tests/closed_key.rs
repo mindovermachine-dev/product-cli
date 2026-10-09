@@ -51,12 +51,12 @@ fn verify(repo: &Repo) -> (i32, String) {
 /// File `cs` by hand, with one `ssh` sidecar per `(ulid, namespace, bytes)`
 /// signed by `key`; commit it.
 fn file_signed(repo: &Repo, cs: ChangeSet, signed: &[(String, String, Vec<u8>)], key: &str) {
-    let dir = repo.path().join(".decisions/sig");
+    let dir = repo.sig_dir(NS);
     std::fs::create_dir_all(&dir).expect("sig dir");
     for (ulid, ns, bytes) in signed {
         std::fs::write(dir.join(format!("{ulid}.ssh.sig")), hand::ssh_sign(key, ns, bytes)).expect("sig");
     }
-    std::fs::write(repo.path().join(".decisions/log").join(cs.file_name()), serde_yaml::to_string(&cs).expect("yaml")).expect("log");
+    std::fs::write(repo.log_dir(NS).join(cs.file_name()), serde_yaml::to_string(&cs).expect("yaml")).expect("log");
     hand::commit(repo, "signed with the closed key, backdated");
 }
 
@@ -69,7 +69,7 @@ fn public(key: &str) -> String {
 }
 
 fn derived_signers(repo: &Repo) -> String {
-    ledger_core::authority::signers::derive(&store(repo)).unwrap_or_default()
+    ledger_core::authority::signers::derive(&store(repo)).into_values().collect()
 }
 
 fn fails_with(repo: &Repo, id: &str, class: &str) -> String {

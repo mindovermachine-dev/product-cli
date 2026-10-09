@@ -3,17 +3,15 @@
 //! and the graph stage reports through `verify` with unchanged exit
 //! semantics.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Output;
 
 use assert_cmd::Command;
 
+mod common;
+
 /// The date at which the coverage fixture exhibits every state.
 const TODAY: &str = "2027-01-01";
-
-fn fixtures() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")
-}
 
 fn ledger(root: &Path, args: &[&str]) -> Output {
     let mut cmd = Command::cargo_bin("ledger").expect("binary");
@@ -27,16 +25,7 @@ fn stdout(out: &Output) -> String {
 
 /// A scratch copy of the coverage fixture, so tests can write an index.
 fn scratch_coverage() -> tempfile::TempDir {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let from = fixtures().join("coverage/.decisions");
-    let to = dir.path().join(".decisions");
-    for sub in ["sets", "log"] {
-        std::fs::create_dir_all(to.join(sub)).expect("mkdir");
-        for entry in std::fs::read_dir(from.join(sub)).expect("read").flatten() {
-            std::fs::copy(entry.path(), to.join(sub).join(entry.file_name())).expect("copy");
-        }
-    }
-    dir
+    common::stage_fixture("coverage")
 }
 
 #[test]
@@ -57,7 +46,8 @@ fn the_rebuild_is_byte_identical_after_deleting_the_index() {
 
 #[test]
 fn coverage_distinguishes_all_seven_states_on_the_fixture() {
-    let root = fixtures().join("coverage");
+    let staged = common::stage_fixture("coverage");
+    let root = staged.path().to_path_buf();
     let out = ledger(&root, &["coverage", "--today", TODAY]);
     assert_eq!(out.status.code(), Some(0), "{}", String::from_utf8_lossy(&out.stderr));
     let text = stdout(&out);
@@ -80,7 +70,8 @@ fn coverage_distinguishes_all_seven_states_on_the_fixture() {
 
 #[test]
 fn coverage_json_carries_the_states_and_the_chain_machine_readably() {
-    let root = fixtures().join("coverage");
+    let staged = common::stage_fixture("coverage");
+    let root = staged.path().to_path_buf();
     let out = ledger(&root, &["coverage", "--today", TODAY, "--json"]);
     let parsed: serde_json::Value = serde_json::from_str(&stdout(&out)).expect("json");
     assert_eq!(parsed["decisions"], 9);
@@ -93,7 +84,8 @@ fn coverage_json_carries_the_states_and_the_chain_machine_readably() {
 fn a_superseded_versions_acceptances_are_historical_in_blame_and_status() {
     // d7 (the chain root) is superseded; the fixture's `decided` decision
     // d3 stays live. Status renders the supersession terminally.
-    let root = fixtures().join("coverage");
+    let staged = common::stage_fixture("coverage");
+    let root = staged.path().to_path_buf();
     let out = ledger(&root, &["status", "--today", TODAY]);
     let text = stdout(&out);
     assert!(text.contains("superseded by dec:fixture.coverage/"), "{text}");
@@ -104,7 +96,7 @@ fn the_graph_stage_reports_through_verify_with_exit_one() {
     // Break the fixture copy: point a supersession at a decision nobody
     // filed. The file gate stays quiet; the graph stage fails the run.
     let dir = scratch_coverage();
-    let log_dir = dir.path().join(".decisions/log");
+    let log_dir = ledger_core::layout::log_dir(dir.path(), "fixture.coverage");
     let target = std::fs::read_dir(&log_dir)
         .expect("read")
         .flatten()
@@ -136,7 +128,8 @@ fn latest_follows_the_parent_dag_when_ulid_order_contradicts_it() {
     // a writer whose clock runs ahead. ULID order would call the root
     // latest and the signed revision historical; the parent DAG knows the
     // revision is the tip, so the store is conformant and decided.
-    let root = fixtures().join("two-clocks");
+    let staged = common::stage_fixture("two-clocks");
+    let root = staged.path().to_path_buf();
     let out = ledger(&root, &["verify", "--today", "2026-08-10", "--no-blame"]);
     assert_eq!(out.status.code(), Some(0), "{}", String::from_utf8_lossy(&out.stderr));
     assert!(
@@ -157,7 +150,8 @@ fn g004_a_forked_chain_fails_verify_and_names_both_tips() {
     // produces: one parent, two divergent revisions. No file is malformed;
     // the graph stage names the fork and the store is non-conformant until
     // a human arbitrates.
-    let root = fixtures().join("forked");
+    let staged = common::stage_fixture("forked");
+    let root = staged.path().to_path_buf();
     let out = ledger(&root, &["verify", "--today", "2026-08-10", "--no-blame"]);
     assert_eq!(out.status.code(), Some(1), "{}", String::from_utf8_lossy(&out.stderr));
     let err = String::from_utf8_lossy(&out.stderr).into_owned();

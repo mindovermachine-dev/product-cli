@@ -58,8 +58,9 @@ fn policy_of(repo: &Repo, ns: &str) -> ledger_core::authority::Policy {
     store.log.iter().flat_map(|l| l.file.policies.iter()).find(|p| p.namespace == ns).cloned().expect("policy")
 }
 
-fn sidecar(repo: &Repo, ulid: &str) -> std::path::PathBuf {
-    repo.path().join(".decisions/sig").join(format!("{ulid}.ssh.sig"))
+/// The sidecar of the entity `ulid`, under the namespace it was filed in.
+fn sidecar(repo: &Repo, ns: &str, ulid: &str) -> std::path::PathBuf {
+    repo.sidecar(ns, ulid)
 }
 
 /// A self-bound binding for the holder's address, filed by hand with a key
@@ -89,9 +90,9 @@ fn init_binds_the_configured_key_self_bound_and_it_signs_the_first_policy() {
     assert!(public.contains(b.key.as_deref().unwrap_or("?")), "the configured key is the one bound");
     let policy = policy_of(&repo, NS);
     assert_eq!(b.at, policy.at, "dated with the policy, so the policy governs it");
-    assert!(sidecar(&repo, b.id.ulid()).exists(), "the binding is signed by the key it binds");
-    assert!(sidecar(&repo, policy.id.ulid()).exists(), "the first policy is signed");
-    let signers = std::fs::read_to_string(repo.path().join(".decisions/allowed_signers")).expect("allowed_signers");
+    assert!(sidecar(&repo, NS, b.id.ulid()).exists(), "the binding is signed by the key it binds");
+    assert!(sidecar(&repo, NS, policy.id.ulid()).exists(), "the first policy is signed");
+    let signers = std::fs::read_to_string(repo.signers_path(NS)).expect("allowed_signers");
     assert!(signers.contains(b.key.as_deref().unwrap_or("?")), "{signers}");
     hand::commit(&repo, "governed");
     let (code, text) = verify(&repo);
@@ -126,7 +127,7 @@ fn unbound_at_init_the_window_stays_open_and_init_says_so() {
     repo.ok(&["identity", "sync"]);
     let (code, text) = verify(&repo);
     assert_eq!(code, 0, "unbound, the forged first binding is trusted: {text}");
-    let signers = std::fs::read_to_string(repo.path().join(".decisions/allowed_signers")).expect("allowed_signers");
+    let signers = std::fs::read_to_string(repo.signers_path(NS)).expect("allowed_signers");
     let store = ledger_core::store::load(repo.path());
     let forged = store.log.iter().flat_map(|l| l.file.key_bindings.iter()).find(|b| b.id.to_string() == id).expect("forged");
     assert!(signers.contains(forged.key.as_deref().unwrap_or("?")), "and it reaches allowed_signers: {signers}");
@@ -137,7 +138,7 @@ fn unbound_at_init_the_window_stays_open_and_init_says_so() {
 fn a_first_policy_filed_before_any_key_stays_valid_unsigned() {
     let (repo, _) = unkeyed();
     let policy = policy_of(&repo, NS);
-    assert!(!sidecar(&repo, policy.id.ulid()).exists(), "nothing to sign with");
+    assert!(!sidecar(&repo, NS, policy.id.ulid()).exists(), "nothing to sign with");
     hand::commit(&repo, "governed");
     let (code, text) = verify(&repo);
     assert_eq!(code, 0, "{text}");
@@ -149,7 +150,7 @@ fn a_later_namespaces_first_policy_is_signed_and_unsigned_it_is_l011() {
     let out = repo.ok(&["init", "--namespace", SECOND, "--external-ref", MANDATE]);
     assert!(out.contains("signed"), "{out}");
     let policy = policy_of(&repo, SECOND);
-    let sig = sidecar(&repo, policy.id.ulid());
+    let sig = sidecar(&repo, SECOND, policy.id.ulid());
     assert!(sig.exists(), "signed with the key trusted in the first namespace");
     hand::commit(&repo, "second namespace");
     let (code, text) = verify(&repo);
@@ -187,10 +188,11 @@ fn init_in_a_later_namespace_binds_the_holders_key_there_and_they_sign_with_no_i
     assert!(!b.self_bound && b.mandate.is_none() && b.by.as_str() == OWNER, "their own add: {b:?}");
     assert_eq!(b.at, policy.at, "dated with the policy");
     assert!(std::fs::read_to_string(format!("{key}.pub")).expect("pub").contains(b.key.as_deref().unwrap_or("?")), "the existing key");
-    assert!(sidecar(&repo, b.id.ulid()).exists(), "signed by their key trusted in the first namespace");
+    assert!(sidecar(&repo, SECOND, b.id.ulid()).exists(), "signed by their key trusted in the first namespace");
     // They sign in the new namespace straight away.
     let grant = hand::word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{SECOND}")]), "grant:");
     repo.ok(&["grant", "accept", &grant]);
+    repo.declare_in(SECOND);
     let out = repo.ok(&[
         "add", "--set", "ledger-design", "--namespace", SECOND, "--statement", "Signed with no separate identity add.",
         "--store", "constraint", "--discharge", "analyzer:DEC001",

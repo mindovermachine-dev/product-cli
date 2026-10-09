@@ -178,5 +178,5 @@ impl<'a> Authority<'a> {
 /// `created_at` is a date its author typed, in no payload — so landing alone
 /// places it: a role counts for an act that landed no earlier than it.
 fn role_landing(landing: &Landing, role: &Role) -> usize {
-    landing.index(&format!("{}/roles/{}", crate::STORE_DIR, role.file_name()))
+    landing.index(&format!("{}/{}", crate::layout::relative_dir(&role.namespace, crate::layout::Kind::Role), role.file_name()))
 }

@@ -6,7 +6,7 @@ use super::*;
 use crate::testkit::git;
 
 fn file(root: &Path, name: &str) {
-    let path = root.join(".decisions/log").join(name);
+    let path = crate::layout::log_dir(root, "a.ns").join(name);
     std::fs::create_dir_all(path.parent().expect("dir")).expect("mkdir");
     std::fs::write(&path, name).expect("write");
     git(root, &["add", "-A"]);
@@ -26,7 +26,7 @@ fn without_git_everything_is_at_the_tip() {
     let dir = tempfile::tempdir().expect("tempdir");
     let l = Landing::compute(dir.path(), None).expect("compute");
     assert!(!l.available);
-    assert_eq!(l.index(".decisions/log/a.yml"), l.index(".decisions/log/b.yml"));
+    assert_eq!(l.index(".decisions/ns/a.ns/log/a.yml"), l.index(".decisions/ns/a.ns/log/b.yml"));
 }
 
 #[test]
@@ -35,8 +35,8 @@ fn a_file_lands_at_the_first_first_parent_commit_containing_it() {
     file(dir.path(), "a.yml");
     file(dir.path(), "b.yml");
     let l = Landing::compute(dir.path(), None).expect("compute");
-    assert!(l.index(".decisions/log/a.yml") < l.index(".decisions/log/b.yml"));
-    assert!(l.index(".decisions/log/b.yml") < l.index(".decisions/log/uncommitted.yml"), "uncommitted is the tip");
+    assert!(l.index(".decisions/ns/a.ns/log/a.yml") < l.index(".decisions/ns/a.ns/log/b.yml"));
+    assert!(l.index(".decisions/ns/a.ns/log/b.yml") < l.index(".decisions/ns/a.ns/log/uncommitted.yml"), "uncommitted is the tip");
 }
 
 #[test]
@@ -52,15 +52,15 @@ fn a_branch_verified_against_its_base_agrees_with_the_merge() {
     let local = Landing::compute(root, Some("main")).expect("against base");
     let naive = Landing::compute(root, None).expect("no base");
     assert!(
-        naive.index(".decisions/log/branch.yml") < naive.index(".decisions/log/main.yml"),
+        naive.index(".decisions/ns/a.ns/log/branch.yml") < naive.index(".decisions/ns/a.ns/log/main.yml"),
         "without the base the branch file reads as earlier, which the merge will not say"
     );
     git(root, &["checkout", "-q", "main"]);
     git(root, &["merge", "-q", "--no-ff", "-m", "merge topic", "topic"]);
     let merged = Landing::compute(root, None).expect("merge");
     let order = |l: &Landing| {
-        (l.index(".decisions/log/a.yml") < l.index(".decisions/log/main.yml"),
-         l.index(".decisions/log/main.yml") < l.index(".decisions/log/branch.yml"))
+        (l.index(".decisions/ns/a.ns/log/a.yml") < l.index(".decisions/ns/a.ns/log/main.yml"),
+         l.index(".decisions/ns/a.ns/log/main.yml") < l.index(".decisions/ns/a.ns/log/branch.yml"))
     };
     assert_eq!(order(&local), (true, true));
     assert_eq!(order(&local), order(&merged), "local against the base and the merge ref agree");

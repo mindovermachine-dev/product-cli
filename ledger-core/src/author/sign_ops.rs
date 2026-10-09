@@ -63,6 +63,7 @@ impl Author {
         self.refuse_key(store, policy, &what, &key)?;
         let bytes = ssh::sign(&key, what.namespace, &what.bytes).map_err(AuthorError::Io)?;
         self.pending_sidecars.push(Sidecar {
+            namespace: what.namespace.to_string(),
             ulid: what.ulid.to_string(),
             scheme: Scheme::Ssh,
             file: Sidecar::file_name(what.ulid, Scheme::Ssh),
@@ -137,10 +138,9 @@ impl Author {
     /// signatures first, so a log entry never lands without the sidecar it
     /// was gated with.
     pub(crate) fn append_signed(&mut self, candidate: &crate::changeset::ChangeSet) -> Result<std::path::PathBuf, AuthorError> {
-        let dir = self.root.join(crate::STORE_DIR);
         let mut written = Vec::new();
         for sidecar in std::mem::take(&mut self.pending_sidecars) {
-            match crate::signing::write(&dir, &sidecar) {
+            match crate::signing::write(&self.root, &sidecar) {
                 Ok(path) => written.push(path),
                 Err(e) => {
                     written.iter().for_each(|p| drop(std::fs::remove_file(p)));

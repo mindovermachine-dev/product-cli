@@ -42,14 +42,15 @@ fn three_repositories_twelve_branches_one_sitting_every_branch_green() {
     let mut sidecars = 0;
     for (i, h) in f.holders.iter().enumerate() {
         h.git(&["fetch", "-q", "origin"]);
-        let on_main = git(h.path(), &["ls-tree", "--name-only", "origin/main", ".decisions/sig/"]).lines().count();
+        let on_main = git(h.path(), &["ls-tree", "-r", "--name-only", "origin/main", ".decisions/"]).lines().filter(|p| p.contains("/sig/")).count();
         let branches = git(h.path(), &["for-each-ref", "--format=%(refname:strip=3)", "refs/remotes/origin/agent/"]);
         for b in branches.lines() {
             let wt = f.root.path().join(format!("check-{i}-{}", b.replace('/', "-")));
             h.git(&["worktree", "add", "-q", "--detach", &wt.display().to_string(), &format!("origin/{b}")]);
             let v = common::invoke(&wt, &["verify", "--base", "origin/main", "--export"]);
             assert_eq!(v.status.code(), Some(0), "repo{i} {b}: {}", common::both(&v));
-            sidecars += std::fs::read_dir(wt.join(".decisions/sig")).map(|d| d.count()).unwrap_or(0) - on_main;
+            let in_tree: usize = ledger_core::layout::namespaces(&wt).iter().map(|ns| std::fs::read_dir(ledger_core::layout::sig_dir(&wt, ns)).map(|d| d.count()).unwrap_or(0)).sum();
+            sidecars += in_tree - on_main;
         }
     }
     assert_eq!(sidecars, 20, "one signature per acceptance, beyond the sidecars main already holds");
@@ -60,6 +61,7 @@ fn a_namespace_with_no_policy_is_named_unchecked_not_omitted() {
     let f = fixture();
     let h = &f.holders[0];
     // A second namespace, never opted in, proposed on main.
+    h.declare_in("loose.ledger");
     let out = h.ok(&["add", "--set", "ledger-design", "--namespace", "loose.ledger", "--statement", "Unchecked."]);
     assert!(out.contains("dec:loose.ledger/"), "{out}");
     h.ok(&["export", "--format", "ntriples"]);

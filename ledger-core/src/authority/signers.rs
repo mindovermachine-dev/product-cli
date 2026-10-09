@@ -1,7 +1,8 @@
 //! `allowed_signers` — the trust root as a derived file (#65; PRD §0 item 11).
 //!
-//! One line per key window, in OpenSSH's `allowed_signers` format, so
-//! `ssh-keygen -Y verify -f .decisions/allowed_signers` reads it directly:
+//! One file per namespace, `.decisions/ns/<ns>/allowed_signers` (LP-3.34),
+//! one line per key window of that namespace, in OpenSSH's
+//! `allowed_signers` format, so `ssh-keygen -Y verify -f` reads it directly:
 //!
 //! ```text
 //! <principal> namespaces="ledger-accept@<ns>",valid-after="<t>"[,valid-before="<t>"] <key-type> <key>
@@ -18,39 +19,56 @@
 //! `verify` re-derives it and holds the committed bytes identical — the
 //! export's discipline, applied to the trust root.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, Utc};
 
 use crate::graph::export::ExportFinding;
 use crate::store::Store;
-use crate::STORE_DIR;
 
 use super::binding::KeyBinding;
 
-/// The derived file's name under `.decisions/`.
-pub const FILE: &str = "allowed_signers";
+/// The derived file's name under each namespace's directory.
+pub const FILE: &str = crate::layout::SIGNERS_FILE;
 
 /// The derived file's two comment lines, as the ledger protocol states them (§4.9).
 pub const HEADER: &str = "# Derived from the key-binding entries in .decisions/log by `ledger identity`.\n\
 # Never edit by hand: `ledger verify` holds this file byte-identical to the log.\n";
 
-/// Where the derived file lives.
-pub fn path(root: &Path) -> PathBuf {
-    root.join(STORE_DIR).join(FILE)
+/// Where a namespace's derived file lives.
+pub fn path(root: &Path, namespace: &str) -> PathBuf {
+    crate::layout::signers_path(root, namespace)
 }
 
 fn when(at: &DateTime<Utc>) -> String {
     at.format("%Y%m%d%H%M%SZ").to_string()
 }
 
-/// The file the log implies — every binding the signature gate trusts
-/// (an unsigned or wrongly signed binding never enters it, spec v1.8);
-/// `None` when nothing binds a key.
-pub fn derive(store: &Store) -> Option<String> {
+/// The files the log implies, by namespace — every binding the signature
+/// gate trusts (an unsigned or wrongly signed binding never enters one,
+/// spec v1.8). A namespace that binds nothing has no entry.
+pub fn derive(store: &Store) -> BTreeMap<String, String> {
     let landing = crate::landing::Landing::compute(&store.root, None).unwrap_or_default();
-    derive_from(&crate::signing::check::trusted_bindings(store, &landing), &filed(store))
+    derive_each(&crate::signing::check::trusted_bindings(store, &landing), &filed(store))
+}
+
+/// Each namespace's file from exactly these bindings: the lines of its
+/// bindings, under the header. A namespace none of them opens a key in has
+/// no entry. A close is looked up among all of `bindings`, in whichever
+/// namespace it was filed, as [`derive_from`] does.
+pub fn derive_each(bindings: &[&KeyBinding], filed: &[&KeyBinding]) -> BTreeMap<String, String> {
+    let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for (namespace, line) in lines(bindings, filed) {
+        grouped.entry(namespace).or_default().push(line);
+    }
+    grouped
+        .into_iter()
+        .map(|(namespace, mut lines)| {
+            lines.sort();
+            (namespace, format!("{HEADER}{}\n", lines.join("\n")))
+        })
+        .collect()
 }
 
 /// Every binding filed in the store, trusted or not.
@@ -58,16 +76,27 @@ pub fn filed(store: &Store) -> Vec<&KeyBinding> {
     store.log.iter().flat_map(|l| l.file.key_bindings.iter()).collect()
 }
 
-/// The allowed-signers text for exactly these bindings; a close's target is
-/// looked up in `filed`.
+/// The allowed-signers text for exactly these bindings, every namespace's
+/// line in one text — what the signature check hands `ssh-keygen`; a
+/// close's target is looked up in `filed`.
 pub fn derive_from(bindings: &[&KeyBinding], filed: &[&KeyBinding]) -> Option<String> {
+    let mut lines: Vec<String> = lines(bindings, filed).into_iter().map(|(_, line)| line).collect();
+    if lines.is_empty() {
+        return None;
+    }
+    lines.sort();
+    Some(format!("{HEADER}{}\n", lines.join("\n")))
+}
+
+/// One line per opening binding, with the namespace it belongs to.
+fn lines(bindings: &[&KeyBinding], filed: &[&KeyBinding]) -> Vec<(String, String)> {
     // A close ends the key in every namespace (ruled 2026-10-06): every
     // line of a closed key ends at its key's earliest close.
     let closes: BTreeMap<String, DateTime<Utc>> = bindings
         .iter()
         .filter_map(|b| super::key_close::closes_among(bindings, filed, b).iter().map(|c| c.at).min().map(|t| (b.id.to_string(), t)))
         .collect();
-    let mut lines: Vec<String> = bindings
+    bindings
         .iter()
         .filter(|b| b.act.opens())
         .filter_map(|b| {
@@ -76,41 +105,48 @@ pub fn derive_from(bindings: &[&KeyBinding], filed: &[&KeyBinding]) -> Option<St
                 .get(&b.id.to_string())
                 .map(|t| format!(",valid-before=\"{}\"", when(t)))
                 .unwrap_or_default();
-            Some(format!(
+            let line = format!(
                 "{} namespaces=\"ledger-accept@{}\",valid-after=\"{}\"{before} {key_type} {key}",
                 b.principal,
                 b.namespace,
                 when(&b.at)
-            ))
+            );
+            Some((b.namespace.clone(), line))
         })
-        .collect();
-    if lines.is_empty() {
-        return None;
-    }
-    lines.sort();
-    Some(format!("{HEADER}{}\n", lines.join("\n")))
+        .collect()
 }
 
-/// Rewrite the derived file from the log (or remove it when nothing binds).
+/// Rewrite each namespace's derived file from the log.
 pub fn write(store: &Store) -> Result<(), String> {
-    let target = path(&store.root);
-    match derive(store) {
-        Some(text) => product_core::fileops::write_file_atomic(&target, &text).map_err(|e| e.to_string()),
-        None => Ok(()),
+    for (namespace, text) in derive(store) {
+        let target = path(&store.root, &namespace);
+        if let Some(dir) = target.parent() {
+            std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+        }
+        product_core::fileops::write_file_atomic(&target, &text).map_err(|e| e.to_string())?;
     }
+    Ok(())
 }
 
-/// The verify stage: the committed file equals the log's derivation.
+/// The verify stage: each namespace's committed file equals the log's
+/// derivation for that namespace.
 pub fn check(store: &Store, trusted: &[&KeyBinding]) -> Vec<ExportFinding> {
-    let label = format!("{STORE_DIR}/{FILE}");
-    let committed = std::fs::read_to_string(path(&store.root)).ok();
+    let derived = derive_each(trusted, &filed(store));
+    let namespaces: BTreeSet<String> = derived.keys().cloned().chain(store.namespaces()).collect();
     let regenerate = "regenerate it with `ledger identity sync` — it is never edited by hand";
-    let message = match (derive_from(trusted, &filed(store)), committed) {
-        (None, None) => return Vec::new(),
-        (Some(want), Some(have)) if want == have => return Vec::new(),
-        (Some(_), None) => format!("the log binds keys but no {FILE} is committed — {regenerate}"),
-        (None, Some(_)) => format!("{FILE} is committed but the log binds no key — it trusts what nothing filed"),
-        (Some(_), Some(_)) => format!("does not match the key bindings in the log — {regenerate}"),
-    };
-    vec![ExportFinding { subject: label, message }]
+    namespaces
+        .into_iter()
+        .filter_map(|ns| {
+            let label = format!("{}/{FILE}", crate::layout::relative_dir(&ns, crate::layout::Kind::Signers).trim_end_matches('/'));
+            let committed = std::fs::read_to_string(path(&store.root, &ns)).ok();
+            let message = match (derived.get(&ns), committed) {
+                (None, None) => return None,
+                (Some(want), Some(have)) if *want == have => return None,
+                (Some(_), None) => format!("the log binds keys in `{ns}` but no {FILE} is committed there — {regenerate}"),
+                (None, Some(_)) => format!("{FILE} is committed in `{ns}` but the log binds no key there — it trusts what nothing filed"),
+                (Some(_), Some(_)) => format!("does not match the key bindings of `{ns}` in the log — {regenerate}"),
+            };
+            Some(ExportFinding { subject: label, message })
+        })
+        .collect()
 }

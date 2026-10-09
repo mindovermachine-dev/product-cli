@@ -19,7 +19,10 @@ use crate::store::Store;
 use crate::testkit;
 
 pub(super) const NS: &str = "fixture.ledger";
-pub(super) const PATH: &str = ".decisions/log/01K2C4YQJ3F8M0PT5W7NZ9RDXW.yml";
+/// The fixture change-set's repo-relative path, under its namespace's directory.
+pub(super) fn path() -> String {
+    format!(".decisions/ns/{}/log/{}.yml", testkit::NS, testkit::CS_ULID)
+}
 /// The `at`s on the grid, for the entries and for the act alike.
 pub(super) const TIMES: [&str; 3] = ["2026-10-02T09:00:00Z", "2026-10-02T10:00:00Z", "2026-10-02T11:00:00Z"];
 pub(super) const HOLDER: &str = fixture::GENESIS_HOLDER;
@@ -75,7 +78,7 @@ pub(super) fn sidecar(ulid: &str, key: &SigningKey, bytes: &[u8]) -> Sidecar {
         "payload": base64_encode(bytes),
         "signatures": [{"keyid": "", "sig": base64_encode(&sig.to_bytes())}],
     });
-    Sidecar { ulid: ulid.into(), scheme: Scheme::Dsse, file: Sidecar::file_name(ulid, Scheme::Dsse), bytes: envelope.to_string().into_bytes() }
+    Sidecar { namespace: NS.into(), ulid: ulid.into(), scheme: Scheme::Dsse, file: Sidecar::file_name(ulid, Scheme::Dsse), bytes: envelope.to_string().into_bytes() }
 }
 
 pub(super) fn binding(tail: &str, act: BindingAct, key: Option<&SigningKey>, closes: Option<&KeyBinding>, mandate: Option<String>, at: &str) -> KeyBinding {
@@ -261,8 +264,12 @@ pub(super) fn build(case: Case, act_index: usize, act_at: &str) -> (Store, Landi
     store.sidecars = b.sidecars;
     // The role files land with the enabling entries: a role takes effect
     // from its file's landing.
-    let roles: Vec<(String, usize)> = store.roles.iter().map(|r| (format!("{}/roles/{}", crate::STORE_DIR, r.file_name()), 0)).collect();
-    (store, Landing::fixed(PATH, &b.placed, &roles, 10), act_id)
+    let roles: Vec<(String, usize)> = store
+        .roles
+        .iter()
+        .map(|r| (format!("{}/{}", crate::layout::relative_dir(&r.namespace, crate::layout::Kind::Role), r.file_name()), 0))
+        .collect();
+    (store, Landing::fixed(&path(), &b.placed, &roles, 10), act_id)
 }
 
 /// What the gate says about the act alone: each file-gate and graph-stage

@@ -127,32 +127,41 @@ A store is a directory of files in a git repository, and the files are the truth
 
 ### 3.1 Store layout
 
+Spec v1.9 (2026-10-09; rulings 62, 63 and 66 as amended by 87). Every store holds each namespace under `.decisions/ns/<namespace>/`, and no store has another form. A file's namespace is its directory.
+
 ```
 .decisions/
-  sets/<set-id>.yml           declared scope: floor, ground, owner
-  roles/<role-id>.yml         declared role, written once (format 6)
-  log/<changeset-ulid>.yml    append-only; the source of truth
-  sig/<ulid>.<scheme>.sig     one signature sidecar per scheme (format 7)
-  allowed_signers             derived from key bindings; never edited
-  index/                      gitignored; rebuildable cache
-docs/decisions/<ns>.nt        the committed export of a namespace
+  ns/<namespace>/
+    sets/<set-id>.yml           declared scope: floor, ground, owner
+    roles/<role-id>.yml         declared role, written once (format 6)
+    log/<changeset-ulid>.yml    append-only; the source of truth
+    sig/<ulid>.<scheme>.sig     one signature sidecar per scheme (format 7)
+    allowed_signers             derived from the namespace's key bindings; never edited
+  index/                        gitignored; rebuildable cache
+docs/decisions/<ns>.nt          the committed export of a namespace
 ```
 
 | Path | Holds |
 | --- | --- |
-| `.decisions/sets/<set-id>.yml` | One set per file (section 5.2) |
-| `.decisions/roles/<id>.yml` | One role per file (section 5.6) |
-| `.decisions/log/<ulid>.yml` | One change-set per file (section 5.3) |
-| `.decisions/sig/<ulid>.<scheme>.sig` | One signature sidecar per scheme (section 4.8) |
-| `.decisions/allowed_signers` | The derived trust file (section 4.9) |
+| `.decisions/ns/<ns>/sets/<set-id>.yml` | One set per file (section 5.2) |
+| `.decisions/ns/<ns>/roles/<id>.yml` | One role per file (section 5.6) |
+| `.decisions/ns/<ns>/log/<ulid>.yml` | One change-set per file (section 5.3) |
+| `.decisions/ns/<ns>/sig/<ulid>.<scheme>.sig` | One signature sidecar per scheme (section 4.8) |
+| `.decisions/ns/<ns>/allowed_signers` | The namespace's derived trust file (section 4.9) |
+| `.decisions/ns/<ns>/pins/` | **Not implemented.** The pinned material of the namespaces this one depends on (section 7.3, ruling 72) |
 | `.decisions/index/` | The rebuildable graph index (section 9.1) |
-| `.decisions/basis/<sha256>` | **Not implemented, open.** Held basis bytes, named by their digest (section 7.4) |
+| `.decisions/ns/<ns>/basis/<sha256>` | **Not implemented, open.** Held basis bytes, named by their digest (section 7.4) |
 | `docs/decisions/<ns>.nt` | The committed export of a namespace (section 9) |
+
+Revision v1.8 held one `sets/`, `roles/`, `log/` and `sig/` and one `allowed_signers` directly under `.decisions/` (the *flat layout*). It is read nowhere from v1.9 on: LP-3.34 refuses it at the verified commit, and what a verifier does with it in history is LP-3.35 (issue 2).
 
 - **LP-3.10** (W, V) Files are read with either `.yml` or `.yaml`. Writers emit `.yml`.
 - **LP-3.11** (W, V) A log file is written once and never edited. A correction is a new version; a reversal is a revocation.
 - **LP-3.12** (V) The file stem MUST equal the id the file declares: `<ulid>.yml` for a change-set whose `id` is `cs:<ulid>`, `<set-id>.yml` for a set, `<role-id>.yml` for a role. A disagreement is a schema fault.
 - **LP-3.13** (W) The `index/` directory is a rebuildable cache and is never committed. A store keeps it out of version control so that a rebuild cache can never be committed by accident.
+- **LP-3.34** (W, V) A store holds each namespace under `.decisions/ns/<namespace>/`, with its own `sets/`, `roles/`, `log/`, `sig/` and `allowed_signers`. A file's namespace is its directory. At the verified commit and in the working tree, a file under `.decisions/` outside `ns/` and `index/` is a schema fault: the flat paths of revision v1.8 among them, a store with no `ns/` directory and any of those paths included, and a file directly under `ns/`, since a namespace is a directory named by its id (rulings 62, 63). The layout is a specification revision with no format number (ruling 66): no file's content changes, and no digest moves.
+- **LP-3.35** (V) **Not implemented** (issue 2). A verifier looks for the flat paths of revision v1.8 (`.decisions/log/`, `.decisions/roles/`, `.decisions/sig/`) on the first-parent history it reads. A verifier with the legacy capability then reads change-set, role and sidecar files at both those paths and the paths of LP-3.34, told apart by path, and only their entities, for `L007`, `L009` and the base overlay (ruling 97). The capability is not part of the verifier profile (ruling 82). A verifier without it refuses a repository whose history holds a flat path, with exit status 2.
+- **LP-3.36** (W, V) Ids, set ids, role ids and file names are unique within a namespace. Two namespaces may each declare a set, or a role, of one id; a version names a set of its own namespace (LP-5.22), and a role is named by the grants and policies of its own namespace once authority is per namespace (LP-6.31, issue 5).
 
 ### 3.2 Format declarations
 
@@ -450,7 +459,7 @@ Spec v1.8 (#70; rulings D1 to D4 of #65 and D5 to D9 of 2 October 2026). A names
 
 ### 4.9 Trust file
 
-- **LP-4.10** (W, V) `allowed_signers` is derived from key-binding entries. A verifier MUST regenerate it and require the committed file to be byte-identical.
+- **LP-4.10** (W, V) `allowed_signers` is derived from key-binding entries. From v1.9 it is one file per namespace, at `ns/<ns>/allowed_signers` (LP-3.34), holding that namespace's lines. A verifier MUST regenerate each and require the committed file to be byte-identical. *What each namespace's file says about a close in another namespace is LP-4.32's, superseded by ruling 47 once implemented (issue 7).*
 - **LP-4.11** (W, V) Key bindings are append-only: add, rotate and revoke are new entries.
 - **LP-4.32** (W, V) The file has one line per key window, in OpenSSH's allowed-signers form, so that an SSHSIG verifier reads it directly:
 
@@ -547,7 +556,7 @@ effective_tier = tolerance_override, else tolerance_floor_at_creation
 
 Without the pin the effective tier is not recomputable after a floor raise, so the hash could not be stable and acceptance-binds-the-tier would be unimplementable. The consequence is intended.
 
-### 5.2 Set file: `.decisions/sets/<set-id>.yml`
+### 5.2 Set file: `.decisions/ns/<ns>/sets/<set-id>.yml`
 
 ```yaml
 format: 1
@@ -569,7 +578,7 @@ Restating membership in the set file would make every addition a rewrite of a sh
 
 The honest limit, which every coverage report must state: coverage is measured against the *enumerated* set, and nothing verifies the set itself.
 
-### 5.3 Change-set file: `.decisions/log/<ulid>.yml`
+### 5.3 Change-set file: `.decisions/ns/<ns>/log/<ulid>.yml`
 
 ```yaml
 format: 1
@@ -675,7 +684,7 @@ Spec v1.7 (2026-10-02; #69, #66). The file schema the authority vocabulary proje
 #### Files
 
 ```
-.decisions/
+.decisions/ns/<ns>/
   roles/<role-id>.yml        declared scope, like a set file (written once)
   allowed_signers            derived from key bindings; never edited (§3.9.5)
 ```
@@ -769,6 +778,7 @@ policies:
 
 *An unavailability's `basis` field names who may declare it (`self`, `grantor`, `fallback-of-genesis`). It keeps its name (ruling 28). It is not a basis in the sense of section 7, and the export carries it as the literal-valued `ledger:basis`; the pinned-basis edge is `ledger:pinnedBasis` (ruling 27). Since D9 (f) the accept role is never the genesis role, so the example's `accept_role: steward` names a role that does not carry the genesis capabilities (LP-6.17).*
 
+- **LP-5.22** (W, V) A version names a set of its own namespace: the set declared under its namespace's `sets/` (LP-3.34). A set id named across namespaces is a set not declared, so a schema fault (spec v1.9; PRD §3.1).
 - **LP-5.21** (W, V) **Two revocation shapes.** Formats 1–5 carry the legacy shape `{acceptance, at, by, reason}`; format 6 carries the entity shape above, which revokes a grant or an acceptance. A file carries the shape its declared format defines; the other, or a mixture, is a schema fault. Both shapes are read forever, since a log file is never rewritten. The legacy shape names no grant and has no id for a sidecar, so it is valid only as a **pre-policy act**: one that is not before its namespace's first policy fails `A006` (LP-6.29).
 
 ### 5.7 Version fields added by the basis rulings
@@ -1461,6 +1471,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 | 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
+| 9 October 2026 | **Spec v1.9: one directory per namespace** (rulings 62, 63, 66 as amended by 87; PRD §3.1; issue 1). Section 3.1 gives the layout: every namespace under `.decisions/ns/<namespace>/` with its own `sets/`, `roles/`, `log/`, `sig/` and `allowed_signers`; the flat paths of revision v1.8 are a schema fault at the verified commit (LP-3.34, new). LP-3.35 (new) states what a verifier does with the flat layout in history and is marked not implemented until issue 2. LP-3.36 (new): ids, set ids, role ids and file names are unique within a namespace. LP-5.22 (new): a version names a set of its own namespace. LP-4.10 and sections 5.2, 5.3 and 5.6 name the new paths. No class added; no digest moves; no format number; `CANONICAL_FORM` stays `v1`. The Appendix C note "Spec v1.9 — one directory per namespace" is added. |
 | 9 October 2026 | The Unicode version behind LP-4.18 step 2b is named: 17.0.0. The tables were unpinned — the reference accepted any `unicode-normalization` 0.1.x and commits no lockfile, and a second implementation had no version to match. The reference now pins the release that carries these tables (`=0.1.25`), held by a test on its `UNICODE_VERSION`. A move to a later Unicode version is a canonical-form question for the principal. No class added; no digest moves; `CANONICAL_FORM` stays `v1`. (#140) |
 
 ### B.1 Revisions of the absorbed format document
@@ -1603,6 +1614,45 @@ or is normalised differently. It is *not* required for a `format` bump that
 only adds an unhashed field.
 
 ---
+
+#### Spec v1.9 — one directory per namespace (2026-10-09, no format change)
+
+**Ruled 7 October 2026** (rulings 62, 63 and 66, the last as amended by 87
+on 9 October; `ledger/prd/namespace-independence-prd.md` §3.1; issue 1 of
+its §6). Every store holds each namespace under
+`.decisions/ns/<namespace>/`, with its own `sets/`, `roles/`, `log/`, `sig/`
+and `allowed_signers`, and no store has another form. A file's namespace is
+its directory. The root `.decisions/` holds only `ns/` and the uncommitted
+`index/`; the export stays at `docs/decisions/<ns>.nt`.
+
+**What changes.** The *flat layout* of revision v1.8 (`.decisions/sets/`,
+`.decisions/roles/`, `.decisions/log/`, `.decisions/sig/`,
+`.decisions/allowed_signers`) is read nowhere at the verified commit or in
+the working tree: a file at any of those paths, or anywhere else under
+`.decisions/` outside `ns/` and `index/`, is a schema fault (LP-3.34), and
+so is a store with no `ns/` directory and any of those paths. A set id, a
+role id and a file name are unique within a namespace, not across the
+store (LP-3.36), and a version names a set of its own namespace (LP-5.22).
+The derived `allowed_signers` is one file per namespace (LP-4.10). The
+writers file every record under the directory of the one namespace its
+entities belong to; `ledger declare` and `ledger role declare` take
+`--namespace`, inferred when the store holds one namespace.
+
+**No digest moves.** No file's content changes, so this is a specification
+revision with no format number (ruling 66). `CANONICAL_FORM` stays `v1`.
+No class is added: the refusal is `SCHEMA`.
+
+**What to do.** A store made before v1.9 moves its files under
+`ns/<namespace>/` in one commit: each change-set and sidecar to the
+namespace its entities belong to, each set to the namespace whose versions
+name it, each role file to the namespace whose grants and policies name
+it. How a verifier reads the flat paths that stay in such a store's
+history, and what a verifier without that capability does, is LP-3.35
+(issue 2 of the PRD's §6, ruling 82 as narrowed by 97). A governed store
+with more than one namespace is not moved but re-founded (ruling 68); its
+note lands with issue 9. This repository's own store and the committed
+fixture stores are re-laid out by issues 10 and 9; until then a verifier
+of this revision refuses them, as LP-3.34 says.
 
 #### A float or an explicit null in hashed content is refused (2026-10-07, no format change)
 

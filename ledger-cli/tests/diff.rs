@@ -56,7 +56,7 @@ fn two_commit_repo() -> (Repo, String) {
     let repo = Repo::new();
     repo.ok(&["init"]);
     repo.ok(&[
-        "declare", "--set", "diff-fixture", "--tolerance-floor", "T1",
+        "declare", "--set", "diff-fixture", "--namespace", "fixture.diff", "--tolerance-floor", "T1",
     ]);
     let add = repo.ok(&[
         "add", "--set", "diff-fixture", "--namespace", "fixture.diff",
@@ -77,7 +77,7 @@ fn two_commit_repo() -> (Repo, String) {
     ]);
     repo.ok(&["accept", &decision]);
     repo.ok(&[
-        "declare", "--set", "second-set", "--tolerance-floor", "T2",
+        "declare", "--set", "second-set", "--namespace", "fixture.diff", "--tolerance-floor", "T2",
     ]);
     repo.commit("second: revision, acceptance, new set");
     (repo, decision)

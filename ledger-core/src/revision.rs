@@ -10,6 +10,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use crate::layout::Kind;
 use crate::store::Store;
 use crate::STORE_DIR;
 
@@ -47,15 +48,15 @@ pub fn load_at(root: &Path, rev: &str) -> Result<Store, String> {
         ..Store::default()
     };
     for path in tree_paths(root, &commit)? {
+        let Some((namespace, kind)) = crate::layout::classify(&path) else { continue };
         let Some(text) = show(root, &commit, &path)? else { continue };
         let label = format!("{rev}:{path}");
         let stem = file_stem(&path);
-        if path.starts_with(&format!("{STORE_DIR}/sets/")) {
-            crate::store::take_set(&mut store, &label, &stem, &text);
-        } else if path.starts_with(&format!("{STORE_DIR}/roles/")) {
-            crate::store::take_role(&mut store, &label, &stem, &text);
-        } else if path.starts_with(&format!("{STORE_DIR}/log/")) {
-            crate::store::take_log(&mut store, PathBuf::from(&label), &label, &stem, &text);
+        match kind {
+            Kind::Set => crate::store::take_set(&mut store, &namespace, &label, &stem, &text),
+            Kind::Role => crate::store::take_role(&mut store, &namespace, &label, &stem, &text),
+            Kind::Log => crate::store::take_log(&mut store, &namespace, PathBuf::from(&label), &label, &stem, &text),
+            Kind::Sig | Kind::Signers => {}
         }
     }
     store.sets.sort_by(|a, b| a.id.cmp(&b.id));
@@ -73,23 +74,23 @@ pub fn overlay_base(store: &mut Store, base: &str) -> Result<usize, String> {
     let have: std::collections::BTreeSet<String> = store.log.iter().map(|l| l.file.id.to_string()).collect();
     let mut added = 0;
     for logged in at_base.log.into_iter().filter(|l| !have.contains(&l.file.id.to_string())) {
-        let path = store.dir.join("log").join(logged.file.file_name());
-        store.log.push(crate::store::LoggedChangeSet { path, file: logged.file });
+        let path = crate::layout::log_dir(&store.root, &logged.namespace).join(logged.file.file_name());
+        store.log.push(crate::store::LoggedChangeSet { namespace: logged.namespace, path, file: logged.file });
         added += 1;
     }
     store.log.sort_by(|a, b| a.file.id.cmp(&b.file.id));
     let commit = resolve(&store.root, base)?;
-    let sig_dir = format!("{STORE_DIR}/{}/", crate::signing::SIG_DIR);
-    let listing = git(&store.root, &["ls-tree", "-r", "--name-only", &commit, "--", &sig_dir]).unwrap_or_default();
+    let listing = git(&store.root, &["ls-tree", "-r", "--name-only", &commit, "--", STORE_DIR]).unwrap_or_default();
     for path in listing.lines().map(str::trim).filter(|p| !p.is_empty()) {
+        let Some((namespace, Kind::Sig)) = crate::layout::classify(path) else { continue };
         let name = path.rsplit('/').next().unwrap_or_default().to_string();
-        if store.sidecars.iter().any(|c| c.file == name) {
+        if store.sidecars.iter().any(|c| c.file == name && c.namespace == namespace) {
             continue;
         }
         let Ok((ulid, scheme)) = crate::signing::Sidecar::parse_name(&name) else { continue };
         let Ok(out) = Command::new("git").arg("-C").arg(&store.root).args(["show", &format!("{commit}:{path}")]).output() else { continue };
         if out.status.success() {
-            store.sidecars.push(crate::signing::Sidecar { ulid, scheme, file: name, bytes: out.stdout });
+            store.sidecars.push(crate::signing::Sidecar { namespace, ulid, scheme, file: name, bytes: out.stdout });
         }
     }
     Ok(added)

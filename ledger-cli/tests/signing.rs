@@ -52,7 +52,7 @@ fn an_accept_is_signed_into_a_sidecar_and_verifies() {
     let out = repo.ok_tty(&["accept", &id]);
     let sig = hand::word(&out, "sig/");
     assert!(sig.ends_with(".ssh.sig"), "{out}");
-    assert!(repo.path().join(".decisions").join(&sig).is_file());
+    assert!(repo.ns_dir(NS).join(&sig).is_file());
     green(&repo);
 }
 
@@ -61,7 +61,7 @@ fn a_missing_or_tampered_signature_fails_l011() {
     let (repo, _) = governed();
     let id = repo.add("Money is decimal.", &[]);
     let out = repo.ok_tty(&["accept", &id]);
-    let sig = repo.path().join(".decisions").join(hand::word(&out, "sig/"));
+    let sig = repo.ns_dir(NS).join(hand::word(&out, "sig/"));
     let original = std::fs::read(&sig).expect("sig");
     let mut tampered = original.clone();
     let mid = tampered.len() / 2;

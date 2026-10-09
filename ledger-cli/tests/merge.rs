@@ -24,7 +24,7 @@ impl Repo {
         repo.git(&["config", "user.name", "Fixture Human"]);
         repo.git(&["config", "user.email", "fixture-human@example"]);
         repo.ok(&["init"]);
-        repo.ok(&["declare", "--set", "merge-fixture", "--tolerance-floor", "T1"]);
+        repo.ok(&["declare", "--set", "merge-fixture", "--namespace", "fixture.merge", "--tolerance-floor", "T1"]);
         repo
     }
 
@@ -272,7 +272,7 @@ fn a_competing_supersession_is_surfaced_and_settled_by_withdrawal() {
 fn a_divergent_floor_stops_at_the_driver_and_resolves_by_choice() {
     let repo = Repo::new();
     // A member-free set, so a floor move cannot strand anyone.
-    repo.ok(&["declare", "--set", "ops", "--tolerance-floor", "T0"]);
+    repo.ok(&["declare", "--set", "ops", "--namespace", "fixture.merge", "--tolerance-floor", "T0"]);
     repo.ok(&["merge", "--install"]);
     // The test must pin the driver to this build's binary, not PATH.
     let bin: PathBuf = assert_cmd::cargo::cargo_bin("ledger");
@@ -283,7 +283,7 @@ fn a_divergent_floor_stops_at_the_driver_and_resolves_by_choice() {
     ]);
     repo.commit("main: the ops set, driver installed");
 
-    let set_file = repo.path().join(".decisions/sets/ops.yml");
+    let set_file = ledger_core::layout::sets_dir(repo.path(), "fixture.merge").join("ops.yml");
     let rewrite_floor = |floor: &str| {
         let text = std::fs::read_to_string(&set_file).expect("read");
         std::fs::write(&set_file, text.replace("tolerance_floor: T0", floor)).expect("write");

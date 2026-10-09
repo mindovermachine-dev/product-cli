@@ -8,6 +8,7 @@ use super::common::{finish, open_author, parse_ground, parse_tier};
 
 pub struct Flags {
     pub set: String,
+    pub namespace: Option<String>,
     pub title: Option<String>,
     pub tolerance_floor: String,
     pub ground: String,
@@ -18,6 +19,7 @@ pub struct Flags {
 pub fn run(root: Option<PathBuf>, flags: Flags) -> Result<i32, String> {
     let mut author = open_author(root)?;
     let args = DeclareArgs {
+        namespace: flags.namespace,
         id: flags.set.clone(),
         title: flags.title.unwrap_or_else(|| flags.set.clone()),
         tolerance_floor: parse_tier(&flags.tolerance_floor)?,

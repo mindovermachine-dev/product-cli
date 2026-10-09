@@ -26,7 +26,7 @@ pub fn run(root: Option<PathBuf>, namespace: String, set: String) -> Result<()> 
     let store = ddd_core::store::load(&ddd_dir);
     let entries = plan(&repo_root, &store).map_err(ProductError::ConfigError)?;
     let mut author = Author::open(&repo_root).map_err(|e| author_err(&e))?;
-    declare_set(&mut author, &set)?;
+    declare_set(&mut author, &namespace, &set)?;
     let mut rows = Vec::new();
     for entry in &entries {
         let ledger_id = file_entry(&mut author, &namespace, &set, entry)?;
@@ -46,10 +46,11 @@ pub fn run(root: Option<PathBuf>, namespace: String, set: String) -> Result<()> 
     Ok(())
 }
 
-fn declare_set(author: &mut Author, set: &str) -> Result<()> {
+fn declare_set(author: &mut Author, namespace: &str, set: &str) -> Result<()> {
     let owner = PRINCIPAL.parse().map_err(ProductError::ConfigError)?;
     author
         .declare(DeclareArgs {
+            namespace: Some(namespace.to_string()),
             id: set.to_string(),
             title: "DDD governance — the migrated record of the .ddd store (M8)".to_string(),
             tolerance_floor: ledger_core::tier::Tier::T1,

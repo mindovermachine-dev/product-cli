@@ -171,7 +171,7 @@ fn current_tips<'a>(
 /// Re-pin the set's current floor on a version being filed now, exactly as
 /// the ordinary next-version pipeline does.
 fn repin_floor(store: &Store, raw: &mut VersionRaw) {
-    if let Some(set) = store.set(&raw.set) {
+    if let Some(set) = store.set_in(raw.decision.namespace(), &raw.set) {
         raw.tolerance_floor_at_creation = set.tolerance_floor;
         if raw.tolerance_override.is_some_and(|o| o <= set.tolerance_floor) {
             raw.tolerance_override = None;
@@ -207,8 +207,10 @@ fn graph_delta_check(current: &Store, candidate: &ChangeSet) -> Result<(), Autho
         sidecars: current.sidecars.clone(),
         schema_findings: current.schema_findings.clone(),
     };
+    let namespace = crate::author::namespace_of(current, candidate)?;
     with.log.push(LoggedChangeSet {
-        path: current.dir.join("log").join(candidate.file_name()),
+        path: crate::layout::log_dir(&current.root, &namespace).join(candidate.file_name()),
+        namespace,
         file: candidate.clone(),
     });
     let fresh: Vec<String> = crate::graph::shapes::graph_findings(&with)
