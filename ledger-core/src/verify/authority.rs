@@ -25,8 +25,8 @@ use crate::store::Store;
 /// Every authority finding in the store, across the three classes.
 pub fn findings(store: &Store) -> Vec<Finding> {
     let auth = Authority::build(store);
-    let mut out: Vec<Finding> = store.log.iter().flat_map(|l| structure::entry_faults(&l.file)).collect();
-    out.extend(references::faults(store, &auth));
+    let mut out: Vec<Finding> = store.log.iter().flat_map(|l| structure::entry_faults(&l.file, &l.namespace)).collect();
+    out.extend(references::faults(store));
     out.extend(model_actors(&auth));
     out.extend(hash_mismatches(&auth));
     out

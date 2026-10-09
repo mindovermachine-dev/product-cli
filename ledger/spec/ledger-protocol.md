@@ -702,7 +702,7 @@ notes: …                       # optional
 
 *§3.9.5 in the example is section 4.9 here.*
 
-- **LP-5.19** (W, V) A role file declares `format: 6`, is named by its id, is not duplicated, and `may` do at least one thing from the closed capability vocabulary (LP-6.1). *Implemented as store-wide: one `roles/` directory serves every namespace. Superseded by ruling 47 once implemented (LP-6.31).*
+- **LP-5.19** (W, V) A role file declares `format: 6`, is named by its id, is not duplicated within its namespace, and `may` do at least one thing from the closed capability vocabulary (LP-6.1). A role is declared under one namespace's `roles/` (LP-3.34) and is that namespace's: a grant or a policy names a role of its own namespace, and the same id in two namespaces is two roles (spec v1.9, ruling 47; LP-3.36).
 
 #### Log entries
 
@@ -803,10 +803,10 @@ An act is valid only when its actor holds a grant whose role carries the claim t
 - **LP-6.2** (W, V) The role check: the actor holds a live, accepted, available grant of a role that `may` the act, over a scope covering the act's target, and, for a fallback, one not limited from the act and not outranked (LP-6.16). In a governed namespace the grant is the one the act names (`under`, LP-6.19), chosen by the rules of section 6.2. The check fails on no such grant, a grant not accepted, a holder unavailable, a wrong scope, a fallback limit or a fallback outranked.
 - **LP-6.3** (V) A grant is live only once its holder has accepted it by its hash.
 - **LP-6.4** (V) A primary grant carries no limits; a primary grant with limits is a schema fault. A fallback grant MAY carry `no-grants`, `no-grant-revocations`, `no-genesis`, `no-role-edits`.
-- **LP-6.5** (V) The genesis grant is self-granted, has scope `*` and order `primary`, and carries an `external_ref`. `external_ref` appears on the genesis grant only. At most one genesis grant is live (`A005`). *Implemented as one genesis grant for the store, whose scope `*` covers every namespace. Superseded by ruling 47 once implemented: each namespace then has its own (LP-6.31).*
+- **LP-6.5** (V) The genesis grant is self-granted, has scope `*` and order `primary`, and carries an `external_ref`. `external_ref` appears on the genesis grant only. Each namespace has its own genesis grant, filed under its directory, and its `*` is the whole of that namespace (rulings 47 and 67). At most one genesis grant is live per namespace (`A005`, counted over the namespace's graph alone — LP-8.19).
 - **LP-6.6** (V) No two live grants share role, scope and order (`A003`). Live means unrevoked, unsuperseded, and accepted by a grant acceptance (LP-6.15).
 - **LP-6.15** (V) **Liveness.** A grant is *live* when unrevoked, unsuperseded, and accepted by its holder (a grant acceptance signing its current hash); *available* at an instant when no unavailability covers it (`[from, until)`, unless an availability ended it at or before the instant). The namespace's policy *in force* is the tip of its `replaces` chain.
-- **LP-6.16** (W, V) **The role check is verb-time.** An authoring act asks whether the actor holds a live, accepted, available grant of a role that `may` the act, over a scope covering it (`*`; a namespace scope its own namespace; a set scope its own set; namespaces match exactly), and, for a fallback, one not limited from the act while no live, available grant of the same role at a lower rank covers the act's target. Fallback order is by covering scope (D9 (e)): a `fallback-1` over a set waits on a primary over `*` in its role; another role never outranks; equal rank acts concurrently. Since v1.8 the check also runs at verification, over history, as of each act (`A006`, section 6.6). *A scope of `*` or `pattern:` covers every namespace of the store. Ruling 47 supersedes that once implemented; what such scopes then mean is open (section 12.3).*
+- **LP-6.16** (W, V) **The role check is verb-time.** An authoring act asks whether the actor holds a live, accepted, available grant of a role that `may` the act, over a scope covering it (`*`; a namespace scope its own namespace; a set scope its own set; namespaces match exactly), and, for a fallback, one not limited from the act while no live, available grant of the same role at a lower rank covers the act's target. Fallback order is by covering scope (D9 (e)): a `fallback-1` over a set waits on a primary over `*` in its role; another role never outranks; equal rank acts concurrently. Since v1.8 the check also runs at verification, over history, as of each act (`A006`, section 6.6). **A scope is read inside its own namespace** (spec v1.9, rulings 47 and 67): the grants that count for an act are those filed under the directory of the namespace the act is in; `*` and `ns:<own>` are the whole of that namespace; `set:<id>` is a set of it; `pattern:<id>` is unchanged and covers no decision; and a grant scoped `ns:<other>` than the namespace it is filed in could never have effect, so it is a schema fault (LP-8.8). Nothing in one namespace's authority has effect in another.
 - **LP-6.17** (W, V) In a namespace with a policy, accepting and revoking an acceptance count only grants of the policy's `accept_role`, which is never the genesis role. The genesis (root) role carries `grant-role`, `revoke-grant`, `declare-unavailability` and `rotate-genesis` and none of the decision capabilities (D9 (f)). A policy whose `accept_role` is no declared role that may `accept-decision` is a schema fault. So is a policy whose `accept_role` is the genesis role, which at a policy's position is the role of the genesis grant live as of that policy (section 8.7), and a genesis role that carries any decision capability (`accept-decision`, `sign-off-pattern`, `waive-invalidation`) (ruling 50). A writer that opens a namespace refuses an existing root role that lacks a root capability or carries a decision capability (D9 (f), extended by ruling 50).
 - **LP-6.18** (V) A namespace without a policy is a pre-v2 namespace: nothing is role-checked there.
 
@@ -859,7 +859,7 @@ LP-6.14 binds one implementation and cannot be confirmed from a store. The guara
 ### 6.6 The role check over history
 
 - **LP-6.27** (V) **`A006`** (graph stage, section 8.6). Every acceptance and every `rev:` revocation is re-judged as of its position (section 8.7): the grant it names (`under`) must be held by its actor, of a role that may do the act (in a governed namespace, the policy's `accept_role`), over a scope covering the target, live, accepted and available at its `at`, and not outranked (D9 (e)). The check never searches for another grant; a governed act with no `under` fails. An acceptance or revocation before its namespace's first policy is not checked (D5 (c)); the exemption covers those two and no key binding (section 4.10). A grant's revocation is checked once the store has a genesis.
-- **LP-6.28** (V) **A policy is the genesis holder's act** (2026-10-05). Every policy, a namespace's first or a change, is judged like any other act as of its own position: the grant it names (`under`) must be the genesis grant as of the policy, held by its `by`, live and available at its `at`, through the same role check (`A006`). **The genesis grant only:** a grant of `grant-role` over `*` that is not the genesis grant authorises no policy, signed or not. The position rule does not exempt it: a policy defines a namespace's governance, so even the first one is checked. A signature on a policy change says who filed it, not that they were the one who may. *"The genesis grant" is the store's one genesis grant; under ruling 47 it becomes the namespace's own (LP-6.31).*
+- **LP-6.28** (V) **A policy is the genesis holder's act** (2026-10-05). Every policy, a namespace's first or a change, is judged like any other act as of its own position: the grant it names (`under`) must be the genesis grant as of the policy, held by its `by`, live and available at its `at`, through the same role check (`A006`). **The genesis grant only:** a grant of `grant-role` over `*` that is not the genesis grant authorises no policy, signed or not. The position rule does not exempt it: a policy defines a namespace's governance, so even the first one is checked. A signature on a policy change says who filed it, not that they were the one who may. "The genesis grant" is the namespace's own (ruling 47): a policy under another namespace's genesis, or with no live genesis of its own namespace as of it, fails `A006`.
 - **LP-6.30** (V) **A role takes effect from its own landing** (2026-10-05). A role file is an enabling entry, and it carries no signed `at` (`created_at` is a date in no payload), so landing alone places it (D6): it counts for an act whose position landed no earlier than the role file. Its `created_at` plays no part. An act made under a grant whose role landed after it fails `A006`; a role and an act landed in the same commit stand together.
 - **LP-6.29** (V) **An old-style revocation is a pre-policy act** (2026-10-05). A legacy revocation (`acceptance`, `by`; formats 1–5) of an acceptance is judged like a `rev:` revocation: before its namespace's first policy it stands unchecked; one that is not before that policy (D6: dated *and* landed before it) fails `A006`, because the shape cannot name a grant.
 
@@ -871,7 +871,7 @@ Until these rules, a policy by anyone with a bound key (or, under `[none]` or fo
 
 All of section 6.7 is **not implemented**.
 
-- **LP-6.31** (W, V) **Not implemented.** Authority is per namespace (ruling 47). Each namespace has its own genesis grant, roles, grants, key bindings and policy, and nothing in one namespace's authority has effect in another. It supersedes, once implemented: the store's one genesis grant of scope `*` (LP-6.5, `A005`); store-wide role files (LP-5.19, LP-6.30, LP-8.27); grant scopes that reach every namespace (LP-6.16, LP-6.28); the self-bound binding once per store and a later namespace's first key trusted through another namespace (LP-4.12, LP-4.31, LP-4.38); keys judged across namespaces (LP-4.32, LP-4.37); the store-wide genesis holder of the unbound-genesis notice (LP-8.31); and the export's reach of `*` grants (LP-9.11).
+- **LP-6.31** (W, V) Authority is per namespace (spec v1.9, ruling 47). A grant, grant acceptance, unavailability, availability, revocation or role belongs to the namespace whose directory holds it (LP-3.33, LP-3.34); a binding and a policy carry their namespace. Each namespace has its own genesis grant, roles, grants and policy, and nothing in one namespace's authority has effect in another: every role check, genesis lookup and policy verdict reads one namespace's records (LP-6.16, LP-6.28), the authority shapes run over each namespace's graph alone (LP-8.19, LP-8.23), the unbound-genesis notice is per namespace (LP-8.31), and an export carries its own namespace's authority only (LP-9.11). A writer opens every namespace as it opens the first, on its own `external_ref` mandate, with its own root and accept roles and first policy (LP-4.38); a store whose namespaces shared one genesis is re-founded, not migrated (ruling 68, Appendix C). *Keys are the one part still store-wide: the self-bound binding once per store and a later namespace's first key trusted through another namespace (LP-4.12, LP-4.31, LP-4.38), and keys judged across namespaces (LP-4.32, LP-4.37, LP-4.39), until issue 6 (LP-6.32).*
 - **LP-6.32** (W, V) **Not implemented.** A close of a key takes effect in its own namespace only. A writer MAY file a close in every namespace it holds (ruling 47). It supersedes LP-4.39 once implemented.
 
 Authority as its own unit, which namespaces depend on by pin, is intended for later and is not designed (ruling 48, section 12.3).
@@ -1022,7 +1022,7 @@ Two verifiers conform when they report the same set of findings for the same sto
 ### 8.2 The parse gate
 
 - **LP-8.7** (V) Verification fails for a **schema fault** or one of **fourteen classes**, and for nothing else. A new reason is a change to this document: `L010` arrived that way, as the spec v1.1 amendment, `L013`/`L014` as spec v1.6, and the signing classes `L011`/`L012` (numbers reserved for them by #65, ruling D3) as spec v1.8.
-- **LP-8.8** (V) `SCHEMA` covers: a file that does not parse against the format it declares; an unknown `format`; an unknown key; an unknown discharge scheme; a file stem disagreeing with its declared id; a duplicate id, an acceptance's included, anywhere in the store; a decision identity object filed more than once (LP-5.11, ruling 49); a per-allocation obligation from section 5.3 that is not met (except the escape's, which is `L002`); a non-empty `signature`; a version naming an undeclared set; a revocation naming an acceptance nobody filed; a `key` not matching `^[A-Z][A-Za-z0-9]{0,63}$`; `under` in a file below format 7; a sidecar that is misnamed, names no signable entity, or is on an act no policy governs (ruling 52); an entity under a namespace's directory that belongs to another namespace, a revocation's target and a sidecar's entity included (LP-3.33, ruling 45); a decision's latest version whose `supersedes` names a decision of another namespace (LP-3.31, rulings 43 and 75); a key binding filed by a party D7 does not allow (section 4.10); a format declaration below what a field needs or at or above the format that retired a shape the file uses (LP-3.15); a binding of a key that LP-4.37 refuses; a policy listing `none` with another scheme (LP-4.29); and the authority rules of section 8.4.
+- **LP-8.8** (V) `SCHEMA` covers: a file that does not parse against the format it declares; an unknown `format`; an unknown key; an unknown discharge scheme; a file stem disagreeing with its declared id; a duplicate id, an acceptance's included, anywhere in the store; a decision identity object filed more than once (LP-5.11, ruling 49); a per-allocation obligation from section 5.3 that is not met (except the escape's, which is `L002`); a non-empty `signature`; a version naming an undeclared set; a revocation naming an acceptance nobody filed; a `key` not matching `^[A-Z][A-Za-z0-9]{0,63}$`; `under` in a file below format 7; a sidecar that is misnamed, names no signable entity, or is on an act no policy governs (ruling 52); an entity under a namespace's directory that belongs to another namespace, a revocation's target and a sidecar's entity included (LP-3.33, ruling 45); a decision's latest version whose `supersedes` names a decision of another namespace (LP-3.31, rulings 43 and 75); a grant scoped `ns:<other>` than the namespace it is filed in (LP-6.16, ruling 47); a key binding filed by a party D7 does not allow (section 4.10); a format declaration below what a field needs or at or above the format that retired a shape the file uses (LP-3.15); a binding of a key that LP-4.37 refuses; a policy listing `none` with another scheme (LP-4.29); and the authority rules of section 8.4.
 
 ### 8.3 The fourteen
 
@@ -1078,7 +1078,7 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
 
 ### 8.6 The graph stage
 
-- **LP-8.19** (V) The graph stage runs SPARQL shape checks over the emitted graph (section 9.1), cross-entry referential integrity the per-file schema cannot name, and the role check over history:
+- **LP-8.19** (V) The graph stage runs SPARQL shape checks over the emitted graph (section 9.1), cross-entry referential integrity the per-file schema cannot name, and the role check over history. The authority shapes `A003` and `A005` run over each namespace's emitted graph alone — the graph that namespace's export carries (LP-9.11) — never the union (spec v1.9, ruling 47); the decision shapes `G001` to `G006` run over the store's graph, where a `based_on` edge may cross a namespace and a `supersedes` edge in history is not judged (LP-3.31, ruling 75):
 
 | Code | Fails when |
 |---|---|
@@ -1089,13 +1089,13 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
 | `G005` | one decision is superseded by two live claimants (spec v1.3) |
 | `G006` | two live decisions of one namespace whose tips share a `key` — the cross-check of `L014` (spec v1.6) |
 | `A003` | two live grants (unrevoked, unsuperseded, accepted) share role, scope and order (spec v1.7) |
-| `A005` | more than one live (unsuperseded, unrevoked) genesis grant (spec v1.7) |
+| `A005` | more than one live (unsuperseded, unrevoked) genesis grant in one namespace (spec v1.7; per namespace since spec v1.9) |
 | `A006` | an acceptance, `rev:` revocation or policy whose named grant did not, as of the act, let its actor do it — or a governed act naming none (spec v1.8, section 6.6); an old-style revocation not before its namespace's first policy; a policy not made under the genesis grant (2026-10-05) |
 
 - **LP-8.20** (V) `G004` is the state two divergent writers leave behind: a plain git merge of two branches' logs, each having revised the same decision from the same parent. No file is malformed; the *store* cannot name a latest version, so it is non-conformant until a recorded arbitration extends one chain past the fork, closing the other tip via `merged_from`. A tip, for both `G004` and `G005`, is a version no other version of the decision claims by `parent` *or* `merged_from`.
 - **LP-8.21** (V) `G005` is the write-time one-superseder-per-decision refusal met across branches, where it cannot refuse retroactively: each side's claim was legal alone. Only live claims count. A claimant whose next version drops the edge has withdrawn, which is exactly the arbitration act recorded for the losing side.
 - **LP-8.22** (V) The graph classes are closed the same way the file classes are: `G006` arrived as a change to this section (spec v1.6), and a `G007` would be another.
-- **LP-8.23** (V) `A003` and `A005` are the authority shapes' gate classes, with two tightenings recorded in the authority shapes: `A003` counts only a grant acceptance as acceptance, and `A005` excludes a revoked genesis. `A006` is not a SPARQL shape: it is computed by the role check over the authority records as of each act, because it needs landing order (section 8.7), which the graph does not carry. *`A005` counts genesis grants across the whole store today. Superseded by ruling 47 once implemented: it then counts per namespace (LP-6.31).*
+- **LP-8.23** (V) `A003` and `A005` are the authority shapes' gate classes, with two tightenings recorded in the authority shapes: `A003` counts only a grant acceptance as acceptance, and `A005` excludes a revoked genesis. `A006` is not a SPARQL shape: it is computed by the role check over the authority records as of each act, in the act's own namespace, because it needs landing order (section 8.7), which the graph does not carry. `A003` and `A005` count per namespace: the authority shapes run over each namespace's graph alone (LP-8.19, ruling 47).
 
 ### 8.7 What a verifier reads from git: landing and order (D6)
 
@@ -1125,9 +1125,9 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
 - **LP-8.31** (V) A verifier reports these as notices, not failures:
   - **Unchecked namespaces.** Each namespace the log speaks that has no policy.
   - **Unsigned namespaces** (2026-10-05, #96). Each namespace whose policy in force is `[none]`, with what does not hold there: an absent signature is no finding, `L012` cannot arise, key bindings are trusted unsigned, a policy change is unsigned, and no `ssh` verification runs unless an `ssh` sidecar exists. A sidecar that is present is still verified.
-  - **An unbound genesis holder** (2026-10-05, #96). *The store's one genesis holder today; per namespace under ruling 47 (LP-6.31).* While the genesis holder has no trusted key, the verifier says so, naming the governed namespaces: the first self-bound binding to land for that address will be the one trusted (D7).
+  - **An unbound genesis holder** (2026-10-05, #96), per namespace (spec v1.9, ruling 47). For each namespace whose genesis holder has no trusted key, the verifier says so, naming the namespace and the holder: the first self-bound binding to land for that address will be the one trusted (D7).
 
-*Note: the reference verifier's machine-readable report carries the second list as `unsigned` and the third as `genesis_unbound` (`holder`, `namespaces`).*
+*Note: the reference verifier's machine-readable report carries the second list as `unsigned` and the third as `genesis_unbound`, one entry per namespace (`namespace`, `holder`).*
 
 ### 8.9 Classes added by the basis rulings
 
@@ -1188,12 +1188,12 @@ The committed export is the read model the analyzers' generator consumes.
   - acceptances of those decisions, and revocations of those acceptances;
   - the sets those versions name;
   - the change-sets that filed any of these, each holding only what belongs to the namespace;
-  - the authority records that reach the namespace: its policies and key bindings; the grants whose scope covers it (`*`, its `ns:` scope, or a set its versions name) with their grant acceptances, unavailabilities, availabilities and revocations; and the roles those grants and policies name;
+  - its own authority records, and only its own (spec v1.9, ruling 47): the policies and key bindings that carry its name; the grants filed under its directory with their grant acceptances, unavailabilities, availabilities and revocations; and the roles declared under its `roles/` that those grants and policies name;
   - one node per sidecar of an entity in it (LP-9.3).
 
   `ledger:set` is the set IRI `<urn:ledger-set:<id>>`; a reader takes the set id from its local part.
 
-  *A grant of scope `*` reaches every namespace's export. Superseded by ruling 47 once implemented (LP-6.31); what an export carries then is open (section 12.3).*
+  A grant of another namespace reaches it whatever its scope says: a scope is read inside its own namespace (LP-6.16).
 - **LP-9.12** (W, V) **Form.** RDF 1.2 canonical N-Triples:
   - every term written in full: no prefixes, and `rdf:type` instead of `a`;
   - literals with `ECHAR` for BS, HT, LF, FF, CR, `"` and `\`;
@@ -1473,6 +1473,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 | 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
+| 9 October 2026 | **Ruling 47 applied: authority per namespace** (with rulings 67, 68 and 50 per namespace; PRD §3.2, §3.9; issue 5). LP-6.31 loses its not-implemented mark: a grant, grant acceptance, interval, revocation or role belongs to the namespace whose directory holds it; each namespace has its own genesis grant, roles and policy; a scope is read inside its own namespace, `ns:<other>` being a schema fault (LP-6.16, LP-8.8); a policy is judged under its own namespace's genesis (LP-6.28); the authority shapes run over each namespace's graph alone, so `A003` and `A005` count per namespace, while the decision shapes keep the store's graph (LP-8.19, LP-8.23); roles are per namespace (LP-5.19); the unbound-genesis notice is per namespace (LP-8.31); an export carries its own authority only (LP-9.11). LP-6.5 loses its note. Keys stay store-wide until issue 6 (noted in LP-6.31). A writer opens every namespace on its own mandate. No class added; no digest moves; no grant payload gains a field. The Appendix C note "Authority is per namespace" is added. |
 | 9 October 2026 | **Ruling 43 applied, on live claims (ruling 75)** (PRD §3.7; issue 4). LP-3.31 loses its not-implemented mark and its note on the implemented format: a decision's latest version whose `supersedes` names a decision of another namespace is a schema fault (LP-8.8); earlier versions are not judged, and a next version that drops the edge repairs the store. `G001` keeps the dangling target. No class added; no digest moves; no such edge in this repository or the fixtures. |
 | 9 October 2026 | **Ruling 45 applied** (PRD §3.7; issue 3). LP-3.33 loses its not-implemented mark and its note on the implemented format: every entity under `ns/<ns>/` belongs to `<ns>`, a revocation's target and a sidecar's entity included, and one that belongs elsewhere is a schema fault (LP-8.8). Closes N12's cross-namespace half with ruling 49, and N14. No class added; no digest moves; no committed file in this repository is mixed (0 of 187). |
 | 9 October 2026 | **Spec v1.9: the flat layout in history** (rulings 82 and 97; PRD §3.1.1, §3.5.7; issue 2). LP-3.35 loses its not-implemented mark: a verifier detects the flat paths of revision v1.8 on the first-parent history it reads; with the legacy capability it follows each tracked file along its lineage, the flat path and the namespaced one, for `L007`, LP-3.16's `format:` comparison, `L009` and the base overlay, and reads no flat semantics; without it, it refuses with exit 2 naming the first flat commit. LP-8.30 gains the re-layout exception, LP-8.32 the lineage. No class added; no digest moves. The Appendix C note of v1.9 gains its history paragraph. |
@@ -1619,6 +1620,54 @@ or is normalised differently. It is *not* required for a `format` bump that
 only adds an unhashed field.
 
 ---
+
+#### Authority is per namespace (2026-10-09, no format change)
+
+**Ruled 7 October 2026** (ruling 47, with 67 and 68;
+`ledger/prd/namespace-independence-prd.md` §3.2 and §3.9; issue 5 of its
+§6). A grant, grant acceptance, unavailability, availability, revocation or
+role belongs to the namespace whose directory holds it; a key binding and a
+policy carry their namespace, which must equal the directory. Each
+namespace has its own genesis grant, declared in its own `roles/`, its own
+grants and its own policy, and nothing in one namespace's authority has
+effect in another (LP-6.31). From this change:
+
+- a scope is read inside its own namespace: `*` and `ns:<own>` are the
+  whole of it (ruling 67), `set:<id>` a set of it, and a grant scoped
+  `ns:<other>` than the namespace it is filed in is a `SCHEMA` fault
+  (LP-6.16, LP-8.8);
+- a policy is the act of its own namespace's genesis holder: one under
+  another namespace's genesis, or with no live genesis of its own namespace
+  as of it, fails `A006` (LP-6.28);
+- the authority shapes run over each namespace's graph alone, so `A003`
+  and `A005` count per namespace (LP-8.19, LP-8.23) — the decision shapes
+  keep the store's graph, since `based_on` crosses and a `supersedes` edge
+  in history is not judged (ruling 75) — and an export carries its own
+  namespace's authority only: a `*` grant no longer reaches every
+  namespace's export (LP-9.11);
+- the genesis-role rules of ruling 50 and the unbound-genesis notice hold
+  per namespace (LP-6.17, LP-8.31);
+- a writer opens every namespace as it opens the first, on its own
+  `--external-ref` mandate, with its own root and accept roles and first
+  policy; there is no joining another namespace's genesis.
+
+**Who must act.** A store whose log holds a policy for more than one
+namespace, filed before this change, shared one genesis grant, one set of
+role files and one set of trusted keys across them. Its namespaces cannot
+be split, and no migration path is provided (ruling 68). Under these rules
+such a store fails verification: each namespace after the first has no
+genesis grant of its own (`A006` on its policy) and its first key binding
+leans on no other namespace (D7 on that binding). It is re-founded per
+namespace; the re-founding note is added with issue 9 of the PRD's §6.
+
+**Keys are not yet per namespace.** A key is still bound, closed and
+trusted store-wide (LP-4.12, LP-4.31, LP-4.32, LP-4.37, LP-4.38, LP-4.39):
+issue 6 scopes them (LP-6.32). Until then the genesis holder's key bound in
+one namespace signs in another once `init` binds it there.
+
+**No digest moves**, no class is added, and no grant payload gains a field
+(PRD §3.12): a grant belongs by where it is filed. No committed store in
+this repository holds an authority record, so no stored verdict changes.
 
 #### An entity outside its namespace's directory is refused (2026-10-09, no format change)
 

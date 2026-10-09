@@ -22,6 +22,7 @@ mod availability_ops;
 mod batch_accept;
 mod declare;
 mod genesis_key;
+mod grant_ops;
 mod home;
 mod decision;
 mod group_accept;
