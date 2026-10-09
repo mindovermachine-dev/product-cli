@@ -459,7 +459,7 @@ Spec v1.8 (#70; rulings D1 to D4 of #65 and D5 to D9 of 2 October 2026). A names
 
 ### 4.9 Trust file
 
-- **LP-4.10** (W, V) `allowed_signers` is derived from key-binding entries. From v1.9 it is one file per namespace, at `ns/<ns>/allowed_signers` (LP-3.34), holding that namespace's lines. A verifier MUST regenerate each and require the committed file to be byte-identical. *What each namespace's file says about a close in another namespace is LP-4.32's, superseded by ruling 47 once implemented (issue 7).*
+- **LP-4.10** (W, V) `allowed_signers` is derived from key-binding entries. From v1.9 it is one file per namespace, at `ns/<ns>/allowed_signers` (LP-3.34), holding that namespace's lines — the trusted bindings of that namespace, each line ended by a close in that namespace only (LP-4.32, ruling 47). A namespace that binds nothing has no file. A verifier MUST regenerate each and require the committed file to be byte-identical; a writer that regenerates the files removes one that no trusted binding of its namespace derives.
 - **LP-4.11** (W, V) Key bindings are append-only: add, rotate and revoke are new entries.
 - **LP-4.32** (W, V) The file has one line per key window, in OpenSSH's allowed-signers form, so that an SSHSIG verifier reads it directly:
 
@@ -481,7 +481,7 @@ Spec v1.8 (#70; rulings D1 to D4 of #65 and D5 to D9 of 2 October 2026). A names
 ```
 
   - When no trusted binding opens a key, there is no file.
-- **LP-4.33** (V) A verifier re-derives the file and fails a **`[SIGNERS]`** stage when the committed bytes differ, when the log binds keys and no file is committed, or when a file is committed and the log binds none. The stage is outside the file gate's classes, like the export stage.
+- **LP-4.33** (V) A verifier re-derives each namespace's file and fails a **`[SIGNERS]`** stage, naming the namespace, when the committed bytes differ from that namespace's derivation, when the log binds keys in a namespace and no file is committed there, or when a file is committed in a namespace whose log binds no key there. The stage is outside the file gate's classes, like the export stage.
 
 v1.7 wrote the options space-separated, which OpenSSH refuses as an invalid key. v1.8 corrected the derivation, and no committed store carried the file.
 
@@ -1475,6 +1475,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 | 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
+| 9 October 2026 | **Ruling 47 applied: `allowed_signers` per namespace** (PRD §3.4; issue 7). LP-4.10 loses its note: each namespace's file holds that namespace's trusted bindings, a line ended by a close in that namespace only (LP-4.32), a namespace that binds nothing has no file, and a writer that regenerates the files removes a stale one; LP-4.33 names the namespace a `[SIGNERS]` finding is about. No class added; no digest moves. The Appendix C note "A stale `allowed_signers` is removed" is added. |
 | 9 October 2026 | **Rulings 47 and 69 applied: keys per namespace** (PRD §3.3; issue 6). LP-6.32 loses its not-implemented mark: a close ends the key in its own namespace only; LP-4.37's three rules, LP-4.39 (with ruling 101's wording) and LP-4.13's deadline look at the binding's own namespace; the genesis holder's first key in a namespace is that namespace's self-bound binding, once per namespace, and a key trusted elsewhere vouches for nothing here (LP-4.12, LP-4.31, LP-4.38 — the later-namespace paragraph goes, with the reference's `carried_over`); `allowed_signers` ends a line at a close in its own namespace (LP-4.32); LP-8.31 gains the two notices of ruling 69. LP-6.31 drops its keys note. No class added; no digest moves. The Appendix C note "Keys are per namespace" is added. |
 | 9 October 2026 | **Ruling 47 applied: authority per namespace** (with rulings 67, 68 and 50 per namespace; PRD §3.2, §3.9; issue 5). LP-6.31 loses its not-implemented mark: a grant, grant acceptance, interval, revocation or role belongs to the namespace whose directory holds it; each namespace has its own genesis grant, roles and policy; a scope is read inside its own namespace, `ns:<other>` being a schema fault (LP-6.16, LP-8.8); a policy is judged under its own namespace's genesis (LP-6.28); the authority shapes run over each namespace's graph alone, so `A003` and `A005` count per namespace, while the decision shapes keep the store's graph (LP-8.19, LP-8.23); roles are per namespace (LP-5.19); the unbound-genesis notice is per namespace (LP-8.31); an export carries its own authority only (LP-9.11). LP-6.5 loses its note. Keys stay store-wide until issue 6 (noted in LP-6.31). A writer opens every namespace on its own mandate. No class added; no digest moves; no grant payload gains a field. The Appendix C note "Authority is per namespace" is added. |
 | 9 October 2026 | **Ruling 43 applied, on live claims (ruling 75)** (PRD §3.7; issue 4). LP-3.31 loses its not-implemented mark and its note on the implemented format: a decision's latest version whose `supersedes` names a decision of another namespace is a schema fault (LP-8.8); earlier versions are not judged, and a next version that drops the edge repairs the store. `G001` keeps the dangling target. No class added; no digest moves; no such edge in this repository or the fixtures. |
@@ -1623,6 +1624,26 @@ or is normalised differently. It is *not* required for a `format` bump that
 only adds an unhashed field.
 
 ---
+
+#### A stale `allowed_signers` is removed; a close reaches its own namespace's file only (2026-10-09, no format change)
+
+**Ruled 7 October 2026** (ruling 47; `ledger/prd/namespace-independence-prd.md`
+§3.4; issue 7 of its §6). `allowed_signers` is one derived file per
+namespace since spec v1.9 (LP-4.10). From this change each file is
+derived from that namespace's trusted bindings alone: a line's
+`valid-before` is the earliest close of its key *in that namespace*
+(LP-4.32), so a close elsewhere leaves the file byte-identical; a
+namespace that binds nothing has no file; and the writers that regenerate
+the files — every `ledger identity` verb, `ledger init --namespace` when
+it binds a key, `ledger identity sync` — remove a file committed in a
+namespace none of whose bindings is trusted (inventory item N10). The
+`[SIGNERS]` stage already failed such a file; now a verb mends it.
+
+**No digest moves** and no class is added. A derived file is never
+hashed or signed. No committed store in this repository binds a key, so no
+stored verdict changes; a store whose later namespaces' lines once ended
+at a close in another namespace regenerates them with `ledger identity
+sync` (and is re-founded in any case, ruling 68).
 
 #### Keys are per namespace (2026-10-09, no format change)
 
