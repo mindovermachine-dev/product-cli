@@ -285,25 +285,28 @@ fn a_policy_change_in_a_format_6_file_is_a_schema_fault() {
 
 const SECOND: &str = "second.ledger";
 
+/// Keys are per namespace (ruling 47): `init` self-binds the holder's key in
+/// the second namespace too, and a further key of theirs there is their own
+/// `add`, signed by the key live in that namespace.
 #[test]
-fn the_genesis_holder_self_binds_once_per_store_and_signs_later_namespaces_with_a_trusted_key() {
+fn the_genesis_holder_self_binds_once_per_namespace_and_a_further_key_there_is_their_own_add() {
     let (repo, _) = governed();
-    repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
-    // Their first key in the second namespace: their own add, signed by the
-    // key already trusted in the first.
+    repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/118"]);
     let next = repo.keygen("owner-second");
     let out = repo.ok(&["identity", "add", "--namespace", SECOND, "--key-file", &format!("{next}.pub")]);
     assert!(out.contains(&format!("in `{SECOND}`")), "{out}");
     let store = ledger_core::store::load(repo.path());
-    let second = store.log.iter().flat_map(|l| l.file.key_bindings.iter()).find(|b| b.namespace == SECOND).expect("binding");
-    assert!(!second.self_bound && second.mandate.is_none(), "not self-bound: {second:?}");
+    let second: Vec<_> = store.log.iter().flat_map(|l| l.file.key_bindings.iter()).filter(|b| b.namespace == SECOND).collect();
+    assert_eq!(second.len(), 2, "{second:?}");
+    assert!(second[0].self_bound && second[0].mandate.as_deref() == Some("contract 2026/118"), "init's, self-bound under the second namespace's mandate: {:?}", second[0]);
+    assert!(!second[1].self_bound && second[1].mandate.is_none(), "the further key, their own add: {:?}", second[1]);
     hand::commit(&repo, "second namespace");
     let (code, text) = verify(&repo);
     assert_eq!(code, 0, "{text}");
 }
 
 #[test]
-fn a_hand_written_self_bound_binding_in_a_second_namespace_fails() {
+fn a_hand_written_self_bound_binding_beside_inits_in_a_second_namespace_fails() {
     let (repo, _) = governed();
     repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
     hand::commit(&repo, "second namespace opted in");
@@ -317,5 +320,5 @@ fn a_hand_written_self_bound_binding_in_a_second_namespace_fails() {
     hand::file(&repo, vec![forged], Vec::new(), &[(&ulid, &forged_key)]);
     let (code, text) = verify(&repo);
     assert_eq!(code, 1, "{text}");
-    assert!(text.contains(&id) && text.contains("D7") && text.contains("first in the store"), "{text}");
+    assert!(text.contains(&id) && text.contains("D7") && text.contains("first in the namespace"), "{text}");
 }

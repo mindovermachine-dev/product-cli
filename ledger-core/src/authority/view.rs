@@ -14,13 +14,11 @@
 //! namespace's records, and every role check, genesis lookup and policy
 //! verdict goes through them. [`Authority::build`] is the store-wide union,
 //! for readings that are namespace-independent (a policy by its own
-//! `namespace`, the bindings a key question ranges over); its `roles` map
-//! collides across namespaces and its `genesis` is undefined with more than
-//! one, so neither is read off it.
-//!
-//! *Key bindings are the one list not yet filtered by namespace:* a key is
-//! still bound, closed and trusted store-wide until issue 6 (LP-6.32,
-//! LP-4.37) scopes them. Every other list is the namespace's own.
+//! `namespace`, every binding the store holds for a repository notice); its
+//! `roles` map collides across namespaces and its `genesis` is undefined
+//! with more than one, so neither is read off it. Key bindings are the
+//! namespace's own too: a key is bound, closed and trusted per namespace
+//! (LP-6.32, LP-4.37, LP-4.39).
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -69,11 +67,10 @@ impl<'a> Authority<'a> {
         }
         for logged in &store.log {
             let cs = &logged.file;
-            // Keys range over the store until issue 6 (module note).
-            a.bindings.extend(&cs.key_bindings);
             if namespace.is_some_and(|ns| logged.namespace != ns) {
                 continue;
             }
+            a.bindings.extend(&cs.key_bindings);
             a.grants.extend(cs.grants.iter().map(|g| (g.id.to_string(), g)));
             a.grant_acceptances.extend(&cs.grant_acceptances);
             a.unavailabilities.extend(cs.unavailabilities.iter().map(|u| (u.id.to_string(), u)));
@@ -91,26 +88,22 @@ impl<'a> Authority<'a> {
     /// closes) and governing ones (policies) unless the act is before them;
     /// and the availability intervals landed no later (their clock
     /// decides). This is what `verify` judges a historic act against
-    /// (`A006`, D7). Key bindings of every namespace are read (module note).
+    /// (`A006`, D7).
     pub fn as_of(store: &'a Store, landing: &Landing, pos: Position, namespace: &str) -> Self {
         let mut a = Self::default();
         for role in store.roles.iter().filter(|r| r.namespace == namespace && role_landing(landing, r) <= pos.index) {
             a.roles.insert(role.id.clone(), role);
         }
-        for logged in &store.log {
+        for logged in store.log.iter().filter(|l| l.namespace == namespace) {
             let path = relative(&store.root, &logged.path);
             let cs = &logged.file;
-            let at_key = |id: String, t| landing.position(&path, &crate::landed::key("key_bindings", &id), t);
+            let at = |list: &str, id: String, t| landing.position(&path, &crate::landed::key(list, &id), t);
             // A key's close is terminating, like a revocation: it applies
             // unless the act is before it. An opening binding enables.
             a.bindings.extend(cs.key_bindings.iter().filter(|b| {
-                let here = at_key(b.id.to_string(), b.at);
+                let here = at("key_bindings", b.id.to_string(), b.at);
                 if b.closes.is_some() { !pos.before(&here) } else { here.not_after(&pos) }
             }));
-            if logged.namespace != namespace {
-                continue;
-            }
-            let at = |list: &str, id: String, t| landing.position(&path, &crate::landed::key(list, &id), t);
             let landed = |list: &str, id: String| landing.entity_index(&path, &crate::landed::key(list, &id)) <= pos.index;
             a.grants.extend(
                 cs.grants.iter().filter(|g| at("grants", g.id.to_string(), g.at).not_after(&pos)).map(|g| (g.id.to_string(), g)),

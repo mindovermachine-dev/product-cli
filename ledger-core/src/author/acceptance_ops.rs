@@ -100,7 +100,6 @@ impl Author {
             ulid: acceptance.id.ulid(),
             bytes: crate::authority::payload::acceptance_bytes(&acceptance),
             own_key: None,
-            any_namespace: false,
         };
         self.sign_under(&store, policy.as_ref(), what)?;
         let signed = self.pending_sidecars.iter().map(|s| format!("signed — sig/{}", s.file)).collect::<Vec<_>>();
@@ -181,8 +180,7 @@ impl Author {
                 ulid: &ulid,
                 bytes: crate::authority::payload::revocation_bytes(&revocation),
                 own_key: None,
-                any_namespace: false,
-            };
+                };
             self.sign_under(&store, policy.as_ref(), what)?;
         }
         let mut candidate = self.shell(None)?;

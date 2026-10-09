@@ -22,9 +22,11 @@
 //! filed binding ends trusted or with a finding — none is left silent.
 //!
 //! **Closed keys** (ruling 12, D6). A close ends the key, not the binding
-//! (ruled 2026-10-06): closing any binding of a principal's key closes it in
-//! every namespace, and every check asks over all bindings of the matched
-//! key ([`key_close`]). An entity signed by a closed key is judged by order:
+//! (ruled 2026-10-06), in its own namespace (ruling 47, LP-6.32): closing
+//! any binding of a principal's key in a namespace closes it there, and
+//! every check asks over all bindings of the matched key in that namespace
+//! ([`key_close`]). A key is trusted in the namespace it is bound in and
+//! nowhere else. An entity signed by a closed key is judged by order:
 //! dated after the close fails `-Overify-time`, so `L011`; landed after the
 //! close, whatever its date, is `L011`, naming the close and its namespace;
 //! dated *and* landed before it, an acceptance goes to the re-acceptance
@@ -150,10 +152,9 @@ fn first_policy<'a>(s: &Subject<'a>) -> Option<&'a Policy> {
 }
 
 /// A namespace's first policy (#96): signed under its own schemes when its
-/// author held a live trusted key at its position — in this namespace or
-/// another, which for this check stands here, as [`carried_over`] does for
-/// a binding. A sidecar that names it is verified whatever. `None`: neither,
-/// so nothing is required.
+/// author held a live trusted key in this namespace at its position (ruling
+/// 47: a key trusted elsewhere has no effect here). A sidecar that names it
+/// is verified whatever. `None`: neither, so nothing is required.
 fn judge_first_policy(
     store: &Store,
     s: &Subject<'_>,
@@ -166,15 +167,12 @@ fn judge_first_policy(
         key_close::closes_among(trusted, &filed(store), k).iter().any(|c| at(&c.id).is_some_and(|c| !s.position.before(&c)))
     };
     let held = trusted.iter().any(|k| {
-        k.principal == s.signer && k.act.opens() && at(&k.id).is_some_and(|o| o.not_after(&s.position)) && !closed(k)
+        k.principal == s.signer && k.namespace == s.namespace && k.act.opens() && at(&k.id).is_some_and(|o| o.not_after(&s.position)) && !closed(k)
     });
     if !held && !store.sidecars.iter().any(|c| c.ulid == s.ulid) {
         return None;
     }
-    let here: Vec<KeyBinding> =
-        trusted.iter().filter(|k| k.principal == s.signer).map(|k| KeyBinding { namespace: s.namespace.clone(), ..(*k).clone() }).collect();
-    let keys: Vec<&KeyBinding> = here.iter().collect();
-    Some(judge(store, s, p, &keys, positions).map(|_| ()))
+    Some(judge(store, s, p, trusted, positions).map(|_| ()))
 }
 
 fn ordered(mut all: Vec<Subject<'_>>) -> Vec<Subject<'_>> {
@@ -217,8 +215,6 @@ fn trust_bindings<'a>(store: &'a Store, landing: &Landing, all: &[Subject<'a>], 
         if b.self_bound {
             keys.push(b);
         }
-        let elsewhere = carried_over(&out.trusted, b);
-        keys.extend(elsewhere.iter());
         let rotate = b.act == crate::authority::BindingAct::Rotate;
         if rotate {
             keys = closed_key_only(&keys, &filed(store), b);
@@ -252,24 +248,6 @@ fn closed_key_only<'a>(keys: &[&'a KeyBinding], filed: &[&KeyBinding], b: &KeyBi
 /// A namespace's first policy (it replaces none), wherever it landed.
 fn first_policy_of(store: &Store, namespace: &str) -> Option<Policy> {
     Authority::build(store).policies.iter().find(|p| p.namespace == namespace && p.replaces.is_none()).map(|p| (*p).clone())
-}
-
-/// The genesis holder's first key in a later namespace is their own `add`,
-/// signed by a key of theirs already trusted in another namespace (D7). For
-/// that check alone, those keys stand in this namespace: the signature is
-/// made in `ledger-accept@<this namespace>`, and `allowed_signers` scopes
-/// each line to its own. `may_file` has already ruled who may file it.
-fn carried_over(trusted: &[&KeyBinding], b: &KeyBinding) -> Vec<KeyBinding> {
-    let own_add = b.act == crate::authority::BindingAct::Add && !b.self_bound && b.by == b.principal;
-    let here = trusted.iter().any(|k| k.principal == b.by && k.namespace == b.namespace && k.act.opens());
-    if !own_add || here {
-        return Vec::new();
-    }
-    trusted
-        .iter()
-        .filter(|k| k.principal == b.by && k.act.opens())
-        .map(|k| KeyBinding { namespace: b.namespace.clone(), ..(*k).clone() })
-        .collect()
 }
 
 /// Judge one subject's sidecars against its policy. `Ok(Some(close))`: valid

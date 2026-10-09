@@ -5,11 +5,11 @@
 //! as it stood before the binding (`Authority::as_of`), so a hand-written
 //! binding file meets the same rule as the verb.
 //!
-//! - **The genesis holder's first binding in the store** is self-bound:
-//!   filed by the genesis holder for itself, carrying the genesis grant's
-//!   `external_ref` as its mandate, signed by the key it binds. Once per
-//!   store: in any later namespace the genesis holder's first binding is
-//!   their own `add`, signed by a key of theirs already trusted elsewhere.
+//! - **The genesis holder's first binding in the namespace** is self-bound:
+//!   filed by the genesis holder for itself, carrying the namespace's
+//!   genesis grant's `external_ref` as its mandate, signed by the key it
+//!   binds. Once per namespace (ruling 47): every namespace is opened as the
+//!   first is, and a key trusted elsewhere vouches for nothing here.
 //! - **A principal's first key** (no open window in the namespace) is filed
 //!   and signed by the genesis holder: `by` is the genesis holder,
 //!   `principal` the new holder, `under` the genesis grant. Recovery from a
@@ -35,12 +35,15 @@ pub fn may_file(auth: &Authority<'_>, b: &KeyBinding) -> Result<(), String> {
             None => "a principal's act on its own keys names no `under`".to_string(),
         });
     }
-    let open_in_ns = |who| open_window(auth, b, who, Some(&b.namespace));
+    let open_in_ns = |who| open_window(auth, b, who);
     match (b.act, &b.closes) {
         (BindingAct::Add, _) if b.self_bound => self_bound(auth, b, genesis.and_then(|g| g.external_ref.clone()), by_genesis),
         (BindingAct::Add, _) if b.by == b.principal => match open_in_ns(&b.principal) {
             true => Ok(()),
-            false if by_genesis && open_window(auth, b, &b.principal, None) => Ok(()),
+            false if by_genesis => Err(format!(
+                "{} has no live key in `{}`: the genesis holder's first key in a namespace is its self-bound binding (D7)",
+                b.principal, b.namespace
+            )),
             false => Err(format!(
                 "{} has no live key in `{}`: a principal's first key is filed by the genesis holder (D7)",
                 b.principal, b.namespace
@@ -56,28 +59,24 @@ pub fn may_file(auth: &Authority<'_>, b: &KeyBinding) -> Result<(), String> {
     }
 }
 
-/// Whether `who` holds an open key window (other than `b` itself) in `ns`,
-/// or in any namespace when `ns` is `None`. A window is open while its key
-/// is: a close of the same key in any namespace closes it (ruled 2026-10-06).
-fn open_window(auth: &Authority<'_>, b: &KeyBinding, who: &crate::identity::Identity, ns: Option<&str>) -> bool {
+/// Whether `who` holds an open key window (other than `b` itself) in `b`'s
+/// namespace. A window is open while its key is: a close of the same key in
+/// the namespace closes it (ruled 2026-10-06; per namespace, ruling 47).
+fn open_window(auth: &Authority<'_>, b: &KeyBinding, who: &crate::identity::Identity) -> bool {
     auth.bindings.iter().any(|o| {
-        o.act.opens()
-            && ns.is_none_or(|ns| o.namespace == ns)
-            && o.principal == *who
-            && o.id != b.id
-            && !super::key_close::is_closed(&auth.bindings, o)
+        o.act.opens() && o.namespace == b.namespace && o.principal == *who && o.id != b.id && !super::key_close::is_closed(&auth.bindings, o)
     })
 }
 
-/// A self-bound binding: the genesis holder's first in the store, under
-/// the genesis mandate.
+/// A self-bound binding: the genesis holder's first in the namespace, under
+/// the namespace's genesis mandate.
 fn self_bound(auth: &Authority<'_>, b: &KeyBinding, mandate: Option<String>, by_genesis: bool) -> Result<(), String> {
-    let first = auth.bindings.iter().all(|o| o.principal != b.principal || o.id == b.id);
+    let first = auth.bindings.iter().all(|o| o.namespace != b.namespace || o.principal != b.principal || o.id == b.id);
     if by_genesis && b.principal == b.by && first && b.mandate == mandate {
         return Ok(());
     }
-    Err("a self-bound binding is the genesis holder's first in the store, under the genesis mandate — \
-         in a later namespace their first key is signed by a key of theirs already trusted"
+    Err("a self-bound binding is the genesis holder's first in the namespace, under its genesis mandate — \
+         every further key of theirs there is their own `add`, signed by a key of theirs live in the namespace"
         .into())
 }
 
