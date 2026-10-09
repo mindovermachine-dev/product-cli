@@ -2233,33 +2233,43 @@ exit 0
 
 ## Principal's replies, 2026-10-09
 
-The design is accepted: position D. Every lean in §7 of the third revision is ruled as leaned, and one question the review raised is ruled too, as rulings 85 to 101 in `ledger/rulings/order-from-the-acts-rulings-2026-10-09.md`, a file this pull request adds. They supersede D6 of 2 October and rulings 64, 65, 79, 83 and 84; amend rulings 66 and 77, D7's first filer and LP-4.39's "a window closes once"; ruling 82 stands. The earlier rulings files are not edited.
+The design is accepted: position D. Every lean of the third revision's §7 is ruled as it was leaned, and one question the PRD did not ask is ruled with them, as rulings 85 to 101 in a new file, `ledger/rulings/order-from-the-acts-rulings-2026-10-09.md`. They supersede D6 of 2 October and rulings 64, 65, 79, 83 and 84; amend rulings 66 and 77, D7's first filer and LP-4.39's "a window closes once"; and leave ruling 82 standing. The earlier rulings files are not edited: the new file states what it supersedes.
 
 ### Rulings, by number
 
 | Ruling | Answers | In short |
 | --- | --- | --- |
-| 85 | Q1, Q11 | Order comes from the acts: before means named by the entry and dated strictly earlier; unnamed is after; enabling by signed `at`; landing decides nothing. Supersedes D6 and 64 |
-| 86 | Q2, Q3, Q4 | Names are `<id>@sha256:<hash>`, in the set `after` in the signed payload; policies too |
-| 87 | Q5, Q6 | Format 8 is `after`, `anchor`, `role_hash`; no move act; a pre-8 entry names nothing. Amends 66 |
-| 88 | Q7 | A policy change names the acts since the policy it replaces; the earliest namer governs; unnamed is under the tip |
-| 89 | Q8 | The genesis grant names its anchor; no "first to land"; `init` refuses without a key, `--without-key` removed; a second genesis is `A005`, cleared by revocation; one pin token or two is the pinning design's. Amends D7 |
-| 90 | Q9 | Grants, grant acceptances, unavailabilities and availabilities signed with `at` first (#82); `A006` on the grantor |
-| 91 | Q10 | `role_hash` under `ledger.role.v1`; a role's position plays no part |
-| 92 | Q12 | Stray and dangling names are notices |
-| 93 | Q13 | Whole-namespace removal in one commit is a notice; part stays `L007`. Supersedes 65 |
-| 94 | Q14 | `L009` judges only acts no signature covers. Supersedes 79 |
-| 95 | Q15 | A move is a copy; no act, record or freeze; an ungoverned namespace carries its history or is governed first. Supersedes 83, 84 |
-| 96 | Q16 | `A007` unused. Amends 77 |
-| 97 | Q17 | Ruling 82 stands; the capability shrinks to `L007`, `L009` and the base overlay |
-| 98 | Q18 | The genesis holder's revoke takes an `at`, bounded below by the closed binding's |
-| 99 | Q19 | A writer names what the checkout holds, committed or not; a name that never lands is ignored |
-| 100 | Q20 | Case H is closed by the anchor; no separate fix |
-| 101 | the review's | The genesis holder's revoke may close a key a `rotate` closed; an act stands only if before each close; a thief's names do not keep forged acts standing. Amends "a window closes once" |
+| 85 | Q1, Q11 | Order comes from the acts: before a terminating entry when named by it and dated strictly earlier; unnamed is after, whatever the `at`; an enabling entry covers by signed `at`; landing order decides nothing. Supersedes D6 and ruling 64. |
+| 86 | Q2, Q3, Q4 | Names are `<id>@sha256:<hash>`, in a set-valued `after` inside the signed payload; policies too |
+| 87 | Q5, Q6 | Format 8 holds `after`, `anchor` and `role_hash`; no move act; an entry below format 8 names nothing. Amends 66. |
+| 88 | Q7 | A policy change names only the acts since the policy it replaces; the earliest policy that names an act governs it; unnamed, the tip |
+| 89 | Q8 | The genesis grant names its anchor; no "first to land"; `init` refuses without a usable key and `--without-key` is removed; a second genesis is `A005`, cleared by revoking it; the pin's token count is for the pinning design. Amends D7's first filer. |
+| 90 | Q9 | Grants, grant acceptances, unavailabilities and availabilities are signed with `at` in their payloads before order from the acts (#82); `A006` judges the grantor as of the grant |
+| 91 | Q10 | A grant names its role's content as `role_hash` under `ledger.role.v1`; a role's position plays no part |
+| 92 | Q12 | A name outside the family, or resolving to no filed act, is ignored and reported as a notice |
+| 93 | Q13 | Whole removal of a namespace and its export in one commit is a notice; part stays `L007`. Supersedes 65. |
+| 94 | Q14 | `L009` judges only acts no signature covers. Supersedes 79. |
+| 95 | Q15 | A move is a copy; no move act, landing record or freeze; a namespace with no policy moves with its history or is governed and re-accepted first. Supersedes 83 and 84. |
+| 96 | Q16 | `A007` returns to unused. Amends 77. |
+| 97 | Q17 | Ruling 82 stands as written; the legacy capability shrinks to `L007`, `L009` and the base overlay |
+| 98 | Q18 | The genesis holder's revoke takes an `at`, the time of compromise, bounded below by the `at` of the binding it closes |
+| 99 | Q19 | A writer names the acts of the family the checkout holds, committed or not; a name that never lands is ignored under 92 |
+| 100 | Q20 | Two trusted self-bound bindings: closed by the anchor; no separate fix under D6 |
+| 101 | the review | The genesis holder's revoke may close a key a `rotate` already closed; where several closes end one key an act stands only if before each (LP-4.39); a thief's `rotate` naming forged acts does not keep them standing once the revoke at the compromise does not name them. Amends "a window closes once" for this case. |
 
-### Case L: ruling 101's store
+### Ruling 101, read against case B
 
-Built after the rulings, with the helpers of "Order from the acts": the thief, holding K1, files a forged acceptance backdated inside K1's window, rotates K1 to K2, and accepts with K2; the genesis holder then files a second close of K1 by hand, a `revoke` dated at the compromise. Today the second close is refused: `authority::references::binding_refs` ("already closed — a window closes once") and `authority::filing::closing` ("window is already closed"), and the rotate itself falls to the same D7 rule because the revoke, dated earlier, is in `Authority::as_of` at the rotate's position; the K2 act is `L011` as signed by a key bound to nobody. Ruling 101 allows the second close and reads every close of the key together; the ruled verdicts are in PRD §3.5, row L, and §3.5.1.
+Case B's store was read under rulings 85 and 101 by hand; nothing was built or run, and the PRD marks the reading *(inference)* as case L of its attack table.
+- The thief's `rotate` is a binding signed by K1. It closes K1, opens K2, and names what the thief chooses. Named by digest, a forged acceptance signed by K1, dated inside K1's window and filed with the rotate, is before that close (case G's mechanism).
+- The genesis holder's `revoke`, signed by the genesis holder's own key (case B's `genesis@customer.example`) under the genesis grant, closes K1 again (101), dated at the compromise (98) and no earlier than K1's binding's `at`, and names the holder's legitimate acceptance.
+- Under LP-4.39's "every close" reading an act stands only if before each close. The forged acceptance is before the rotate and not before the revoke: `L011`. The legitimate acceptance is before both: a review item, as today.
+- The rotate itself is an act K1 signed that the revoke does not name, so it is after the revoke and its signature does not hold; K2 opens no window, and every act K2 signed is refused. Revoking K2 as well (case B) reaches the same verdicts.
+
+One thing the reading turned up, put to the principal in PRD §7: ruling 99 has the writer name every act of the family the checkout holds, and in case L the checkout holds the forged acts, backdatable to before `--at`; ruling 101 has the revoke not name them. Both hold only if that one revoke may name less than the checkout holds, and how is not ruled.
+
+### Case L, built and run
+
+A second session, working from the same rulings, built the store the reading above describes, with the helpers of "Order from the acts": the thief, holding K1, files a forged acceptance backdated inside K1's window, rotates K1 to K2, and accepts with K2; the genesis holder then files a second close of K1 by hand, a `revoke` dated at the compromise. Today the second close is refused: `authority::references::binding_refs` ("already closed — a window closes once") and `authority::filing::closing` ("window is already closed"); the rotate itself falls to the same D7 rule, because the revoke, dated earlier, is in `Authority::as_of` at the rotate's position; and the K2 act is `L011` as signed by a key bound to nobody. That is the "Today" column of row L. The ruled column stays a reading by hand: the prototype does not read several closes of one key.
 
 The script, `case_l.sh`:
 
@@ -2330,23 +2340,36 @@ exit 1
 
 ### What changed in the PRD
 
-- **Header.** The fourth revision, its base (#142's branch merged with `main` at `17f9656`), and what the rulings supersede and amend.
-- **§3.5** states the ruled design, citing a ruling at each point: the attack table gains row L and its "Ruled" column; §3.5.1 states ruling 101 (which close the thief's `rotate` makes and which the genesis holder's `revoke` makes, how LP-4.39's "every close" reading judges an act named by one and not the other, and that the thief's new key falls with the untrusted `rotate`); §3.5.2 to §3.5.8 state rulings 86 to 95 and 98, 99; §3.5.9 the export; §3.5.10 stays open; §3.5.11 the cost. The option tables are gone; the options not chosen are one row each in Appendix A.
-- **§3.1, §3.1.1, §3.9, §3.10, §3.11, §3.13** carry no "as ruled / under D" split any more: format 8 is `after`, `anchor`, `role_hash` and the signed records (87, 90); `A007` is unused (96); the classes and notices follow 92 and 93; the tests to rewrite include every `--without-key` test (89).
-- **§4** is one list: AC-1 as a copy (93, 94, 95); the attack rows AC-85-A to AC-101-L, the new row L included; one criterion per ruling. The superseded criteria stay in Appendix A.1.2.
-- **§5** is one list, citing rulings: LP-4.12, LP-4.13, LP-4.22 (with the three new payloads of ruling 90), LP-4.38, LP-4.39 (ruling 101), LP-5.23, LP-6.27, LP-6.29, LP-6.33 to LP-6.37, LP-8.24, LP-8.26, LP-8.28 to LP-8.32, LP-8.34, LP-9.6, LP-9.14, LP-9.15, and the Appendix C note for format 8. The superseded proposals stay in Appendix A.1.3.
-- **§6** keeps the order (layout and authority, #82, order from the acts and the move, the export, pins) and re-sizes nothing; issues 11, 15, 17 and 20 gain the intervals, `--at` and the second close, row L, and the pin's tokens.
-- **§7** maps the twenty questions to rulings 85 to 100 and the review's question to 101; keeps the comparison of C and D as the record; lists what each ruling of 9 October replaces; leaves N-Q2, the freshness question and the pin's tokens open for the pinning design; and asks two questions the rulings themselves raise, on ruling 90's new payloads and on which verbs take `--at`.
-- **Appendix A** lists the options not chosen, one row each, and marks A.1 as superseded by rulings 85, 93, 94 and 95.
+- **Header and contents.** The fourth revision, the rulings it rests on, the base (`fac640d`), and the contents list.
+- **§3 diagram, §3.1, §3.1.1, §3.6, §3.11, §3.13.** Every "as ruled" / "under D" pair collapses to the ruled text: no `landing/` directory, no departure reader, the readers of flat history shrunk to three (97), `--without-key` gone from the tests to rewrite (89), the pin's token count deferred (89), N17 to N19 answered by 85, 94, 93 and 95.
+- **§3.5** states the ruled design, citing its ruling at each point: the rule (85, 101), the encoding (86, 87, 92), size and successive policies (88), the unsigned records (90, 91), the founding (89, 100), the writer (98, 99, 101), what git still does (97), the move (93, 94, 95), the export, freshness (open), cost. The attack table gains case L, ruling 101 read against case B. The option tables are gone; what they held is one row each in Appendix A.
+- **§3.9 and §3.10** state the export and format 8 as ruled; `A007` is unused (96); the move act's rows are gone.
+- **§4** is one list: the layout, authority, export and pin criteria, then order from the acts and the move. AC-D-L is new (101). AC-42 and AC-D-5 carry the pin's token count to the pinning design.
+- **§5** is one set of proposals: the shared ones, then order from the acts and the move, each with its ruling. New: the LP-4.39 amendment and LP-6.38 (98, 101). LP-8.30 and LP-8.32 are no longer "if chosen". The superseded design's proposals stay in A.1.3 and are not made.
+- **§6** keeps the twenty-two issues, their order and their sizes; 12, 15, 16, 17 and 20 cite the rulings that settled them, and 15 waits on §7's question for the thief's acts.
+- **§7** replaces the twenty questions with the rulings that answered them, by number, keeps the side-by-side comparison of C and D as the record of what was weighed, lists what each earlier ruling became, and asks the one question the rulings raise. N-Q2, the freshness question and the pin's token count stay open for the pinning design; N-Q5 is closed.
+- **Appendix A** holds every option not chosen in one table, kept short, and A.1 is marked superseded by rulings 85, 93, 94 and 95.
 
 ### Checks
 
-- **What changed.** #142's branch, `claude/zealous-cannon-da2epc-act-ordering`, merged with `main` at `17f9656` (the merge of #141, which changes tests and one protocol note). Against that, the pull request now adds `ledger/rulings/order-from-the-acts-rulings-2026-10-09.md` and changes `ledger/prd/namespace-independence-prd.md` and this record. Nothing else: no code, test, fixture, protocol text, store, export or `.ddd/` file, and no earlier rulings file. Case L's store, script and output live in the scratchpad beside the others and are not committed.
+#### Fourth revision (rulings 85 to 101)
+
+- **What changed.** The pull request adds `ledger/rulings/order-from-the-acts-rulings-2026-10-09.md` and changes the PRD and this record. Nothing else: no code, test, fixture, protocol text, earlier rulings file, store, export or `.ddd/` file.
+- **Gates**, with the four git-identity variables unset, on `fac640d`'s code, which the revision does not touch:
+  - `cargo build`: exit 0.
+  - `cargo clippy -- -D warnings -D clippy::unwrap_used`: exit 0.
+  - `cargo t`: exit 0. 2,125 passed, 0 failed and 2 ignored, summed over the 96 `test result:` lines.
+  - `dotnet test` was not run, since no .NET code is touched.
+- **`ledger verify --export`**, built from this branch and run on it and on `main` at `fac640d`: exit 0 on both, and byte-identical output, the same as shown under the third revision.
+
+#### The merge with `main` at `17f9656`
+
+The fourth revision was written twice, by two sessions working from the same rulings; the first to push is the one above, and the second was merged into it, keeping the first's three files and adding only the case L run and this paragraph. The merge also brings `main` at `17f9656` (the merge of #141, which changes tests and one protocol note) into the branch.
+
 - **Gates**, with the four git-identity variables unset, on the merged branch's code:
   - `cargo build`: exit 0.
   - `cargo clippy -- -D warnings -D clippy::unwrap_used`: exit 0.
   - `cargo t`: exit 0. 2,126 passed, 0 failed and 2 ignored, summed over the 96 `test result:` lines.
-  - `dotnet test` was not run, since no .NET code is touched.
 - **`ledger verify --export`**, built from the merged branch and run on it and on a worktree of `origin/main` at `17f9656`: exit 0 on both, and byte-identical output:
 
 ```text
@@ -2361,4 +2384,3 @@ notice: namespace `hafeok.ledger` has no policy — nothing in it is role-checke
 export: every committed export matches the log byte for byte
 exit 0
 ```
-- **Pushed** to `origin/claude/zealous-cannon-da2epc-act-ordering`, #142's branch, on 9 October 2026, for the principal to merge.
