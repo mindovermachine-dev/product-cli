@@ -164,12 +164,12 @@ pub fn acceptance_id() -> AcceptanceId {
 /// overrides the `user.name` / `user.email` a fixture configures for its own
 /// commits, so every git the tests spawn clears them (#138): the author of a
 /// fixture commit is the repository's, never the container's.
-pub const GIT_IDENTITY_VARS: [&str; 4] =
+pub(crate) const GIT_IDENTITY_VARS: [&str; 4] =
     ["GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"];
 
 /// A `git -C dir` command that takes its identity from the repository's own
 /// configuration alone.
-pub fn git_command(dir: &std::path::Path) -> std::process::Command {
+pub(crate) fn git_command(dir: &std::path::Path) -> std::process::Command {
     let mut cmd = std::process::Command::new("git");
     cmd.arg("-C").arg(dir);
     for var in GIT_IDENTITY_VARS {
@@ -179,7 +179,7 @@ pub fn git_command(dir: &std::path::Path) -> std::process::Command {
 }
 
 /// Run git in `dir`, failing the test on a non-zero exit; returns its output.
-pub fn git(dir: &std::path::Path, args: &[&str]) -> std::process::Output {
+pub(crate) fn git(dir: &std::path::Path, args: &[&str]) -> std::process::Output {
     let out = git_command(dir).args(args).output().expect("git");
     assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
     out

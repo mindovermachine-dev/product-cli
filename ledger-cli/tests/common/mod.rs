@@ -161,12 +161,12 @@ impl Repo {
 /// overrides the `user.name` / `user.email` a fixture configures for its own
 /// commits, so every git the suites spawn, directly or through the binary,
 /// clears them (#138).
-pub const GIT_IDENTITY_VARS: [&str; 4] =
+pub(crate) const GIT_IDENTITY_VARS: [&str; 4] =
     ["GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"];
 
 /// A `git -C dir` command that takes its identity from the repository's own
 /// configuration alone.
-pub fn git_command(dir: &Path) -> std::process::Command {
+pub(crate) fn git_command(dir: &Path) -> std::process::Command {
     let mut cmd = std::process::Command::new("git");
     cmd.arg("-C").arg(dir);
     for var in GIT_IDENTITY_VARS {
@@ -176,7 +176,7 @@ pub fn git_command(dir: &Path) -> std::process::Command {
 }
 
 /// Run git in `dir`, failing the test on a non-zero exit; returns its output.
-pub fn git(dir: &Path, args: &[&str]) -> Output {
+pub(crate) fn git(dir: &Path, args: &[&str]) -> Output {
     let out = git_command(dir).args(args).output().expect("git");
     assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
     out
@@ -184,7 +184,7 @@ pub fn git(dir: &Path, args: &[&str]) -> Output {
 
 /// The binary at `root`, with plain pipes and the caller's git identity
 /// cleared, before any verb is given.
-pub fn ledger_command(root: &Path) -> Command {
+pub(crate) fn ledger_command(root: &Path) -> Command {
     let mut cmd = Command::cargo_bin("ledger").expect("binary");
     cmd.arg("--root").arg(root);
     for var in GIT_IDENTITY_VARS {
