@@ -6,6 +6,11 @@
 //! pseudo-terminal, which is how a person runs it; everything else runs
 //! with plain pipes. [`Repo::piped`] forces pipes, for the refusal
 //! tests themselves.
+//!
+//! Every git these suites run, and every invocation of the binary (whose
+//! `inbox accept` commits), goes out with the caller's git identity
+//! variables cleared ([`GIT_IDENTITY_VARS`], #138): a fixture commit is
+//! authored by the identity the fixture configured, never the container's.
 
 #![allow(dead_code)]
 
@@ -42,13 +47,7 @@ impl Repo {
     }
 
     pub fn git(&self, args: &[&str]) {
-        let out = std::process::Command::new("git")
-            .arg("-C")
-            .arg(self.path())
-            .args(args)
-            .output()
-            .expect("git");
-        assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+        git(self.path(), args);
     }
 
     /// Switch the acting identity, as a person changing git config would.
@@ -158,6 +157,42 @@ impl Repo {
     }
 }
 
+/// The git identity variables a caller's environment may export. Each one
+/// overrides the `user.name` / `user.email` a fixture configures for its own
+/// commits, so every git the suites spawn, directly or through the binary,
+/// clears them (#138).
+pub const GIT_IDENTITY_VARS: [&str; 4] =
+    ["GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"];
+
+/// A `git -C dir` command that takes its identity from the repository's own
+/// configuration alone.
+pub fn git_command(dir: &Path) -> std::process::Command {
+    let mut cmd = std::process::Command::new("git");
+    cmd.arg("-C").arg(dir);
+    for var in GIT_IDENTITY_VARS {
+        cmd.env_remove(var);
+    }
+    cmd
+}
+
+/// Run git in `dir`, failing the test on a non-zero exit; returns its output.
+pub fn git(dir: &Path, args: &[&str]) -> Output {
+    let out = git_command(dir).args(args).output().expect("git");
+    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    out
+}
+
+/// The binary at `root`, with plain pipes and the caller's git identity
+/// cleared, before any verb is given.
+pub fn ledger_command(root: &Path) -> Command {
+    let mut cmd = Command::cargo_bin("ledger").expect("binary");
+    cmd.arg("--root").arg(root);
+    for var in GIT_IDENTITY_VARS {
+        cmd.env_remove(var);
+    }
+    cmd
+}
+
 /// Whether an invocation must run at a terminal (#71, #85): it signs, or
 /// unsays a signature, or writes an authority record. The binary's own
 /// classification is `commands::terminal::mode`; this mirrors it so the
@@ -189,9 +224,7 @@ pub fn invoke(root: &Path, args: &[&str]) -> Output {
 
 /// Run the binary with plain pipes.
 pub fn piped(root: &Path, args: &[&str]) -> Output {
-    let mut cmd = Command::cargo_bin("ledger").expect("binary");
-    cmd.arg("--root").arg(root).args(args);
-    cmd.output().expect("run")
+    ledger_command(root).args(args).output().expect("run")
 }
 
 /// Run the binary under a pseudo-terminal (`script(1)` from util-linux), so
@@ -207,11 +240,12 @@ pub fn tty(root: &Path, args: &[&str]) -> Output {
         line.push(' ');
         line.push_str(&shell_quote(a));
     }
-    let out = std::process::Command::new("script")
-        .args(["-qefc", &line, "/dev/null"])
-        .stdin(std::process::Stdio::null())
-        .output()
-        .expect("script(1) from util-linux is required to drive a pseudo-terminal");
+    let mut script = std::process::Command::new("script");
+    script.args(["-qefc", &line, "/dev/null"]).stdin(std::process::Stdio::null());
+    for var in GIT_IDENTITY_VARS {
+        script.env_remove(var);
+    }
+    let out = script.output().expect("script(1) from util-linux is required to drive a pseudo-terminal");
     let text = String::from_utf8_lossy(&out.stdout).replace("\r\n", "\n");
     Output { status: out.status, stdout: text.into_bytes(), stderr: out.stderr }
 }

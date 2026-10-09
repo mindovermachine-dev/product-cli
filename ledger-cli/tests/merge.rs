@@ -12,7 +12,6 @@ mod common;
 use std::path::{Path, PathBuf};
 use std::process::Output;
 
-use assert_cmd::Command;
 
 struct Repo {
     dir: tempfile::TempDir,
@@ -34,24 +33,12 @@ impl Repo {
     }
 
     fn git(&self, args: &[&str]) -> Output {
-        let out = std::process::Command::new("git")
-            .arg("-C")
-            .arg(self.path())
-            .args(args)
-            .output()
-            .expect("git");
-        assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
-        out
+        common::git(self.path(), args)
     }
 
     /// Git where failure is the expected outcome.
     fn git_may_fail(&self, args: &[&str]) -> Output {
-        std::process::Command::new("git")
-            .arg("-C")
-            .arg(self.path())
-            .args(args)
-            .output()
-            .expect("git")
+        common::git_command(self.path()).args(args).output().expect("git")
     }
 
     fn commit(&self, message: &str) {
@@ -65,8 +52,8 @@ impl Repo {
     }
 
     fn ledger_stdin(&self, args: &[&str], stdin: &str) -> Output {
-        let mut cmd = Command::cargo_bin("ledger").expect("binary");
-        cmd.arg("--root").arg(self.path()).args(args).write_stdin(stdin);
+        let mut cmd = common::ledger_command(self.path());
+        cmd.args(args).write_stdin(stdin);
         cmd.output().expect("run")
     }
 

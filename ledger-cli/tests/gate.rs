@@ -19,6 +19,8 @@ use std::process::Output;
 
 use assert_cmd::Command;
 
+mod common;
+
 /// The date the fixtures are judged against, so expiry never depends on
 /// when the suite happens to run.
 const TODAY: &str = "2026-08-10";
@@ -210,18 +212,12 @@ mod blame {
         }
 
         fn git(&self, args: &[&str]) {
-            let out = std::process::Command::new("git")
-                .arg("-C")
-                .arg(self.path())
-                .args(args)
-                .output()
-                .expect("git");
-            assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+            common::git(self.path(), args);
         }
 
         fn verify(&self) -> Output {
-            let mut cmd = Command::cargo_bin("ledger").expect("binary");
-            cmd.arg("--root").arg(self.path()).args(["verify", "--today", TODAY]);
+            let mut cmd = common::ledger_command(self.path());
+            cmd.args(["verify", "--today", TODAY]);
             cmd.output().expect("run")
         }
     }

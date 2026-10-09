@@ -8,7 +8,7 @@
 use std::path::Path;
 use std::process::Output;
 
-use assert_cmd::Command;
+mod common;
 
 const TODAY: &str = "2026-08-13";
 
@@ -33,16 +33,12 @@ impl Repo {
     }
 
     fn git(&self, args: &[&str]) {
-        Command::new("git")
-            .current_dir(self.path())
-            .args(args)
-            .output()
-            .expect("git");
+        common::git_command(self.path()).args(args).output().expect("git");
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        let mut cmd = Command::cargo_bin("ledger").expect("binary");
-        cmd.current_dir(self.path()).arg("--root").arg(self.path()).args(args);
+        let mut cmd = common::ledger_command(self.path());
+        cmd.current_dir(self.path()).args(args);
         cmd.output().expect("run")
     }
 
