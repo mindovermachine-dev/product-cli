@@ -74,7 +74,7 @@ base name, not its path, so the move does not touch it.
 `docs/ledger-format-v1.md` and `docs/ledger-format-migrations.md` were absorbed
 into `spec/ledger-protocol.md` and deleted (ruling 22). Issue bodies, rulings,
 session close-outs, the `.ddd/` store, the hashed basis pointers in
-`.decisions/log/` (`format:ledger-format-v1#…`) and other repositories cite the
+`.decisions/ns/<ns>/log/` (`format:ledger-format-v1#…`) and other repositories cite the
 format document's sections. The one map from those sections to the protocol's
 is the protocol's Appendix C.0 (ruling 36). Read "ground" in the earlier
 rulings, in the sense of what a version rests on, as "basis" (ruling 23).
