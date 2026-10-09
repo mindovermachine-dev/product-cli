@@ -1010,7 +1010,7 @@ Session of 9 October 2026, on the direction the principal accepted: the order of
 
 ### The repository
 
-The prompt was written with `main` at `18ebc86` and pull request #128 (this branch, head `c7d7e4f`) unmerged. When this session started, `main` was at `918a08d`, the merge of #128: the repository had moved, and the repository wins. So this revision is not a change to #128. The branch `claude/focused-goodall-qh7sm7` was restarted from `918a08d`, keeping its name, and the revision is a new pull request on it. Every claim about code below holds for `918a08d`, which carries the ten verification fixes (rulings 49 to 60) that the prompt says had merged.
+The prompt was written with `main` at `18ebc86` and pull request #128 (this branch, head `c7d7e4f`) unmerged. When this session started, `main` was at `918a08d`, the merge of #128: the repository had moved, and the repository wins. So this revision is not a change to #128. The branch `claude/focused-goodall-qh7sm7` was restarted from `918a08d`, keeping its name, and the commit was pushed there. The pull request is opened from a new branch off `main` instead (see the end of this record), because that branch is #128's and #128 has merged. Every claim about code below holds for `918a08d`, which carries the ten verification fixes (rulings 49 to 60) that the prompt says had merged.
 
 The local clone has `origin/main` and full history; the experiment did not need this repository's history beyond its store, which case K copies.
 
@@ -2229,3 +2229,4 @@ export: every committed export matches the log byte for byte
 exit 0
 ```
 - **Pushed** to `origin/claude/focused-goodall-qh7sm7` on 9 October 2026, as one commit on top of `918a08d`, for the principal to review and merge. Merging is his.
+- **Moved**, later on 9 October 2026, to `claude/zealous-cannon-da2epc-act-ordering`, a new branch from `main` at `fac640d` (the merge of #139, which changes tests only), because `claude/focused-goodall-qh7sm7` is #128's branch and #128 had merged. The commit is carried over unchanged; this note and the two sentences above that said the pull request was on that branch are the only additions. The rulings file is untouched: rulings 82 to 84 stand on `main` until the principal supersedes them. `ledger verify --export`, built from and run on the new branch: exit 0, the output above. The pull request revises the design merged in #128.
