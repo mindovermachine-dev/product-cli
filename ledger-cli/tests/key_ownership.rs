@@ -79,7 +79,7 @@ fn a_hand_filed_binding_of_another_principals_key_is_a_schema_fault() {
     assert_eq!(code, 1, "{text}");
     assert!(text.contains("[SCHEMA]") && text.contains(&id) && text.contains("a key belongs to one principal"), "{text}");
     repo.ok(&["identity", "sync"]);
-    let signers = std::fs::read_to_string(repo.path().join(".decisions/allowed_signers")).unwrap_or_default();
+    let signers = std::fs::read_to_string(repo.signers_path(NS)).unwrap_or_default();
     let blob = std::fs::read_to_string(format!("{a}.pub")).expect("pub").split_whitespace().nth(1).map(str::to_string).expect("blob");
     assert!(signers.lines().filter(|l| l.contains(&blob)).all(|l| l.starts_with(OWNER)), "never trusted as the architect's: {signers}");
 }

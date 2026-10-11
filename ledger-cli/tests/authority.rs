@@ -67,14 +67,14 @@ fn key_file(repo: &Repo, name: &str, key_type: &str) -> String {
 #[test]
 fn init_namespace_bootstraps_the_genesis_and_the_gate_stays_green() {
     let repo = governed();
-    let root = std::fs::read_to_string(repo.path().join(".decisions/roles/steward.yml")).expect("root role");
+    let root = std::fs::read_to_string(repo.roles_dir(NS).join("steward.yml")).expect("root role");
     for cap in ["grant-role", "revoke-grant", "declare-unavailability", "rotate-genesis"] {
         assert!(root.contains(cap), "the root role carries {cap}: {root}");
     }
     for cap in ["accept-decision", "sign-off-pattern", "waive-invalidation"] {
         assert!(!root.contains(cap), "the root role carries no decision capability: {root}");
     }
-    let accept = std::fs::read_to_string(repo.path().join(".decisions/roles/acceptor.yml")).expect("accept role");
+    let accept = std::fs::read_to_string(repo.roles_dir(NS).join("acceptor.yml")).expect("accept role");
     assert!(accept.contains("accept-decision"), "{accept}");
     let shown = repo.ok(&["policy", "show", "--namespace", NS]);
     assert!(shown.contains("accept-decision role: acceptor"), "{shown}");
@@ -138,7 +138,7 @@ fn grant_revocation_needs_a_terminal_and_files_its_own_entity() {
     let revoked = repo.ok_tty(&["grant", "revoke", &grant, "--reason", "moved to the platform team"]);
     assert!(revoked.contains("revoked grant:"), "{revoked}");
     let log = repo.log_files().pop().expect("log");
-    let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(log)).expect("read");
+    let text = std::fs::read_to_string(repo.log_dir(NS).join(log)).expect("read");
     assert!(text.contains("format: 7") && text.contains("under: grant:") && text.contains("id: rev:") && text.contains("revokes: grant:"), "{text}");
     repo.ok(&["verify", "--no-blame"]);
 }
@@ -151,11 +151,11 @@ fn key_bindings_derive_allowed_signers_and_verify_holds_it() {
     let first = repo.ok(&["identity", "add", "--namespace", NS, "--key-file", &format!("{owner}.pub")]);
     let binding = first.split_whitespace().find(|w| w.starts_with("key:")).expect("binding id").to_string();
     let log = repo.log_files().pop().expect("log");
-    let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(log)).expect("read");
+    let text = std::fs::read_to_string(repo.log_dir(NS).join(log)).expect("read");
     assert!(text.contains("self_bound: true") && text.contains("mandate: contract 2026/117"), "{text}");
     let ulid = binding.trim_start_matches("key:");
-    assert!(repo.path().join(format!(".decisions/sig/{ulid}.ssh.sig")).is_file(), "self-signed by the key it binds");
-    let signers = repo.path().join(".decisions/allowed_signers");
+    assert!(repo.sidecar(NS, ulid).is_file(), "self-signed by the key it binds");
+    let signers = repo.signers_path(NS);
     let derived = std::fs::read_to_string(&signers).expect("allowed_signers");
     assert!(derived.contains(&format!("{OWNER} namespaces=\"ledger-accept@{NS}\",valid-after=")), "{derived}");
     repo.ok(&["verify", "--no-blame"]);
@@ -227,16 +227,16 @@ fn revoke_files_a_revocation_entity_and_leaves_the_acceptance_untouched() {
     let files_before: Vec<(String, String)> = repo
         .log_files()
         .into_iter()
-        .map(|f| (f.clone(), std::fs::read_to_string(repo.path().join(".decisions/log").join(&f)).expect("read")))
+        .map(|f| (f.clone(), std::fs::read_to_string(repo.log_dir(NS).join(&f)).expect("read")))
         .collect();
     let out = repo.ok_tty(&["revoke", &acc, "--reason", "filed against the wrong version"]);
     assert!(out.contains("by rev:"), "{out}");
     for (file, text) in &files_before {
-        let now = std::fs::read_to_string(repo.path().join(".decisions/log").join(file)).expect("read");
+        let now = std::fs::read_to_string(repo.log_dir(NS).join(file)).expect("read");
         assert_eq!(&now, text, "{file} was edited by a revocation");
     }
     let log = repo.log_files().pop().expect("log");
-    let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(log)).expect("read");
+    let text = std::fs::read_to_string(repo.log_dir(NS).join(log)).expect("read");
     assert!(text.contains("format: 7") && text.contains("under: grant:") && text.contains(&format!("revokes: {acc}")) && text.contains("hash: sha256:"), "{text}");
     repo.ok(&["verify", "--no-blame"]);
 }
@@ -281,8 +281,8 @@ fn the_accept_role_is_never_the_genesis_role() {
 fn bootstrap_refuses_an_existing_root_role_without_the_root_capabilities() {
     let repo = Repo::with_identity(OWNER);
     let role = "format: 6\nid: steward\nowner: owner@customer.example\nmay: [accept-decision, grant-role]\ncreated_at: 2026-10-02\n";
-    std::fs::create_dir_all(repo.path().join(".decisions/roles")).expect("roles dir");
-    std::fs::write(repo.path().join(".decisions/roles/steward.yml"), role).expect("role");
+    std::fs::create_dir_all(repo.roles_dir(NS)).expect("roles dir");
+    std::fs::write(repo.roles_dir(NS).join("steward.yml"), role).expect("role");
     let refused = repo.refused(&["init", "--namespace", NS, "--external-ref", "m"]);
     assert!(refused.contains("cannot be the genesis role") && refused.contains("revoke-grant"), "{refused}");
     assert!(repo.log_files().is_empty(), "a refused init files nothing");
@@ -318,7 +318,7 @@ fn a_policy_naming_the_genesis_role_and_a_widened_genesis_role_fail_verify() {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
     repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
-    let log = repo.path().join(".decisions/log");
+    let log = repo.log_dir(NS);
     let file = std::fs::read_dir(&log).expect("log").flatten().map(|e| e.path()).next().expect("the init change-set");
     let mut cs: ChangeSet = serde_yaml::from_str(&std::fs::read_to_string(&file).expect("read")).expect("parse");
     for p in &mut cs.policies {
@@ -326,7 +326,7 @@ fn a_policy_naming_the_genesis_role_and_a_widened_genesis_role_fail_verify() {
         p.hash = policy_hash(p);
     }
     std::fs::write(&file, serde_yaml::to_string(&cs).expect("yaml")).expect("write");
-    let roles = repo.path().join(".decisions/roles");
+    let roles = repo.roles_dir(NS);
     let steward = std::fs::read_to_string(roles.join("steward.yml")).expect("steward");
     std::fs::write(roles.join("steward.yml"), steward.replace("- rotate-genesis\n", "- rotate-genesis\n- accept-decision\n")).expect("widen");
     std::fs::remove_file(roles.join("acceptor.yml")).expect("acceptor");
@@ -345,8 +345,8 @@ fn a_policy_naming_the_genesis_role_and_a_widened_genesis_role_fail_verify() {
 fn bootstrap_refuses_an_existing_root_role_that_carries_a_decision_capability() {
     let repo = Repo::with_identity(OWNER);
     let role = "format: 6\nid: steward\nowner: owner@customer.example\nmay: [grant-role, revoke-grant, declare-unavailability, rotate-genesis, accept-decision]\ncreated_at: 2026-10-07\n";
-    std::fs::create_dir_all(repo.path().join(".decisions/roles")).expect("roles dir");
-    std::fs::write(repo.path().join(".decisions/roles/steward.yml"), role).expect("role");
+    std::fs::create_dir_all(repo.roles_dir(NS)).expect("roles dir");
+    std::fs::write(repo.roles_dir(NS).join("steward.yml"), role).expect("role");
     let refused = repo.refused(&["init", "--namespace", NS, "--external-ref", "m", "--without-key"]);
     assert!(refused.contains("cannot be the genesis role") && refused.contains("carries accept-decision"), "{refused}");
     assert!(repo.log_files().is_empty(), "a refused init files nothing");
@@ -380,7 +380,7 @@ fn no_agent_identity_and_no_non_interactive_session_produces_an_acceptance() {
 #[test]
 fn a_set_scope_with_a_dot_is_granted_and_verifies() {
     let repo = governed();
-    repo.ok(&["declare", "--set", "money.rules", "--tolerance-floor", "T1"]);
+    repo.ok(&["declare", "--set", "money.rules", "--namespace", NS, "--tolerance-floor", "T1"]);
     let out = repo.ok(&["grant", "new", "acceptor", "--to", ARCHITECT, "--scope", "set:money.rules"]);
     let grant = grant_id(&out);
     let store = ledger_core::store::load(repo.path());

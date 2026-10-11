@@ -7,8 +7,6 @@
 
 mod common;
 
-use std::path::Path;
-
 use common::{hand, Repo};
 
 const CS: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXW";
@@ -16,12 +14,7 @@ const CS: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXW";
 /// The `pass` fixture's store, committed.
 fn landed() -> Repo {
     let repo = Repo::human();
-    let from = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/pass/.decisions");
-    for dir in ["sets", "log"] {
-        for entry in std::fs::read_dir(from.join(dir)).expect("fixture").flatten() {
-            std::fs::copy(entry.path(), repo.path().join(".decisions").join(dir).join(entry.file_name())).expect("copy");
-        }
-    }
+    common::stage_fixture_into("pass", repo.path());
     hand::commit(&repo, "landed");
     repo
 }
@@ -29,7 +22,7 @@ fn landed() -> Repo {
 /// Add `line` to the landed header, commit, and verify.
 fn header_gains(line: &str) -> (i32, String) {
     let repo = landed();
-    let path = repo.path().join(format!(".decisions/log/{CS}.yml"));
+    let path = repo.log_dir("fixture.ledger").join(format!("{CS}.yml"));
     let text = std::fs::read_to_string(&path).expect("log file");
     let edited = text.replacen("created_by: fixture-human@example\n", &format!("created_by: fixture-human@example\n{line}\n"), 1);
     assert_ne!(text, edited, "the header was edited");

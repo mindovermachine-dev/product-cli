@@ -34,8 +34,9 @@ use std::process::Command;
 
 use chrono::{DateTime, Utc};
 
-/// The directories whose files land: the log, role files, signatures.
-const TRACKED: &[&str] = &[".decisions/log", ".decisions/roles", ".decisions/sig"];
+/// The paths whose files land: every namespace's log, role files and
+/// signatures ([`crate::layout::TRACKED`]).
+const TRACKED: &[&str] = crate::layout::TRACKED;
 
 /// Where each file of the store landed.
 #[derive(Debug, Clone, Default)]
@@ -230,7 +231,7 @@ fn entity_landings(
     touched: &std::collections::BTreeSet<String>,
 ) -> Result<BTreeMap<(String, String), usize>, String> {
     let mut out = BTreeMap::new();
-    let logs: Vec<&String> = touched.iter().filter(|p| p.starts_with(".decisions/log/")).collect();
+    let logs: Vec<&String> = touched.iter().filter(|p| crate::layout::is_log(p)).collect();
     if logs.is_empty() {
         return Ok(out);
     }

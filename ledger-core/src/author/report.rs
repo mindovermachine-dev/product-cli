@@ -31,7 +31,8 @@ pub fn status(store: &Store, today: NaiveDate) -> String {
             lines.push(member_line(&view, row));
         }
     }
-    for row in rows.values().filter(|r| store.set(&r.set).is_none()) {
+    let namespace_of = |decision: &str| decision.trim_start_matches("dec:").split('/').next().unwrap_or_default().to_string();
+    for row in rows.values().filter(|r| store.set_in(&namespace_of(&r.decision), &r.set).is_none()) {
         lines.push(format!(
             "  {} [undeclared set `{}`] {}",
             row.decision,

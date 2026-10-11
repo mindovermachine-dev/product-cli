@@ -44,7 +44,7 @@ fn binding_of(repo: &Repo, who: &str) -> String {
 }
 
 fn signers(repo: &Repo) -> String {
-    std::fs::read_to_string(repo.path().join(".decisions/allowed_signers")).unwrap_or_default()
+    std::fs::read_to_string(repo.signers_path(NS)).unwrap_or_default()
 }
 
 #[test]
@@ -57,7 +57,7 @@ fn an_unsigned_binding_for_an_existing_holder_fails_and_never_reaches_allowed_si
     let (code, text) = verify(&repo);
     assert_eq!(code, 1);
     assert!(text.contains("[L011]") && text.contains(&id) && text.contains("not trusted"), "{text}");
-    let derived = ledger_core::authority::signers::derive(&ledger_core::store::load(repo.path())).unwrap_or_default();
+    let derived = ledger_core::authority::signers::derive(&ledger_core::store::load(repo.path())).remove(NS).unwrap_or_default();
     assert_eq!(derived.lines().filter(|l| !l.starts_with('#')).count(), 1, "only the genesis key: {derived}");
 }
 
@@ -189,7 +189,7 @@ fn removing_a_policy_fails_l007_because_opting_in_is_one_way() {
 #[test]
 fn a_role_file_edited_after_landing_fails_l007() {
     let (repo, _) = governed();
-    let path = repo.path().join(".decisions/roles/acceptor.yml");
+    let path = repo.roles_dir(NS).join("acceptor.yml");
     let text = std::fs::read_to_string(&path).expect("role");
     std::fs::write(&path, text.replace("- accept-decision", "- accept-decision\n- grant-role")).expect("edit");
     let (code, out) = verify(&repo);

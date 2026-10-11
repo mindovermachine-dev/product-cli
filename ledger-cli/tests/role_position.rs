@@ -30,7 +30,7 @@ fn an_act_that_landed_before_the_role_its_grant_names_fails_a006() {
     repo.ok_tty(&["accept", &id]);
     // Land everything but the `acceptor` role file, then the role file.
     repo.git(&["add", "-A"]);
-    repo.git(&["reset", "-q", "--", ".decisions/roles/acceptor.yml"]);
+    repo.git(&["reset", "-q", "--", &format!(".decisions/ns/{NS}/roles/acceptor.yml")]);
     repo.git(&["commit", "-q", "-m", "the acceptance, before its role"]);
     hand::commit(&repo, "the role, after");
     let store = ledger_core::store::load(repo.path());
@@ -48,7 +48,7 @@ fn a_role_and_an_act_landed_in_the_same_commit_pass_whatever_the_role_is_dated()
         let repo = Repo::with_identity(OWNER);
         repo.declare();
         repo.ok(&["init", "--namespace", NS, "--external-ref", "contract 2026/117", "--without-key"]);
-        let role = repo.path().join(".decisions/roles/acceptor.yml");
+        let role = repo.roles_dir(NS).join("acceptor.yml");
         let text = std::fs::read_to_string(&role).expect("role");
         let dated: String = text
             .lines()

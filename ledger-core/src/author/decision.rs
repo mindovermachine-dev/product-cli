@@ -74,16 +74,16 @@ impl Author {
     /// Mint a decision and file its first version.
     pub fn add(&mut self, args: AddArgs) -> Result<Applied, AuthorError> {
         let store = self.load();
+        let namespace = resolve_namespace(args.namespace.as_deref(), &store)?;
         let floor = store
-            .set(&args.set)
+            .set_in(&namespace, &args.set)
             .ok_or_else(|| {
                 AuthorError::Usage(format!(
-                    "set `{}` is not declared under sets/ — `ledger declare` it first",
+                    "set `{}` is not declared under `{namespace}`'s sets/ — `ledger declare` it there first (a version names a set of its own namespace)",
                     args.set
                 ))
             })?
             .tolerance_floor;
-        let namespace = resolve_namespace(args.namespace.as_deref(), &store)?;
         let decision: DecisionId = format!("dec:{namespace}/{}", self.mint.mint())
             .parse()
             .map_err(AuthorError::Usage)?;

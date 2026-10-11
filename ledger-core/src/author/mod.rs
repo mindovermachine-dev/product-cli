@@ -12,7 +12,9 @@
 //! not a write fault).
 //!
 //! The log stays append-only: verbs only ever create new files
-//! (`log/<ulid>.yml`, `sets/<id>.yml`), never edit one.
+//! (`ns/<ns>/log/<ulid>.yml`, `ns/<ns>/sets/<id>.yml`), never edit one.
+//! Every change-set is filed under the directory of the one namespace its
+//! entities belong to ([`home::namespace_of`], LP-3.34).
 
 mod acceptance_ops;
 mod authority_ops;
@@ -20,6 +22,7 @@ mod availability_ops;
 mod batch_accept;
 mod declare;
 mod genesis_key;
+mod home;
 mod decision;
 mod group_accept;
 mod identity_ops;
@@ -40,6 +43,7 @@ pub use policy_ops::PolicyArgs;
 pub use batch_accept::AcceptBatchArgs;
 pub use group_accept::AcceptGroupArgs;
 pub use declare::DeclareArgs;
+pub use home::namespace_of;
 pub use decision::{AddArgs, AllocationArgs};
 pub use report::{blame, log, status};
 pub use version_ops::{EscapeArgs, ReviseArgs, SupersedeArgs};
@@ -178,8 +182,13 @@ impl Author {
             sidecars: current.sidecars.iter().chain(self.pending_for(candidate)).cloned().collect(),
             schema_findings: current.schema_findings.clone(),
         };
+        // A candidate that names nothing the store holds (a revocation of
+        // an unfiled acceptance, say) has no home; the gate refuses it with
+        // the finding that says why, so it is placed under no namespace here.
+        let namespace = home::namespace_of(current, candidate).unwrap_or_default();
         with.log.push(LoggedChangeSet {
-            path: current.dir.join("log").join(candidate.file_name()),
+            path: crate::layout::log_dir(&current.root, &namespace).join(candidate.file_name()),
+            namespace,
             file: candidate.clone(),
         });
         let fresh: Vec<Finding> = self
@@ -209,10 +218,14 @@ impl Author {
         self.pending_sidecars.iter().filter(move |s| ulids.contains(&s.ulid))
     }
 
-    /// Append a change-set as a brand-new log file. Never overwrites: the
-    /// log is append-only, and a colliding ULID is an error, not a merge.
+    /// Append a change-set as a brand-new log file under its namespace's
+    /// directory. Never overwrites: the log is append-only, and a colliding
+    /// ULID is an error, not a merge.
     pub(crate) fn append(&self, candidate: &ChangeSet) -> Result<PathBuf, AuthorError> {
-        let path = self.root.join(crate::STORE_DIR).join("log").join(candidate.file_name());
+        let namespace = home::namespace_of(&self.load(), candidate)?;
+        let dir = crate::layout::log_dir(&self.root, &namespace);
+        std::fs::create_dir_all(&dir).map_err(|e| AuthorError::Io(e.to_string()))?;
+        let path = dir.join(candidate.file_name());
         if path.exists() {
             return Err(AuthorError::Io(format!(
                 "{} already exists — a log file is written once and never edited",

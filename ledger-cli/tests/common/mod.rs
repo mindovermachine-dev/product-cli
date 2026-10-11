@@ -94,13 +94,66 @@ impl Repo {
         expect_code(&self.tty(args), 1, args)
     }
 
-    /// The log files in the store, sorted.
+    /// The log files of every namespace in the store, sorted by name.
     pub fn log_files(&self) -> Vec<String> {
-        let mut out: Vec<String> = std::fs::read_dir(self.path().join(".decisions/log"))
-            .map(|d| d.flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect())
-            .unwrap_or_default();
+        let mut out: Vec<String> = ledger_core::layout::namespaces(self.path())
+            .into_iter()
+            .flat_map(|ns| {
+                std::fs::read_dir(self.log_dir(&ns))
+                    .map(|d| d.flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect::<Vec<_>>())
+                    .unwrap_or_default()
+            })
+            .collect();
         out.sort();
         out
+    }
+
+    /// `.decisions/ns/<ns>/` — a namespace's directory (LP-3.34).
+    pub fn ns_dir(&self, ns: &str) -> std::path::PathBuf {
+        ledger_core::layout::namespace_dir(self.path(), ns)
+    }
+
+    /// `.decisions/ns/<ns>/log/`.
+    pub fn log_dir(&self, ns: &str) -> std::path::PathBuf {
+        ledger_core::layout::log_dir(self.path(), ns)
+    }
+
+    /// `.decisions/ns/<ns>/sig/`.
+    pub fn sig_dir(&self, ns: &str) -> std::path::PathBuf {
+        ledger_core::layout::sig_dir(self.path(), ns)
+    }
+
+    /// `.decisions/ns/<ns>/roles/`.
+    pub fn roles_dir(&self, ns: &str) -> std::path::PathBuf {
+        ledger_core::layout::roles_dir(self.path(), ns)
+    }
+
+    /// `.decisions/ns/<ns>/sets/`.
+    pub fn sets_dir(&self, ns: &str) -> std::path::PathBuf {
+        ledger_core::layout::sets_dir(self.path(), ns)
+    }
+
+    /// `.decisions/ns/<ns>/allowed_signers`.
+    pub fn signers_path(&self, ns: &str) -> std::path::PathBuf {
+        ledger_core::layout::signers_path(self.path(), ns)
+    }
+
+    /// The namespace's derived `allowed_signers`, or empty when absent.
+    pub fn signers(&self, ns: &str) -> String {
+        std::fs::read_to_string(self.signers_path(ns)).unwrap_or_default()
+    }
+
+    /// The sidecar path for the entity `ulid` in `ns`.
+    pub fn sidecar(&self, ns: &str, ulid: &str) -> std::path::PathBuf {
+        self.sig_dir(ns).join(format!("{ulid}.ssh.sig"))
+    }
+
+    /// How many sidecars every namespace holds.
+    pub fn sidecar_count(&self) -> usize {
+        ledger_core::layout::namespaces(self.path())
+            .into_iter()
+            .map(|ns| std::fs::read_dir(self.sig_dir(&ns)).map(|d| d.count()).unwrap_or(0))
+            .sum()
     }
 
     /// A fresh ed25519 key pair (no passphrase) under `keys/`, outside the
@@ -140,9 +193,15 @@ impl Repo {
         private
     }
 
-    /// Declare the default fixture set at floor T1.
+    /// Declare the default fixture set at floor T1, in `fixture.ledger`.
     pub fn declare(&self) {
-        self.ok(&["declare", "--set", "ledger-design", "--tolerance-floor", "T1"]);
+        self.declare_in("fixture.ledger");
+    }
+
+    /// Declare the default fixture set at floor T1 in `ns`: a version
+    /// names a set of its own namespace (LP-5.22).
+    pub fn declare_in(&self, ns: &str) {
+        self.ok(&["declare", "--set", "ledger-design", "--namespace", ns, "--tolerance-floor", "T1"]);
     }
 
     /// File a constraint decision and return its id.
@@ -253,6 +312,101 @@ pub fn tty(root: &Path, args: &[&str]) -> Output {
 /// Stdout then stderr, as one string.
 pub fn both(out: &Output) -> String {
     format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr))
+}
+
+/// A scratch copy of a committed fixture store, laid out under
+/// `.decisions/ns/<namespace>/` (LP-3.34). The fixtures under
+/// `tests/fixtures/` are still in the flat layout until issue 9 re-lays
+/// them out; until then this stages each one the way the loader reads.
+pub fn stage_fixture(name: &str) -> tempfile::TempDir {
+    let dir = tempfile::tempdir().expect("tempdir");
+    stage_fixture_into(name, dir.path());
+    dir
+}
+
+/// Stage the fixture `name` into `root`'s store; returns its one namespace.
+pub fn stage_fixture_into(name: &str, root: &Path) -> String {
+    let from = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name).join(".decisions");
+    let namespaces = stage_store_into(&from, root);
+    assert_eq!(namespaces.len(), 1, "a fixture holds one namespace: {namespaces:?}");
+    namespaces.into_iter().next().expect("one namespace")
+}
+
+/// A scratch copy of this repository's own store, staged the same way: the
+/// store is flat until issue 10 re-lays it out, and the loader reads only
+/// `ns/<namespace>/`.
+pub fn stage_workspace() -> tempfile::TempDir {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let from = Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join(".decisions");
+    stage_store_into(&from, dir.path());
+    dir
+}
+
+/// Stage the store at `from` (a `.decisions/` directory, flat or per
+/// namespace) into `root`'s store under `ns/<namespace>/`: a change-set
+/// goes to the namespace its decisions name, a set to the namespace whose
+/// versions name it. Bytes are copied, never rewritten. Returns the
+/// namespaces staged.
+pub fn stage_store_into(from: &Path, root: &Path) -> Vec<String> {
+    if from.join("ns").is_dir() {
+        let mut out = Vec::new();
+        for ns in std::fs::read_dir(from.join("ns")).expect("ns").flatten().filter(|e| e.path().is_dir()) {
+            let name = ns.file_name().to_string_lossy().into_owned();
+            copy_tree(&ns.path(), &ledger_core::layout::namespace_dir(root, &name));
+            out.push(name);
+        }
+        out.sort();
+        return out;
+    }
+    let mut namespaces: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    let mut set_homes: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    let mut logs: Vec<(std::path::PathBuf, String)> = Vec::new();
+    for entry in std::fs::read_dir(from.join("log")).into_iter().flatten().flatten() {
+        let text = std::fs::read_to_string(entry.path()).expect("read");
+        let cs: ledger_core::changeset::ChangeSet = serde_yaml::from_str(&text).expect("a change-set");
+        let ns = cs
+            .decisions
+            .iter()
+            .map(|d| d.id.namespace().to_string())
+            .chain(cs.versions.iter().map(|v| v.decision.namespace().to_string()))
+            .chain(cs.acceptances.iter().map(|a| a.decision.namespace().to_string()))
+            .next()
+            .unwrap_or_else(|| panic!("{} names no namespace", entry.path().display()));
+        for v in &cs.versions {
+            set_homes.entry(v.set.clone()).or_insert_with(|| ns.clone());
+        }
+        namespaces.insert(ns.clone());
+        logs.push((entry.path(), ns));
+    }
+    for (path, ns) in logs {
+        let target = ledger_core::layout::log_dir(root, &ns);
+        std::fs::create_dir_all(&target).expect("mkdir");
+        std::fs::copy(&path, target.join(path.file_name().expect("name"))).expect("copy");
+    }
+    for entry in std::fs::read_dir(from.join("sets")).into_iter().flatten().flatten() {
+        let stem = entry.path().file_stem().expect("stem").to_string_lossy().into_owned();
+        let ns = set_homes
+            .get(&stem)
+            .cloned()
+            .or_else(|| (namespaces.len() == 1).then(|| namespaces.iter().next().cloned()).flatten())
+            .unwrap_or_else(|| panic!("set `{stem}` is named by no version, and the store speaks several namespaces"));
+        let target = ledger_core::layout::sets_dir(root, &ns);
+        std::fs::create_dir_all(&target).expect("mkdir");
+        std::fs::copy(entry.path(), target.join(entry.file_name())).expect("copy");
+    }
+    namespaces.into_iter().collect()
+}
+
+fn copy_tree(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).expect("mkdir");
+    for entry in std::fs::read_dir(from).expect("read").flatten() {
+        let target = to.join(entry.file_name());
+        if entry.path().is_dir() {
+            copy_tree(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), target).expect("copy");
+        }
+    }
 }
 
 /// The `dec:` id an `add` printed.

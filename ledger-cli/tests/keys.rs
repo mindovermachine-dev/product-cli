@@ -14,7 +14,7 @@ fn add_files_a_keyed_exported_decision_as_format_5() {
     ]);
     assert!(out.contains("key `MoneyIsDecimal`"), "{out}");
     let file = repo.log_files().pop().expect("a log file");
-    let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(file)).expect("read");
+    let text = std::fs::read_to_string(repo.log_dir("fixture.ledger").join(file)).expect("read");
     assert!(text.contains("format: 5"), "{text}");
     assert!(text.contains("key: MoneyIsDecimal") && text.contains("exported: true"), "{text}");
     repo.ok(&["verify", "--no-blame"]);
@@ -26,7 +26,7 @@ fn an_unkeyed_add_stays_a_format_1_file() {
     repo.declare();
     repo.add("Money is decimal.", &[]);
     let file = repo.log_files().pop().expect("a log file");
-    let text = std::fs::read_to_string(repo.path().join(".decisions/log").join(file)).expect("read");
+    let text = std::fs::read_to_string(repo.log_dir("fixture.ledger").join(file)).expect("read");
     assert!(text.contains("format: 1"), "a file declares only what it uses: {text}");
 }
 

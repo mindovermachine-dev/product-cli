@@ -33,7 +33,8 @@ fn second() -> ChangeSet {
 fn run(extra: ChangeSet) -> Report {
     let mut store = testkit::store(first());
     store.log.push(LoggedChangeSet {
-        path: std::path::PathBuf::from(format!("/fixture/.decisions/log/{SECOND}.yml")),
+        namespace: testkit::NS.to_string(),
+        path: std::path::PathBuf::from(format!("/fixture/.decisions/ns/{}/log/{SECOND}.yml", testkit::NS)),
         file: extra,
     });
     verify(&store, &Options::offline(testkit::date("2026-08-12")))

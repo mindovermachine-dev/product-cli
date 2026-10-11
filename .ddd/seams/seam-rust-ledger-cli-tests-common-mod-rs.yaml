@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-tests-common-mod-rs
 boundary: contract surface of ledger-cli/tests/common/mod.rs
-verdict_knowledge: Test authors learn signing invocations run under a pseudo-terminal through script(1) and everything else under pipes, so the binary's real TTY check is what the suites exercise.
+verdict_knowledge: 'Test-only: the shared harness of the ledger-cli integration suites, with no consumer outside ledger-cli/tests/ — test authors learn signing invocations run under a pseudo-terminal through script(1) and everything else under pipes, so the binary''s real TTY check is what the suites exercise, and that a repo''s per-namespace paths and a fixture store copied in under ns/<namespace>/ come from here.'
 contract_location: ledger-cli/tests/common/mod.rs
 obligations: []
 metadata: {}
@@ -186,3 +186,87 @@ bindings:
   after: sha256:3a4828d68356ad4027e5a5b45edcceca1224c6a6f7677662eaf11390c79cc396
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:b3d24f2ad18976db7025c7f442dc3a7e2e3e03f99683cb0ba2a8ee1ccb6bd9b0
+- symbol: stage_fixture
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:62e4f917e229e1905ddd93807c03db4e10b4abd81955fd59d4656949030a651e
+- symbol: stage_fixture_into
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:6c62b1c1e7dc60dc7f4d0047fd2533008eb7f4678ed3931cc68b13407ce652e2
+- symbol: stage_store_into
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:1f6518ef7db2e19384727f5045e83c07c70f9dc8f69b0397a14e74e3a0d144ae
+- symbol: stage_workspace
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:b47acb536ac847e4b4403b7880d9cc8389d9cb4ad14321397ede5bd4444564dc
+- symbol: declare_in
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:28b0181db0b2265ee8c3aa91e93d8be50b1a34af6d61e54ba259eb0f8996c60d
+- symbol: log_dir
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:f82034ffe4db2cd20efa572c23087e6d157670a34c6ff014d2f1bc18bdc8c3db
+- symbol: ns_dir
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:5d6bf9ccebc1b51cd18f1c5909636f2d9fda84a79869f183cb38429f927fffa7
+- symbol: roles_dir
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:a114a1cf9097284905e70b7f0d204234338824f71842cb320cc456be2f98f427
+- symbol: sets_dir
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:bf78dbc8862617e18e1841123a853e2289a7a9efaea13df8baeaf76f65d46aff
+- symbol: sidecar
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:43a2c6e1d6ecfd1e959f19213a60be34bc5b947c513c361e7df664c5fd862f57
+- symbol: sidecar_count
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:ed2167b6430970faa7f3f30ea3de4665cf8eae9d3f1748c2910a2c2f296d75c5
+- symbol: sig_dir
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:3d3db7593710973b5b82c5c27079845d596aaae9680c43f0cab4fbe219fa7efb
+- symbol: signers
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:9e2ce878c44c672043143de359d5a4fb69c5e57bc13c01d79e64839977d92bb5
+- symbol: signers_path
+  file: ledger-cli/tests/common/mod.rs
+  before: sha256:18fc91bbdbea11fc51d15eab25d300acf77170f69d1c6113c6040976aeb3d4d1
+  after: sha256:4950bad589fd7178075bd548a44829ce5427af2c8f9efb20d2cfb88bf1460db8
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:8debaac1a6019c0a4e89fd05aebdc38472dc853fd33d1e9eef714237ff482817

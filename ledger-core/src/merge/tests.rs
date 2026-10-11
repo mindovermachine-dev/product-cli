@@ -148,6 +148,7 @@ mod acts {
         crate::init::apply_init(dir, &crate::init::plan_init(dir)).expect("init");
         let mut a = author(dir, 1_755_000_000_000);
         a.declare(crate::author::DeclareArgs {
+            namespace: Some("fixture.merge".into()),
             id: "merge-acts".into(),
             title: "Arbitration acts".into(),
             tolerance_floor: Tier::T1,
@@ -191,7 +192,7 @@ mod acts {
         let mut cs = testkit::changeset(versions, Vec::new());
         cs.decisions.clear();
         cs.id = format!("cs:{ulid}").parse().expect("id");
-        let path = dir.join(".decisions/log").join(cs.file_name());
+        let path = crate::layout::log_dir(dir, "fixture.merge").join(cs.file_name());
         std::fs::write(&path, serde_yaml::to_string(&cs).expect("yaml")).expect("write");
     }
 

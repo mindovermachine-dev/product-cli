@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-fixture-rs
 boundary: contract surface of ledger-core/src/authority/fixture.rs
-verdict_knowledge: "Test authors learn the builders for roles, grants, acceptances and intervals used by the authority tests."
+verdict_knowledge: Test authors learn the builders for roles, grants, acceptances and intervals used by the authority tests.
 contract_location: ledger-core/src/authority/fixture.rs
 obligations: []
 metadata: {}
@@ -72,3 +72,9 @@ bindings:
   after: sha256:c6fd80134efefd5363add1d3af47052c945cb0401a7d070f7f73341745e039f5
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:94365e2a1f3f1994d49844cd571493df9f24366ebfa91d35285b4f0db21ebb9d
+- symbol: NS
+  file: ledger-core/src/authority/fixture.rs
+  before: sha256:cc1ab203523883be0a659bc7976c52296df2a9623824e546a7058c926114a45a
+  after: sha256:d331fc23ea716ac40b2eac0bde6d3903ae6610c421b4142c8a5f5f38afc973cb
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:4d59ed84e67973f26047487cc69314cfbcf6e380c4f1b85c3b440afbb40c37e1

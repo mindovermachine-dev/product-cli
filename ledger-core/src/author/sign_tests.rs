@@ -146,7 +146,7 @@ fn forked_store(dir: &Path) -> (Author, DecisionId) {
     let mut cs = testkit::changeset(vec![right], Vec::new());
     cs.decisions.clear();
     cs.id = "cs:01K2C4YQJ3F8M0PT5W7NZ9RD99".parse().expect("id");
-    let path = dir.join(".decisions/log").join(cs.file_name());
+    let path = crate::layout::log_dir(dir, "fixture.verbs").join(cs.file_name());
     std::fs::write(&path, serde_yaml::to_string(&cs).expect("yaml")).expect("write");
     (a, id)
 }
@@ -187,6 +187,7 @@ fn declare_refuses_a_second_declaration_of_the_same_set() {
     declare(&mut a);
     let err = a
         .declare(DeclareArgs {
+            namespace: Some("fixture.verbs".into()),
             id: "verbs".into(),
             title: "Again".into(),
             tolerance_floor: Tier::T2,

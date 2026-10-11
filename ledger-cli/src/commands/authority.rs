@@ -25,9 +25,9 @@ pub fn init_namespace(root: PathBuf, args: InitNamespaceArgs) -> Result<i32, Str
 }
 
 pub fn role(root: Option<PathBuf>, cmd: RoleCmd) -> Result<i32, String> {
-    let RoleCmd::Declare { id, may, title, notes } = cmd;
+    let RoleCmd::Declare { id, namespace, may, title, notes } = cmd;
     let mut author = open_author(root)?;
-    finish(author.declare_role(RoleArgs { id, title, may: parse_all(&may)?, notes }))
+    finish(author.declare_role(RoleArgs { namespace, id, title, may: parse_all(&may)?, notes }))
 }
 
 pub fn grant(root: Option<PathBuf>, cmd: GrantCmd) -> Result<i32, String> {

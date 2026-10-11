@@ -30,7 +30,7 @@ fn envelope(key: &SigningKey, bytes: &[u8]) -> Vec<u8> {
 }
 
 fn sidecar(ulid: &str, bytes: Vec<u8>) -> Sidecar {
-    Sidecar { ulid: ulid.to_string(), scheme: Scheme::Dsse, file: Sidecar::file_name(ulid, Scheme::Dsse), bytes }
+    Sidecar { namespace: fixture::NS.to_string(), ulid: ulid.to_string(), scheme: Scheme::Dsse, file: Sidecar::file_name(ulid, Scheme::Dsse), bytes }
 }
 
 fn policy(g: &crate::authority::Grant) -> Policy {

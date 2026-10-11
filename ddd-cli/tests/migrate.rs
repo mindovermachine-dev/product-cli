@@ -56,8 +56,9 @@ fn repo() -> tempfile::TempDir {
         ".ddd/seams/seam-t-api.yaml",
         "format: 1\nid: seam/t/api\nboundary: fn t in src/t.rs\nverdict_knowledge: callers learn t\ncontract_location: src/t.rs#t\n",
     );
-    write(dir, ".decisions/sets/.keep", "");
-    std::fs::create_dir_all(dir.join(".decisions/log")).expect("mkdir");
+    // The store's layout is one directory per namespace (LP-3.34); the
+    // migration makes `ns/t.ddd/` on its first write.
+    std::fs::create_dir_all(dir.join(".decisions/ns")).expect("mkdir");
     git(dir, &["add", "-A"]);
     git(dir, &["commit", "-qm", "init"]);
     tmp
@@ -100,7 +101,7 @@ fn migration_files_entries_writes_the_concordance_and_refuses_a_second_run() {
     let ledger = Command::cargo_bin("ledger").expect("binary").current_dir(dir).arg("verify").assert().success();
     let out = String::from_utf8_lossy(&ledger.get_output().stdout).to_string();
     assert!(out.contains("awaiting acceptance"), "{out}");
-    let log_text: String = std::fs::read_dir(dir.join(".decisions/log"))
+    let log_text: String = std::fs::read_dir(dir.join(".decisions/ns/t.ddd/log"))
         .expect("log")
         .flatten()
         .map(|e| std::fs::read_to_string(e.path()).unwrap_or_default())

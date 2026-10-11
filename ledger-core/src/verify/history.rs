@@ -40,7 +40,7 @@ pub fn findings(store: &Store, landing: &Landing) -> Vec<Finding> {
         let versions = file_versions(&store.root, "HEAD", &path);
         let Some(first) = versions.first() else { continue };
         let now = std::fs::read_to_string(store.root.join(&path)).ok();
-        if path.starts_with(".decisions/log/") {
+        if crate::layout::is_log(&path) {
             out.extend(log_file(&store.root, &path, &versions, now.as_deref()));
             out.extend(format_changes(&store.root, &path, &versions, now.as_deref()));
         } else if let Some(landed) = content_at(&store.root, first, &path) {
@@ -128,14 +128,14 @@ fn declared(text: &str) -> Option<u64> {
 fn whole_file(path: &str, commit: &str, landed: &str, now: Option<&str>) -> Option<Finding> {
     let same = match now {
         None => false,
-        Some(now) if path.starts_with(".decisions/roles/") => without_format(now) == without_format(landed),
+        Some(now) if crate::layout::is_role(path) => without_format(now) == without_format(landed),
         Some(now) => now == landed,
     };
     if same {
         return None;
     }
     let what = if now.is_some() { "changed" } else { "removed" };
-    let rule = if path.starts_with(".decisions/roles/") {
+    let rule = if crate::layout::is_role(path) {
         "roles are write-once; a new role and new grants supersede"
     } else {
         "a landed signature is never edited or removed"

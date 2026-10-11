@@ -24,8 +24,8 @@ fn init_scaffolds_the_layout_then_verify_passes_over_the_empty_store() {
     let dir = tempfile::tempdir().expect("tempdir");
     let out = ledger(dir.path(), &["init"]);
     assert_eq!(out.status.code(), Some(0), "{}", stderr(&out));
-    assert!(dir.path().join(".decisions/sets").is_dir());
-    assert!(dir.path().join(".decisions/log").is_dir());
+    assert!(dir.path().join(".decisions/ns").is_dir(), "one directory per namespace, made on first write (LP-3.34)");
+    assert!(!dir.path().join(".decisions/sets").exists() && !dir.path().join(".decisions/log").exists(), "no flat path");
     let ignore = std::fs::read_to_string(dir.path().join(".gitignore")).expect("read");
     assert!(ignore.contains(".decisions/index/"), "{ignore}");
 

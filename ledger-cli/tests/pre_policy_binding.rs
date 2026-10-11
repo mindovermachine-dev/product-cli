@@ -45,8 +45,9 @@ fn policy_of(repo: &Repo, ns: &str) -> Policy {
     store.log.iter().flat_map(|l| l.file.policies.iter()).find(|p| p.namespace == ns).cloned().expect("policy")
 }
 
+/// Every namespace's derived `allowed_signers`, concatenated.
 fn signers(repo: &Repo) -> String {
-    std::fs::read_to_string(repo.path().join(".decisions/allowed_signers")).unwrap_or_default()
+    ledger_core::layout::namespaces(repo.path()).into_iter().map(|ns| repo.signers(&ns)).collect()
 }
 
 /// The verb, with its clock `behind` the policy's.
@@ -133,6 +134,7 @@ fn a_signed_binding_before_the_first_policy_is_trusted_and_signs() {
     assert_eq!(out.status.code(), Some(0), "{}", common::both(&out));
     assert!(signers(&repo).contains(&blob), "it reaches allowed_signers: {}", signers(&repo));
     // And it signs: an acceptance in the second namespace under that key.
+    repo.declare_in(SECOND);
     repo.use_key(&next);
     let grant = hand::word(&repo.ok(&["grant", "new", "acceptor", "--to", OWNER, "--scope", &format!("ns:{SECOND}")]), "grant:");
     repo.ok(&["grant", "accept", &grant]);

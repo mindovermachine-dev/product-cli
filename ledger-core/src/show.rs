@@ -279,7 +279,7 @@ fn build(
     Some(Screen {
         decision: id.to_string(),
         set: raw.set.clone(),
-        set_floor: store.set(&raw.set).map(|s| s.tolerance_floor.to_string()),
+        set_floor: store.set_in(raw.decision.namespace(), &raw.set).map(|s| s.tolerance_floor.to_string()),
         state: match (row, viewed.parsed.as_ref()) {
             (Some(r), _) => r.state,
             (None, Some(tip)) if view.is_forked(id) => state::tip_state(view, tip, today),

@@ -51,6 +51,9 @@ pub const DEFAULT_ACCEPT_ROLE: &str = "acceptor";
 
 /// What `role declare` states.
 pub struct RoleArgs {
+    /// The namespace whose `roles/` holds the file: explicit, else the one
+    /// namespace the store has a directory for.
+    pub namespace: Option<String>,
     pub id: String,
     pub title: Option<String>,
     pub may: Vec<Capability>,
@@ -108,7 +111,7 @@ impl Author {
             )));
         }
         if store.roles.iter().all(|r| r.id != accept_role) {
-            new_roles.push(self.new_role(&accept_role, "Accepts decisions", &[Capability::AcceptDecision]));
+            new_roles.push(self.new_role(&args.namespace, &accept_role, "Accepts decisions", &[Capability::AcceptDecision]));
             lines.push(format!("declared role `{accept_role}` — may accept-decision; held by nobody until granted"));
         }
         let root = candidate.grants.first().cloned().or(genesis).ok_or_else(|| AuthorError::Io("no genesis grant".into()))?;
@@ -136,10 +139,11 @@ impl Author {
         Ok(Applied { path, lines })
     }
 
-    fn new_role(&self, id: &str, title: &str, may: &[Capability]) -> Role {
+    fn new_role(&self, namespace: &str, id: &str, title: &str, may: &[Capability]) -> Role {
         Role {
             format: crate::format::AUTHORITY_FORMAT,
             id: id.to_string(),
+            namespace: namespace.to_string(),
             title: Some(title.into()),
             owner: self.who.clone(),
             may: may.to_vec(),
@@ -161,7 +165,7 @@ impl Author {
             AuthorError::Usage("the store has no genesis yet — `--external-ref` names the mandate it rests on".into())
         })?;
         let new_roles = match store.role(&args.role) {
-            None => vec![self.new_role(&args.role, "Genesis steward", Capability::ROOT)],
+            None => vec![self.new_role(&args.namespace, &args.role, "Genesis steward", Capability::ROOT)],
             Some(existing) => match existing.genesis_refusal() {
                 Some(why) => return Err(AuthorError::Conflict(format!("role `{}` cannot be the genesis role: {why}", args.role))),
                 None => Vec::new(),
@@ -257,8 +261,9 @@ impl Author {
         })
     }
 
+    /// Write a role file under its namespace's `roles/` (LP-3.34).
     fn write_role(&self, role: &Role) -> Result<(), AuthorError> {
-        let path = self.root.join(crate::STORE_DIR).join("roles").join(role.file_name());
+        let path = crate::layout::roles_dir(&self.root, &role.namespace).join(role.file_name());
         if path.exists() {
             return Err(AuthorError::Conflict(format!("role `{}` is already declared", role.id)));
         }
@@ -277,9 +282,11 @@ impl Author {
         if args.may.is_empty() {
             return Err(AuthorError::Usage("a role names at least one capability (`--may`)".into()));
         }
+        let namespace = super::home::resolve_namespace_dir(&self.root, args.namespace.as_deref())?;
         let role = Role {
             format: crate::format::AUTHORITY_FORMAT,
             id: args.id,
+            namespace,
             title: args.title,
             owner: self.who.clone(),
             may: args.may,
@@ -287,9 +294,9 @@ impl Author {
             notes: args.notes,
         };
         self.write_role(&role)?;
-        let path = self.root.join(crate::STORE_DIR).join("roles").join(role.file_name());
+        let path = crate::layout::roles_dir(&self.root, &role.namespace).join(role.file_name());
         let caps: Vec<&str> = role.may.iter().map(|c| c.as_str()).collect();
-        Ok(Applied { path, lines: vec![format!("declared role `{}` — may {}", role.id, caps.join(", "))] })
+        Ok(Applied { path, lines: vec![format!("declared role `{}` in `{}` — may {}", role.id, role.namespace, caps.join(", "))] })
     }
 
     /// Grant a role: `grant-role` over the new grant's scope. Below the

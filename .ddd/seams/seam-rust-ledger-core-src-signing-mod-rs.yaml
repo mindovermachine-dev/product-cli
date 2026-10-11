@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-signing-mod-rs
 boundary: contract surface of ledger-core/src/signing/mod.rs
-verdict_knowledge: "Callers learn where signatures live: one sidecar per scheme at .decisions/sig/<ulid>.<scheme>.sig over the entity's signed bytes, never inside a log file."
+verdict_knowledge: 'Callers learn where signatures live: one sidecar per scheme at .decisions/ns/<ns>/sig/<ulid>.<scheme>.sig over the entity''s signed bytes, never inside a log file, and that a sidecar carries the namespace of the directory it was read from (LP-3.34).'
 contract_location: ledger-core/src/signing/mod.rs
 obligations: []
 metadata: {}
@@ -96,3 +96,21 @@ bindings:
   after: sha256:f71243d14488722ab26f7109a55fdb2275c26f7b24ba8c1c04a51e58bacdb7ec
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:35c44b5c3a8c36b720f456f4e2152b863259a3a938cfd8a0f00cb37c6d63ecb3
+- symbol: load
+  file: ledger-core/src/signing/mod.rs
+  before: sha256:5a068293304a64b85dfcf05bf1e2110cf2bd454583e488871a67c142990a6cda
+  after: sha256:240cf5465e6bd95128a689a65bcff3677b018b701508f4e90b3905216411b0bc
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:678d4db3b28fd58cef871872492ffa500cbc76d39d050639e6f4e1920b947d1a
+- symbol: write
+  file: ledger-core/src/signing/mod.rs
+  before: sha256:5a068293304a64b85dfcf05bf1e2110cf2bd454583e488871a67c142990a6cda
+  after: sha256:240cf5465e6bd95128a689a65bcff3677b018b701508f4e90b3905216411b0bc
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:42fcaa475d610ac945988d7a851f10c6e9ccc8b1103bec45262e9eaadaf71f4b
+- symbol: namespace
+  file: ledger-core/src/signing/mod.rs
+  before: sha256:5a068293304a64b85dfcf05bf1e2110cf2bd454583e488871a67c142990a6cda
+  after: sha256:240cf5465e6bd95128a689a65bcff3677b018b701508f4e90b3905216411b0bc
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:3daff5ea4f44c0ae0924da952404bcb3a2ece8b76bf80788416df2ff4c13e096

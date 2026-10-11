@@ -1,0 +1,38 @@
+format: 2
+id: seam/rust/ledger-core-src-author-home-rs
+boundary: contract surface of ledger-core/src/author/home.rs
+verdict_knowledge: 'Callers learn how a change-set finds its home: an act''s namespace is read from the entities it carries or names (a decision id, a binding''s or policy''s namespace, a revocation''s target, a grant''s under), a new set''s from --namespace or the store''s single directory, so no verb files a change-set outside .decisions/ns/<ns>/ (LP-3.34, ruling 45).'
+contract_location: ledger-core/src/author/home.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: acceptance_namespace
+  file: ledger-core/src/author/home.rs
+  before: absent
+  after: sha256:4926c14cc6dcd79530f72f17a95e77fa4229cfcd10cc275e51d01a69c33652be
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:fb7dac9caf078789880050a15c968834e667c1fe34014c728c238281b2cea821
+- symbol: grant_namespace
+  file: ledger-core/src/author/home.rs
+  before: absent
+  after: sha256:4926c14cc6dcd79530f72f17a95e77fa4229cfcd10cc275e51d01a69c33652be
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:e8e161b1ddf549c9688f5b0d5147d1bd2e71784915b15cac7566b7e59e842a46
+- symbol: interval_namespace
+  file: ledger-core/src/author/home.rs
+  before: absent
+  after: sha256:4926c14cc6dcd79530f72f17a95e77fa4229cfcd10cc275e51d01a69c33652be
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:6a40e6ca52f2001fa1156188232880901a26638fdd0a8402474c9b7657527d7f
+- symbol: namespace_of
+  file: ledger-core/src/author/home.rs
+  before: absent
+  after: sha256:4926c14cc6dcd79530f72f17a95e77fa4229cfcd10cc275e51d01a69c33652be
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:8d5bc372fb239897d0651422b1963028d5280ea622535a527203d92543c58eb3
+- symbol: resolve_namespace_dir
+  file: ledger-core/src/author/home.rs
+  before: absent
+  after: sha256:4926c14cc6dcd79530f72f17a95e77fa4229cfcd10cc275e51d01a69c33652be
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:585c918727532e7362592a70f1b8d87bb8b3094a160857839633191e66fd94a9

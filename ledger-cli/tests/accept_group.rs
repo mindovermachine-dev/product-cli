@@ -30,7 +30,7 @@ impl Repo {
         repo.git(&["config", "user.name", "Fixture"]);
         repo.git(&["config", "user.email", email]);
         repo.ok(&["init"]);
-        repo.ok(&["declare", "--set", "batched", "--tolerance-floor", "T1"]);
+        repo.ok(&["declare", "--set", "batched", "--namespace", "fixture.batched", "--tolerance-floor", "T1"]);
         repo
     }
 
@@ -118,7 +118,7 @@ impl Repo {
     }
 
     fn log_files(&self) -> usize {
-        std::fs::read_dir(self.path().join(".decisions/log"))
+        std::fs::read_dir(ledger_core::layout::log_dir(self.path(), "fixture.batched"))
             .expect("log dir")
             .filter_map(Result::ok)
             .count()

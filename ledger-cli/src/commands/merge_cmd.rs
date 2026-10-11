@@ -104,10 +104,10 @@ fn install(root: Option<PathBuf>) -> Result<i32, String> {
 # Structured merge for the decision ledger (L3). The driver completes\n\
 # mechanical cases and exits non-zero on anything requiring judgment,\n\
 # preserving the conflict for `ledger merge --resolve`.\n\
-log/*.yml merge=ledger\n\
-log/*.yaml merge=ledger\n\
-sets/*.yml merge=ledger\n\
-sets/*.yaml merge=ledger\n";
+ns/*/log/*.yml merge=ledger\n\
+ns/*/log/*.yaml merge=ledger\n\
+ns/*/sets/*.yml merge=ledger\n\
+ns/*/sets/*.yaml merge=ledger\n";
     std::fs::write(&attributes, content).map_err(|e| e.to_string())?;
     git_config(&repo, "merge.ledger.name", "decision ledger structured merge (L3)")?;
     git_config(&repo, "merge.ledger.driver", "ledger merge-driver %O %A %B %P")?;

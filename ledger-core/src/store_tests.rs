@@ -11,8 +11,8 @@ struct Repo {
 impl Repo {
     fn new() -> Self {
         let dir = tempfile::tempdir().expect("tempdir");
-        std::fs::create_dir_all(dir.path().join(".decisions/sets")).expect("mkdir");
-        std::fs::create_dir_all(dir.path().join(".decisions/log")).expect("mkdir");
+        std::fs::create_dir_all(dir.path().join(".decisions/ns").join(testkit::NS).join("sets")).expect("mkdir");
+        std::fs::create_dir_all(dir.path().join(".decisions/ns").join(testkit::NS).join("log")).expect("mkdir");
         Self { dir }
     }
 
@@ -20,8 +20,16 @@ impl Repo {
         self.dir.path()
     }
 
+    /// Write a file under the fixture namespace's directory.
     fn write(&self, relative: &str, body: &str) {
+        let path = self.dir.path().join(".decisions/ns").join(testkit::NS).join(relative);
+        std::fs::write(path, body).expect("write");
+    }
+
+    /// Write a file at a flat path of revision v1.8, directly under `.decisions/`.
+    fn write_flat(&self, relative: &str, body: &str) {
         let path = self.dir.path().join(".decisions").join(relative);
+        std::fs::create_dir_all(path.parent().expect("dir")).expect("mkdir");
         std::fs::write(path, body).expect("write");
     }
 
@@ -51,7 +59,90 @@ fn a_well_formed_store_loads_with_no_faults() {
     assert_eq!(store.sets.len(), 1);
     assert_eq!(store.log.len(), 1);
     assert_eq!(store.entry_count(), 3, "one set, one decision, one version");
-    assert!(store.set("ledger-design").is_some());
+    assert!(store.set_in(testkit::NS, "ledger-design").is_some());
+    assert_eq!(store.log[0].namespace, testkit::NS, "a file's namespace is its directory");
+    assert_eq!(store.sets[0].namespace, testkit::NS);
+}
+
+/// AC-63: a store with any flat path at the verified commit is a schema fault
+/// (LP-3.34, ruling 63) — each flat file named, the namespaced files still read.
+#[test]
+fn a_file_at_a_flat_path_is_a_schema_fault_and_names_the_path() {
+    let repo = Repo::new();
+    repo.write_set();
+    repo.write_log();
+    let text = serde_yaml::to_string(&testkit::set()).expect("serialize");
+    repo.write_flat("sets/ledger-design.yml", &text);
+    repo.write_flat("log/01K2C4YQJ3F8M0PT5W7NZ9RDXZ.yml", "format: 1\n");
+    repo.write_flat("roles/steward.yml", "format: 6\n");
+    repo.write_flat("sig/01K2C4YQJ3F8M0PT5W7NZ9RDXZ.ssh.sig", "x");
+    repo.write_flat("allowed_signers", "# x\n");
+    let store = repo.load();
+    let faults: Vec<&str> = store.schema_findings.iter().map(|f| f.subject.as_str()).collect();
+    assert_eq!(
+        faults,
+        [
+            ".decisions/allowed_signers",
+            ".decisions/log/01K2C4YQJ3F8M0PT5W7NZ9RDXZ.yml",
+            ".decisions/roles/steward.yml",
+            ".decisions/sets/ledger-design.yml",
+            ".decisions/sig/01K2C4YQJ3F8M0PT5W7NZ9RDXZ.ssh.sig",
+        ],
+        "{:?}",
+        store.schema_findings
+    );
+    assert!(store.schema_findings.iter().all(|f| f.message.contains("LP-3.34")), "{:?}", store.schema_findings);
+    assert_eq!((store.sets.len(), store.log.len()), (1, 1), "the namespaced files are read; the flat ones are not");
+}
+
+/// A store with no `ns/` directory and a flat path is a schema fault too;
+/// nothing of the flat layout is read.
+#[test]
+fn a_flat_only_store_is_refused_and_nothing_of_it_is_read() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let repo = Repo { dir };
+    std::fs::remove_dir_all(repo.path().join(".decisions")).ok();
+    let text = serde_yaml::to_string(&testkit::set()).expect("serialize");
+    repo.write_flat("sets/ledger-design.yml", &text);
+    let cs = testkit::changeset(vec![testkit::sealed(testkit::version())], Vec::new());
+    repo.write_flat(&format!("log/{}.yml", testkit::CS_ULID), &serde_yaml::to_string(&cs).expect("serialize"));
+    let store = repo.load();
+    assert!(store.sets.is_empty() && store.log.is_empty(), "the flat layout is not read");
+    assert_eq!(store.schema_findings.len(), 2, "{:?}", store.schema_findings);
+}
+
+/// Two namespaces may each declare a set of one id (LP-3.36); a version
+/// names the set of its own namespace (LP-5.22).
+#[test]
+fn a_set_id_is_unique_within_its_namespace_not_across_the_store() {
+    let repo = Repo::new();
+    repo.write_set();
+    let text = serde_yaml::to_string(&testkit::set()).expect("serialize");
+    let other = repo.path().join(".decisions/ns/hafeok.other/sets");
+    std::fs::create_dir_all(&other).expect("mkdir");
+    std::fs::write(other.join("ledger-design.yml"), &text).expect("write");
+    let store = repo.load();
+    assert!(store.schema_findings.is_empty(), "{:?}", store.schema_findings);
+    assert_eq!(store.sets.len(), 2);
+    assert!(store.set_in("hafeok.other", "ledger-design").is_some());
+    assert!(store.set_in("hafeok.third", "ledger-design").is_none());
+    repo.write("sets/ledger-design.yaml", &text);
+    let twice = repo.load();
+    assert!(twice.schema_findings.iter().any(|f| f.message.contains("declared twice in `hafeok.ledger`")), "{:?}", twice.schema_findings);
+}
+
+/// A file directly under `ns/`, or a directory there that is no namespace
+/// name, is a schema fault: a namespace is a directory named by its id.
+#[test]
+fn a_stray_file_under_ns_and_a_misnamed_namespace_directory_are_faults() {
+    let repo = Repo::new();
+    repo.write_set();
+    std::fs::write(repo.path().join(".decisions/ns/notes.txt"), "x").expect("write");
+    std::fs::create_dir_all(repo.path().join(".decisions/ns/Not A Namespace/log")).expect("mkdir");
+    let store = repo.load();
+    let subjects: Vec<&str> = store.schema_findings.iter().map(|f| f.subject.as_str()).collect();
+    assert!(subjects.contains(&".decisions/ns/notes.txt"), "{subjects:?}");
+    assert!(subjects.contains(&"ns/Not A Namespace"), "{subjects:?}");
 }
 
 #[test]

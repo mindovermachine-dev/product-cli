@@ -65,7 +65,7 @@ pub fn expired(view: &View, today: NaiveDate) -> Vec<Finding> {
 pub fn stranded(view: &View, store: &Store) -> Vec<Finding> {
     view.latest_versions()
         .filter_map(|v| v.parsed.as_ref())
-        .filter_map(|p| store.set(&p.set).map(|s| (p, s)))
+        .filter_map(|p| store.set_in(p.decision.namespace(), &p.set).map(|s| (p, s)))
         .filter(|(p, s)| p.tolerance.is_stranded_below(s.tolerance_floor))
         .map(|(p, s)| {
             Finding::new(

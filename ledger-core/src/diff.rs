@@ -99,7 +99,7 @@ pub fn diff(from_label: &str, from: &Store, to_label: &str, to: &Store) -> DiffR
 
 fn diff_sets(report: &mut DiffReport, from: &Store, to: &Store) {
     for set in &to.sets {
-        match from.sets.iter().find(|s| s.id == set.id) {
+        match from.sets.iter().find(|s| s.id == set.id && s.namespace == set.namespace) {
             None => report.sets_declared.push(format!("{} (floor {})", set.id, set.tolerance_floor)),
             Some(old) if old.tolerance_floor != set.tolerance_floor => {
                 report.floors_changed.push(format!(

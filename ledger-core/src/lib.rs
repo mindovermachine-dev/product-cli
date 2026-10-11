@@ -37,6 +37,7 @@ pub mod key;
 pub mod inbox;
 pub mod landed;
 pub mod landing;
+pub mod layout;
 pub mod merge;
 pub mod mint;
 pub mod render;

@@ -58,10 +58,12 @@ pub fn accept(repo: &Repo, h: &HandAccept<'_>) -> String {
     let mut cs = ChangeSet::empty(7, mint.mint_id("cs").expect("cs id"), h.at, h.actor.parse().expect("actor"), None);
     cs.acceptances.push(acceptance);
     let text = serde_yaml::to_string(&cs).expect("yaml");
-    std::fs::write(repo.path().join(".decisions/log").join(cs.file_name()), text).expect("write log");
+    let log = repo.log_dir(&ns);
+    std::fs::create_dir_all(&log).expect("log dir");
+    std::fs::write(log.join(cs.file_name()), text).expect("write log");
     if let Some(key) = h.key {
         let sig = ssh_sign(key, &ns, &bytes);
-        let dir = repo.path().join(".decisions/sig");
+        let dir = repo.sig_dir(&ns);
         std::fs::create_dir_all(&dir).expect("sig dir");
         std::fs::write(dir.join(format!("{ulid}.ssh.sig")), sig).expect("write sig");
     }
@@ -101,7 +103,8 @@ pub fn file(
     let at = bindings.iter().map(|b| b.at).chain(policies.iter().map(|p| p.at)).max().unwrap_or_else(Utc::now);
     let who = bindings.first().map(|b| b.by.clone()).or_else(|| policies.first().map(|p| p.by.clone())).expect("an entity");
     let mut cs = ChangeSet::empty(7, mint.mint_id("cs").expect("cs id"), at, who, None);
-    let dir = repo.path().join(".decisions/sig");
+    let ns = bindings.first().map(|b| b.namespace.clone()).or_else(|| policies.first().map(|p| p.namespace.clone())).expect("a namespace");
+    let dir = repo.sig_dir(&ns);
     std::fs::create_dir_all(&dir).expect("sig dir");
     for b in &bindings {
         let ulid = b.id.ulid().to_string();
@@ -120,7 +123,9 @@ pub fn file(
     cs.key_bindings = bindings;
     cs.policies = policies;
     let text = serde_yaml::to_string(&cs).expect("yaml");
-    std::fs::write(repo.path().join(".decisions/log").join(cs.file_name()), text).expect("write log");
+    let log = repo.log_dir(&ns);
+    std::fs::create_dir_all(&log).expect("log dir");
+    std::fs::write(log.join(cs.file_name()), text).expect("write log");
 }
 
 /// A sealed key binding, as a hand would write it.
@@ -160,12 +165,11 @@ pub fn binding(
     b
 }
 
-/// The log file holding the entity `id`, by its text.
+/// The log file holding the entity `id`, by its text, in any namespace.
 pub fn file_holding(repo: &Repo, id: &str) -> std::path::PathBuf {
-    std::fs::read_dir(repo.path().join(".decisions/log"))
-        .expect("log")
-        .flatten()
-        .map(|e| e.path())
+    ledger_core::layout::namespaces(repo.path())
+        .into_iter()
+        .flat_map(|ns| std::fs::read_dir(repo.log_dir(&ns)).into_iter().flatten().flatten().map(|e| e.path()))
         .find(|p| std::fs::read_to_string(p).is_ok_and(|t| t.contains(&format!("id: {id}"))))
         .unwrap_or_else(|| panic!("no log file holds {id}"))
 }

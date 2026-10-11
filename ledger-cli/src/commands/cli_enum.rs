@@ -129,6 +129,10 @@ pub enum Commands {
     Declare {
         #[arg(long, value_name = "ID")]
         set: String,
+        /// The namespace the set belongs to (its directory); inferred when
+        /// the store holds one
+        #[arg(long, value_name = "NS")]
+        namespace: Option<String>,
         /// Human title; defaults to the set id
         #[arg(long)]
         title: Option<String>,

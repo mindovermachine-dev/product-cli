@@ -32,12 +32,14 @@ fn fixtures() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")
 }
 
-/// Run the gate over a fixture store. Blame is off: these stores live inside
+/// Run the gate over a fixture store, staged under `.decisions/ns/<ns>/`
+/// (`common::stage_fixture`). Blame is off: these stores live inside
 /// this repository, so their history attributes to whoever committed them.
 fn gate(fixture: &str, extra: &[&str]) -> Output {
+    let staged = common::stage_fixture(fixture);
     let mut cmd = Command::cargo_bin("ledger").expect("binary");
     cmd.arg("--root")
-        .arg(fixtures().join(fixture))
+        .arg(staged.path())
         .args(["verify", "--today", TODAY, "--no-blame"])
         .args(extra);
     cmd.output().expect("run")
@@ -199,16 +201,7 @@ mod blame {
         }
 
         fn copy_pass_fixture(&self) {
-            let from = fixtures().join("pass/.decisions");
-            let to = self.path().join(".decisions");
-            std::fs::create_dir_all(to.join("sets")).expect("mkdir");
-            std::fs::create_dir_all(to.join("log")).expect("mkdir");
-            for sub in ["sets", "log"] {
-                for entry in std::fs::read_dir(from.join(sub)).expect("read").flatten() {
-                    let target = to.join(sub).join(entry.file_name());
-                    std::fs::copy(entry.path(), target).expect("copy");
-                }
-            }
+            common::stage_fixture_into("pass", self.path());
         }
 
         fn git(&self, args: &[&str]) {
@@ -245,7 +238,7 @@ mod blame {
         // File a second acceptance under a new id, uncommitted. It is
         // appended: the landed one stays as it landed (landed entities are
         // immutable, `L007`).
-        let log = repo.path().join(".decisions/log/01K2C4YQJ3F8M0PT5W7NZ9RDXW.yml");
+        let log = ledger_core::layout::log_dir(repo.path(), "fixture.ledger").join("01K2C4YQJ3F8M0PT5W7NZ9RDXW.yml");
         let text = std::fs::read_to_string(&log).expect("read");
         let mut file: serde_yaml::Value = serde_yaml::from_str(&text).expect("yaml");
         let list = file.get_mut("acceptances").and_then(serde_yaml::Value::as_sequence_mut).expect("acceptances");
@@ -279,7 +272,7 @@ fn fixture_hashes_are_current() {
         if name == STALE_BY_DESIGN {
             continue;
         }
-        for log in std::fs::read_dir(entry.path().join(".decisions/log")).expect("log").flatten() {
+        for log in fixture_log_files(&entry.path()) {
             if refresh(&log.path(), update) {
                 stale.push(format!("{name}/{}", log.file_name().to_string_lossy()));
             }
@@ -289,6 +282,15 @@ fn fixture_hashes_are_current() {
         stale.is_empty() || update,
         "stale fixture hashes in {stale:?} — run `UPDATE_FIXTURES=1 cargo test -p ledger-cli --test gate`"
     );
+}
+
+/// The log files of one fixture store: `.decisions/ns/<ns>/log/*` (LP-3.34)
+/// or, until issue 9 re-lays the fixtures out, the flat `.decisions/log/*`.
+fn fixture_log_files(root: &Path) -> Vec<std::fs::DirEntry> {
+    let mut dirs: Vec<PathBuf> =
+        ledger_core::layout::namespaces(root).iter().map(|ns| ledger_core::layout::log_dir(root, ns)).collect();
+    dirs.push(root.join(".decisions/log"));
+    dirs.into_iter().filter(|d| d.is_dir()).flat_map(|d| std::fs::read_dir(d).expect("log").flatten()).collect()
 }
 
 /// Rewrite the stored hashes in one log file. Returns whether it was stale.

@@ -61,7 +61,8 @@ fn store(changesets: Vec<ChangeSet>) -> Store {
         log: changesets
             .into_iter()
             .map(|file| LoggedChangeSet {
-                path: std::path::PathBuf::from(format!("/fixture/.decisions/log/{}.yml", file.id.ulid())),
+                namespace: testkit::NS.to_string(),
+                path: std::path::PathBuf::from(format!("/fixture/.decisions/ns/{}/log/{}.yml", testkit::NS, file.id.ulid())),
                 file,
             })
             .collect(),

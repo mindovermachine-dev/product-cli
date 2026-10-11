@@ -16,6 +16,8 @@ use crate::version::VersionRaw;
 pub const DEC_ULID: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXV";
 pub const CS_ULID: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXW";
 pub const ACC_ULID: &str = "01K2C4YQJ3F8M0PT5W7NZ9RDXX";
+/// The namespace the fixture decision lives in.
+pub const NS: &str = "hafeok.ledger";
 
 pub fn decision_id() -> DecisionId {
     format!("dec:hafeok.ledger/{DEC_ULID}").parse().expect("decision id")
@@ -75,6 +77,7 @@ pub fn set() -> DecisionSet {
     DecisionSet {
         format: 1,
         id: "ledger-design".into(),
+        namespace: NS.into(),
         title: "Decision Ledger — L0 settled design".into(),
         tolerance_floor: Tier::T1,
         ground: Ground::Characterised,
@@ -133,7 +136,8 @@ pub fn store(changeset: ChangeSet) -> Store {
         roles: Vec::new(),
         sidecars: Vec::new(),
         log: vec![LoggedChangeSet {
-            path: std::path::PathBuf::from(format!("/fixture/.decisions/log/{CS_ULID}.yml")),
+            namespace: NS.to_string(),
+            path: std::path::PathBuf::from(format!("/fixture/.decisions/ns/{NS}/log/{CS_ULID}.yml")),
             file: changeset,
         }],
         schema_findings: Vec::new(),

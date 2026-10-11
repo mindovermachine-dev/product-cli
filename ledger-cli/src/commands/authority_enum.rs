@@ -9,6 +9,10 @@ pub enum RoleCmd {
     Declare {
         /// Role id: lowercase alphanumerics, dashes, dots
         id: String,
+        /// The namespace whose roles/ holds the file; inferred when the
+        /// store holds one
+        #[arg(long, value_name = "NS")]
+        namespace: Option<String>,
         /// Capability, repeatable: accept-decision | sign-off-pattern |
         /// waive-invalidation | grant-role | revoke-grant |
         /// declare-unavailability | rotate-genesis
@@ -93,7 +97,7 @@ pub enum IdentityCmd {
         #[arg(long, value_name = "PATH")]
         key_file: std::path::PathBuf,
     },
-    /// Rewrite .decisions/allowed_signers from the log (after a merge)
+    /// Rewrite each namespace's allowed_signers from the log (after a merge)
     Sync,
 }
 

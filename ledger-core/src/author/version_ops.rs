@@ -185,7 +185,7 @@ impl Author {
         raw.parent = Some(latest.raw.hash.clone());
         // Re-pin the floor as it stands now; drop an override the new floor
         // has caught up with, so the version stays representable (§4.2.1).
-        if let Some(set) = store.set(&raw.set) {
+        if let Some(set) = store.set_in(raw.decision.namespace(), &raw.set) {
             raw.tolerance_floor_at_creation = set.tolerance_floor;
             if raw.tolerance_override.is_some_and(|o| o <= set.tolerance_floor) {
                 raw.tolerance_override = None;

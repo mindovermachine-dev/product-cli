@@ -47,7 +47,7 @@ fn manifest(out: &str) -> String {
 }
 
 fn sidecars(repo: &Repo) -> usize {
-    std::fs::read_dir(repo.path().join(".decisions/sig")).map(|d| d.count()).unwrap_or(0)
+    std::fs::read_dir(repo.sig_dir(NS)).map(|d| d.count()).unwrap_or(0)
 }
 
 fn three(repo: &Repo) -> Vec<String> {

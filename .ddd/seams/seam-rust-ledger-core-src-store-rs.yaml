@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-store-rs
 boundary: contract surface of ledger-core/src/store.rs
-verdict_knowledge: Consumers learn the store loads role files beside sets and checks every file declares the format its fields need.
+verdict_knowledge: 'Consumers learn the store loads every namespace''s sets, roles and log from .decisions/ns/<ns>/, that a loaded set or change-set carries the namespace of the directory it was read from, that a set is looked up by (namespace, id) with set_in, and that every file must declare the format its fields need (LP-3.34).'
 contract_location: ledger-core/src/store.rs
 obligations: []
 metadata: {}
@@ -30,3 +30,27 @@ bindings:
   after: sha256:91e788b08e27bd57d8df7ad10beaafeb67fa394db4870f158cc98314c775c06d
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:55d9f56e905c78fa627dfa0985fa255f30bf2fe5b8096cc60b1fbda37f210527
+- symbol: namespace
+  file: ledger-core/src/store.rs
+  before: sha256:29b5f62eba6f1e766370947967e81e8aa4c895c285fc85ff06904461602c7dd1
+  after: sha256:dafa8d9927a1ed6ef80b99b682f949d26a927ece4a8b31ac044602b907884b26
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:d1f0c51cd02ec46d2b71aa7092a9e170ce30a8458ec0684a0867e14d63939420
+- symbol: namespaces
+  file: ledger-core/src/store.rs
+  before: sha256:29b5f62eba6f1e766370947967e81e8aa4c895c285fc85ff06904461602c7dd1
+  after: sha256:dafa8d9927a1ed6ef80b99b682f949d26a927ece4a8b31ac044602b907884b26
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:a538a51f63f3a900440d2548a1de125b1f361689ffae88e9da2d7b13c4a50055
+- symbol: set_in
+  file: ledger-core/src/store.rs
+  before: sha256:29b5f62eba6f1e766370947967e81e8aa4c895c285fc85ff06904461602c7dd1
+  after: sha256:dafa8d9927a1ed6ef80b99b682f949d26a927ece4a8b31ac044602b907884b26
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:aa377b4ca8341890f42879be31162d6dcee3f639d40cb212b431a31b786ce6b6
+- symbol: set
+  file: ledger-core/src/store.rs
+  before: sha256:29b5f62eba6f1e766370947967e81e8aa4c895c285fc85ff06904461602c7dd1
+  after: sha256:dafa8d9927a1ed6ef80b99b682f949d26a927ece4a8b31ac044602b907884b26
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:68d5ee772625beaa0a9d2645073dca38bf54888b200ad90e9423cc28343e2128

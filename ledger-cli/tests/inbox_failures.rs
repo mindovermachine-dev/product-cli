@@ -142,7 +142,7 @@ fn a_killed_sitting_leaves_a_worktree_the_next_run_sweeps() {
     let killed = inbox(&f, &["accept", "--all", "--confirm", &manifest(&dry)]);
     assert_ne!(killed.status.code(), Some(0), "{}", common::both(&killed));
     let left = f.holders[0].path().join(".git/ledger-inbox/agent_0");
-    assert!(left.join(".decisions/sig").is_dir(), "the kill left the signed worktree behind");
+    assert!(ledger_core::layout::namespaces(&left).iter().any(|ns| ledger_core::layout::sig_dir(&left, ns).is_dir()), "the kill left the signed worktree behind");
     let signed = git(&left, &["rev-parse", "HEAD"]);
     assert!(!git(f.holders[0].path(), &["worktree", "list"]).is_empty());
     let bare = f.root.path().join("remote0.git");
