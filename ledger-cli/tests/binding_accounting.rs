@@ -7,7 +7,7 @@ mod common;
 
 use chrono::{Duration, Utc};
 use common::{hand, Repo};
-use ledger_core::authority::{BindingAct, Policy, Scheme};
+use ledger_core::authority::{BindingAct, Scheme};
 use ledger_core::mint::UlidMint;
 
 const OWNER: &str = "owner@customer.example";
@@ -81,30 +81,11 @@ fn by_hand(repo: &Repo, by: &str, principal: &str, ns: &str, at: chrono::DateTim
     blob(&key)
 }
 
-/// A first policy for `ns` filed by hand by the owner under the genesis
-/// grant, signed by `signer` when given.
+/// A first policy for `ns`, founded by hand with its own genesis ten seconds
+/// older (ruling 47: no namespace joins another's genesis), signed by
+/// `signer` when given. Returns the policy's `at`.
 fn first_policy(repo: &Repo, ns: &str, schemes: Vec<Scheme>, signer: Option<&str>) -> chrono::DateTime<Utc> {
-    let store = ledger_core::store::load(repo.path());
-    let genesis = store.log.iter().flat_map(|l| l.file.grants.iter()).find(|g| g.genesis).cloned().expect("genesis");
-    let mut p = Policy {
-        id: UlidMint::system().mint_id("pol").expect("id"),
-        namespace: ns.into(),
-        schemes,
-        require_sk: false,
-        accept_role: "acceptor".into(),
-        reaccept_within_days: None,
-        replaces: None,
-        by: OWNER.parse().expect("id"),
-        under: Some(genesis.id.clone()),
-        at: Utc::now(),
-        hash: ledger_core::hash::VersionHash::zero(),
-    };
-    p.hash = ledger_core::authority::payload::policy_hash(&p);
-    let ulid = p.id.ulid().to_string();
-    let signers: Vec<(&str, &str)> = signer.map(|s| vec![(ulid.as_str(), s)]).unwrap_or_default();
-    let at = p.at;
-    hand::file(repo, Vec::new(), vec![p], &signers);
-    at
+    hand::found(repo, ns, OWNER, schemes, signer).at
 }
 
 #[test]

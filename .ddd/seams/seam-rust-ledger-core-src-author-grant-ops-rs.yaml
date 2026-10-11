@@ -1,0 +1,32 @@
+format: 2
+id: seam/rust/ledger-core-src-author-grant-ops-rs
+boundary: contract surface of ledger-core/src/author/grant_ops.rs
+verdict_knowledge: 'Callers learn the grant verbs (grant, accept_grant, revoke_grant) file into the namespace of the grant they act under or name, with --namespace deciding where a grant is filed when the store holds several, and run the role check over that namespace''s authority before the same delta-gate as every verb (LP-6.5, ruling 47).'
+contract_location: ledger-core/src/author/grant_ops.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: impl Author
+  file: ledger-core/src/author/grant_ops.rs
+  before: absent
+  after: sha256:077ac022737937424c066dc86eec75677f67b739e5cf648289c9a60cef2463fc
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:110ce8a5e6db2dad95318c0fbb111ddabe07943fd2cb50ab1c43765cfed15a8a
+- symbol: accept_grant
+  file: ledger-core/src/author/grant_ops.rs
+  before: absent
+  after: sha256:077ac022737937424c066dc86eec75677f67b739e5cf648289c9a60cef2463fc
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:bcbd03d5b6b8cf505c6da4ecff936a11cdeab70a00e17cd70224e0fe8c0f3f26
+- symbol: grant
+  file: ledger-core/src/author/grant_ops.rs
+  before: absent
+  after: sha256:077ac022737937424c066dc86eec75677f67b739e5cf648289c9a60cef2463fc
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:4d0914674b3caa5c35dce1f41733cf185ca3fe965e47ee110a547567e239855a
+- symbol: revoke_grant
+  file: ledger-core/src/author/grant_ops.rs
+  before: absent
+  after: sha256:077ac022737937424c066dc86eec75677f67b739e5cf648289c9a60cef2463fc
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:5bc507967c9e07b95b5ec42455fae91e8ade6136e4ec301ffa6b11b104742c45

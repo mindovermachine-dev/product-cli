@@ -324,13 +324,21 @@ store (`.decisions/`), separate ontology.
 - **Authority (format 6 / spec v1.7, #69)** — roles
   (`.decisions/ns/<ns>/roles/<id>.yml`), grants + grant acceptances, unavailability
   / availability, key bindings, namespace policy, and the `rev:` revocation
-  entity, all in `ledger-core/src/authority/`. `ledger init --namespace
-  <ns> --external-ref <mandate>` bootstraps the genesis; `role declare`,
-  `grant new|accept|revoke`, `unavailable`, `available`, `identity
+  entity, all in `ledger-core/src/authority/`. **Authority is per
+  namespace** (spec v1.9, ruling 47): `ledger init --namespace <ns>
+  --external-ref <mandate>` opens every namespace with its own genesis
+  grant, root and accept roles and first policy, each under
+  `.decisions/ns/<ns>/`; a grant belongs to the directory that holds it and
+  its scope is read inside that namespace (`*` = the whole namespace,
+  `ns:<other>` a schema fault); `grant new --namespace` names where a grant
+  is filed when the store has several. `role declare`, `grant
+  new|accept|revoke`, `unavailable`, `available`, `identity
   add|rotate|revoke|sync`, `policy show|set`. The role check is one
-  function, `authority::authorize`, which `accept`, `revoke` and the grant
-  verbs call; a namespace **without** a policy is pre-v2 and not
-  role-checked. `allowed_signers` is derived (never hand-edited) and held by
+  function, `authority::authorize`, over `Authority::of(store, ns)`, which
+  `accept`, `revoke` and the grant verbs call; a namespace **without** a
+  policy is pre-v2 and not role-checked. The graph stage runs per
+  namespace (`A003`/`A005` count one trust root each). Keys are still
+  bound and trusted store-wide until issue 6 of the namespace PRD. `allowed_signers` is derived (never hand-edited) and held by
   `verify`'s `[SIGNERS]` stage. Graph classes `A003`/`A005`; `A006` deferred.
 - **Signing (format 7 / spec v1.8, #70)** — `ledger-core/src/signing/`.
   A namespace's policy lists the required schemes; a signature is a sidecar

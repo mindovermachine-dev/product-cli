@@ -97,7 +97,7 @@ impl Author {
                 at: self.now,
                 scope: AcceptanceScope::Version,
                 expires_at,
-                under: held.as_ref().map(super::authority_ops::under_of).transpose()?,
+                under: held.as_ref().map(super::grant_ops::under_of).transpose()?,
                 signature: String::new(),
             };
             // One signature per acceptance, never one over the selection.

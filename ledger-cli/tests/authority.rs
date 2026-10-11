@@ -299,10 +299,16 @@ fn a_grantor_below_star_is_refused_a_grant_over_another_scope() {
     repo.act_as(ARCHITECT);
     repo.ok(&["grant", "accept", &grant]);
     repo.ok(&["grant", "accept", &delegate]);
-    for scope in ["*", "ns:fixture.other", "set:ledger-design"] {
+    for scope in ["*", "set:ledger-design"] {
         let refused = repo.refused(&["grant", "new", "delegate", "--to", "third@customer.example", "--scope", scope]);
         assert!(refused.contains("does not cover this"), "{scope}: {refused}");
     }
+    // A `ns:` scope names the namespace the grant is filed in (ruling 47):
+    // over another namespace the grant would be made in that namespace's
+    // authority, where the role is not even declared.
+    let elsewhere = repo.ledger(&["grant", "new", "delegate", "--to", "third@customer.example", "--scope", "ns:fixture.other"]);
+    assert_eq!(elsewhere.status.code(), Some(2), "{}", common::both(&elsewhere));
+    assert!(common::both(&elsewhere).contains("not declared in `fixture.other`"), "{}", common::both(&elsewhere));
     repo.ok(&["grant", "new", "delegate", "--to", "third@customer.example", "--scope", &format!("ns:{NS}")]);
     repo.ok(&["verify", "--no-blame"]);
 }

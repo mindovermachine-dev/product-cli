@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-view-rs
 boundary: contract surface of ledger-core/src/authority/view.rs
-verdict_knowledge: Callers learn the Authority view's answers — live, accepted, available, revoked, superseded, the genesis, the policy in force — that every authority check reads.
+verdict_knowledge: 'Callers learn the Authority view is built per namespace, of(store, ns) now and as_of(store, landing, pos, ns) at a past act, and answers live, accepted, available, revoked, superseded, the genesis and the policy in force for that namespace alone (LP-6.5, ruling 47).'
 contract_location: ledger-core/src/authority/view.rs
 obligations: []
 metadata: {}
@@ -156,3 +156,15 @@ bindings:
   after: sha256:a95a2e5a573e61b8bbf03ed29a0e0da62565668d3a6b0db6ec80e7bce38c86a3
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:8695ec2f847bedaa2c2643683652a1f6d5eefc81b4fdead32b0f87675cdbb357
+- symbol: as_of
+  file: ledger-core/src/authority/view.rs
+  before: sha256:a8b7b76054a59ee6efcea9392d21446f3cac91e586502902bbd7fa7afcf90c68
+  after: sha256:c3153380e8201023a1f597f6168ccc9cf946100d28bf39f4598c17a598fd78f7
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:d583dbf483594c53d3ce621627b43ed7d5c35a23d747a7b81f4a72f24a208d33
+- symbol: of
+  file: ledger-core/src/authority/view.rs
+  before: sha256:a8b7b76054a59ee6efcea9392d21446f3cac91e586502902bbd7fa7afcf90c68
+  after: sha256:c3153380e8201023a1f597f6168ccc9cf946100d28bf39f4598c17a598fd78f7
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:0f7ad170fd1459d5401f376ed2353ee507f8eaba5ef3b2a073f50bb4b7d90ee8

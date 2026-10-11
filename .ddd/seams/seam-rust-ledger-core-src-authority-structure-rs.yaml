@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-structure-rs
 boundary: contract surface of ledger-core/src/authority/structure.rs
-verdict_knowledge: "Consumers learn the single-record SCHEMA rules for roles, grants, intervals, bindings and policies."
+verdict_knowledge: 'Consumers learn the single-record SCHEMA rules for roles, grants, intervals, bindings and policies, judged in the record''s own namespace: a grant''s scope is read inside that namespace (* is the whole namespace) and a scope naming another namespace is a schema fault (LP-6.16, ruling 47).'
 contract_location: ledger-core/src/authority/structure.rs
 obligations: []
 metadata: {}
@@ -18,3 +18,9 @@ bindings:
   after: sha256:e0c3d508f0ef2979262139e05969da693efea418db1ceb75badccdcc7e72d504
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:1163450ba0c074eabde3261db44d8bdff046bf260aa5e2dbd617edd78e9e3b81
+- symbol: entry_faults
+  file: ledger-core/src/authority/structure.rs
+  before: sha256:9e805d601ab60a3ab5ed4ad1fd523a183eb986067e9a7b5d3c8f562901eb3cb9
+  after: sha256:8beb004635ac126329ee2b3f5fc0c4abf393044a879fa56b364b37f625fc21a2
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:2ab4c9253aa59d44a1a13b1429b20d4f0bc2de58a58346c054dd526549b7ec0c

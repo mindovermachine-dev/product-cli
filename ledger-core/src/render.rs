@@ -99,11 +99,10 @@ fn notices(n: &crate::verify::Notices, out: &mut Vec<String>) {
             "notice: namespace `{ns}` is under policy `[none]` — governed and role-checked (D7, `A006`), but no signature is required: an absent signature is no finding, `L012` cannot arise, key bindings are trusted unsigned, a policy change is unsigned, and `ssh-keygen` is not consulted unless an `ssh` sidecar exists; a sidecar that is present is still verified"
         ));
     }
-    if let Some(u) = &n.genesis_unbound {
+    for u in &n.genesis_unbound {
         out.push(format!(
-            "notice: the genesis holder {} has no trusted key — governed namespace(s) {}: the first self-bound binding to land for that address will be the one trusted (D7); bind one with `ledger identity add --namespace <ns>`",
-            u.holder,
-            u.namespaces.iter().map(|n| format!("`{n}`")).collect::<Vec<_>>().join(", ")
+            "notice: the genesis holder {} has no trusted key — governed namespace `{}`: the first self-bound binding to land for that address will be the one trusted (D7); bind one with `ledger identity add --namespace {}`",
+            u.holder, u.namespace, u.namespace
         ));
     }
 }

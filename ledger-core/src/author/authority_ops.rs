@@ -8,21 +8,23 @@
 //! (an acceptance by an actor who held no grant, `A006`) is deferred until
 //! the decision-class → role mapping exists.
 //!
-//! **Genesis.** The first `init --namespace` in a store bootstraps the
-//! trust root: the root role carrying the four authority capabilities
-//! ([`Capability::ROOT`]) and none of the decision ones, the genesis grant
-//! (self-granted, `*`, primary, naming the out-of-band mandate), the
-//! holder's acceptance of it, and the namespace's first policy, whose
-//! `accept_role` is a different role (D9 (f)). Nobody holds the accept role
-//! until it is granted — to the genesis holder too, if that person is to
-//! accept. Later namespaces are the genesis holder's to initialise, and
-//! file a policy (and the accept role, if new) only — a store has one trust
-//! root (`A005`).
+//! **Genesis.** Every `init --namespace` opens a trust root of its own
+//! (LP-6.31, ruling 47): the root role carrying the four authority
+//! capabilities ([`Capability::ROOT`]) and none of the decision ones,
+//! declared under the namespace's `roles/`; the genesis grant (self-granted,
+//! `*` — the whole of this namespace — primary, naming the out-of-band
+//! mandate); the holder's acceptance of it; and the namespace's first
+//! policy, whose `accept_role` is a different role (D9 (f)). Nobody holds
+//! the accept role until it is granted — to the genesis holder too, if that
+//! person is to accept. A namespace has one trust root (`A005`); a store
+//! has as many as it has namespaces, and nothing links them. Authority
+//! records are filed in change-sets of their own, apart from decisions
+//! (PRD §3.12).
 
-use crate::authority::payload::{grant_hash, revocation_hash};
+use crate::authority::payload::grant_hash;
 use crate::authority::{
     authorize, Act, Authority, Authorized, Capability, Grant, GrantAcceptance, GrantScope, Limit,
-    Order, Policy, Revocable, Revocation, Role, Scheme, Target,
+    Order, Policy, Role, Scheme, Target,
 };
 use crate::id::GrantId;
 use crate::store::Store;
@@ -32,8 +34,8 @@ use super::{Applied, Author, AuthorError};
 /// What `init --namespace` states.
 pub struct InitNamespaceArgs {
     pub namespace: String,
-    /// The mandate outside the tool — required when the store has no
-    /// genesis yet, ignored after.
+    /// The mandate outside the tool the namespace's genesis rests on —
+    /// required every time: each namespace is opened on its own (ruling 47).
     pub external_ref: Option<String>,
     /// The genesis role's id (created with [`Capability::ROOT`] if absent).
     pub role: String,
@@ -62,6 +64,10 @@ pub struct RoleArgs {
 
 /// What `grant new` states.
 pub struct GrantArgs {
+    /// The namespace whose directory holds the grant and whose authority
+    /// the grantor acts in: explicit, else a `ns:` scope's, else the one
+    /// namespace the store has a directory for.
+    pub namespace: Option<String>,
     pub role: String,
     pub holder: crate::identity::Identity,
     pub scope: GrantScope,
@@ -71,38 +77,41 @@ pub struct GrantArgs {
 }
 
 impl Author {
-    /// The role check, as a verb's refusal.
+    /// The role check in `namespace`'s authority, as a verb's refusal
+    /// (ruling 47: a grant acts in the namespace whose directory holds it).
     pub(crate) fn authorized(
         &self,
         store: &Store,
+        namespace: &str,
         act: Act,
         target: Target<'_>,
         role: Option<&str>,
     ) -> Result<Authorized, AuthorError> {
         let as_role = self.as_role.as_deref();
-        authorize(&Authority::build(store), &self.who, act, target, self.now, role, as_role).map_err(|d| {
-            AuthorError::Unauthorized(format!("{} may not {}: {d}", self.who, act.as_str()))
+        authorize(&Authority::of(store, namespace), &self.who, act, target, self.now, role, as_role).map_err(|d| {
+            AuthorError::Unauthorized(format!("{} may not {} in `{namespace}`: {d}", self.who, act.as_str()))
         })
     }
 
-    /// Put a namespace under policy, bootstrapping the genesis if needed.
+    /// Put a namespace under policy, opening its own trust root (LP-6.31).
     pub fn init_namespace(&mut self, args: InitNamespaceArgs) -> Result<Applied, AuthorError> {
         crate::id::validate_namespace(&args.namespace).map_err(AuthorError::Usage)?;
         let mut store = self.load();
-        let auth = Authority::build(&store);
+        let auth = Authority::of(&store, &args.namespace);
         if auth.policy(&args.namespace).is_some() {
             return Err(AuthorError::Conflict(format!(
                 "namespace `{}` is already under policy — `ledger policy set` changes it",
                 args.namespace
             )));
         }
-        let genesis = auth.genesis().cloned();
-        let joined = genesis.as_ref().map(|g| g.id.clone());
+        if let Some(g) = auth.genesis() {
+            return Err(AuthorError::Conflict(format!(
+                "namespace `{}` already has a live genesis grant ({}) — a namespace has one trust root (A005)",
+                args.namespace, g.id
+            )));
+        }
         let mut candidate = self.shell(Some(format!("init namespace {}", args.namespace)))?;
-        let (mut new_roles, root_role, mut lines) = match genesis.clone() {
-            None => self.bootstrap(&store, &args, &mut candidate)?,
-            Some(g) => self.join_genesis(&auth, &g)?,
-        };
+        let (mut new_roles, root_role, mut lines) = self.bootstrap(&store, &args, &mut candidate)?;
         let accept_role = args.accept_role.clone().unwrap_or_else(|| DEFAULT_ACCEPT_ROLE.to_string());
         if accept_role == root_role {
             return Err(AuthorError::Usage(format!(
@@ -110,13 +119,12 @@ impl Author {
                  the authority structure, not on decisions (D9 (f))"
             )));
         }
-        if store.roles.iter().all(|r| r.id != accept_role) {
+        if store.role_in(&args.namespace, &accept_role).is_none() {
             new_roles.push(self.new_role(&args.namespace, &accept_role, "Accepts decisions", &[Capability::AcceptDecision]));
-            lines.push(format!("declared role `{accept_role}` — may accept-decision; held by nobody until granted"));
+            lines.push(format!("declared role `{accept_role}` in `{}` — may accept-decision; held by nobody until granted", args.namespace));
         }
-        let root = candidate.grants.first().cloned().or(genesis).ok_or_else(|| AuthorError::Io("no genesis grant".into()))?;
-        let under = joined.or_else(|| Some(root.id.clone()));
-        let policy = self.first_policy(&args.namespace, &accept_role, under)?;
+        let root = candidate.grants.first().cloned().ok_or_else(|| AuthorError::Io("no genesis grant".into()))?;
+        let policy = self.first_policy(&args.namespace, &accept_role, Some(root.id.clone()))?;
         lines.push(format!("namespace `{}` under policy {} (accept role `{accept_role}`)", args.namespace, policy.id));
         lines.extend(self.genesis_key(&store, &mut candidate, &root, &policy, args.without_key)?);
         candidate.policies.push(policy);
@@ -152,9 +160,9 @@ impl Author {
         }
     }
 
-    /// The genesis records: the root role (if new), grant, its acceptance.
-    /// An existing role of the root id must carry every root capability and
-    /// no decision capability (D9 (f), extended by ruling 50).
+    /// The namespace's genesis records: the root role (if new in it), grant,
+    /// its acceptance. An existing role of the root id must carry every root
+    /// capability and no decision capability (D9 (f), extended by ruling 50).
     fn bootstrap(
         &mut self,
         store: &Store,
@@ -162,9 +170,12 @@ impl Author {
         candidate: &mut crate::changeset::ChangeSet,
     ) -> Result<(Vec<Role>, String, Vec<String>), AuthorError> {
         let mandate = args.external_ref.clone().filter(|r| !r.trim().is_empty()).ok_or_else(|| {
-            AuthorError::Usage("the store has no genesis yet — `--external-ref` names the mandate it rests on".into())
+            AuthorError::Usage(format!(
+                "a namespace is opened on its own mandate (ruling 47) — `--external-ref` names the one `{}`'s genesis rests on",
+                args.namespace
+            ))
         })?;
-        let new_roles = match store.role(&args.role) {
+        let new_roles = match store.role_in(&args.namespace, &args.role) {
             None => vec![self.new_role(&args.namespace, &args.role, "Genesis steward", Capability::ROOT)],
             Some(existing) => match existing.genesis_refusal() {
                 Some(why) => return Err(AuthorError::Conflict(format!("role `{}` cannot be the genesis role: {why}", args.role))),
@@ -172,6 +183,7 @@ impl Author {
             },
         };
         let grant = self.seal_grant(&GrantArgs {
+            namespace: Some(args.namespace.clone()),
             role: args.role.clone(),
             holder: self.who.clone(),
             scope: GrantScope::All,
@@ -179,25 +191,10 @@ impl Author {
             limits: Vec::new(),
             supersedes: None,
         }, Some(mandate), None)?;
-        let line = format!("genesis {} — {} holds `{}` over *", grant.id, self.who, args.role);
+        let line = format!("genesis {} — {} holds `{}` over * (the whole of `{}`)", grant.id, self.who, args.role, args.namespace);
         candidate.grant_acceptances.push(self.grant_acceptance(&grant)?);
         candidate.grants.push(grant);
         Ok((new_roles, args.role.clone(), vec![line]))
-    }
-
-    /// A later namespace: the live, available genesis holder's act.
-    fn join_genesis(
-        &self,
-        auth: &Authority<'_>,
-        genesis: &Grant,
-    ) -> Result<(Vec<Role>, String, Vec<String>), AuthorError> {
-        if genesis.holder != self.who || !auth.is_available(genesis, self.now) {
-            return Err(AuthorError::Unauthorized(format!(
-                "a namespace is put under policy by the genesis holder ({}), available now",
-                genesis.holder
-            )));
-        }
-        Ok((Vec::new(), genesis.role.clone(), Vec::new()))
     }
 
     /// The namespace's first policy, made under the genesis grant (D9 (a)).
@@ -251,7 +248,7 @@ impl Author {
         Ok(grant)
     }
 
-    fn grant_acceptance(&mut self, grant: &Grant) -> Result<GrantAcceptance, AuthorError> {
+    pub(super) fn grant_acceptance(&mut self, grant: &Grant) -> Result<GrantAcceptance, AuthorError> {
         Ok(GrantAcceptance {
             id: self.mint.mint_id("gacc").map_err(AuthorError::Io)?,
             grant: grant.id.clone(),
@@ -274,15 +271,16 @@ impl Author {
         product_core::fileops::write_file_atomic(&path, &text).map_err(|e| AuthorError::Io(e.to_string()))
     }
 
-    /// Declare a role: `grant-role` over `*`, withheld by `no-role-edits`.
+    /// Declare a role in a namespace: `grant-role` over `*` there, withheld
+    /// by `no-role-edits`.
     pub fn declare_role(&mut self, args: RoleArgs) -> Result<Applied, AuthorError> {
         let store = self.load();
-        self.authorized(&store, Act::DeclareRole, Target::Scope(&GrantScope::All), None)?;
+        let namespace = super::home::resolve_namespace_dir(&self.root, args.namespace.as_deref())?;
+        self.authorized(&store, &namespace, Act::DeclareRole, Target::Scope(&GrantScope::All), None)?;
         crate::set::DecisionSet::validate_id(&args.id).map_err(AuthorError::Usage)?;
         if args.may.is_empty() {
             return Err(AuthorError::Usage("a role names at least one capability (`--may`)".into()));
         }
-        let namespace = super::home::resolve_namespace_dir(&self.root, args.namespace.as_deref())?;
         let role = Role {
             format: crate::format::AUTHORITY_FORMAT,
             id: args.id,
@@ -299,96 +297,4 @@ impl Author {
         Ok(Applied { path, lines: vec![format!("declared role `{}` in `{}` — may {}", role.id, role.namespace, caps.join(", "))] })
     }
 
-    /// Grant a role: `grant-role` over the new grant's scope. Below the
-    /// genesis, a grantor gives only the role it acts under.
-    pub fn grant(&mut self, args: GrantArgs) -> Result<Applied, AuthorError> {
-        let store = self.load();
-        if store.role(&args.role).is_none() {
-            return Err(AuthorError::Usage(format!("role `{}` is not declared — `ledger role declare` it", args.role)));
-        }
-        let auth = Authority::build(&store);
-        let as_role = self.as_role.as_deref();
-        let by = crate::authority::choice::grantor(&auth, &self.who, &args.scope, &args.role, self.now, as_role)
-            .map_err(|d| AuthorError::Unauthorized(format!("{} may not {}: {d}", self.who, Act::Grant.as_str())))?;
-        let grant = self.seal_grant(&args, None, Some(under_of(&by)?))?;
-        let line = format!("{} granted `{}` over {} to {} ({})", self.who, grant.role, grant.scope, grant.holder, grant.order);
-        let note = format!("grant {}", grant.id);
-        let id = grant.id.clone();
-        let mut candidate = self.shell(Some(note))?;
-        candidate.grants.push(grant);
-        self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
-        Ok(Applied { path, lines: vec![line, format!("{id} is live once its holder runs `ledger grant accept {id}`"), by.line()] })
-    }
-
-    /// The holder accepts a grant: it signs the grant's hash.
-    pub fn accept_grant(&mut self, id: &GrantId) -> Result<Applied, AuthorError> {
-        let store = self.load();
-        let auth = Authority::build(&store);
-        let grant = auth.grants.get(&id.to_string()).copied().cloned().ok_or_else(|| {
-            AuthorError::Usage(format!("{id} is not a filed grant"))
-        })?;
-        if grant.holder != self.who {
-            return Err(AuthorError::Unauthorized(format!("{id} is held by {}; only the holder accepts it", grant.holder)));
-        }
-        if auth.is_accepted(&grant) {
-            return Err(AuthorError::Conflict(format!("{id} is already accepted — accepting twice adds nothing")));
-        }
-        let mut candidate = self.shell(None)?;
-        candidate.grant_acceptances.push(self.grant_acceptance(&grant)?);
-        self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
-        Ok(Applied { path, lines: vec![format!("{} accepted {id} — `{}` over {} is live", self.who, grant.role, grant.scope)] })
-    }
-
-    /// Revoke a grant: `revoke-grant` over its scope, withheld by
-    /// `no-grant-revocations`. Files a `rev:` entity; the grant is untouched.
-    pub fn revoke_grant(&mut self, id: &GrantId, reason: String) -> Result<Applied, AuthorError> {
-        let store = self.load();
-        let auth = Authority::build(&store);
-        let grant = auth.grants.get(&id.to_string()).copied().cloned().ok_or_else(|| {
-            AuthorError::Usage(format!("{id} is not a filed grant"))
-        })?;
-        if auth.is_revoked(&Revocable::Grant(id.clone())) {
-            return Err(AuthorError::Conflict(format!("{id} is already revoked — one revocation is enough")));
-        }
-        let by = self.authorized(&store, Act::RevokeGrant, Target::Scope(&grant.scope), None)?;
-        let revocation = self.revocation(Revocable::Grant(id.clone()), reason, Some(under_of(&by)?))?;
-        let line = format!("revoked {id} — {}", revocation.reason);
-        let mut candidate = self.shell(None)?;
-        candidate.revocations.push(revocation);
-        self.refusal_check(&store, &candidate, |_| false)?;
-        let path = self.append(&candidate)?;
-        Ok(Applied { path, lines: vec![line, by.line()] })
-    }
-
-    /// A sealed `rev:` entity for `target` (spec v1.7).
-    pub(crate) fn revocation(
-        &mut self,
-        target: Revocable,
-        reason: String,
-        under: Option<GrantId>,
-    ) -> Result<Revocation, AuthorError> {
-        if reason.trim().is_empty() {
-            return Err(AuthorError::Usage("a revocation carries its reason".to_string()));
-        }
-        let mut r = Revocation {
-            id: Some(self.mint.mint_id("rev").map_err(AuthorError::Io)?),
-            revokes: Some(target),
-            acceptance: None,
-            at: self.now,
-            actor: Some(self.who.clone()),
-            by: None,
-            reason,
-            under,
-            hash: None,
-        };
-        r.hash = Some(revocation_hash(&r));
-        Ok(r)
-    }
-}
-
-/// The grant id an authorised act records as its `under`.
-pub(crate) fn under_of(by: &Authorized) -> Result<GrantId, AuthorError> {
-    by.grant.parse().map_err(AuthorError::Io)
 }

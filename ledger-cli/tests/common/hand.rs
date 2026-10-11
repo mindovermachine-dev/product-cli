@@ -194,3 +194,69 @@ pub fn append_into(repo: &Repo, id: &str, into: &std::path::Path) {
     std::fs::write(into, serde_yaml::to_string(&target).expect("yaml")).expect("write");
     std::fs::remove_file(from).expect("remove");
 }
+
+/// Found `ns` by hand with a genesis older than its first policy (ruling 47:
+/// every namespace has its own): the root and accept roles under its
+/// `roles/`, one change-set holding `holder`'s genesis grant and its
+/// acceptance dated ten seconds before the policy, and the first policy
+/// under that genesis — signed by `signer` when given. The writer never
+/// files this shape (`init` dates a namespace's genesis with its policy), so
+/// it is the hand-built store in which a binding can be before the first
+/// policy yet after the genesis.
+pub fn found(repo: &Repo, ns: &str, holder: &str, schemes: Vec<ledger_core::authority::Scheme>, signer: Option<&str>) -> ledger_core::authority::Policy {
+    use ledger_core::authority::{Capability, Grant, GrantAcceptance, GrantScope, Order, Policy, Role};
+    let who: ledger_core::identity::Identity = holder.parse().expect("holder");
+    let mut mint = UlidMint::system();
+    let roles_dir = repo.roles_dir(ns);
+    std::fs::create_dir_all(&roles_dir).expect("roles dir");
+    for (id, may) in [("steward", Capability::ROOT.to_vec()), ("acceptor", vec![Capability::AcceptDecision])] {
+        let role = Role { format: 6, id: id.into(), namespace: ns.into(), title: None, owner: who.clone(), may, created_at: Utc::now().date_naive(), notes: None };
+        std::fs::write(roles_dir.join(role.file_name()), serde_yaml::to_string(&role).expect("yaml")).expect("role");
+    }
+    let t0 = Utc::now() - chrono::Duration::seconds(10);
+    let mut genesis = Grant {
+        id: mint.mint_id("grant").expect("id"),
+        role: "steward".into(),
+        scope: GrantScope::All,
+        holder: who.clone(),
+        granted_by: who.clone(),
+        order: Order::PRIMARY,
+        limits: Vec::new(),
+        genesis: true,
+        external_ref: Some(format!("mandate for {ns}")),
+        supersedes: None,
+        under: None,
+        at: t0,
+        hash: ledger_core::hash::VersionHash::zero(),
+    };
+    genesis.hash = ledger_core::authority::payload::grant_hash(&genesis);
+    let accepted = GrantAcceptance { id: mint.mint_id("gacc").expect("id"), grant: genesis.id.clone(), signs: genesis.hash.clone(), actor: who.clone(), at: t0 };
+    let mut policy = Policy {
+        id: mint.mint_id("pol").expect("id"),
+        namespace: ns.into(),
+        schemes,
+        require_sk: false,
+        accept_role: "acceptor".into(),
+        reaccept_within_days: None,
+        replaces: None,
+        by: who.clone(),
+        under: Some(genesis.id.clone()),
+        at: t0 + chrono::Duration::seconds(10),
+        hash: ledger_core::hash::VersionHash::zero(),
+    };
+    policy.hash = ledger_core::authority::payload::policy_hash(&policy);
+    if let Some(key) = signer {
+        let dir = repo.sig_dir(ns);
+        std::fs::create_dir_all(&dir).expect("sig dir");
+        let sig = ssh_sign(key, ns, &ledger_core::authority::payload::policy_bytes(&policy));
+        std::fs::write(dir.join(format!("{}.ssh.sig", policy.id.ulid())), sig).expect("sig");
+    }
+    let mut cs = ChangeSet::empty(7, mint.mint_id("cs").expect("cs id"), t0, who, Some(format!("found {ns} by hand")));
+    cs.grants.push(genesis);
+    cs.grant_acceptances.push(accepted);
+    cs.policies.push(policy.clone());
+    let log = repo.log_dir(ns);
+    std::fs::create_dir_all(&log).expect("log dir");
+    std::fs::write(log.join(cs.file_name()), serde_yaml::to_string(&cs).expect("yaml")).expect("write log");
+    policy
+}

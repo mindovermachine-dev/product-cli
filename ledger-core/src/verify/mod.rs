@@ -114,36 +114,37 @@ pub struct Notices {
     /// role-checked, but no signature is required.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub unsigned: Vec<String>,
-    /// The genesis holder, while they have no trusted key: until one is
+    /// Each namespace whose genesis holder has no trusted key: until one is
     /// bound, the first self-bound binding to land for the address is the
-    /// one trusted (D7, #96). With the governed namespaces it bears on.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub genesis_unbound: Option<GenesisUnbound>,
+    /// one trusted (D7, #96). Per namespace, since each has its own genesis
+    /// (LP-8.31, ruling 47).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub genesis_unbound: Vec<GenesisUnbound>,
 }
 
-/// A genesis holder with no trusted key, and the governed namespaces.
+/// A namespace whose genesis holder has no trusted key.
 #[derive(Debug, Default, serde::Serialize)]
 pub struct GenesisUnbound {
+    pub namespace: String,
     pub holder: String,
-    pub namespaces: Vec<String>,
 }
 
 fn notices(store: &Store, trusted: &[&crate::authority::KeyBinding]) -> Notices {
     Notices { unchecked: unchecked(store), unsigned: unsigned(store), genesis_unbound: genesis_unbound(store, trusted) }
 }
 
-/// The genesis holder, when no key of theirs is trusted, with every
-/// namespace under policy.
-fn genesis_unbound(store: &Store, trusted: &[&crate::authority::KeyBinding]) -> Option<GenesisUnbound> {
-    let auth = crate::authority::Authority::build(store);
-    let genesis = auth.genesis()?;
-    if trusted.iter().any(|k| k.principal == genesis.holder && k.act.opens()) {
-        return None;
-    }
-    let mut namespaces: Vec<String> = auth.policies.iter().map(|p| p.namespace.clone()).collect();
-    namespaces.sort();
-    namespaces.dedup();
-    Some(GenesisUnbound { holder: genesis.holder.to_string(), namespaces })
+/// Each namespace with a live genesis grant whose holder has no trusted
+/// key (a trusted key is store-wide until issue 6).
+fn genesis_unbound(store: &Store, trusted: &[&crate::authority::KeyBinding]) -> Vec<GenesisUnbound> {
+    store
+        .namespaces()
+        .into_iter()
+        .filter_map(|ns| {
+            let genesis = crate::authority::Authority::of(store, &ns).genesis()?;
+            let bound = trusted.iter().any(|k| k.principal == genesis.holder && k.act.opens());
+            (!bound).then(|| GenesisUnbound { namespace: ns, holder: genesis.holder.to_string() })
+        })
+        .collect()
 }
 
 impl Report {
@@ -218,7 +219,8 @@ pub fn verify(store: &Store, opts: &Options) -> Report {
     report
 }
 
-/// The graph stage: the SPARQL shapes, then `A006` over history.
+/// The graph stage: the SPARQL shapes — the authority shapes over each
+/// namespace's graph alone (LP-8.19, ruling 47) — then `A006` over history.
 fn graph_stage(store: &Store, landing: &crate::landing::Landing) -> Vec<crate::graph::GraphFinding> {
     let mut graph = crate::graph::shapes::graph_findings(store);
     graph.extend(acts::unauthorised(store, landing));
