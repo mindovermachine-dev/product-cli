@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-changeset-rs
 boundary: contract surface of ledger-core/src/changeset.rs
-verdict_knowledge: "Consumers learn a change-set carries the format-6 authority lists beside decisions, versions, acceptances and revocations, with empty() and entry counts covering every kind."
+verdict_knowledge: Consumers learn a change-set carries the format-6 authority lists beside decisions, versions, acceptances and revocations, with empty() and entry counts covering every kind.
 contract_location: ledger-core/src/changeset.rs
 obligations: []
 metadata: {}
@@ -60,3 +60,9 @@ bindings:
   after: sha256:2938b1158a1b74fa565a3e7ce98bd1a6cc0ac1040e0186ddcf60ccbf7439494b
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:370983173de896f16fe302261036f485b1e78a7dd877b7d02f4982478b49586d
+- symbol: namespace_hint
+  file: ledger-core/src/changeset.rs
+  before: sha256:60d4f5850702a7873ba96aa09bf7c94e717a0d15537303db7a8c4140791fbb1b
+  after: sha256:773050254a354008bf7ff67fcfc116e019dc374381f6ecedb22c1ccb0d10df5f
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:643d517323816382107be0d7d7bfd9264517849a14141ce2f1b393f8337c8698

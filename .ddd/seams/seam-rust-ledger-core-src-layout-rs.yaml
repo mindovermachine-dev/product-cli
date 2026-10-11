@@ -156,3 +156,39 @@ bindings:
   after: sha256:59ba9bd3f17cd6ac0a9388a82e33aaff1137703f223e829c13c09851ba31781e
   base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
   hash: sha256:d8280851d3938727e513a912caa8b9a94fedad29bf46a227ec623b7dc9e6d29e
+- symbol: FLAT_TRACKED
+  file: ledger-core/src/layout.rs
+  before: sha256:59ba9bd3f17cd6ac0a9388a82e33aaff1137703f223e829c13c09851ba31781e
+  after: sha256:387c4847112a3705992e8b129d3a5b719995e80a994250b3dcd55891e6dc174d
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:ebf7600830e77b4620fe516e217409afcc672ceca8853af041579db2588231c5
+- symbol: classify_flat
+  file: ledger-core/src/layout.rs
+  before: sha256:59ba9bd3f17cd6ac0a9388a82e33aaff1137703f223e829c13c09851ba31781e
+  after: sha256:387c4847112a3705992e8b129d3a5b719995e80a994250b3dcd55891e6dc174d
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:78dc38fe8fbd21c85cfe1bf4d1fefa5086d2f95f81d11c5b6bfacdb9bfc0cd90
+- symbol: flat_counterpart
+  file: ledger-core/src/layout.rs
+  before: sha256:59ba9bd3f17cd6ac0a9388a82e33aaff1137703f223e829c13c09851ba31781e
+  after: sha256:387c4847112a3705992e8b129d3a5b719995e80a994250b3dcd55891e6dc174d
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:7103837e2c1bba7671458e636e4cfc838785f5f080c5298ee2ac2064109ac37b
+- symbol: flat_history
+  file: ledger-core/src/layout.rs
+  before: sha256:59ba9bd3f17cd6ac0a9388a82e33aaff1137703f223e829c13c09851ba31781e
+  after: sha256:387c4847112a3705992e8b129d3a5b719995e80a994250b3dcd55891e6dc174d
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:16c971037cd98f29f2a8ea49827b25e84d2718df6b8f1df6289c9bbfab6a67c7
+- symbol: moved_to
+  file: ledger-core/src/layout.rs
+  before: sha256:59ba9bd3f17cd6ac0a9388a82e33aaff1137703f223e829c13c09851ba31781e
+  after: sha256:387c4847112a3705992e8b129d3a5b719995e80a994250b3dcd55891e6dc174d
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:9fb33d6cb75edf885846288e61d6f2ab1c37ef50da014cfe3aec1d2236833aef
+- symbol: moved_to_a_namespace
+  file: ledger-core/src/layout.rs
+  before: sha256:59ba9bd3f17cd6ac0a9388a82e33aaff1137703f223e829c13c09851ba31781e
+  after: sha256:387c4847112a3705992e8b129d3a5b719995e80a994250b3dcd55891e6dc174d
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:9cde5daa6c7c09e4832001770a66465c2c1e4af1cbe75586368a6b65c03efacd
