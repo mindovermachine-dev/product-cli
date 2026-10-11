@@ -43,22 +43,25 @@ are named in those issues' bodies.
 
 As of the seam-binding commits of 2026-10-11 (§6), on the principal's
 ruling that the `.ddd/` prohibition meant the design records and not seam
-bindings. The runs on the rebased branches started at 06:22Z and were in
-flight when this was committed; the commit after this one records what
-they returned.
+bindings. Confirmed by the `check` runs on the current heads of §1,
+completed between 06:28Z and 06:42Z on 2026-10-11:
 
-- #143 and #156 were green before and change nothing the bindings touch.
-- #154 and #155 are red on `ledger verify --export` by design: at those
-  commits the loader refuses the repository's own flat store. The pull
-  requests say so; they pass once #156 lands with them. Their other steps,
-  the contract-surface gate included, pass locally.
-- #157 to #163: the contract-surface gate, `ddd diff-contracts
-  <base>..HEAD`, reports 0 undischarged on each branch locally with the
-  bindings of §6, and `ddd validate` is conformant; every other `check`
-  step passed before on the same trees — build, `cargo t`, clippy with
-  `-D warnings -D clippy::unwrap_used`, the quality scripts, and `ledger
-  verify --export` printing the same output as `main` (284 entries, 93
-  decisions, 3 awaiting, 2 notices, exports matching) from #156 on.
+- #143 (untouched), #156, #157, #158, #159, #160, #161, #162, #163 and
+  #164 are green: every `check` step passes — build, `cargo t`, clippy
+  with `-D warnings -D clippy::unwrap_used`, the quality scripts, the spec
+  flow, `ledger verify --export` printing the same output as `main` (284
+  entries, 93 decisions, 3 awaiting, 2 notices, exports matching), `ddd
+  validate`, and the contract-surface gate `ddd diff-contracts
+  <base>..HEAD`, discharged by the bindings of §6.
+- #154 and #155 are red on `ledger verify --export` alone, by design: at
+  those commits the loader refuses the repository's own flat store. The
+  pull requests say so; they pass once #156 lands with them. Because that
+  step runs before the gate in the workflow, CI does not reach the gate on
+  those two; locally it reports 0 undischarged on both with their bindings.
+- One run on the way was red for another reason: #161's head before the
+  rebase failed `signers_per_namespace` on the second-granularity
+  `ssh-keygen` window (§5). The pause step 8 had added was ported into
+  step 7, and the run on the current head is green.
 
 Before those commits, #157 to #163 were red on the contract-surface gate
 alone, which demands a signed seam binding for every exposed Rust surface
