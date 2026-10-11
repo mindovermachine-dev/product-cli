@@ -27,7 +27,9 @@ const RELAYER: &str = "relayout@example";
 /// commit's id.
 fn flat_history() -> (Repo, String) {
     let repo = Repo::with_identity(ACCEPTOR);
-    let from = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/pass/.decisions");
+    // The fixture is committed in the v1.9 layout; its files are laid flat
+    // here, byte for byte, as a v1.8 writer filed them.
+    let from = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/pass/.decisions/ns").join(NS);
     for sub in ["sets", "log"] {
         let to = repo.path().join(".decisions").join(sub);
         std::fs::create_dir_all(&to).expect("mkdir");
