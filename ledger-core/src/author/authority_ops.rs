@@ -141,8 +141,7 @@ impl Author {
         }
         let path = self.append_signed(candidate)?;
         if !candidate.key_bindings.is_empty() {
-            crate::authority::signers::write(&self.load()).map_err(AuthorError::Io)?;
-            lines.push(format!("regenerated {}", crate::authority::signers::FILE));
+            lines.extend(crate::authority::signers::write(&self.load()).map_err(AuthorError::Io)?.lines());
         }
         Ok(Applied { path, lines })
     }

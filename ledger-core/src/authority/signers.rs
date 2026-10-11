@@ -16,9 +16,10 @@
 //! — a close ends the key, not the binding (ruled 2026-10-06), in its own
 //! namespace (ruling 47, LP-6.32). The principal
 //! is the bare address (ruling 6: files keep the bare address). The file is
-//! never edited by hand: every `ledger identity` verb rewrites it, and
-//! `verify` re-derives it and holds the committed bytes identical — the
-//! export's discipline, applied to the trust root.
+//! never edited by hand: every `ledger identity` verb rewrites each
+//! namespace's file and removes one no binding of that namespace derives
+//! (LP-4.10), and `verify` re-derives each and holds the committed bytes
+//! identical — the export's discipline, applied to the trust root.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -117,16 +118,45 @@ fn lines(bindings: &[&KeyBinding], filed: &[&KeyBinding]) -> Vec<(String, String
         .collect()
 }
 
-/// Rewrite each namespace's derived file from the log.
-pub fn write(store: &Store) -> Result<(), String> {
-    for (namespace, text) in derive(store) {
-        let target = path(&store.root, &namespace);
+/// What a rewrite did: the namespaces whose file was written, and those
+/// whose stale file was removed.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct Synced {
+    pub written: Vec<String>,
+    pub removed: Vec<String>,
+}
+
+impl Synced {
+    /// One line per namespace touched, for a verb's output.
+    pub fn lines(&self) -> Vec<String> {
+        let mut out: Vec<String> = self.written.iter().map(|ns| format!("regenerated ns/{ns}/{FILE}")).collect();
+        out.extend(self.removed.iter().map(|ns| format!("removed ns/{ns}/{FILE} — no trusted binding of `{ns}` derives it")));
+        out
+    }
+}
+
+/// Rewrite each namespace's derived file from the log, and remove a file
+/// committed in a namespace none of whose bindings is trusted: a namespace
+/// that binds nothing has no file (LP-4.10, ruling 47).
+pub fn write(store: &Store) -> Result<Synced, String> {
+    let derived = derive(store);
+    let mut synced = Synced::default();
+    for (namespace, text) in &derived {
+        let target = path(&store.root, namespace);
         if let Some(dir) = target.parent() {
             std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
         }
-        product_core::fileops::write_file_atomic(&target, &text).map_err(|e| e.to_string())?;
+        product_core::fileops::write_file_atomic(&target, text).map_err(|e| e.to_string())?;
+        synced.written.push(namespace.clone());
     }
-    Ok(())
+    for namespace in store.namespaces().into_iter().filter(|ns| !derived.contains_key(ns)) {
+        let stale = path(&store.root, &namespace);
+        if stale.is_file() {
+            std::fs::remove_file(&stale).map_err(|e| e.to_string())?;
+            synced.removed.push(namespace);
+        }
+    }
+    Ok(synced)
 }
 
 /// The verify stage: each namespace's committed file equals the log's

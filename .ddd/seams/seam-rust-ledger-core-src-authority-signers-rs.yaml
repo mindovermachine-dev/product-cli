@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-authority-signers-rs
 boundary: contract surface of ledger-core/src/authority/signers.rs
-verdict_knowledge: 'Consumers learn allowed_signers is derived per namespace from that namespace''s key bindings in OpenSSH form, written by the identity verbs at .decisions/ns/<ns>/allowed_signers, and held byte-identical by verify''s [SIGNERS] stage.'
+verdict_knowledge: 'Consumers learn allowed_signers is derived per namespace from that namespace''s key bindings in OpenSSH form, written by the identity verbs at .decisions/ns/<ns>/allowed_signers, that write reports what it wrote and removed (Synced) and removes a stale file in a namespace with no derived entry, and that verify''s [SIGNERS] stage holds every namespace''s file byte-identical (LP-4.10, LP-4.33).'
 contract_location: ledger-core/src/authority/signers.rs
 obligations: []
 metadata: {}
@@ -90,3 +90,39 @@ bindings:
   after: sha256:3e0780d22c990a69f8205668616cd6971976ec3130ee73caf7745cf51997396a
   base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
   hash: sha256:1100a9e4e2b13c50ad9c31ffd8123af332e6e432cc0eca45e0f38a77ca12ca85
+- symbol: write
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:948fea8114295ba83d7d9bf9b18e074db9694a3c982a2eba59e9dc993f2d4c26
+  after: sha256:611b39e2f472007f915fb984ac23e8eae26c37044cb08e2c8d8c55d35264a2ef
+  base_revision: 792983ac6f2a057451b11d6a3a46101a707e6838
+  hash: sha256:e2f9b122875266f74fe7422bd3d395e6d56b27a6553e5705714064a0e1f9634d
+- symbol: impl Synced
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:948fea8114295ba83d7d9bf9b18e074db9694a3c982a2eba59e9dc993f2d4c26
+  after: sha256:611b39e2f472007f915fb984ac23e8eae26c37044cb08e2c8d8c55d35264a2ef
+  base_revision: 792983ac6f2a057451b11d6a3a46101a707e6838
+  hash: sha256:2c7c975a8eb135d7d59edc7a27ae08414f00a8c5b15f05a0e5461379def1e0c9
+- symbol: Synced
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:948fea8114295ba83d7d9bf9b18e074db9694a3c982a2eba59e9dc993f2d4c26
+  after: sha256:611b39e2f472007f915fb984ac23e8eae26c37044cb08e2c8d8c55d35264a2ef
+  base_revision: 792983ac6f2a057451b11d6a3a46101a707e6838
+  hash: sha256:8082982faff2d4c185bb57ea5b759dc5f3d66de12199e6c680292cc3711d22d6
+- symbol: removed
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:948fea8114295ba83d7d9bf9b18e074db9694a3c982a2eba59e9dc993f2d4c26
+  after: sha256:611b39e2f472007f915fb984ac23e8eae26c37044cb08e2c8d8c55d35264a2ef
+  base_revision: 792983ac6f2a057451b11d6a3a46101a707e6838
+  hash: sha256:c844b258c6699385c8c9220fdb85e871a3664fbe085370d9b46d7067970d8136
+- symbol: written
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:948fea8114295ba83d7d9bf9b18e074db9694a3c982a2eba59e9dc993f2d4c26
+  after: sha256:611b39e2f472007f915fb984ac23e8eae26c37044cb08e2c8d8c55d35264a2ef
+  base_revision: 792983ac6f2a057451b11d6a3a46101a707e6838
+  hash: sha256:2e2545b091a37a0fff2559ad54b41fdcdc0a5887cc84fd6ea96b62ba8177eafc
+- symbol: lines
+  file: ledger-core/src/authority/signers.rs
+  before: sha256:948fea8114295ba83d7d9bf9b18e074db9694a3c982a2eba59e9dc993f2d4c26
+  after: sha256:611b39e2f472007f915fb984ac23e8eae26c37044cb08e2c8d8c55d35264a2ef
+  base_revision: 792983ac6f2a057451b11d6a3a46101a707e6838
+  hash: sha256:af2fbba83148f97a5f0a40da4b08890d60b8876f80aafefc6f23584be66de424
