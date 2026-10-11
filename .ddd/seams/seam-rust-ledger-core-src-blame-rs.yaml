@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-blame-rs
+boundary: contract surface of ledger-core/src/blame.rs
+verdict_knowledge: 'Callers learn git blame attribution follows a file along its lineage: with the legacy capability the pickaxe also names the flat path the file had before the re-layout, so the introducing author is the original one and never the re-layout commit''s (LP-3.35).'
+contract_location: ledger-core/src/blame.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: introducing_author
+  file: ledger-core/src/blame.rs
+  before: sha256:12d4ae9b7ddb2af8423df3ca1bc1f2b0fdc942c95539d6622a18c6811c408a6b
+  after: sha256:bd37b146167ee5eecaaa06c8ced110c1a7199e6921d2e9a56c1f19b53a09c9a3
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:cc0047860f00c1d511d995adefb15ba8b5abf8db6e2b5eec73b15e84e8f95163

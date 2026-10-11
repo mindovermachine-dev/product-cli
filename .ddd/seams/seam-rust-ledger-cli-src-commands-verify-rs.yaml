@@ -24,3 +24,9 @@ bindings:
   after: sha256:f6f3e91d7c7a4d62879b72c501f573fe83dcd8e961b5fe6e7aeb5f71fb6f9671
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:2848d2674f2097fb042c05ddd593a86fd580d98ceeb07990822599ebec82cea0
+- symbol: legacy_layout
+  file: ledger-cli/src/commands/verify.rs
+  before: sha256:f6f3e91d7c7a4d62879b72c501f573fe83dcd8e961b5fe6e7aeb5f71fb6f9671
+  after: sha256:715a87a4601fb9b95cd50c5f51f8749a684935110771775692b5bf24a068568d
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:6789df6cbef5073d922b5a3697cdf55428d8fe89207fa7a7b92b757b834c65a5

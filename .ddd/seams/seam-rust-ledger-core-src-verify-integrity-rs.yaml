@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-integrity-rs
+boundary: contract surface of ledger-core/src/verify/integrity.rs
+verdict_knowledge: 'Callers learn the blame-consistency check takes the legacy flag so that, in a repository whose history holds the flat layout, an entity''s introducing author is read across the re-layout rather than from the move (LP-3.35).'
+contract_location: ledger-core/src/verify/integrity.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: blame_consistency
+  file: ledger-core/src/verify/integrity.rs
+  before: sha256:c014372bf22afda6daaeeea21a4bf6e8a91a272a0c774abae734b2427ac56663
+  after: sha256:ae758c7c418b13c7bd4843c27a0c4aa8fe211e8e2164782afc9baf1dbf24e551
+  base_revision: 15c24ade6ff251ca8618d52c8e77a1e8b4cf4020
+  hash: sha256:231feb826f40caf6825079b1143f2cbc2e8de3b0cd5a902d7c5a06e1e02719d7

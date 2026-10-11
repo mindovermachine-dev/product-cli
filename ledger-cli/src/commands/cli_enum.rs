@@ -348,6 +348,11 @@ pub enum Commands {
         /// Judge acceptance expiry against this date instead of today
         #[arg(long, value_name = "DATE")]
         today: Option<String>,
+        /// Verify as an implementation without the legacy capability of
+        /// ruling 82 would: a history holding the flat layout of revision
+        /// v1.8 is refused with exit 2, naming its first flat commit
+        #[arg(long)]
+        no_legacy_layout: bool,
         /// Skip the git blame pass (class L009)
         #[arg(long)]
         no_blame: bool,

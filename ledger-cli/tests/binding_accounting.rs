@@ -27,7 +27,7 @@ enum Expect {
 fn accounted(repo: &Repo) -> Vec<(String, Expect)> {
     let store = ledger_core::store::load(repo.path());
     let today = Utc::now().date_naive();
-    let landing = ledger_core::landing::Landing::compute(repo.path(), None).expect("landing");
+    let landing = ledger_core::landing::Landing::compute(repo.path(), None, true).expect("landing");
     let trusted: Vec<String> =
         ledger_core::signing::check::check(&store, &landing, today).trusted.iter().map(|b| b.id.to_string()).collect();
     let report = ledger_core::verify::verify(&store, &ledger_core::verify::Options::full(today));

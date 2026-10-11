@@ -160,7 +160,7 @@ Revision v1.8 held one `sets/`, `roles/`, `log/` and `sig/` and one `allowed_sig
 - **LP-3.12** (V) The file stem MUST equal the id the file declares: `<ulid>.yml` for a change-set whose `id` is `cs:<ulid>`, `<set-id>.yml` for a set, `<role-id>.yml` for a role. A disagreement is a schema fault.
 - **LP-3.13** (W) The `index/` directory is a rebuildable cache and is never committed. A store keeps it out of version control so that a rebuild cache can never be committed by accident.
 - **LP-3.34** (W, V) A store holds each namespace under `.decisions/ns/<namespace>/`, with its own `sets/`, `roles/`, `log/`, `sig/` and `allowed_signers`. A file's namespace is its directory. At the verified commit and in the working tree, a file under `.decisions/` outside `ns/` and `index/` is a schema fault: the flat paths of revision v1.8 among them, a store with no `ns/` directory and any of those paths included, and a file directly under `ns/`, since a namespace is a directory named by its id (rulings 62, 63). The layout is a specification revision with no format number (ruling 66): no file's content changes, and no digest moves.
-- **LP-3.35** (V) **Not implemented** (issue 2). A verifier looks for the flat paths of revision v1.8 (`.decisions/log/`, `.decisions/roles/`, `.decisions/sig/`) on the first-parent history it reads. A verifier with the legacy capability then reads change-set, role and sidecar files at both those paths and the paths of LP-3.34, told apart by path, and only their entities, for `L007`, `L009` and the base overlay (ruling 97). The capability is not part of the verifier profile (ruling 82). A verifier without it refuses a repository whose history holds a flat path, with exit status 2.
+- **LP-3.35** (V) A verifier looks for the flat paths of revision v1.8 (`.decisions/log/`, `.decisions/roles/`, `.decisions/sig/`) on the first-parent history it reads, the verified commit's and, when given, the base's. A verifier with the **legacy capability** then reads change-set, role and sidecar files at both those paths and the paths of LP-3.34, told apart by path and never a commit by its layout, and only their entities, for `L007` (with LP-3.16's `format:` comparison), `L009` and the base overlay (ruling 97): a file's lineage is its path under its namespace's directory and the flat path of the same kind and name, since a file's stem is its id (LP-3.12). Nothing else is read from the flat layout: no store-wide set, role, genesis or `allowed_signers`. The capability is not part of the verifier profile (ruling 82). A verifier without it refuses a repository whose history holds a flat path, with exit status 2 (LP-8.18), naming the first flat commit, and never reports the repository conformant. *The reference implementation has the capability; `ledger verify --no-legacy-layout` runs without it.*
 - **LP-3.36** (W, V) Ids, set ids, role ids and file names are unique within a namespace. Two namespaces may each declare a set, or a role, of one id; a version names a set of its own namespace (LP-5.22), and a role is named by the grants and policies of its own namespace once authority is per namespace (LP-6.31, issue 5).
 
 ### 3.2 Format declarations
@@ -1115,8 +1115,10 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
 
   Appending a new entity to a landed file changes no other entity; the new one lands where it was appended (LP-8.24).
 
+  A re-layout from the flat layout of revision v1.8 (LP-3.34) deletes every flat file. That is no removal when each of its entities is present, unchanged, under its namespace's directory in the same commit: a verifier with the legacy capability judges the moved file along its lineage (LP-3.35), and anything else stays `L007`.
+
   A log file's `format:` declaration is not an entity, but it is compared too (ruling 58): each change of it along the same history, the working tree last, MUST be a correction under LP-3.16, a raise to exactly the lowest format the content needs with no entity changed in the same step; otherwise `L007`.
-- **LP-8.32** (V) `L009` reads the author of the commit that introduced an acceptance and compares its email address, as an identity (section 3.4), with the acceptance's actor. A repository with no git history has the check skipped entirely (LP-8.14).
+- **LP-8.32** (V) `L009` reads the author of the commit that introduced an acceptance and compares its email address, as an identity (section 3.4), with the acceptance's actor. A repository with no git history has the check skipped entirely (LP-8.14). With the legacy capability the introducing commit is found along the file's lineage (LP-3.35), so a re-layout commit is never the introduction of what it moved.
 
 ### 8.8 Notices
 
@@ -1471,6 +1473,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 | 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
+| 9 October 2026 | **Spec v1.9: the flat layout in history** (rulings 82 and 97; PRD §3.1.1, §3.5.7; issue 2). LP-3.35 loses its not-implemented mark: a verifier detects the flat paths of revision v1.8 on the first-parent history it reads; with the legacy capability it follows each tracked file along its lineage, the flat path and the namespaced one, for `L007`, LP-3.16's `format:` comparison, `L009` and the base overlay, and reads no flat semantics; without it, it refuses with exit 2 naming the first flat commit. LP-8.30 gains the re-layout exception, LP-8.32 the lineage. No class added; no digest moves. The Appendix C note of v1.9 gains its history paragraph. |
 | 9 October 2026 | **Spec v1.9: one directory per namespace** (rulings 62, 63, 66 as amended by 87; PRD §3.1; issue 1). Section 3.1 gives the layout: every namespace under `.decisions/ns/<namespace>/` with its own `sets/`, `roles/`, `log/`, `sig/` and `allowed_signers`; the flat paths of revision v1.8 are a schema fault at the verified commit (LP-3.34, new). LP-3.35 (new) states what a verifier does with the flat layout in history and is marked not implemented until issue 2. LP-3.36 (new): ids, set ids, role ids and file names are unique within a namespace. LP-5.22 (new): a version names a set of its own namespace. LP-4.10 and sections 5.2, 5.3 and 5.6 name the new paths. No class added; no digest moves; no format number; `CANONICAL_FORM` stays `v1`. The Appendix C note "Spec v1.9 — one directory per namespace" is added. |
 | 9 October 2026 | The Unicode version behind LP-4.18 step 2b is named: 17.0.0. The tables were unpinned — the reference accepted any `unicode-normalization` 0.1.x and commits no lockfile, and a second implementation had no version to match. The reference now pins the release that carries these tables (`=0.1.25`), held by a test on its `UNICODE_VERSION`. A move to a later Unicode version is a canonical-form question for the principal. No class added; no digest moves; `CANONICAL_FORM` stays `v1`. (#140) |
 
@@ -1646,13 +1649,31 @@ No class is added: the refusal is `SCHEMA`.
 `ns/<namespace>/` in one commit: each change-set and sidecar to the
 namespace its entities belong to, each set to the namespace whose versions
 name it, each role file to the namespace whose grants and policies name
-it. How a verifier reads the flat paths that stay in such a store's
-history, and what a verifier without that capability does, is LP-3.35
-(issue 2 of the PRD's §6, ruling 82 as narrowed by 97). A governed store
-with more than one namespace is not moved but re-founded (ruling 68); its
-note lands with issue 9. This repository's own store and the committed
-fixture stores are re-laid out by issues 10 and 9; until then a verifier
-of this revision refuses them, as LP-3.34 says.
+it. A governed store with more than one namespace is not moved but
+re-founded (ruling 68); its note lands with issue 9. This repository's
+own store and the committed fixture stores are re-laid out by issues 10
+and 9; until then a verifier of this revision refuses them, as LP-3.34
+says.
+
+**The flat layout in history** (rulings 82 and 97; LP-3.35). The
+re-layout cannot make the flat paths disappear from history, and
+verification reads history for `L007`, `L009` and the base overlay.
+Reading the flat layout there is a *legacy capability*, outside the
+verifier profile: a verifier with it classifies each path by itself,
+never a commit by its layout, follows each tracked file along its lineage
+(its namespaced path and the flat path of the same kind and name), judges
+immutability by entity across the move, finds `L009`'s introducing commit
+along the lineage, and reads a flat base in the overlay. It reads no flat
+semantics. A verifier without it refuses such a repository with exit
+status 2, naming the first flat commit, and never reports it conformant:
+it never passes the repository by treating the re-layout commit as every
+entity's landing. The reference implementation has the capability, since
+this repository's history will always predate v1.9; `ledger verify
+--no-legacy-layout` shows what a verifier without it does. Landing
+positions, which still decide authority verdicts until order from the
+acts lands (issue 12), read the namespaced paths only; that is sound
+because no committed store with flat history holds an authority record
+(confirmed by scan on 9 October 2026).
 
 #### A float or an explicit null in hashed content is refused (2026-10-07, no format change)
 

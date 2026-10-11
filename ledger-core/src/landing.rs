@@ -25,6 +25,15 @@
 //! `at` decides. Without git every entity is at the tip and `at` alone
 //! decides — the export-only verifier's reading, stated as its limit.
 //!
+//! **The flat layout in history** (LP-3.35, rulings 82 and 97). A store made
+//! before v1.9 keeps its flat paths in history. With the legacy capability
+//! on, the write-once readers ([`touched_after_landing`], [`file_versions`],
+//! [`content_at`]) follow a tracked file across both path patterns, told
+//! apart by path; landing positions read the namespace paths only, which is
+//! sound while no store with flat history holds an authority record. A
+//! verifier without the capability refuses such a history before reading it
+//! ([`crate::layout::flat_history`]).
+//!
 //! Assumption, stated rather than proved: the default branch's history is
 //! not rewritten. A ruleset holds that; `verify` cannot.
 
@@ -43,6 +52,9 @@ const TRACKED: &[&str] = crate::layout::TRACKED;
 pub struct Landing {
     /// Whether git answered. When it did not, everything is at the tip.
     pub available: bool,
+    /// Whether the write-once readers follow a file across the flat paths
+    /// of revision v1.8 in history (the legacy capability, LP-3.35).
+    pub legacy: bool,
     /// Repo-relative path → (first-parent index, landing commit).
     landed: BTreeMap<String, (usize, String)>,
     /// For touched files only: (path, entity key) → first-parent index of
@@ -84,16 +96,16 @@ impl Landing {
     /// Resolve every tracked file's landing on `HEAD`, against `base` when
     /// given (see the module doc). A `base` that does not resolve is an
     /// error, never silently ignored: the result would differ from CI's.
-    pub fn compute(root: &Path, base: Option<&str>) -> Result<Self, String> {
+    pub fn compute(root: &Path, base: Option<&str>, legacy: bool) -> Result<Self, String> {
         if !git_ok(root, &["rev-parse", "--verify", "-q", "HEAD"]) {
             return Ok(Self::unknown());
         }
         let head = first_parent_adds(root, "HEAD")?;
-        let touched = touched_after_landing(root);
+        let touched = touched_after_landing(root, legacy);
         let Some(base) = base else {
             let tip = head.commits;
             let entities = entity_landings(root, "HEAD", &touched)?;
-            return Ok(Self { available: true, landed: head.adds, entities, touched, tip });
+            return Ok(Self { available: true, legacy, landed: head.adds, entities, touched, tip });
         };
         if !git_ok(root, &["rev-parse", "--verify", "-q", &format!("{base}^{{commit}}")]) {
             return Err(format!("`{base}` does not name a commit — landing is computed against the base"));
@@ -110,7 +122,7 @@ impl Landing {
         // Entities of a touched file land where the base's line first holds
         // them; one only the branch holds lands at the tip, as the merge would.
         let entities = entity_landings(root, base, &touched)?;
-        Ok(Self { available: true, landed, entities, touched, tip })
+        Ok(Self { available: true, legacy, landed, entities, touched, tip })
     }
 
     /// A landing with every listed entity of one file, and every listed
@@ -120,6 +132,7 @@ impl Landing {
     pub(crate) fn fixed(path: &str, entities: &[(String, usize)], files: &[(String, usize)], tip: usize) -> Self {
         Self {
             available: true,
+            legacy: false,
             landed: files.iter().map(|(f, i)| (f.clone(), (*i, String::new()))).collect(),
             entities: entities.iter().map(|(key, i)| ((path.to_string(), key.clone()), *i)).collect(),
             touched: [path.to_string()].into(),
@@ -155,21 +168,27 @@ impl Landing {
 
 /// The tracked paths git says changed or vanished after they were added:
 /// modified or deleted on the first-parent line, or in the working tree.
-/// The write-once checks read only these, not every landed file.
-pub fn touched_after_landing(root: &Path) -> std::collections::BTreeSet<String> {
+/// The write-once checks read only these, not every landed file. With
+/// `legacy`, the flat paths of revision v1.8 are listed too, so a flat file
+/// the re-layout deleted is judged, by entity, against where it went.
+pub fn touched_after_landing(root: &Path, legacy: bool) -> std::collections::BTreeSet<String> {
     let mut out = std::collections::BTreeSet::new();
+    let mut paths: Vec<&str> = TRACKED.to_vec();
+    if legacy {
+        paths.extend(crate::layout::FLAT_TRACKED);
+    }
     let history = Command::new("git")
         .arg("-C")
         .arg(root)
-        .args(["log", "--first-parent", "--diff-merges=first-parent", "--relative", "--name-only"])
+        .args(["log", "--first-parent", "--diff-merges=first-parent", "--relative", "--name-only", "--no-renames"])
         .args(["--diff-filter=DM", "--format=", "HEAD", "--"])
-        .args(TRACKED)
+        .args(&paths)
         .output();
     let worktree = Command::new("git")
         .arg("-C")
         .arg(root)
-        .args(["diff", "--relative", "--name-only", "--diff-filter=DM", "HEAD", "--"])
-        .args(TRACKED)
+        .args(["diff", "--relative", "--name-only", "--no-renames", "--diff-filter=DM", "HEAD", "--"])
+        .args(&paths)
         .output();
     for out_put in [history, worktree].into_iter().flatten().filter(|o| o.status.success()) {
         out.extend(String::from_utf8_lossy(&out_put.stdout).lines().map(str::trim).filter(|l| !l.is_empty()).map(str::to_string));
@@ -181,6 +200,22 @@ pub fn touched_after_landing(root: &Path) -> std::collections::BTreeSet<String> 
 pub fn content_at(root: &Path, commit: &str, path: &str) -> Option<String> {
     let out = Command::new("git").arg("-C").arg(root).args(["show", &format!("{commit}:{path}")]).output().ok()?;
     out.status.success().then(|| String::from_utf8_lossy(&out.stdout).into_owned())
+}
+
+/// The text of the first of `paths` the commit's tree holds: a file read
+/// along its lineage across the re-layout (LP-3.35).
+pub fn content_at_any(root: &Path, commit: &str, paths: &[String]) -> Option<String> {
+    paths.iter().find_map(|p| content_at(root, commit, p))
+}
+
+/// The paths one tracked file has had: its path now and, with the legacy
+/// capability, the flat path it had before the re-layout (LP-3.35).
+pub fn lineage(path: &str, legacy: bool) -> Vec<String> {
+    let mut out = vec![path.to_string()];
+    if legacy {
+        out.extend(crate::layout::flat_counterpart(path));
+    }
+    out
 }
 
 /// A repo-relative path for a file under `root`.
@@ -196,12 +231,13 @@ struct Adds {
 /// Walk `rev`'s first-parent line oldest first, recording the first commit
 /// that added each tracked path. Merges are diffed against their first
 /// parent (`--first-parent` implies it), so a branch's files land at the
-/// merge commit.
+/// merge commit. Renames are not detected: a move is a delete and an add,
+/// so each path is classified by itself (LP-3.35).
 fn first_parent_adds(root: &Path, rev: &str) -> Result<Adds, String> {
     let out = Command::new("git")
         .arg("-C")
         .arg(root)
-        .args(["log", "--first-parent", "--diff-merges=first-parent", "--reverse", "--relative"])
+        .args(["log", "--first-parent", "--diff-merges=first-parent", "--reverse", "--relative", "--no-renames"])
         .args(["--name-only", "--diff-filter=A", "--format=%x01%H", rev, "--"])
         .args(TRACKED)
         .output()
@@ -250,10 +286,17 @@ fn entity_landings(
 
 /// The first-parent commits of `rev` that changed `path`, oldest first.
 pub fn file_versions(root: &Path, rev: &str, path: &str) -> Vec<String> {
+    lineage_versions(root, rev, &[path.to_string()])
+}
+
+/// The first-parent commits of `rev` that changed any of `paths` (one
+/// file's lineage), oldest first.
+pub fn lineage_versions(root: &Path, rev: &str, paths: &[String]) -> Vec<String> {
     Command::new("git")
         .arg("-C")
         .arg(root)
-        .args(["log", "--first-parent", "--diff-merges=first-parent", "--reverse", "--format=%H", rev, "--", path])
+        .args(["log", "--first-parent", "--diff-merges=first-parent", "--reverse", "--format=%H", rev, "--"])
+        .args(paths)
         .output()
         .ok()
         .filter(|o| o.status.success())
