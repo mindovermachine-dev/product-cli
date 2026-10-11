@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-belonging-rs
+boundary: contract surface of ledger-core/src/verify/belonging.rs
+verdict_knowledge: 'Callers learn the belonging stage: every entity filed under ns/<ns>/ must belong to <ns> (a decision id, a version''s or acceptance''s decision, a binding''s or policy''s namespace, a revocation''s or grant acceptance''s target, a sidecar''s entity), each breach a SCHEMA fault and no class added (LP-3.33, ruling 45).'
+contract_location: ledger-core/src/verify/belonging.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: findings
+  file: ledger-core/src/verify/belonging.rs
+  before: absent
+  after: sha256:f984f8b49a3423a02326d32f1650c4b5fad75e5a29d51c5c273d643df888d1f1
+  base_revision: efc4bc55bfddbcadbc440489ad8ba701ae86b5e9
+  hash: sha256:6758d6231d707799823204b3c54f704930b26bb82d0c85b7091291ab8eb44821
