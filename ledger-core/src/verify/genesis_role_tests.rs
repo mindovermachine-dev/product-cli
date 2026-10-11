@@ -17,7 +17,7 @@ use super::{verify, Options, Report};
 fn policy(g: &Grant, accept_role: &str) -> Policy {
     let mut p = Policy {
         id: format!("pol:{}", fixture::ulid("3")).parse().expect("id"),
-        namespace: "fixture.ledger".into(),
+        namespace: testkit::NS.into(),
         schemes: vec![Scheme::None],
         require_sk: false,
         accept_role: accept_role.into(),

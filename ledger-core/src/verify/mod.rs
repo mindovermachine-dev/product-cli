@@ -12,6 +12,7 @@
 
 pub mod acts;
 pub mod authority;
+pub mod belonging;
 pub mod disposition;
 mod genesis_role;
 pub mod history;
@@ -160,20 +161,28 @@ impl Report {
     }
 }
 
+/// The file-gate findings that need no landing order: the view's own, the
+/// disposition classes, integrity, keys, authority records and belonging.
+fn file_findings(store: &Store, view: &View, today: NaiveDate) -> Vec<Finding> {
+    let mut findings = view.findings.clone();
+    findings.extend(disposition::unallocated(view));
+    findings.extend(disposition::expired(view, today));
+    findings.extend(disposition::stranded(view, store));
+    findings.extend(disposition::model_acceptor(view));
+    findings.extend(disposition::model_judge(view));
+    findings.extend(integrity::hash_mismatch(view).into_iter().chain(integrity::dangling_acceptance(view)));
+    findings.extend(keys::key_changed(view));
+    findings.extend(keys::key_collision(view));
+    findings.extend(authority::findings(store));
+    findings.extend(belonging::findings(store));
+    findings
+}
+
 /// Run the gate over a loaded store.
 pub fn verify(store: &Store, opts: &Options) -> Report {
     let view = View::build(store);
     let mut findings = store.schema_findings.clone();
-    findings.extend(view.findings.iter().cloned());
-    findings.extend(disposition::unallocated(&view));
-    findings.extend(disposition::expired(&view, opts.today));
-    findings.extend(disposition::stranded(&view, store));
-    findings.extend(disposition::model_acceptor(&view));
-    findings.extend(disposition::model_judge(&view));
-    findings.extend(integrity::hash_mismatch(&view).into_iter().chain(integrity::dangling_acceptance(&view)));
-    findings.extend(keys::key_changed(&view));
-    findings.extend(keys::key_collision(&view));
-    findings.extend(authority::findings(store));
+    findings.extend(file_findings(store, &view, opts.today));
     let landing = landing(store, opts);
     let signing = crate::signing::check::check(store, &landing, opts.today);
     findings.extend(signing.findings.iter().cloned());
