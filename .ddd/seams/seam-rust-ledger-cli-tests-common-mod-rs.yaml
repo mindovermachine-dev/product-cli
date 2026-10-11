@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-tests-common-mod-rs
 boundary: contract surface of ledger-cli/tests/common/mod.rs
-verdict_knowledge: Test authors learn signing invocations run under a pseudo-terminal through script(1) and everything else under pipes, so the binary's real TTY check is what the suites exercise.
+verdict_knowledge: 'Test-only: the shared harness of the ledger-cli integration suites, with no consumer outside ledger-cli/tests/ — test authors learn signing invocations run under a pseudo-terminal through script(1) and everything else under pipes, so the binary''s real TTY check is what the suites exercise, and that a repo''s per-namespace paths and a fixture store copied in under ns/<namespace>/ come from here.'
 contract_location: ledger-cli/tests/common/mod.rs
 obligations: []
 metadata: {}
