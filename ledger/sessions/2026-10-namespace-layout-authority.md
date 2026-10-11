@@ -30,9 +30,9 @@ and the repository's own store is still flat.
 | 4 | #147 | #158 | `step-04-supersedes` | `d4d35075`, `deb88ef2` | `verify::crossing`: a latest version whose `supersedes` names another namespace is `SCHEMA`; history is not judged (LP-3.31, LP-8.8). |
 | 5 | #148 | #159 | `step-05-authority` | `1d1fb8cf`, `103c1bf1`, `4ee026b7` | `Authority::of` / `as_of(…, ns)`; scopes read inside the namespace, `ns:<other>` a fault; roles per namespace; `A003`/`A005` per namespace; the export keeps a namespace's own authority; the writer opens every namespace on its own genesis (`join_genesis` gone, `--external-ref` required); `grant new --namespace`; the unbound-genesis notice per namespace; Appendix C "Authority is per namespace". |
 | 6 | #149 | #160 | `step-06-keys` | `af9e6514`, `53becab1` | Keys bound, closed and trusted per namespace: `key_close` compares the namespace, D7's store-wide branch and `carried_over` go, the first policy is signed by a key trusted in its own namespace, `init` self-binds the holder's key in every namespace; notices `key_split` and `key_shared`; Appendix C "Keys are per namespace". |
-| 7 | #150 | #161 | `step-07-signers` | `cffc9a26`, `3cdc1188` | `allowed_signers` derived per namespace from that namespace's trusted bindings; `signers::write` removes a stale file and reports per namespace; Appendix C "A stale `allowed_signers` is removed". |
-| 8 | #151 | #162 | `step-08-close-everywhere` | `83eb6639`, `f85d4d53` | `identity revoke\|rotate --everywhere`: one change-set per namespace the holder has the key open in, same `at`, one commit (LP-6.34). |
-| 9 | #152 | #163 | `step-09-fixtures` | `a886cf1e`, `7766d21e` | The fifteen fixture stores moved under `ns/<namespace>/` by `git mv`, no digest moved; the staging shim removed; Appendix C "Namespaces become independent; a store with shared authority is re-founded". |
+| 7 | #150 | #161 | `step-07-signers` | `cffc9a26`, `3cdc1188`, `ee59361a` | `allowed_signers` derived per namespace from that namespace's trusted bindings; `signers::write` removes a stale file and reports per namespace; Appendix C "A stale `allowed_signers` is removed". |
+| 8 | #151 | #162 | `step-08-close-everywhere` | `4846f212`, `5f23b62f` | `identity revoke\|rotate --everywhere`: one change-set per namespace the holder has the key open in, same `at`, one commit (LP-6.34). |
+| 9 | #152 | #163 | `step-09-fixtures` | `ea6fd5c7`, `a3f3d54a` | The fifteen fixture stores moved under `ns/<namespace>/` by `git mv`, no digest moved; the staging shim removed; Appendix C "Namespaces become independent; a store with shared authority is re-founded". |
 | — | — | (this record) | `close-out` | — | This document. |
 
 Issues opened: #144 to #153, one per PRD row, each from its row. No other
@@ -275,9 +275,12 @@ merge.
   an act in the same second as the policy it is judged under, with a close
   of its key in that second, fails to verify. The key tests pause a second
   between acts for this reason; `signers_per_namespace.rs` did not and was
-  flaky once. A real store will not file two acts in one second, but the
-  reading could be stated in the protocol (LP-4.13) or the writer could
-  refuse an act dated within the same second as the policy.
+  flaky once, then fired again in CI on #161's own head on 2026-10-11
+  (`L011` on the close filed in the policies' second), so the pause step 8
+  had added to that harness was ported into step 7 (`ee59361a`; it no-ops
+  when step 8 lands). A real store will not file two acts in one second,
+  but the reading could be stated in the protocol (LP-4.13) or the writer
+  could refuse an act dated within the same second as the policy.
 - `Store::namespaces()` collects namespaces from sets, roles, log and
   sidecars, so a namespace that has only a sidecar or only an
   `allowed_signers` counts; `signers::check` and `write` rely on that. A
