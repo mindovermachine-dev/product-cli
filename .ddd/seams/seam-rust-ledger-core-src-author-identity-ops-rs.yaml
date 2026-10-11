@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-author-identity-ops-rs
 boundary: contract surface of ledger-core/src/author/identity_ops.rs
-verdict_knowledge: Callers learn identity add|rotate|revoke append key bindings (the namespace's first is the genesis holder's, self-bound under the mandate), refuse a software key under an -sk policy, and rewrite allowed_signers.
+verdict_knowledge: 'Callers learn identity add|rotate|revoke append key bindings in one namespace (the namespace''s first is the genesis holder''s, self-bound under the mandate), refuse a software key under an -sk policy, rewrite that namespace''s allowed_signers, and that rotate and revoke with everywhere file one change-set per namespace the principal has the key open in, to land in one commit (LP-6.34).'
 contract_location: ledger-core/src/author/identity_ops.rs
 obligations: []
 metadata: {}
@@ -66,3 +66,21 @@ bindings:
   after: sha256:bead00f9272725f5dd6f5a1aed8e104e0952dc2de57a3c505f490c599b2f8b28
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:6a22798d9caf6c67109e21f5d717775fd87d1bf77439c166a0ca52a7265aecd9
+- symbol: KeyArgs
+  file: ledger-core/src/author/identity_ops.rs
+  before: sha256:8bea51520bb0b7ffe6eed9cda30c74dbc7edecba82e555148063f65a776f07e7
+  after: sha256:65495d3f5ae13c3b9afe51dca8fb9aca2c43fefa1ced4f3740169de3d61087c2
+  base_revision: 111f4f611f1e31b07843a4211292f0c6d7d3e500
+  hash: sha256:1d17d847b3c0af6a505e4ae9b5444bf3e8ba2646a01d20201cd1da687bb88939
+- symbol: identity_revoke
+  file: ledger-core/src/author/identity_ops.rs
+  before: sha256:8bea51520bb0b7ffe6eed9cda30c74dbc7edecba82e555148063f65a776f07e7
+  after: sha256:65495d3f5ae13c3b9afe51dca8fb9aca2c43fefa1ced4f3740169de3d61087c2
+  base_revision: 111f4f611f1e31b07843a4211292f0c6d7d3e500
+  hash: sha256:c3c6135fa7c45bd808835e06a1b272454571dc6f5eb8e5096153f46565a16b53
+- symbol: identity_rotate
+  file: ledger-core/src/author/identity_ops.rs
+  before: sha256:8bea51520bb0b7ffe6eed9cda30c74dbc7edecba82e555148063f65a776f07e7
+  after: sha256:65495d3f5ae13c3b9afe51dca8fb9aca2c43fefa1ced4f3740169de3d61087c2
+  base_revision: 111f4f611f1e31b07843a4211292f0c6d7d3e500
+  hash: sha256:85346982663c44e63ae8712fd40804749d996059e1e76b45cbc61ccf5927b608
