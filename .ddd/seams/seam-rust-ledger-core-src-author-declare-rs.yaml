@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-author-declare-rs
+boundary: contract surface of ledger-core/src/author/declare.rs
+verdict_knowledge: 'Callers learn a declared set is filed under the namespace named in DeclareArgs.namespace or, when none is named, the store''s single namespace directory, and that a store holding several refuses an unnamed declaration (LP-3.34).'
+contract_location: ledger-core/src/author/declare.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: namespace
+  file: ledger-core/src/author/declare.rs
+  before: sha256:5839ccbcb859e14d370ec3a55c7c1509225b0ed7eae207184bda533db7a31e53
+  after: sha256:2605056afab363291eb394dc9c0de329100f1aa31b0a9dc8d7a8cd8712416026
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:d576ae3210be23623249b1a51b7f406aac97e77eb59c5fd095f1d3b6d4689cbb

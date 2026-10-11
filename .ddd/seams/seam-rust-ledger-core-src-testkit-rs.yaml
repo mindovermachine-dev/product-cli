@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-testkit-rs
 boundary: contract surface of ledger-core/src/testkit.rs
-verdict_knowledge: "Test authors learn the legacy-shape revocation builder."
+verdict_knowledge: Test authors learn the legacy-shape revocation builder.
 contract_location: ledger-core/src/testkit.rs
 obligations: []
 metadata: {}
@@ -12,3 +12,9 @@ bindings:
   after: sha256:1f89a7244f9ea8e5eee92e9f17155d2da914018281aa05bb504cd3f72fbc2c28
   base_revision: e33398d874ec5ddd52404c4f2c16039d5ed7cdbb
   hash: sha256:150f4cac51cfe3c2fe3fb139938d522f50d4b6b553a3ce090bfad0f2454799ce
+- symbol: NS
+  file: ledger-core/src/testkit.rs
+  before: sha256:e2b7efbdd1c70ce82ac229683c44d8574e3b41c895f163d5cceb4c34be3eec3a
+  after: sha256:7c347de958a591b8eb95cd2755e4b32d536dc36152d4d4a2821254949f15c7d5
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:5b23f61c3fb15980c07cdd103a1943ae677542a4d8db65f72861c89e443f1623

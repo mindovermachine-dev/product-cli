@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-set-rs
+boundary: contract surface of ledger-core/src/set.rs
+verdict_knowledge: 'Consumers learn a loaded set carries the namespace of the directory it was read from, never a field of the file, so a set id is unique within a namespace and a version names a set of its own namespace (LP-3.34, LP-3.36).'
+contract_location: ledger-core/src/set.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: namespace
+  file: ledger-core/src/set.rs
+  before: sha256:6e5373bbc153ec765072228a6dfcd05e8dca3cc41cb18b110a6cdf92797f13e0
+  after: sha256:2186efbeddde315cf5447cbecf8470d4a714245815b7b0a9daa0953104e729d2
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:dab88117a5c1f0d9056223d19b3bc6f6f941cd08bf2c6cb81d92cc0350bbac4c

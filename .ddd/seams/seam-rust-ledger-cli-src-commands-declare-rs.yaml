@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-cli-src-commands-declare-rs
+boundary: contract surface of ledger-cli/src/commands/declare.rs
+verdict_knowledge: 'CLI users learn declare takes --namespace to name the directory a new set files under, required only when the store holds several namespaces and inferred from the one directory otherwise (LP-3.34).'
+contract_location: ledger-cli/src/commands/declare.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: namespace
+  file: ledger-cli/src/commands/declare.rs
+  before: sha256:32068ee222b0b7682349a7b8427c714c821cc75a2b6209a5b9dc5a4b6f5b9367
+  after: sha256:2abf1e15dd84887baf833ad418a0bccf0788ae2fcd28db235ae04b420a79b590
+  base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
+  hash: sha256:0ffc177fe09f85a0b7ff3f0abbe19b4b7bb0211a5a6396357ef38b95cef795f8
