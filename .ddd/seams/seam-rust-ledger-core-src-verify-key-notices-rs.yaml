@@ -1,0 +1,62 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-key-notices-rs
+boundary: contract surface of ledger-core/src/verify/key_notices.rs
+verdict_knowledge: 'Callers learn the two repository notices about keys across namespaces: a key closed in one namespace and open in another (KeySplit), and one key blob bound to different principals in different namespaces (KeyShared), each reported by verify and never a finding, because a key is per namespace (LP-4.37, LP-4.39, rulings 47 and 69).'
+contract_location: ledger-core/src/verify/key_notices.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: shared
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:657965eba48123977a8979e45086c93e5a6557cdab576693197de4a144ac27d8
+- symbol: split
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:f7a9e3dffce583822fdc779b7348ac013faf32d07002e7f97775b5c949e98dd5
+- symbol: KeyShared
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:01e30b271f83e276a396083c5c7f05be9861e1482e90219b3f058b9a745c1af3
+- symbol: KeySplit
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:2a1273dc7af2ba52f5fc52465971389f23ee648f8b6bbcbb12e33cce4fff47e7
+- symbol: bound_to
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:e7c3108b3eb0f0e1053ff28f6976f9ae2d5acc08e1f38482da23636308484f47
+- symbol: key
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:1345c32ee60edaefa2293714331bfc0a60691974f49a2a9b67259f582f5a79d1
+- symbol: closed_in
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:033977638acd7c020565757cf7e11d24f479e7e5e4c0e78173030f5c8f06e9ed
+- symbol: holder
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:3b6772a7f9407d7d911d567b12b90873cd8ea8272ff044d5a4816c12678abf71
+- symbol: open_in
+  file: ledger-core/src/verify/key_notices.rs
+  before: absent
+  after: sha256:394d25018419a14f6aca7195dc32171330641d7a50f05ac276c472c7ea890cbd
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:bf512f9996b72b984629634e920592994d296bc86a2357d355dc4a22b1020a81
