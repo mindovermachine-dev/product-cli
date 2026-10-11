@@ -186,3 +186,9 @@ bindings:
   after: sha256:6bec31662ee3ba78c736178572b39ca0039fa83f23be4af7317f7422d833824b
   base_revision: 88b3de113c03fa70091d00fef217e55d44ccac3e
   hash: sha256:3fe513692e074586bd1e3d50e6123c7db9f90d76d2619ac108de67879c7bdee7
+- symbol: found
+  file: ledger-cli/tests/common/hand.rs
+  before: sha256:b8a216763ec322bf9470148afbcbea4077dbdbe6730e459bb1d03fa5da2d553a
+  after: sha256:e111d09b6d84e63d8aea9fbbe7cca766bd4bdd1d103674aea3c695e2f81ed99b
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:6f5ce54063e728276bd5f3c86b4f7f2f3df238e3e49e4da5b137b9f6690d1369

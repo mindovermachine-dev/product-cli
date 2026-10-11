@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-author-authority-ops-rs
 boundary: contract surface of ledger-core/src/author/authority_ops.rs
-verdict_knowledge: Callers learn the authority verbs (init_namespace, declare_role, grant, accept_grant, revoke_grant) run the role check, then the same delta-gate as every verb, refusing with AuthorError::Unauthorized or the verify finding.
+verdict_knowledge: 'Callers learn init_namespace opens every namespace with its own genesis grant, root and accept roles and first policy under .decisions/ns/<ns>/ (a mandate is required), and that declare_role runs the role check over that namespace''s authority, then the same delta-gate as every verb, refusing with AuthorError::Unauthorized or the verify finding; the grant verbs live in grant_ops (LP-6.5, ruling 47).'
 contract_location: ledger-core/src/author/authority_ops.rs
 obligations: []
 metadata: {}
@@ -156,3 +156,27 @@ bindings:
   after: sha256:5ee3f00e52414f633ca8b3970070a8ea892e566db63ac49511c311d9f7700c18
   base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
   hash: sha256:bc915b2048b8716dff644b51608397512a153cd62eb87e6091331047bd121a90
+- symbol: namespace
+  file: ledger-core/src/author/authority_ops.rs
+  before: sha256:5ee3f00e52414f633ca8b3970070a8ea892e566db63ac49511c311d9f7700c18
+  after: sha256:48aa783f1903bfcae7c9e5dfc63cc80a6ceb46005ba1fc15af7233711597bce6
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:c62fb0ecfe69a0f3867091334f08f2a2597dba2fba2f98ac03ce8f94ab804f87
+- symbol: accept_grant
+  file: ledger-core/src/author/authority_ops.rs
+  before: sha256:5ee3f00e52414f633ca8b3970070a8ea892e566db63ac49511c311d9f7700c18
+  after: sha256:48aa783f1903bfcae7c9e5dfc63cc80a6ceb46005ba1fc15af7233711597bce6
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:1df6cb34c71c53f2161b8ed39a8a6fcd2dbf64496f0d0cc79379b549964ea323
+- symbol: grant
+  file: ledger-core/src/author/authority_ops.rs
+  before: sha256:5ee3f00e52414f633ca8b3970070a8ea892e566db63ac49511c311d9f7700c18
+  after: sha256:48aa783f1903bfcae7c9e5dfc63cc80a6ceb46005ba1fc15af7233711597bce6
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:4b6a96428d9ce8d4fa86bb99691551a60b71dbee97256ba9db6becf528f592bf
+- symbol: revoke_grant
+  file: ledger-core/src/author/authority_ops.rs
+  before: sha256:5ee3f00e52414f633ca8b3970070a8ea892e566db63ac49511c311d9f7700c18
+  after: sha256:48aa783f1903bfcae7c9e5dfc63cc80a6ceb46005ba1fc15af7233711597bce6
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:6fef7024dec55afb1af27752d357b4f871c016ad935d584207a21b581a7a35e2

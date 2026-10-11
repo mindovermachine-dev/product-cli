@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-store-rs
 boundary: contract surface of ledger-core/src/store.rs
-verdict_knowledge: 'Consumers learn the store loads every namespace''s sets, roles and log from .decisions/ns/<ns>/, that a loaded set or change-set carries the namespace of the directory it was read from, that a set is looked up by (namespace, id) with set_in, and that every file must declare the format its fields need (LP-3.34).'
+verdict_knowledge: 'Consumers learn the store loads every namespace''s sets, roles and log from .decisions/ns/<ns>/, that a loaded set, role or change-set carries the namespace of the directory it was read from, that a set or a role is looked up by (namespace, id) with set_in and role_in, and that every file must declare the format its fields need (LP-3.34, ruling 47).'
 contract_location: ledger-core/src/store.rs
 obligations: []
 metadata: {}
@@ -54,3 +54,15 @@ bindings:
   after: sha256:dafa8d9927a1ed6ef80b99b682f949d26a927ece4a8b31ac044602b907884b26
   base_revision: 70395dfe317cb9a00665433813766ca763f3c58a
   hash: sha256:68d5ee772625beaa0a9d2645073dca38bf54888b200ad90e9423cc28343e2128
+- symbol: role_in
+  file: ledger-core/src/store.rs
+  before: sha256:dafa8d9927a1ed6ef80b99b682f949d26a927ece4a8b31ac044602b907884b26
+  after: sha256:f3d39821004043850810504c32f380e2cd29b21cfbf36010bfe0d0841c009826
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:39464c8758f1a1ab771855e12826b607b17b9d1d157a937e1fe73b8ea7d09971
+- symbol: role
+  file: ledger-core/src/store.rs
+  before: sha256:dafa8d9927a1ed6ef80b99b682f949d26a927ece4a8b31ac044602b907884b26
+  after: sha256:f3d39821004043850810504c32f380e2cd29b21cfbf36010bfe0d0841c009826
+  base_revision: ec43481f591b1022d8840755c8c0381b06a59387
+  hash: sha256:a3a3c2c3ffbebd3cc37f21aa407f2f12808da096af45cd7f603e72d635dfbedb
