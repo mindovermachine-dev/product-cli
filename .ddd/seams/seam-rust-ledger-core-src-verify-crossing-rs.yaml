@@ -1,0 +1,14 @@
+format: 2
+id: seam/rust/ledger-core-src-verify-crossing-rs
+boundary: contract surface of ledger-core/src/verify/crossing.rs
+verdict_knowledge: 'Callers learn the crossing stage: a decision''s latest version may not supersede a decision of another namespace, since only based_on crosses namespaces, judged on the live claim alone so history keeps what it recorded, a SCHEMA fault and no class added (LP-3.31, rulings 43 and 75).'
+contract_location: ledger-core/src/verify/crossing.rs
+obligations: []
+metadata: {}
+bindings:
+- symbol: findings
+  file: ledger-core/src/verify/crossing.rs
+  before: absent
+  after: sha256:2e57d63f5d371504edeb1c90e0fb16d8815f6d379af5ab2c8ba48ca07aa12615
+  base_revision: 74fb8581e549c803a1b4a0ddff3a6ce3ed90cc06
+  hash: sha256:f2cc8de7468fca69fc456a8c3e63ceac592931d9a37f388763e7f6cf8b635b9c
