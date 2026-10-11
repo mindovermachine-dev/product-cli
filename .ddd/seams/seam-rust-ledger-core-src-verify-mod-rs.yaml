@@ -138,3 +138,9 @@ bindings:
   after: sha256:bdac3c5d6194cd868373d4bdcab54a7f410fb4b7078b0d0d2fff70fec3f3d703
   base_revision: efc4bc55bfddbcadbc440489ad8ba701ae86b5e9
   hash: sha256:ef2bf299bd26f57a28cfeb4d0efcb845cf0c13164035048387168764f5b96dc9
+- symbol: crossing
+  file: ledger-core/src/verify/mod.rs
+  before: sha256:bdac3c5d6194cd868373d4bdcab54a7f410fb4b7078b0d0d2fff70fec3f3d703
+  after: sha256:005fa2ac0a75a8c4cf4b1d60c90eff616b8e2fa84b879ab7a233d566775c09c6
+  base_revision: 74fb8581e549c803a1b4a0ddff3a6ce3ed90cc06
+  hash: sha256:50077d369f2ca0de42441e4d36809c172a001080777b7592ca84c080d9f38125
