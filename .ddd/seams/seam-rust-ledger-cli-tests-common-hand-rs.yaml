@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-cli-tests-common-hand-rs
 boundary: contract surface of ledger-cli/tests/common/hand.rs
-verdict_knowledge: Test suites learn how to write ledger entities by hand — acceptances, bindings and policies with any at, under or signer — so verify is exercised on files no verb made.
+verdict_knowledge: 'Test-only: the hand-writing half of the ledger-cli suites'' harness, with no consumer outside ledger-cli/tests/ — test suites learn how to write ledger entities by hand (acceptances, bindings, policies with any at, under or signer) and how to found a namespace with its genesis, roles and first policy without the writer, so verify is exercised on files no verb made.'
 contract_location: ledger-cli/tests/common/hand.rs
 obligations: []
 metadata: {}
