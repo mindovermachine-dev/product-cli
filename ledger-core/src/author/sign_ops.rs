@@ -8,7 +8,7 @@
 //!
 //! - a configured key that is not the signer's live key in the namespace
 //!   (or, for a self-bound binding, the key being bound; for a `rotate`,
-//!   the key it closes);
+//!   the key it closes) — a key bound elsewhere does not sign here (ruling 47);
 //! - a software key where the policy requires hardware-backed (`-sk`) keys;
 //! - an **agent-reported unconfirmed key**: a software key whose private
 //!   half only an agent holds (the configured file is a public key). Nothing
@@ -36,9 +36,6 @@ pub(crate) struct ToSign<'a> {
     /// self-bound binding binds (it signs itself), or the key a `rotate`
     /// closes (LP-4.12, ruling 53).
     pub own_key: Option<(&'a str, &'a str)>,
-    /// The genesis holder's first key in a later namespace (D7): signed by
-    /// a live key of theirs bound in any namespace.
-    pub any_namespace: bool,
 }
 
 impl Author {
@@ -98,10 +95,10 @@ impl Author {
                 )));
             }
             Some(_) => true,
-            None => self.live_key(store, (!what.any_namespace).then_some(what.namespace), &key_type, &blob),
+            None => self.live_key(store, what.namespace, &key_type, &blob),
         };
         if !bound {
-            let closed = self.closed_by(store, &blob).map(|(id, ns)| format!(": it was closed in `{ns}` by {id}, and a close ends the key in every namespace")).unwrap_or_default();
+            let closed = self.closed_by(store, what.namespace, &blob).map(|id| format!(": it was closed in `{}` by {id}", what.namespace)).unwrap_or_default();
             return Err(AuthorError::Unauthorized(format!(
                 "{} is not {}'s live key in `{}`{closed} — the signature would not verify",
                 key.display(),
@@ -112,13 +109,12 @@ impl Author {
         Ok(())
     }
 
-    /// Whether `(key_type, blob)` is an open window of this author's in
-    /// `ns`, or in any namespace when `ns` is `None`.
-    fn live_key(&self, store: &Store, ns: Option<&str>, key_type: &str, blob: &str) -> bool {
-        let auth = Authority::build(store);
+    /// Whether `(key_type, blob)` is an open window of this author's in `ns`
+    /// (a key is trusted in the namespace it is bound in, ruling 47).
+    fn live_key(&self, store: &Store, ns: &str, key_type: &str, blob: &str) -> bool {
+        let auth = Authority::of(store, ns);
         auth.bindings.iter().any(|b| {
             b.act.opens()
-                && ns.is_none_or(|ns| b.namespace == ns)
                 && b.principal == self.who
                 && b.key_type.as_deref() == Some(key_type)
                 && b.key.as_deref() == Some(blob)
@@ -126,12 +122,11 @@ impl Author {
         })
     }
 
-    /// The close that ended this author's key `blob`, and its namespace.
-    fn closed_by(&self, store: &Store, blob: &str) -> Option<(String, String)> {
-        let auth = Authority::build(store);
+    /// The close in `ns` that ended this author's key `blob` there.
+    fn closed_by(&self, store: &Store, ns: &str, blob: &str) -> Option<String> {
+        let auth = Authority::of(store, ns);
         let mine = auth.bindings.iter().copied().find(|b| b.act.opens() && b.principal == self.who && b.key.as_deref() == Some(blob))?;
-        let close = crate::authority::key_close::closes_of(&auth.bindings, mine).into_iter().next()?;
-        Some((close.id.to_string(), close.namespace.clone()))
+        crate::authority::key_close::closes_of(&auth.bindings, mine).into_iter().next().map(|c| c.id.to_string())
     }
 
     /// Append the change-set and write its pending signatures beside it —

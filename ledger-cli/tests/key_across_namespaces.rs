@@ -1,11 +1,12 @@
-//! A close ends the key, not the binding (ruled 2026-10-06, #104).
+//! A close ends the key in its own namespace (ruling 47, LP-6.32; ruling 69).
 //!
-//! Closing any binding of a principal's key closes that key in every
-//! namespace of the store, from the close's position (D6), and every
-//! signature check considers all bindings of the matched key, not the first
-//! one it matched. A key already open in a namespace is never bound there
-//! twice. Whichever order the bindings were filed in, a closed key signs
-//! nothing and vouches for nothing.
+//! The same key bound in two namespaces is two keys: closing it in `A`
+//! leaves `B`'s bindings, acceptances, review items and `allowed_signers`
+//! untouched (AC-47, second bullet), and `verify` reports the split as a
+//! notice, never a finding. Within a namespace the rules of 2026-10-06
+//! stand: a key is bound once there, a closed key is never bound again
+//! there, and every check asks over all bindings of the key there. The
+//! writer's close in every namespace it holds is issue 8's.
 
 mod common;
 
@@ -25,11 +26,6 @@ fn bindings(repo: &Repo, ns: &str) -> Vec<ledger_core::authority::KeyBinding> {
 
 fn pause() {
     std::thread::sleep(std::time::Duration::from_millis(1100));
-}
-
-/// Every namespace's derived `allowed_signers`, concatenated.
-fn signers(repo: &Repo) -> String {
-    ledger_core::layout::namespaces(repo.path()).into_iter().map(|ns| repo.signers(&ns)).collect()
 }
 
 fn verify(repo: &Repo, extra: &[&str]) -> (i32, String) {
@@ -71,7 +67,8 @@ fn decision(repo: &Repo, ns: &str, statement: &str) -> String {
     common::decision_id(&out)
 }
 
-/// The key bound in A at `init`, then in B by `init` B: A's binding first.
+/// The key self-bound in A at `init`, then self-bound again in B by `init`
+/// B (ruling 47: every namespace is opened as the first is).
 fn a_then_b() -> (Repo, String) {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
@@ -83,12 +80,13 @@ fn a_then_b() -> (Repo, String) {
     repo.ok(&["init", "--namespace", B, "--external-ref", MANDATE]);
     repo.declare_in(B);
     acceptor(&repo, B);
-    hand::commit(&repo, "B, the same key bound");
+    hand::commit(&repo, "B, the same key self-bound there");
     pause();
     (repo, key)
 }
 
-/// The key bound in B first (self-bound), then in A by `identity add`.
+/// The key self-bound in B first, then in A by `identity add` — the genesis
+/// holder's first key in A, so self-bound there too.
 fn b_then_a() -> (Repo, String) {
     let repo = Repo::with_identity(OWNER);
     repo.declare();
@@ -107,50 +105,77 @@ fn b_then_a() -> (Repo, String) {
     hand::commit(&repo, "A, the same key bound second");
     pause();
     assert!(bindings(&repo, B)[0].id < bindings(&repo, A)[0].id, "B's binding is filed first");
+    assert!(bindings(&repo, A)[0].self_bound, "the genesis holder's first key in A is self-bound there");
     (repo, key)
 }
 
-/// Revoke the key's binding in A, then show it is closed in B as well and
-/// vouches for no first binding in C.
-fn closed_in_a_is_closed_everywhere(repo: &Repo, key: &str) {
+/// Revoke the key's binding in A, then show that B is untouched: the key
+/// still signs there, the split is a notice, and a third namespace opens
+/// with the same key self-bound.
+fn closed_in_a_stays_closed_in_a(repo: &Repo, key: &str) {
     let in_a = bindings(repo, A)[0].id.to_string();
     let close = hand::word(&repo.ok(&["identity", "revoke", &in_a]), "key:");
     hand::commit(repo, "closed in A");
     pause();
-    // Every allowed_signers line of the key ends at the close — B's too.
-    for line in signers(repo).lines().filter(|l| !l.starts_with('#')) {
-        assert!(line.contains("valid-before="), "every line of the closed key ends: {line}");
-    }
-    // An acceptance in B signed with the key is refused by the verb, naming
-    // the close and its namespace.
+    // A's line ends at the close; B's does not.
+    assert!(repo.signers(A).lines().filter(|l| !l.starts_with('#')).all(|l| l.contains("valid-before=")), "{}", repo.signers(A));
+    assert!(repo.signers(B).lines().filter(|l| !l.starts_with('#')).all(|l| !l.contains("valid-before=")), "{}", repo.signers(B));
+    // The key still signs in B.
     let id = decision(repo, B, "Signed in B after the key was closed in A.");
-    hand::commit(repo, "a decision in B");
-    let refused = refusal(repo, &["accept", &id]);
-    assert!(refused.contains(&format!("live key in `{B}`: it was closed in `{A}` by {close}")), "{refused}");
-    // And it vouches for no first binding in a new namespace.
-    let out = repo.ledger(&["init", "--namespace", C, "--external-ref", MANDATE]);
-    let text = common::both(&out);
-    assert_eq!(out.status.code(), Some(2), "{text}");
-    assert!(text.contains("no live key"), "{text}");
-    assert!(bindings(repo, C).is_empty(), "nothing bound in C");
+    repo.ok_tty(&["accept", &id]);
+    hand::commit(repo, "accepted in B with the key closed in A");
     let (code, text) = verify(repo, &[]);
     assert_eq!(code, 0, "{text}");
-    // Filed by hand past the verb, the gate fails it: the finding names the
-    // namespace it is refused in, the namespace of the close, and the close.
-    let text = hand_signed_finding(repo, B, &id, key);
-    assert!(text.contains(&format!("closed in `{A}` by {close}")) && text.contains(&format!("signs nothing in `{B}`")), "{text}");
+    assert!(text.contains(&format!("of {OWNER} is closed in `{A}` and open in `{B}`")), "the notice of ruling 69: {text}");
+    // In A it signs nothing: the verb names the close, the gate fails a
+    // hand-filed acceptance.
+    repo.declare_in(A);
+    acceptor(repo, A);
+    let in_a_only = decision(repo, A, "Signed in A after the close.");
+    hand::commit(repo, "a decision in A");
+    let refused = refusal(repo, &["accept", &in_a_only]);
+    assert!(refused.contains(&format!("live key in `{A}`: it was closed in `{A}` by {close}")), "{refused}");
+    let text = hand_signed_finding(repo, A, &in_a_only, key);
+    assert!(text.contains(&format!("closed in `{A}` by {close}")), "{text}");
+    // And a third namespace opens with the same key, self-bound there.
+    repo.ok(&["init", "--namespace", C, "--external-ref", MANDATE]);
+    assert!(bindings(repo, C)[0].self_bound, "self-bound in C");
 }
 
 #[test]
-fn bound_in_a_then_b_and_closed_in_a_the_key_is_closed_in_b_and_vouches_in_no_third() {
+fn bound_in_a_then_b_a_close_in_a_leaves_b_open_and_is_a_notice() {
     let (repo, key) = a_then_b();
-    closed_in_a_is_closed_everywhere(&repo, &key);
+    closed_in_a_stays_closed_in_a(&repo, &key);
 }
 
 #[test]
-fn bound_in_b_then_a_and_closed_in_a_the_key_is_closed_in_b_and_vouches_in_no_third() {
+fn bound_in_b_then_a_a_close_in_a_leaves_b_open_and_is_a_notice() {
     let (repo, key) = b_then_a();
-    closed_in_a_is_closed_everywhere(&repo, &key);
+    closed_in_a_stays_closed_in_a(&repo, &key);
+}
+
+/// AC-47, second bullet: a rotate in A leaves B's acceptances, review items
+/// and `allowed_signers` unchanged.
+#[test]
+fn a_rotate_in_a_leaves_bs_acceptances_review_items_and_allowed_signers_unchanged() {
+    let (repo, key) = a_then_b();
+    let id = decision(&repo, B, "Accepted in B before the rotate in A.");
+    repo.ok_tty(&["accept", &id]);
+    repo.ok(&["policy", "set", "--namespace", B, "--reaccept-within-days", "30"]);
+    hand::commit(&repo, "accepted in B");
+    pause();
+    let signers_b = repo.signers(B);
+    let (code, before) = verify(&repo, &["--today", "2099-01-01"]);
+    assert_eq!(code, 0, "{before}");
+    let in_a = bindings(&repo, A)[0].id.to_string();
+    let next = repo.keygen("owner-next");
+    repo.ok(&["identity", "rotate", &in_a, "--key-file", &format!("{next}.pub")]);
+    hand::commit(&repo, "rotated in A");
+    let (code, text) = verify(&repo, &["--today", "2099-01-01"]);
+    assert_eq!(code, 0, "no L012, however late: {text}");
+    assert!(!text.contains("need re-acceptance") && !text.contains("[L012]"), "no review item in B: {text}");
+    assert_eq!(repo.signers(B), signers_b, "B's allowed_signers is byte-identical");
+    assert!(text.contains(&format!("of {OWNER} is closed in `{A}` and open in `{B}`")), "{text}");
 }
 
 /// A store governed in A with the owner's key bound, an acceptor grant, and
@@ -225,25 +250,25 @@ fn revoking_the_second_of_two_bindings_closes_the_key_as_well() {
     assert!(text.contains(&format!("closed in `{A}` by {close}")), "{text}");
 }
 
+/// Carried: no agent identity and no non-interactive session produces a
+/// key close, in either namespace.
 #[test]
-fn an_acceptance_before_a_close_in_another_namespace_is_a_review_item_then_l012() {
+fn no_agent_identity_and_no_non_interactive_session_produces_a_key_close() {
     let (repo, _) = a_then_b();
-    let id = decision(&repo, B, "Accepted in B before the key closes in A.");
-    repo.ok_tty(&["accept", &id]);
-    let acc = {
-        let store = ledger_core::store::load(repo.path());
-        store.log.iter().flat_map(|l| l.file.acceptances.iter()).map(|a| a.id.to_string()).next_back().expect("acceptance")
-    };
-    repo.ok(&["policy", "set", "--namespace", B, "--reaccept-within-days", "30"]);
-    hand::commit(&repo, "accepted in B");
-    pause();
+    let before = repo.log_files();
+    for ns in [A, B] {
+        let id = bindings(&repo, ns)[0].id.to_string();
+        let piped = repo.piped(&["identity", "revoke", &id]);
+        assert_ne!(piped.status.code(), Some(0), "{}", common::both(&piped));
+        for agent in ["claude@anthropic.com", "noreply@anthropic.com", "github-actions@github.com"] {
+            repo.act_as(agent);
+            let out = repo.tty(&["identity", "revoke", &id]);
+            assert_ne!(out.status.code(), Some(0), "{agent} in `{ns}`: {}", common::both(&out));
+        }
+        repo.act_as(OWNER);
+    }
+    assert_eq!(repo.log_files(), before, "nothing filed");
     let in_a = bindings(&repo, A)[0].id.to_string();
     repo.ok(&["identity", "revoke", &in_a]);
-    hand::commit(&repo, "closed in A");
-    let (code, text) = verify(&repo, &[]);
-    assert_eq!(code, 0, "a review item, not a failure: {text}");
-    assert!(text.contains("need re-acceptance") && text.contains(&acc), "{text}");
-    let (code, text) = verify(&repo, &["--today", "2099-01-01"]);
-    assert_eq!(code, 1, "{text}");
-    assert!(text.contains("[L012]") && text.contains(&acc), "{text}");
+    assert_eq!(repo.log_files().len(), before.len() + 1, "the holder, at a terminal, closes");
 }

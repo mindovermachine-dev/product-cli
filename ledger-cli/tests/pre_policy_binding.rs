@@ -68,10 +68,14 @@ fn governed() -> Repo {
     repo
 }
 
-/// An unsigned binding for the owner in `ns`, dated `behind` `at`.
+/// An unsigned self-bound binding for the owner in `ns` — the genesis
+/// holder's first key there (ruling 47), under the mandate `hand::found`
+/// gives the namespace — dated a second before `at`.
 fn unsigned_before(repo: &Repo, ns: &str, at: chrono::DateTime<chrono::Utc>) -> (String, String) {
     let forged = repo.keygen("forged");
     let mut b = hand::binding(BindingAct::Add, OWNER, OWNER, ns, Some(&format!("{forged}.pub")), None, None);
+    b.self_bound = true;
+    b.mandate = Some(format!("mandate for {ns}"));
     b.at = at - Duration::seconds(1);
     b.hash = ledger_core::authority::payload::binding_hash(&b);
     let id = b.id.to_string();
@@ -94,12 +98,15 @@ fn in_a_fresh_store_d7_refuses_a_binding_dated_before_the_first_policy() {
 #[test]
 fn a_signed_binding_before_the_first_policy_is_trusted_and_signs() {
     let repo = governed();
-    let owner = repo.path().join("keys/owner").display().to_string();
-    // A namespace founded by hand with its genesis older than its policy;
-    // then a key added on a clock behind the policy, signed by the owner's
-    // key trusted in the first namespace (keys are store-wide until issue 6).
-    hand::found(&repo, SECOND, OWNER, vec![Scheme::Ssh], Some(&owner));
+    // A namespace founded by hand with its genesis older than its policy,
+    // the policy signed by the key below; then the holder's first key there,
+    // added on a clock behind the policy: their self-bound binding in that
+    // namespace, signed by the key it binds (keys are per namespace, ruling
+    // 47). Bound before the policy, it is the key the policy must be signed
+    // by (LP-4.31).
     let next = repo.keygen("owner-second");
+    hand::found(&repo, SECOND, OWNER, vec![Scheme::Ssh], Some(&next));
+    repo.use_key(&next);
     let (key_type, blob) = public(&next);
     bind_behind(&repo, SECOND, Duration::seconds(1), key_type, blob.clone()).expect("D7 admits it, and it is signed");
     hand::commit(&repo, "second namespace, governed and bound in one commit");
@@ -138,10 +145,10 @@ fn a_skewed_add_dated_before_inits_genesis_is_refused_by_d7() {
 #[test]
 fn an_unsigned_binding_before_a_signed_first_policy_fails_l011_and_is_never_trusted() {
     let repo = governed();
-    let owner = repo.path().join("keys/owner").display().to_string();
-    // A namespace founded by hand, its genesis older than its signed first
-    // policy; a binding filed with the policy, dated a second before it.
-    let policy = hand::found(&repo, SECOND, OWNER, vec![Scheme::Ssh], Some(&owner));
+    // A namespace founded by hand, its genesis older than its first policy
+    // requiring `ssh`; the holder's self-bound first binding there, filed
+    // with the policy, dated a second before it, unsigned.
+    let policy = hand::found(&repo, SECOND, OWNER, vec![Scheme::Ssh], None);
     let (id, blob) = unsigned_before(&repo, SECOND, policy.at);
     hand::commit(&repo, "second namespace, with a hand-filed binding");
     let out = repo.ledger(&["verify", "--no-blame"]);
@@ -153,7 +160,7 @@ fn an_unsigned_binding_before_a_signed_first_policy_fails_l011_and_is_never_trus
 }
 
 #[test]
-fn a_binding_in_a_namespace_no_policy_governs_is_a_schema_fault_and_init_does_not_launder_it() {
+fn a_binding_in_a_namespace_no_policy_governs_is_a_schema_fault_and_init_is_refused_over_it() {
     let repo = governed();
     let (id, _) = unsigned_before(&repo, SECOND, chrono::Utc::now());
     hand::commit(&repo, "a binding in a namespace nobody governs");
@@ -161,15 +168,11 @@ fn a_binding_in_a_namespace_no_policy_governs_is_a_schema_fault_and_init_does_no
     let text = common::both(&out);
     assert_eq!(out.status.code(), Some(1), "{text}");
     assert!(text.contains("[SCHEMA]") && text.contains(&id) && text.contains("a namespace with no policy"), "{text}");
-    // Opening the namespace dates its genesis with its policy, after the
-    // binding (ruling 47): the binding is then before the genesis, and D7
-    // refuses it — still a schema fault, now for that reason.
-    repo.ok(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
-    hand::commit(&repo, "opened after the fact");
-    let out = repo.ledger(&["verify", "--no-blame"]);
-    let text = common::both(&out);
-    assert_eq!(out.status.code(), Some(1), "{text}");
-    assert!(text.contains(&format!("[SCHEMA] {id}")) && text.contains("D7"), "{text}");
+    // Opening the namespace would self-bind the holder's key there — no
+    // longer their first binding in it, with that one filed (D7, ruling 47).
+    // The gate refuses to introduce the fault, and the binding stays one.
+    let refused = repo.refused(&["init", "--namespace", SECOND, "--external-ref", "contract 2026/117"]);
+    assert!(refused.contains("D7") && refused.contains("first in the namespace"), "{refused}");
 }
 
 #[test]

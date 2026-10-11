@@ -1,22 +1,27 @@
-//! A close ends the key, not the binding (ruled 2026-10-06).
+//! A close ends the key, not the binding — in its own namespace (ruled
+//! 2026-10-06; per namespace by ruling 47, LP-6.32).
 //!
-//! Closing any binding of a principal's key — by `rotate` or `revoke`, in
-//! any namespace — closes that key in every namespace of the store, from the
-//! close's position (D6). The key is the principal and the key blob; every
+//! Closing any binding of a principal's key in a namespace — by `rotate` or
+//! `revoke` — closes that key in that namespace, from the close's position
+//! (D6). The key is the principal, the key blob and the namespace; every
 //! check that asks whether a key is closed asks it here, over every binding
-//! of that key, never only the binding a signature happened to match. Which
-//! keys may be bound at all — once per namespace, never once closed, never
-//! another principal's — is [`refusal`].
+//! of that key in the namespace, never only the binding a signature
+//! happened to match. The same key bound in another namespace is another
+//! key there, judged by that namespace alone: a key closed in one and open
+//! in another is a repository notice (ruling 69), never a finding. Which
+//! keys may be bound at all — once per namespace, never once closed there,
+//! never another principal's there — is [`refusal`].
 
 use super::binding::KeyBinding;
 
-/// Whether `a` and `b` open the same principal's same key.
+/// Whether `a` and `b` open the same principal's same key in the same
+/// namespace (ruling 47: a key is bound, closed and trusted per namespace).
 pub fn same_key(a: &KeyBinding, b: &KeyBinding) -> bool {
-    a.act.opens() && b.act.opens() && a.principal == b.principal && a.key.is_some() && a.key == b.key
+    a.act.opens() && b.act.opens() && a.principal == b.principal && a.namespace == b.namespace && a.key.is_some() && a.key == b.key
 }
 
 /// Every close among `bindings` that ends `b`'s key: a close of any opening
-/// binding of the same principal and key, in any namespace.
+/// binding of the same principal and key in `b`'s namespace.
 pub fn closes_of<'a>(bindings: &[&'a KeyBinding], b: &KeyBinding) -> Vec<&'a KeyBinding> {
     closes_among(bindings, bindings, b)
 }
@@ -48,25 +53,29 @@ pub fn already_open<'a>(bindings: &[&'a KeyBinding], b: &KeyBinding) -> Option<&
 /// it (trusted, in landing order), a close's target looked up in `filed`
 /// (ruled 2026-10-06). `None`: it may.
 ///
+/// Each rule looks at the binding's own namespace (ruling 47, LP-4.37):
+///
 /// - **A key belongs to one principal** (ruling 4): a key that is, or was,
-///   bound to a different principal anywhere in the store is not bound again.
+///   bound to a different principal in the namespace is not bound again
+///   there. The same key bound to two principals in two namespaces is a
+///   repository notice.
 /// - **A closed key is never bound again** (ruling 3): a key closed for its
-///   principal, in any namespace, is not bound again — the genesis holder
-///   vouching for it as someone's first key included.
+///   principal in the namespace is not bound again there — the genesis
+///   holder vouching for it as someone's first key included.
 /// - **A key is bound once per namespace** (ruling 1).
 pub fn refusal(bound: &[&KeyBinding], filed: &[&KeyBinding], b: &KeyBinding) -> Option<String> {
     if !b.act.opens() || b.key.is_none() {
         return None;
     }
-    if let Some(other) = bound.iter().find(|o| o.act.opens() && o.key == b.key && o.principal != b.principal) {
+    if let Some(other) = bound.iter().find(|o| o.act.opens() && o.namespace == b.namespace && o.key == b.key && o.principal != b.principal) {
         return Some(format!(
-            "this key is bound to {} ({} in `{}`) — a key belongs to one principal, so it is never bound to {}",
+            "this key is bound to {} ({} in `{}`) — a key belongs to one principal, so it is never bound to {} there",
             other.principal, other.id, other.namespace, b.principal
         ));
     }
     if let Some(close) = closes_among(bound, filed, b).first() {
         return Some(format!(
-            "this key was closed for {} in `{}` by {} — a closed key is never bound again",
+            "this key was closed for {} in `{}` by {} — a closed key is never bound again there",
             b.principal, close.namespace, close.id
         ));
     }

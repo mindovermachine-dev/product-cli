@@ -455,7 +455,7 @@ Spec v1.8 (#70; rulings D1 to D4 of #65 and D5 to D9 of 2 October 2026). A names
 
 - **LP-4.30** (V) **Requirement.** The policy in force for the namespace at the entity's position (section 8.7), or for a policy change the policy it replaces (D1), lists the required schemes. Under `[none]` an entity needs no sidecar; under any other policy each listed scheme needs one. A policy listing `none` with another scheme is a schema fault, and a writer refuses to file one. A sidecar that is present always has to verify. An acceptance or revocation before its namespace's first policy is not checked (D5 (c)), and a sidecar on one is a schema fault (LP-4.7, ruling 52). **A key binding is never exempt** (ruled 2026-10-05, narrowing D5 (c)): one before its namespace's first policy is judged by D7 and by **that first policy's** requirement (section 4.10).
 - **LP-4.9** (W, V) A policy change MUST be signed under the policy in force before it, which is the policy it replaces.
-- **LP-4.31** (V) **A namespace's first policy** (2026-10-05, #96) replaces nothing, so no policy is in force before it. It is judged under **its own** schemes, and only when its `by` held a live trusted key at its position: bound in this namespace (in the same change-set, dated with the policy, when the namespace is opened) or in another, which for this check alone stands in this namespace as it does for the genesis holder's later first binding (section 4.10). Then a missing or invalid signature is `L011`. A first policy filed before its author held any trusted key needs none, and stands unsigned. *Superseded by ruling 47 once implemented: a key trusted in another namespace then has no effect here (LP-6.31).*
+- **LP-4.31** (V) **A namespace's first policy** (2026-10-05, #96) replaces nothing, so no policy is in force before it. It is judged under **its own** schemes, and only when its `by` held a live key trusted in this namespace at its position — bound here, in the same change-set, dated with the policy, when the namespace is opened (LP-4.38); a key trusted in another namespace has no effect here (spec v1.9, ruling 47). Then a missing or invalid signature is `L011`. A first policy filed before its author held any trusted key in the namespace needs none, and stands unsigned.
 
 ### 4.9 Trust file
 
@@ -469,7 +469,7 @@ Spec v1.8 (#70; rulings D1 to D4 of #65 and D5 to D9 of 2 October 2026). A names
 
   - Options are comma-separated, as OpenSSH's grammar requires.
   - `<principal>` is the bare address.
-  - `valid-after` is the opening binding's `at`. `valid-before` is the `at` of the earliest `rotate` or `revoke` that closed its **key**, in any namespace, since a close ends the key, not the binding (ruled 2026-10-06, section 4.11). So every line of a closed key carries the end date.
+  - `valid-after` is the opening binding's `at`. `valid-before` is the `at` of the earliest `rotate` or `revoke` that closed its **key** in that namespace, since a close ends the key, not the binding (ruled 2026-10-06, section 4.11), in its own namespace (spec v1.9, LP-6.32). So every line of a key closed in the namespace carries the end date, and a line of the same key in another namespace does not.
   - Only bindings that open a window (`add`, `rotate`) give a line, and only **trusted** bindings are written (section 4.10). An unsigned or wrongly signed binding never reaches the file.
   - Lines are sorted by code point, joined by LF, and the last line ends with one LF.
   - *Superseded by ruling 47 once implemented: `valid-before` then comes from a close in the binding's own namespace (LP-6.31).*
@@ -490,25 +490,25 @@ v1.7 wrote the options space-separated, which OpenSSH refuses as an invalid key.
 - **LP-4.34** (V) Key bindings are judged first, in order (section 8.7). A binding is **trusted** when its filer is one D7 allows and, where the policy in force requires a signature, its signature verifies against the bindings already trusted.
 - **LP-4.35** (V) **Before the first policy** (ruled 2026-10-05). A binding before its namespace's first policy (D6: landed no later, dated earlier) is judged by D7 and by the requirement of that first policy, as if it were in force. Signed, it is trusted. Unsigned where that policy requires a signature, it is `L011` and never trusted. Under a `[none]` first policy, D7 alone decides it. A binding in a namespace no policy governs at all is a schema fault. **Every filed binding is trusted or named by a finding**; none is left silently untrusted.
 - **LP-4.12** (V) D7 allows these filers:
-  - the genesis holder's **self-bound** first binding in the store, carrying the genesis grant's `external_ref` as `mandate`, signed by the key it binds. Once per store: in any later namespace the genesis holder's first binding is their own `add`, signed by a key of theirs already trusted in another namespace (for that check alone, that key stands in the new namespace). A key trusted elsewhere vouches for that **first** binding only, never a further `add` (ruled 2026-10-05). Otherwise a key closed in one namespace and live in another could re-enter the namespace it was closed in. So a further key dated before the opening binding, which would turn that binding into a further `add`, is refused. *Superseded by ruling 47 once implemented: the self-bound first binding is then once per namespace, and a key trusted in another namespace vouches for nothing here (LP-6.31);*
+  - the genesis holder's **self-bound** first binding in the namespace, carrying that namespace's genesis grant's `external_ref` as `mandate`, signed by the key it binds. Once per namespace (spec v1.9, ruling 47): every namespace is opened as the first is, and a key trusted in another namespace vouches for nothing here — the same key is self-bound again in each namespace it is to sign in. A further key of the genesis holder's in the namespace is their own `add`, signed by a key of theirs live there; one dated before their self-bound binding is before the namespace's genesis and refused. *Superseded by ruling 47 once implemented: the self-bound first binding is then once per namespace, and a key trusted in another namespace vouches for nothing here (LP-6.31);*
   - a principal's **first key** (no open window in the namespace) is filed and signed by the genesis holder: `by` the genesis holder, `principal` the new holder, `under` the genesis grant;
   - every further `add`, and every `rotate`, is the principal's own, signed by a live key of theirs (a `rotate` by the key it closes). A verifier verifies a `rotate`'s signature against the key of the binding it closes and no other, so one signed by another live key of the same principal is `L011`, and a writer signs a `rotate` with that key and refuses any other (ruling 53);
   - a `revoke` is the principal's, or the genesis holder's under the genesis grant.
 - **LP-4.36** (V) A binding filed by anyone else is a schema fault (D7); one whose required signature does not verify is `L011`. Neither is trusted, and only trusted bindings reach `allowed_signers`.
 - **LP-4.37** (W, V) **Which keys may be bound** (ruled 2026-10-06). A binding that opens a key is refused at filing, and at verification it is a schema fault and never trusted, when, against the bindings trusted before it:
-  - **the key belongs to another principal**: it is, or was, bound to a different principal anywhere in the store. A key belongs to one principal;
-  - **the key is closed** for its principal, in any namespace (section 4.11). A closed key is never bound again, the genesis holder vouching for it as someone's first key included;
-
-  *Superseded in part by ruling 47 once implemented: both bullets then look at the binding's own namespace only (LP-6.31).*
+  - **the key belongs to another principal**: it is, or was, bound to a different principal in that namespace. A key belongs to one principal within a namespace; the same key bound to two principals in two namespaces is a repository notice (LP-8.31, ruling 69);
+  - **the key is closed** for its principal in that namespace (section 4.11). A closed key is never bound again there, the genesis holder vouching for it as someone's first key included; closed in one namespace, it is another key in the next, bindable there;
   - **the key is already open** for its principal in that namespace. A key is bound once per namespace. The same key may be bound in another namespace.
-- **LP-4.38** (W) **Opening a namespace** (2026-10-05, #96). A writer that opens a namespace files the genesis holder's self-bound binding in the same change-set as the genesis grant and the first policy, dated with the policy (so the policy is in force at it), whenever the genesis holder has no key in the store. The window in which the first self-bound binding to land for the address, anyone's, is the one trusted is then closed by the act that opens the namespace. With no usable key the writer refuses and names what is missing, unless explicitly told to proceed unbound (ruled 2026-10-05); the verifier then says the window is open (LP-8.31). In a **later namespace**, while the genesis holder holds a live key, the writer binds that key there in the same change-set: their own `add`, signed by a key of theirs already trusted, dated with the policy, so they sign in the new namespace with no separate binding act. If every key of theirs is closed, the writer refuses and names the closed keys, unless explicitly told to proceed unbound; then it warns, binds nothing and signs nothing. *Superseded by ruling 47 once implemented: each namespace then has its own genesis grant and its own self-bound first binding, and a later namespace is opened as the first one is (LP-6.31).*
+
+  Each rule looks at the binding's own namespace (spec v1.9, ruling 47).
+- **LP-4.38** (W) **Opening a namespace** (2026-10-05, #96; per namespace since spec v1.9, ruling 47). A writer that opens a namespace files the genesis holder's self-bound binding in the same change-set as the namespace's genesis grant and first policy, dated with the policy (so the policy is in force at it), under that namespace's mandate — every namespace, whatever the holder has bound elsewhere, since a key is trusted only in the namespace it is bound in. The window in which the first self-bound binding to land for the address in that namespace, anyone's, is the one trusted is then closed by the act that opens it. With no usable key the writer refuses and names what is missing, unless explicitly told to proceed unbound (ruled 2026-10-05); the verifier then says the window is open (LP-8.31). A key closed in another namespace is no obstacle: it is another key here, and the split is a notice (ruling 69).
 
 *Note: in the reference writer the genesis holder's key is the one its git configuration names as the signing key, and "proceed unbound" is an explicit option of the command that opens a namespace.*
 
 ### 4.11 Closed keys
 
-- **LP-4.39** (V) A close ends the **key**, not the binding (ruled 2026-10-06). Closing any binding of a principal's key, by `rotate` or `revoke`, in any namespace, the target a trusted binding or not, closes that key (the principal and the key) in every namespace of the store, from the close's position (D6). Every signature check considers all bindings of the matched key, never the first it matched; with several closes, the earliest the act is not before decides. The `L011` finding names the namespace the act is refused in, the namespace of the close, and the close. *Superseded by ruling 47 once implemented: a close then takes effect in its own namespace only, and a writer MAY file a close in every namespace it holds (LP-6.32).*
-- **LP-4.13** (V) An entity signed by a closed key: dated at or after the close, it fails verification at its `at` (`L011`); landed after the close, whatever its date, it is `L011`; dated and landed before it, an acceptance is a review item ("needs re-acceptance") until a later valid acceptance of the same version by the same actor affirms it, and `L012` once the policy's `reaccept_within_days` deadline (from the close: the key's earliest, in whichever namespace) has passed.
+- **LP-4.39** (V) A close ends the **key**, not the binding (ruled 2026-10-06), in its own namespace (spec v1.9, ruling 47; LP-6.32). Closing any binding of a principal's key in a namespace, by `rotate` or `revoke`, the target a trusted binding or not, closes that key (the principal, the key and the namespace) there, from the close's position (D6). Every signature check considers all bindings of the matched key in that namespace, never the first it matched; where several closes end one key, an act stands only if it is before each of them (ruling 101: the genesis holder's revoke may close a key a `rotate` has already closed, so a thief's `rotate` that names forged acts keeps nothing standing once the holder's revoke, dated at the compromise, does not). The `L011` finding names the namespace the act is refused in and the close.
+- **LP-4.13** (V) An entity signed by a closed key: dated at or after the close, it fails verification at its `at` (`L011`); landed after the close, whatever its date, it is `L011`; dated and landed before it, an acceptance is a review item ("needs re-acceptance") until a later valid acceptance of the same version by the same actor affirms it, and `L012` once the policy's `reaccept_within_days` deadline (from the close: the key's earliest in the entity's own namespace, LP-6.32) has passed.
 - **LP-4.14** (V, R) An affirmation is a new acceptance under a live key. The reader takes the latest valid acceptance of a version.
 
 ## 5. Entities
@@ -871,8 +871,8 @@ Until these rules, a policy by anyone with a bound key (or, under `[none]` or fo
 
 All of section 6.7 is **not implemented**.
 
-- **LP-6.31** (W, V) Authority is per namespace (spec v1.9, ruling 47). A grant, grant acceptance, unavailability, availability, revocation or role belongs to the namespace whose directory holds it (LP-3.33, LP-3.34); a binding and a policy carry their namespace. Each namespace has its own genesis grant, roles, grants and policy, and nothing in one namespace's authority has effect in another: every role check, genesis lookup and policy verdict reads one namespace's records (LP-6.16, LP-6.28), the authority shapes run over each namespace's graph alone (LP-8.19, LP-8.23), the unbound-genesis notice is per namespace (LP-8.31), and an export carries its own namespace's authority only (LP-9.11). A writer opens every namespace as it opens the first, on its own `external_ref` mandate, with its own root and accept roles and first policy (LP-4.38); a store whose namespaces shared one genesis is re-founded, not migrated (ruling 68, Appendix C). *Keys are the one part still store-wide: the self-bound binding once per store and a later namespace's first key trusted through another namespace (LP-4.12, LP-4.31, LP-4.38), and keys judged across namespaces (LP-4.32, LP-4.37, LP-4.39), until issue 6 (LP-6.32).*
-- **LP-6.32** (W, V) **Not implemented.** A close of a key takes effect in its own namespace only. A writer MAY file a close in every namespace it holds (ruling 47). It supersedes LP-4.39 once implemented.
+- **LP-6.31** (W, V) Authority is per namespace (spec v1.9, ruling 47). A grant, grant acceptance, unavailability, availability, revocation or role belongs to the namespace whose directory holds it (LP-3.33, LP-3.34); a binding and a policy carry their namespace. Each namespace has its own genesis grant, roles, grants and policy, and nothing in one namespace's authority has effect in another: every role check, genesis lookup and policy verdict reads one namespace's records (LP-6.16, LP-6.28), the authority shapes run over each namespace's graph alone (LP-8.19, LP-8.23), the unbound-genesis notice is per namespace (LP-8.31), and an export carries its own namespace's authority only (LP-9.11). A writer opens every namespace as it opens the first, on its own `external_ref` mandate, with its own root and accept roles and first policy (LP-4.38); a store whose namespaces shared one genesis is re-founded, not migrated (ruling 68, Appendix C). Keys are per namespace as well: the self-bound binding once per namespace (LP-4.12, LP-4.38), a first policy signed by a key trusted in its own namespace (LP-4.31), and keys judged within their namespace (LP-4.32, LP-4.37, LP-4.39, LP-6.32).
+- **LP-6.32** (W, V) A close of a key takes effect in its own namespace only (spec v1.9, ruling 47; LP-4.39). A key closed in one namespace and open in another is a repository notice, never a finding (ruling 69, LP-8.31). A writer MAY file a close in every namespace it holds, one change-set per namespace in one commit (ruling 69). *The writer's close in every namespace held is not yet built (issue 8).*
 
 Authority as its own unit, which namespaces depend on by pin, is intended for later and is not designed (ruling 48, section 12.3).
 
@@ -1126,8 +1126,10 @@ CI has to tell "the gate said no" apart from "the gate broke". This differs from
   - **Unchecked namespaces.** Each namespace the log speaks that has no policy.
   - **Unsigned namespaces** (2026-10-05, #96). Each namespace whose policy in force is `[none]`, with what does not hold there: an absent signature is no finding, `L012` cannot arise, key bindings are trusted unsigned, a policy change is unsigned, and no `ssh` verification runs unless an `ssh` sidecar exists. A sidecar that is present is still verified.
   - **An unbound genesis holder** (2026-10-05, #96), per namespace (spec v1.9, ruling 47). For each namespace whose genesis holder has no trusted key, the verifier says so, naming the namespace and the holder: the first self-bound binding to land for that address will be the one trusted (D7).
+  - **A key closed in one namespace and open in another** (spec v1.9, ruling 69): a close ends the key in its own namespace only (LP-6.32), so the verifier names the key, its holder, the namespaces it is closed in and those it is open in. The holder decides whether to close it there too.
+  - **One key bound to two principals in two namespaces** (spec v1.9, ruling 69): within a namespace a key belongs to one principal (LP-4.37); across namespaces the verifier names the key and each `(principal, namespace)` it is bound to.
 
-*Note: the reference verifier's machine-readable report carries the second list as `unsigned` and the third as `genesis_unbound`, one entry per namespace (`namespace`, `holder`).*
+*Note: the reference verifier's machine-readable report carries the second list as `unsigned`, the third as `genesis_unbound`, one entry per namespace (`namespace`, `holder`), the fourth as `key_split` (`holder`, `key`, `closed_in`, `open_in`) and the fifth as `key_shared` (`key`, `bound_to`).*
 
 ### 8.9 Classes added by the basis rulings
 
@@ -1473,6 +1475,7 @@ A deployment should tell holders, before they accept a grant, that their address
 | 7 October 2026 | Ruling 58 applied: a landed `format:` declaration is compared across first-parent history, and any change other than the LP-3.16 correction fails `L007` (LP-3.16, LP-8.30, `L007`'s wording). This enforces the ruling of 5 October on #81; its three corrections stay green. No class added; no digest moves. |
 | 7 October 2026 | Ruling 59 applied: a `set:` grant scope accepts every valid set id, dots included (LP-3.3). The reference had refused a dot, which section 3.3 allows. No class added; no digest moves: a scope is hashed as written. |
 | 7 October 2026 | Ruling 60 applied: a change-set's `parents` is part of its header entity and immutable once landed (LP-8.25). The reference had keyed each parent as its own entity, so a parent appended to a landed header passed. No class added; no digest moves. |
+| 9 October 2026 | **Rulings 47 and 69 applied: keys per namespace** (PRD §3.3; issue 6). LP-6.32 loses its not-implemented mark: a close ends the key in its own namespace only; LP-4.37's three rules, LP-4.39 (with ruling 101's wording) and LP-4.13's deadline look at the binding's own namespace; the genesis holder's first key in a namespace is that namespace's self-bound binding, once per namespace, and a key trusted elsewhere vouches for nothing here (LP-4.12, LP-4.31, LP-4.38 — the later-namespace paragraph goes, with the reference's `carried_over`); `allowed_signers` ends a line at a close in its own namespace (LP-4.32); LP-8.31 gains the two notices of ruling 69. LP-6.31 drops its keys note. No class added; no digest moves. The Appendix C note "Keys are per namespace" is added. |
 | 9 October 2026 | **Ruling 47 applied: authority per namespace** (with rulings 67, 68 and 50 per namespace; PRD §3.2, §3.9; issue 5). LP-6.31 loses its not-implemented mark: a grant, grant acceptance, interval, revocation or role belongs to the namespace whose directory holds it; each namespace has its own genesis grant, roles and policy; a scope is read inside its own namespace, `ns:<other>` being a schema fault (LP-6.16, LP-8.8); a policy is judged under its own namespace's genesis (LP-6.28); the authority shapes run over each namespace's graph alone, so `A003` and `A005` count per namespace, while the decision shapes keep the store's graph (LP-8.19, LP-8.23); roles are per namespace (LP-5.19); the unbound-genesis notice is per namespace (LP-8.31); an export carries its own authority only (LP-9.11). LP-6.5 loses its note. Keys stay store-wide until issue 6 (noted in LP-6.31). A writer opens every namespace on its own mandate. No class added; no digest moves; no grant payload gains a field. The Appendix C note "Authority is per namespace" is added. |
 | 9 October 2026 | **Ruling 43 applied, on live claims (ruling 75)** (PRD §3.7; issue 4). LP-3.31 loses its not-implemented mark and its note on the implemented format: a decision's latest version whose `supersedes` names a decision of another namespace is a schema fault (LP-8.8); earlier versions are not judged, and a next version that drops the edge repairs the store. `G001` keeps the dangling target. No class added; no digest moves; no such edge in this repository or the fixtures. |
 | 9 October 2026 | **Ruling 45 applied** (PRD §3.7; issue 3). LP-3.33 loses its not-implemented mark and its note on the implemented format: every entity under `ns/<ns>/` belongs to `<ns>`, a revocation's target and a sidecar's entity included, and one that belongs elsewhere is a schema fault (LP-8.8). Closes N12's cross-namespace half with ruling 49, and N14. No class added; no digest moves; no committed file in this repository is mixed (0 of 187). |
@@ -1620,6 +1623,42 @@ or is normalised differently. It is *not* required for a `format` bump that
 only adds an unhashed field.
 
 ---
+
+#### Keys are per namespace (2026-10-09, no format change)
+
+**Ruled 7 October 2026** (rulings 47 and 69;
+`ledger/prd/namespace-independence-prd.md` §3.3; issue 6 of its §6). A key
+is bound, closed and trusted in one namespace: the same key self-bound in
+two namespaces is two keys, each judged by its namespace alone. From this
+change:
+
+- a close — `rotate` or `revoke` — ends the key in its own namespace only
+  (LP-6.32, LP-4.39); an acceptance in another namespace signed with the
+  same key is untouched, has no review item, and its `allowed_signers`
+  line keeps no end date (LP-4.13, LP-4.32);
+- "a key belongs to one principal" and "a closed key is never bound again"
+  are judged within the namespace (LP-4.37); closed in one namespace, a key
+  is bindable in the next;
+- the genesis holder's first key in a namespace is that namespace's
+  self-bound binding, under its own mandate, signed by the key it binds —
+  once per namespace, whatever the holder has bound elsewhere (LP-4.12,
+  LP-4.38). The reference writer binds the configured key self-bound at
+  every `init --namespace`; a first policy is signed by a key trusted in
+  its own namespace only (LP-4.31). The rule that let a key trusted in one
+  namespace vouch for a holder's first binding in another, and the
+  reference's `carried_over` that implemented it, go;
+- two repository notices, never findings (LP-8.31, ruling 69): a key closed
+  in one namespace and open in another; one key bound to two principals in
+  two namespaces.
+
+**Who must act.** Nobody, for a store with one namespace. A store with
+several governed namespaces made before v1.9 is re-founded (ruling 68; the
+note "Authority is per namespace" below): its later namespaces' first
+bindings leaned on a key trusted elsewhere, which now trusts nothing there.
+
+**No digest moves** and no class is added: a binding's hashed fields are
+unchanged, and `namespace` was already among them. No committed store in
+this repository binds a key, so no stored verdict changes.
 
 #### Authority is per namespace (2026-10-09, no format change)
 

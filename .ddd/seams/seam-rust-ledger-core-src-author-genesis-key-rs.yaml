@@ -1,7 +1,7 @@
 format: 2
 id: seam/rust/ledger-core-src-author-genesis-key-rs
 boundary: contract surface of ledger-core/src/author/genesis_key.rs
-verdict_knowledge: 'Callers learn the genesis holder''s key at init: bound self-bound in the same change-set as the first policy when a usable signing key is configured, signing that policy; in a later namespace the first policy is signed with a live key.'
+verdict_knowledge: 'Callers learn the genesis holder''s key at init: in every namespace init opens, the configured key is self-bound in the same change-set as the first policy, under the genesis mandate, and signs that policy; a later namespace binds the holder''s live key there, signed by a key of theirs already trusted, and init is refused with no usable key unless --without-key proceeds unbound (LP-4.31, LP-4.38, ruling 47).'
 contract_location: ledger-core/src/author/genesis_key.rs
 obligations: []
 metadata: {}
@@ -24,3 +24,9 @@ bindings:
   after: sha256:b1f3d002e552fc53131758042caaa73f52c3d2a9da2f2550a0e6a4269478f7ea
   base_revision: 8edaa49385d53722a01a95c588f109af94a59783
   hash: sha256:da0eab5c2006e4377a59d6279ad1a219a4bd638f9d97593677a109704363c292
+- symbol: impl Author
+  file: ledger-core/src/author/genesis_key.rs
+  before: sha256:f56e3ebc3bb733576bb09e4130a239088b8e87803c199ce2ef4504a4e5799092
+  after: sha256:5bd15ca42caf8a69e2ef6194d1439b8f2cc215f38499e1295443806f185a23af
+  base_revision: 73f98fb8133e0e2f334d0f0061b311a92408b882
+  hash: sha256:441c0b7bd086c83d20224dfb089ea984ce4890be043dcd910844b3dd9c453a0c
