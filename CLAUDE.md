@@ -4,8 +4,7 @@
 
 Product is a Rust CLI and MCP server for the **Product Framework** — the open
 What/How specification graph (`docs/product-framework-open.md`, currently
-v1.11.0, synced with canonical; it keeps the blueprint/DeployableUnit rename and
-still carries pre-1.8.0 §5 SPMC/Build-seam wording). It captures and verifies a product's *What* (domain model, event model,
+v1.11.0, synced with canonical; it keeps the blueprint/DeployableUnit rename). It captures and verifies a product's *What* (domain model, event model,
 Deciders, Projectors, systems, triggers, UI/AIO model) and *How* (contracts,
 reification, delivery), all under `.product/`. Every product has one home,
 `.product/products/<name>/`; the reference What lives in

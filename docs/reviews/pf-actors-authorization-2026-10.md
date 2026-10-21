@@ -27,16 +27,20 @@ copies, keeping a principal of the product distinct from the realising actor.
 The ontology (`schema/ontology/`) and SHACL shapes (`schema/shapes/`) have no
 counterpart in the canonical repo, so their §3.7 vocabulary stays here.
 
-Differences from canonical that the merge kept, all present before 1.9.1:
+Differences from canonical that the merge kept, all present before 1.9.1, are
+product-cli's own: the blueprint/DeployableUnit vocabulary (canonical says
+archetype/deployment), schema links to `schema/json/` rather than `preview/`, the
+§8 seam row, and the §14 package paragraph.
 
-- **Deliberate, product-cli's own:** the blueprint/DeployableUnit vocabulary
-  (canonical says archetype/deployment), schema links to `schema/json/` rather
-  than `preview/`, the §8 seam row, and the §14 package paragraph.
-- **Lag, not resolved here:** the §5 SPMC bundle and §5.1 Build-seam wording
-  predate canonical 1.7.0/1.8.0 (schemas owned by the contracts tier; the cell and
-  full-binding SPMC axes). It now sits beside 1.10.0's capacity check, which
-  assumes the pinned-binding reading. Taking that wording is a separate decision,
-  because product-cli still vendors the build-seam schemas.
+The merge also kept §5 and §5.1 wording that predated canonical 1.7.0/1.8.0. That
+was lag, not intent, and it has since been brought up to canonical: the SPMC
+bundle with cells, a fully pinned Model binding and a content-addressed Context
+pool, which is the reading 1.10.0's capacity check assumes; and Build-seam schemas
+owned by the contracts tier (ai-development-contracts), not by the framework. §5.2
+already matched. One sentence in §5.1 is product-cli's own: the vendored
+`schema/json/build-seam/` files are a pre-1.7.0 snapshot (snake_case, one
+`executor_extension` slot) kept for reference. They are not a projection of the
+contract, which `product build --emit-seam` and `product verdict` already follow.
 
 ## Verdict
 
