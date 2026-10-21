@@ -12,9 +12,10 @@ The canonical specification is
 is merged there as **1.11.0** on branch `claude/pf-actors-authorization-xq2sap`:
 the spec text, a CHANGELOG entry, the `preview/conformance/` request schemas, and
 the `actor-kind` authoring-scope kind. Canonical had already released **1.10.0**
-(§2.2 the allocation reading, §5.3 seam demand, 2026-07-11), which this repo's
-mirror never took, so §3.7 is numbered 1.11.0 upstream. Here the mirror reads
-"1.9.1 with the §3.7 draft" rather than claim a version whose content it lacks.
+(§2.2 the allocation reading, §5.3 seam demand, 2026-07-11), so §3.7 is numbered
+1.11.0 upstream. The mirror here has since been brought up to canonical 1.11.0 by
+a three-way merge (base canonical 1.9.1): it takes all of 1.10.0 and 1.11.0 and
+keeps its own differences from 1.9.1.
 
 Two adaptations were made in the canonical copy. Canonical has no
 blueprint/DeployableUnit vocabulary (that rename is product-cli's alone), so
@@ -26,9 +27,16 @@ copies, keeping a principal of the product distinct from the realising actor.
 The ontology (`schema/ontology/`) and SHACL shapes (`schema/shapes/`) have no
 counterpart in the canonical repo, so their §3.7 vocabulary stays here.
 
-Re-syncing the mirror with canonical 1.10.0, in both directions, is a separate
-task this change does not attempt. Canonical lacks the blueprint/DeployableUnit
-rename, and the mirror lacks §2.2 and §5.3.
+Differences from canonical that the merge kept, all present before 1.9.1:
+
+- **Deliberate, product-cli's own:** the blueprint/DeployableUnit vocabulary
+  (canonical says archetype/deployment), schema links to `schema/json/` rather
+  than `preview/`, the §8 seam row, and the §14 package paragraph.
+- **Lag, not resolved here:** the §5 SPMC bundle and §5.1 Build-seam wording
+  predate canonical 1.7.0/1.8.0 (schemas owned by the contracts tier; the cell and
+  full-binding SPMC axes). It now sits beside 1.10.0's capacity check, which
+  assumes the pinned-binding reading. Taking that wording is a separate decision,
+  because product-cli still vendors the build-seam schemas.
 
 ## Verdict
 
