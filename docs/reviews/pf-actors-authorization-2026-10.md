@@ -37,10 +37,11 @@ was lag, not intent, and it has since been brought up to canonical: the SPMC
 bundle with cells, a fully pinned Model binding and a content-addressed Context
 pool, which is the reading 1.10.0's capacity check assumes; and Build-seam schemas
 owned by the contracts tier (ai-development-contracts), not by the framework. §5.2
-already matched. One sentence in §5.1 is product-cli's own: the vendored
-`schema/json/build-seam/` files are a pre-1.7.0 snapshot (snake_case, one
-`executor_extension` slot) kept for reference. They are not a projection of the
-contract, which `product build --emit-seam` and `product verdict` already follow.
+already matched. The vendored `schema/json/build-seam/` files, until then a
+pre-1.7.0 snapshot (snake_case, one `executor_extension` slot), were refreshed
+from canonical's `preview/build-seam/`, so §5.1 takes canonical's sentence as is,
+with only the links rewritten. `product build --emit-seam` output and the worked
+pair validate against the refreshed schemas.
 
 ## Verdict
 

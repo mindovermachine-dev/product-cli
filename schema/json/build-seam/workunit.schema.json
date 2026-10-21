@@ -2,64 +2,216 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hafeok.github.io/product-framework/build-seam/workunit.schema.json",
   "title": "WorkUnit",
-  "description": "The message emitted by the specification side across the Build seam (spec §5.1). Travels BY VALUE: the SPMC bundle is inlined in full, with every reference resolved, so the executor resolves nothing by calling back. The universal envelope below is what every conforming executor must understand; stack-specific structure (capability tiers, escalation ladders, sealed interior DAGs, etc.) lives in `executor_extension`, which the framework neither reads nor mandates.",
+  "description": "The message emitted by the specification side across the Build seam (spec §5.1). This schema is a LOCAL PROJECTION of the normative WorkUnit contract published on the contracts tier — ai-development-contracts v0.1.0, schemas/work-unit.schema.json — which GOVERNS. It is reproduced here so the Product Framework repo is self-contained; where this file and the contract differ, the contract wins. A WorkUnit is a complete, executable SPMC package: it travels BY VALUE (the bundle is inlined in full, every reference resolved), and an executor holding it can run every cell with no further input. The producer (this specification framework) authors the whole shape, including the cell-graph and the fully-pinned model binding — that is producer-owns per foundation RFC 0001.",
   "type": "object",
-  "required": ["unit_ref", "bundle_hash", "bundle", "acceptance_class"],
   "additionalProperties": false,
+  "required": [
+    "unit-ref",
+    "parent-deliverable",
+    "bundle-hash",
+    "tier",
+    "acceptance-class",
+    "ladder-position",
+    "artifact-delivery",
+    "spmc-bundle",
+    "cell-graph"
+  ],
   "properties": {
-    "unit_ref": {
+    "unit-ref": {
       "type": "string",
       "minLength": 1,
       "description": "Opaque identifier for this unit. The executor treats it as a label, NOT a pointer into the specification side's graph. Echoed back on the verdict so a consumer can match verdict to unit without shared state."
     },
-    "parent_lineage": {
-      "type": "string",
-      "description": "Opaque lineage tag carried solely so a verdict can be rolled up to the larger deliverable it belongs to. Opaque to the executor; echoed back on the verdict. Optional: a unit with no larger parent may omit it."
-    },
-    "bundle_hash": {
+    "parent-deliverable": {
       "type": "string",
       "minLength": 1,
-      "description": "Content hash of `bundle` as emitted. This IS the unit's identity. Present even though the bundle travels by value, because the verdict needs it and because it makes a future migration to by-reference transport additive, not breaking (move the body to a content-addressed store, keep the hash). The emitter MUST ensure this equals the hash of `bundle` at emit time."
+      "description": "Opaque lineage tag carried so a verdict can be rolled up to the larger deliverable it belongs to. Opaque to the executor; echoed back on the verdict."
     },
-    "bundle": {
+    "bundle-hash": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+:[A-Za-z0-9+/=_-]+$",
+      "description": "algo:digest content hash of `spmc-bundle` as emitted, taken over a declared canonical form (see context-pool.bundle-form-profile). This IS the unit's identity. Present even though the bundle travels by value, because the verdict needs it and because it makes a future migration to by-reference transport additive, not breaking."
+    },
+    "tier": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The single worker-role tier for the whole unit (homogeneity invariant). Every cell requires this one tier; a heterogeneous unit is a decomposition defect that fails dispatch on the specification side and is not emitted. Matched by the executor to a resident model/mode."
+    },
+    "acceptance-class": {
+      "type": "string",
+      "enum": ["auto-commit-if-green", "needs-verdict"],
+      "description": "Tells a CONSUMER whether an `accepted` verdict may auto-commit without human review (`auto-commit-if-green`) or must be surfaced for a human (`needs-verdict`). The executor passes it through unchanged."
+    },
+    "ladder-position": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Escalation-ladder rung. Advanced by the producer on re-dispatch after a rejecting/escalating verdict whose ladder is not exhausted (same unit-ref, same bundle-hash if the bundle is unchanged)."
+    },
+    "artifact-delivery": { "$ref": "#/$defs/artifactDelivery" },
+    "spmc-bundle": { "$ref": "#/$defs/spmcBundle" },
+    "cell-graph": { "$ref": "#/$defs/cellGraph" }
+  },
+  "$defs": {
+    "artifactDelivery": {
       "type": "object",
-      "description": "The frozen SPMC bundle (spec §5) — the Input Contract, fully self-contained. The four axes are named in this framework's terms; an executor reads `schema`, `prompt`, and `context` to produce the artifact, and matches `model` to a capability it can supply. No element may require a callback to read: if the executor would ever need to resolve a reference live, the unit is not frozen and MUST NOT be emitted.",
-      "required": ["schema", "prompt", "model", "context"],
-      "additionalProperties": false,
+      "description": "DECLARED transport for produced artifacts. 'inline': artifacts return by value in the VerdictEvent cell-results (the seam stays store-free). 'workspace': the executor writes to the declared workspace (e.g. a local git clone) and the VerdictEvent references path+hash. A workspace is permitted because it is DECLARED here — the seam forbids undeclared side channels, not declared transports.",
+      "required": ["mode"],
       "properties": {
-        "schema": {
-          "description": "The shape of the output the unit must produce: the artifact's type and its versioned acceptance criteria. What 'one artifact' is checked against (spec §5, §6.1).",
-          "type": "object"
-        },
-        "prompt": {
-          "description": "The single bounded transformation the unit performs — the unit's 'single purpose' (spec §5). Free-form to the framework; meaningful to the executor's producer.",
-          "type": "object"
-        },
+        "mode": { "type": "string", "enum": ["inline", "workspace"] },
+        "workspace": {
+          "type": "object",
+          "required": ["kind", "location"],
+          "properties": {
+            "kind": { "type": "string", "minLength": 1, "description": "e.g. 'git'" },
+            "location": { "type": "string", "minLength": 1, "description": "Executor-resolvable location of the workspace (e.g. repo path/URL of the local clone)." },
+            "ref": { "type": "string", "description": "Base ref/branch/commit the executor starts from." }
+          }
+        }
+      },
+      "if": { "properties": { "mode": { "const": "workspace" } } },
+      "then": { "required": ["mode", "workspace"] }
+    },
+    "spmcBundle": {
+      "type": "object",
+      "description": "Unit-level SPMC carriers: M (one fully-pinned binding, guaranteed by tier homogeneity) and C (a content-addressed fragment pool). S and P are per-cell (each discrete LLM call has its own output shape and prompt); M and C are the shared carriers. This is the axis structure the foundation requires per discrete call — content travels once, by value, and every reference resolves inside the unit.",
+      "required": ["model", "context-pool"],
+      "properties": {
         "model": {
-          "description": "What should produce the artifact: the capability the unit is intended for, declared abstractly. The executor matches this to a resident producer (spec §5.1). The framework does not enumerate capability values — an executor's catalog is its own concern; the framework only requires that the unit declares the capability it needs.",
-          "type": "object"
+          "type": "object",
+          "required": ["binding"],
+          "properties": {
+            "capability-tag": { "type": "string", "description": "Optional human-facing label for the capability (e.g. 'constrained-implementer'). The binding, not the tag, is what pins the axis." },
+            "binding": { "$ref": "#/$defs/modelBinding" }
+          }
         },
-        "context": {
-          "description": "The frozen, resolved input the unit reads: every What concept and How principle it depends on, referenced by pointer and resolved/inlined. The axis the reproducibility guarantee rests on — freeze the context, and the same input yields the same output (spec §5, §5.1).",
-          "type": "object"
+        "context-pool": {
+          "type": "object",
+          "required": ["fragments"],
+          "properties": {
+            "bundle-form-profile": {
+              "type": "string",
+              "description": "Named canonical serialization profile the bundle-hash is computed over (e.g. an RDF dataset canonicalization such as URDNA2015 over N-Quads). Makes the hash a stable, reproducible identity within this producer."
+            },
+            "fragments": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/contextFragment" }
+            }
+          }
         }
       }
     },
-    "acceptance_class": {
-      "type": "string",
-      "enum": ["auto-commit-if-green", "needs-verdict"],
-      "description": "Tells a CONSUMER whether an `accepted` verdict may auto-commit without human review (`auto-commit-if-green`) or must be surfaced for a human (`needs-verdict`). The executor passes it through unchanged; it does not interpret deliverable-level meaning. A consumer-facing, framework-level field — universal because every executor must carry it even though none acts on it."
-    },
-    "executor_extension": {
+    "contextFragment": {
       "type": "object",
-      "description": "THE ONE OPAQUE SLOT. Stack-specific structure a particular execution framework needs — capability tiers, escalation-ladder position, sealed interior dependency graphs, batching hints, and so on — lives here. The framework NEITHER reads NOR mandates anything inside it. Its presence means an executor never needs the universal schema reopened to carry its own model. A `kind` discriminator is recommended so a consumer can tell which executor produced it, but the contents are otherwise unconstrained.",
+      "description": "One inline context item — a What concept or How principle the unit depends on, resolved and carried by value. `id` is its content-addressable handle within this unit; cells select it by that id.",
+      "required": ["id", "content"],
       "properties": {
-        "kind": {
-          "type": "string",
-          "description": "Optional discriminator naming the execution framework whose structure this slot carries (e.g. a reverse-DNS or short name). Lets a consumer recognise the extension's shape without the framework defining it."
+        "id": { "type": "string", "minLength": 1 },
+        "media-type": { "type": "string" },
+        "role": { "type": "string", "description": "e.g. data-model | decision | constraint | interface | simulation" },
+        "content": {
+          "description": "The actual context content, inline. String or structured.",
+          "type": ["string", "object", "array"]
+        },
+        "provenance": { "type": "object", "description": "Where this knowledge entered the frozen boundary." }
+      }
+    },
+    "modelBinding": {
+      "type": "object",
+      "description": "Fully-pinned model binding (foundation RFC 0002 axis precision). The Model axis is pinned as a binding — served precision and invocation parameters — not a bare name, so the verdict is attributable to an immutable input. Pinning is producer-side: this framework now owns the Model axis rather than deferring it across the seam.",
+      "required": ["provider", "model-id", "quantization", "invocation"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model-id": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string" },
+        "architecture": { "type": "string", "enum": ["dense", "moe"] },
+        "quantization": { "type": "string", "minLength": 1 },
+        "invocation": { "type": "object", "minProperties": 1, "description": "Invocation parameters (e.g. temperature, top-p, max-tokens)." }
+      }
+    },
+    "cellGraph": {
+      "type": "object",
+      "description": "The sealed interior DAG the producer authors. No cross-unit edges — the interior is sealed; a cell's `requires` names only intra-unit cell ids. The executor walks this DAG; its interior shape beyond the fields pinned here is the producing framework's concern.",
+      "required": ["cells"],
+      "additionalProperties": true,
+      "properties": {
+        "cells": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/cell" }
         }
-      },
-      "additionalProperties": true
+      }
+    },
+    "cell": {
+      "type": "object",
+      "description": "One discrete LLM call. Carries its own S and P inline; references C by fragment id (must resolve within this unit's context-pool — structural check); shares the unit's M. Declares the artifact it produces.",
+      "required": ["id", "requires", "schema", "prompt", "output"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "requires": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Intra-unit cell ids this cell depends on. No cross-unit edges (structural check)."
+        },
+        "schema": {
+          "type": "object",
+          "description": "SPMC Schema axis for THIS call: shape language pinned (RFC 0002) and the shape DOCUMENT inline, so the executor validates output locally with no callback.",
+          "required": ["shape-language", "document"],
+          "properties": {
+            "shape-language": { "type": "string", "minLength": 1 },
+            "shape-version": { "type": "string" },
+            "document": {
+              "description": "The actual shape artifact, inline (e.g. a JSON Schema object, SHACL text).",
+              "type": ["string", "object"]
+            }
+          }
+        },
+        "prompt": {
+          "type": "object",
+          "description": "SPMC Prompt axis for THIS call: the actual content inline, never a callback ref.",
+          "required": ["content"],
+          "properties": {
+            "content": {
+              "description": "Prompt text, or a structured message array.",
+              "anyOf": [
+                { "type": "string", "minLength": 1 },
+                {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "required": ["role", "content"],
+                    "properties": {
+                      "role": { "type": "string", "minLength": 1 },
+                      "content": { "type": "string" }
+                    }
+                  }
+                }
+              ]
+            },
+            "prompt-version": { "type": "string" }
+          }
+        },
+        "context-refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Fragment ids from the unit's context-pool assembled as this call's Context axis. May be empty; every id MUST resolve within the pool (structural check)."
+        },
+        "output": {
+          "type": "object",
+          "description": "What this cell produces — the executor's 'where to do it'. Delivered per artifact-delivery mode.",
+          "required": ["artifact-id"],
+          "properties": {
+            "artifact-id": { "type": "string", "minLength": 1 },
+            "media-type": { "type": "string" },
+            "path": { "type": "string", "description": "Workspace-relative path when mode=workspace." },
+            "description": { "type": "string" }
+          }
+        },
+        "gate": {
+          "type": "object",
+          "description": "Optional additional gate for this cell's output beyond schema conformance. Interior is framework-specific."
+        }
+      }
     }
   }
 }
