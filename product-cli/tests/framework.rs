@@ -1351,6 +1351,46 @@ fn tc_1030_product_journey_quality_demand_and_journey_conformance() {
         "non-Translation crossing fails journey conformance:\n{}", bad.stderr);
 }
 
+// --- §3.7 actors and authorization (1.11.0 upstream) -------------------------
+
+#[test]
+fn tc_1100_actor_kinds_offers_and_view_scopes() {
+    let h = Harness::new_bare();
+    h.run(&["init", "--yes", "--name", "bookstore", "--demo"]).assert_exit(0);
+    h.run(&["domain", "new", "ui-step", "MyOrders", "--label", "My orders",
+        "--surfaces", "OrderSummary:display-collection", "--offers", "PlaceOrder:trigger-action"]).assert_exit(0);
+    // Before any actor kind exists the actor checks are inert.
+    let before = h.run(&["domain", "validate", "--strict"]);
+    assert!(!before.stderr.contains("Actor coverage") && !before.stderr.contains("Scope coverage"),
+        "an actor-free What is judged as before:\n{}", before.stderr);
+
+    // A closed nature; claims are typed, set-valued, drawn from reference data.
+    h.run(&["domain", "new", "actor-kind", "robot", "--label", "R", "--nature", "admin"]).assert_exit(1);
+    h.run(&["domain", "new", "reference-set", "tenants", "--concept", "Order", "--values", "t1,t2"]).assert_exit(0);
+    h.run(&["domain", "new", "actor-kind", "customer", "--label", "Customer", "--nature", "human",
+        "--claims", "customer_id:string,tenants:string[]@tenants"]).assert_exit(0);
+    h.run(&["domain", "new", "actor-kind", "staff", "--label", "Staff", "--nature", "human"]).assert_exit(0);
+    let unstated = h.run(&["domain", "validate", "--strict"]);
+    assert!(unstated.stderr.contains("Actor coverage") && unstated.stderr.contains("Scope coverage"),
+        "once actors exist, an unoffered step and an unscoped View are findings:\n{}", unstated.stderr);
+
+    // Offer the step to both; scope the View per actor kind (staff: every row).
+    h.run(&["domain", "edit", "MyOrders", "--offered-to", "customer,staff"]).assert_exit(0);
+    h.run(&["domain", "edit", "OrderSummary", "--scoped-by", "staff:email=email"]).assert_exit(1);
+    h.run(&["domain", "edit", "OrderSummary", "--scoped-by",
+        "customer:customer_id=customer_id,customer:tenant=tenants,staff"]).assert_exit(0);
+    let covered = h.run(&["domain", "validate", "--strict"]);
+    assert!(!covered.stderr.contains("Actor coverage") && !covered.stderr.contains("Scope coverage"),
+        "offered + scoped clears the actor findings:\n{}", covered.stderr);
+
+    // The actor layer survives the Turtle round-trip the graph is stored in.
+    let ttl = h.run(&["domain", "export"]);
+    assert!(ttl.stdout.contains("pf:ActorKind") && ttl.stdout.contains("pf:claimMany true")
+        && ttl.stdout.contains("pf:offeredTo d:staff") && ttl.stdout.contains("pf:forActor d:staff"),
+        "export carries the actor layer:\n{}", ttl.stdout);
+    h.run(&["domain", "show", "customer"]).assert_exit(0).assert_stdout_contains("values_from");
+}
+
 // --- §7.3 versions and direction (1.6.0) -----------------------------------
 
 #[test]

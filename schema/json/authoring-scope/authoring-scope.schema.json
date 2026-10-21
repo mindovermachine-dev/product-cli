@@ -22,7 +22,7 @@
     },
     "authors": {
       "type": "array",
-      "description": "What-element kinds this tool MAY author. Kinds come from the Product Framework ontology (e.g. domain-structure, trigger, command, event, view, decider, projector, ui-step, aio, state-annotation, page-graph, context-of-use, accessibility-criteria, content-reference, journey, quality-demand, data-shape, token-source).",
+      "description": "What-element kinds this tool MAY author. Kinds come from the Product Framework ontology (e.g. domain-structure, trigger, command, event, view, decider, projector, ui-step, aio, state-annotation, page-graph, context-of-use, accessibility-criteria, content-reference, journey, quality-demand, actor-kind, data-shape, token-source).",
       "minItems": 1,
       "items": {
         "type": "object",

@@ -124,6 +124,121 @@ pf:OfferShape a sh:NodeShape ;
     sh:path pf:typedAs ; sh:minCount 1 ; sh:class pf:Aio ;
     sh:message "§3.2.1 A UI step's interactions must be typed against an Abstract Interaction Object (an AIO), never a concrete control (a CIO)." ] .
 
+####################  WHAT — §3.7 actors  ########################
+#  The product's authorization. Per-node shapes here; the strict
+#  coverage checks (actor / scope / claim / provider, §6.3) are
+#  graph-level and live in the conformance tooling.
+
+pf:ActorKindShape a sh:NodeShape ;
+  sh:targetClass pf:ActorKind ;
+  sh:property [
+    sh:path pf:actorNature ; sh:minCount 1 ; sh:maxCount 1 ; sh:in ( "human" "process" "external" ) ;
+    sh:message "§3.7 An actor kind must declare exactly one nature: human, process, or external." ] ;
+  sh:property [
+    sh:path pf:hasField ; sh:node pf:ClaimShape ;
+    sh:message "§3.7 A claim must be named and typed from the §3.2 datatype vocabulary." ] .
+
+pf:ClaimShape a sh:NodeShape ;
+  sh:property [
+    sh:path pf:attrName ; sh:minCount 1 ; sh:maxCount 1 ;
+    sh:message "§3.7 Every claim carries a name." ] ;
+  sh:property [
+    sh:path pf:attrType ; sh:maxCount 1 ; sh:in ( "string" "integer" "number" "boolean" "date" ) ;
+    sh:message "§3.7 A claim's type comes from the §3.2 datatype vocabulary." ] ;
+  sh:property [
+    sh:path pf:claimMany ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+  sh:property [
+    sh:path pf:valuesFrom ; sh:maxCount 1 ; sh:class pf:ReferenceSet ;
+    sh:message "§3.7 A claim's values_from must be declared reference data (§3.1)." ] .
+
+pf:TriggerActorShape a sh:NodeShape ;
+  sh:targetClass pf:Trigger ;
+  sh:property [
+    sh:path pf:actsAs ; sh:maxCount 1 ; sh:class pf:ActorKind ;
+    sh:message "§3.7 A trigger acts as at most one declared actor kind." ] ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "§3.7 A trigger's source admits one actor nature: user→human, automated→process, external→external." ;
+    sh:select """
+      SELECT $this ?actor WHERE {
+        $this <https://productframework.org/ns#actsAs> ?actor ;
+              <https://productframework.org/ns#source> ?source .
+        ?actor <https://productframework.org/ns#actorNature> ?nature .
+        FILTER ( (?source = "user" && ?nature != "human")
+              || (?source = "automated" && ?nature != "process")
+              || (?source = "external" && ?nature != "external") )
+      }
+    """ ;
+  ] .
+
+pf:StepActorShape a sh:NodeShape ;
+  sh:targetClass pf:WireframeStep ;
+  sh:property [
+    sh:path pf:offeredTo ; sh:class pf:ActorKind ;
+    sh:node [ sh:property [ sh:path pf:actorNature ; sh:hasValue "human" ] ] ;
+    sh:message "§3.7 A UI step is offered only to declared human actor kinds — a process or external system acts through a trigger." ] .
+
+pf:ViewScopeShape a sh:NodeShape ;
+  sh:targetClass pf:ReadModel ;
+  sh:property [
+    sh:path pf:publicView ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+  sh:property [
+    sh:path pf:scopedBy ; sh:node pf:ScopeRuleShape ;
+    sh:message "§3.7 A scope rule names one declared actor kind and compares view fields with claims." ] ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "§3.7 A View is either public or scoped by the actor's claims, not both." ;
+    sh:select """
+      SELECT $this WHERE {
+        $this <https://productframework.org/ns#publicView> true ;
+              <https://productframework.org/ns#scopedBy> ?rule .
+      }
+    """ ;
+  ] ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "§3.7 A View carries one scope rule per actor kind." ;
+    sh:select """
+      SELECT $this ?actor WHERE {
+        $this <https://productframework.org/ns#scopedBy> ?r1 , ?r2 .
+        ?r1 <https://productframework.org/ns#forActor> ?actor .
+        ?r2 <https://productframework.org/ns#forActor> ?actor .
+        FILTER ( ?r1 != ?r2 )
+      }
+    """ ;
+  ] ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "§3.7 A scope rule reads only claims its actor kind carries." ;
+    sh:select """
+      SELECT $this ?claim WHERE {
+        $this <https://productframework.org/ns#scopedBy> ?rule .
+        ?rule <https://productframework.org/ns#forActor> ?actor ;
+              <https://productframework.org/ns#scopeKey> ?key .
+        ?key <https://productframework.org/ns#claim> ?claim .
+        FILTER NOT EXISTS {
+          ?actor <https://productframework.org/ns#hasField> ?f .
+          ?f <https://productframework.org/ns#attrName> ?claim .
+        }
+      }
+    """ ;
+  ] .
+
+pf:ScopeRuleShape a sh:NodeShape ;
+  sh:property [
+    sh:path pf:forActor ; sh:minCount 1 ; sh:maxCount 1 ; sh:class pf:ActorKind ;
+    sh:message "§3.7 A scope rule describes exactly one declared actor kind." ] ;
+  sh:property [
+    sh:path pf:scopeKey ; sh:node pf:ScopeKeyShape ] .
+
+pf:ScopeKeyShape a sh:NodeShape ;
+  sh:property [
+    sh:path pf:viewField ; sh:minCount 1 ; sh:maxCount 1 ;
+    sh:message "§3.7 A scope key names the view field it compares." ] ;
+  sh:property [
+    sh:path pf:claim ; sh:minCount 1 ; sh:maxCount 1 ;
+    sh:message "§3.7 A scope key names the claim it compares with." ] .
+
 #########################  HOW — §4  ############################
 #  The How conformance shapes (decisions, principles, patterns,
 #  the two contracts, layout, interface, and the trace-truth

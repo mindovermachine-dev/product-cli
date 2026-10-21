@@ -11,6 +11,11 @@
       "type": "array",
       "description": "The events the Projector folds, in order, from its initial view. May be empty (the empty history — the Projector's initial view state). Each item is an EventRef.",
       "items": { "$ref": "#/$defs/eventRef" }
+    },
+    "key": {
+      "type": "object",
+      "description": "For a keyed Projector (spec §3.4): the partition to answer, field → wire scalar over the fields the Projector is keyed by. The runner folds `given` and answers that partition's state. Absent for an unkeyed Projector. Scoping is not on this wire — a scope selects partitions at the seam (§3.7).",
+      "additionalProperties": { "$ref": "#/$defs/scalar" }
     }
   },
   "$defs": {

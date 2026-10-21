@@ -15,9 +15,32 @@
     "when": {
       "description": "The single command decided against the folded state. A CommandRef.",
       "$ref": "#/$defs/commandRef"
+    },
+    "actor": {
+      "description": "The authenticated principal issuing `when` (spec §3.3, §3.7): its actor kind and its claims. Supplied BESIDE the command, never inside its `with` — the command is what the caller sent, the actor is what the system's authentication established. Absent means no actor: conformant only for a Decider whose actor alphabet is empty; a scenario that names an actor must send it.",
+      "$ref": "#/$defs/actorRef"
     }
   },
   "$defs": {
+    "actorRef": {
+      "description": "An actor on the wire: the actor-kind id and its claims. A claim value is a wire scalar or — for a claim the actor kind declares set-valued — an array of wire scalars: the one list-valued position on this wire, confined to the actor block so payload equality is unchanged (§3.3).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1, "description": "The actor-kind id (§3.7)." },
+        "claims": {
+          "type": "object",
+          "description": "Claim name → wire scalar, or an array of wire scalars for a set-valued claim. Absent means no claims.",
+          "additionalProperties": {
+            "oneOf": [
+              { "$ref": "#/$defs/scalar" },
+              { "type": "array", "items": { "$ref": "#/$defs/scalar" } }
+            ]
+          }
+        }
+      }
+    },
     "scalar": {
       "description": "A wire scalar (§3.3): the only value types that cross this wire. `boolean`, a 64-bit signed `integer`, or a `string`. A payload field declared `number` or `date` (§3.2) is carried here AS A STRING — the wire alphabet has no fractional-number or date type, so those cross as their string form.",
       "type": ["boolean", "integer", "string"]

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::ids::NodeKind;
 
+pub use super::model_actor::*;
 pub use super::model_data::*;
 pub use super::model_product::*;
 pub use super::model_question::*;
@@ -123,6 +124,14 @@ pub struct ReadModel {
     pub projects: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub states: Vec<String>,
+    /// §3.7 — declared readable by every actor (no scope). Exclusive with
+    /// `scoped_by`.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub public: bool,
+    /// §3.7 — the View scope, one rule per actor kind: rows restricted by the
+    /// actor's claims, applied at the seam over one shared fold.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scoped_by: Vec<ScopeRule>,
 }
 
 
@@ -193,6 +202,8 @@ pub struct DomainGraph {
     pub quality_demands: Vec<QualityDemand>,
     #[serde(default)]
     pub open_questions: Vec<OpenQuestion>,
+    #[serde(default)]
+    pub actor_kinds: Vec<ActorKind>,
 }
 
 impl DomainGraph {
@@ -246,6 +257,7 @@ impl DomainGraph {
             ("Journey", self.journeys.len()),
             ("QualityDemand", self.quality_demands.len()),
             ("OpenQuestion", self.open_questions.len()),
+            ("ActorKind", self.actor_kinds.len()),
         ]
     }
 
@@ -288,6 +300,7 @@ impl DomainGraph {
         self.journeys.iter().for_each(|n| out.push((n.id.clone(), NodeKind::Journey)));
         self.quality_demands.iter().for_each(|n| out.push((n.id.clone(), NodeKind::QualityDemand)));
         self.open_questions.iter().for_each(|n| out.push((n.id.clone(), NodeKind::OpenQuestion)));
+        self.actor_kinds.iter().for_each(|n| out.push((n.id.clone(), NodeKind::ActorKind)));
         out
     }
 }

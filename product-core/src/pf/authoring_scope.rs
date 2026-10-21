@@ -72,6 +72,7 @@ pub const AUTHORABLE_KINDS: &[&str] = &[
     "content-reference",
     "journey",
     "quality-demand",
+    "actor-kind",
     "data-shape",
     "token-source",
 ];

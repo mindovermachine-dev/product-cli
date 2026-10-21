@@ -26,7 +26,7 @@ pub fn check_reference_set(rs: &ReferenceSet, out: &mut Vec<Violation>) {
 }
 
 /// The datatypes a type constraint may declare (the engine's machine gates).
-const DATATYPES: [&str; 5] = ["string", "integer", "number", "boolean", "date"];
+pub(super) const DATATYPES: [&str; 5] = ["string", "integer", "number", "boolean", "date"];
 
 /// In-loop presence checks for a data shape (no cross-reference).
 pub fn check_data_shape(s: &DataShape, out: &mut Vec<Violation>) {

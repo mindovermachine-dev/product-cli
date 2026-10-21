@@ -118,6 +118,7 @@ fn props_for(kind: product_core::pf::ids::NodeKind) -> serde_json::Map<String, s
         K::Journey => schema_props::<Journey>(),
         K::QualityDemand => schema_props::<QualityDemand>(),
         K::OpenQuestion => schema_props::<OpenQuestion>(),
+        K::ActorKind => schema_props::<ActorKind>(),
     }
 }
 

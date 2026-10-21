@@ -29,6 +29,7 @@ pub fn pattern_conformance(graph: &DomainGraph) -> Vec<Violation> {
     view_consumed(graph, &mut v);
     unreifiable_seam(graph, &mut v);
     journey_conformance(graph, &mut v);
+    v.extend(super::rules_actor::actor_conformance(graph));
     v
 }
 

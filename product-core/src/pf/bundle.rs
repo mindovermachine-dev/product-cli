@@ -207,6 +207,7 @@ fn section_title(kind: NodeKind) -> &'static str {
         NodeKind::Journey => "Journeys",
         NodeKind::QualityDemand => "Quality demands",
         NodeKind::OpenQuestion => "Open questions",
+        NodeKind::ActorKind => "Actor kinds",
     }
 }
 

@@ -76,10 +76,13 @@ pub enum NodeKind {
     /// An authored open question: something the graph cannot yet decide,
     /// recorded next to the nodes it concerns and carried into How/Build.
     OpenQuestion,
+    /// §3.7 — an actor kind: a kind of principal carrying typed claims, the
+    /// domain-level half of authorization.
+    ActorKind,
 }
 
 /// Every node kind, in declaration order (for `list`/iteration).
-pub const ALL_KINDS: [NodeKind; 31] = [
+pub const ALL_KINDS: [NodeKind; 32] = [
     NodeKind::BoundedContext,
     NodeKind::Entity,
     NodeKind::ValueObject,
@@ -111,6 +114,7 @@ pub const ALL_KINDS: [NodeKind; 31] = [
     NodeKind::Journey,
     NodeKind::QualityDemand,
     NodeKind::OpenQuestion,
+    NodeKind::ActorKind,
 ];
 
 /// Built-in WCAG 2.2 criteria seed: (id, level, verification-type, name). An
@@ -160,7 +164,7 @@ impl NodeKind {
     /// kind is added in one place. A `match self` over `NodeKind` is
     /// compiler-checked exhaustive, so a kind added here that any consumer
     /// forgets to handle is a compile error, not a silent gap.
-    pub fn all() -> [NodeKind; 31] {
+    pub fn all() -> [NodeKind; 32] {
         [
             Self::BoundedContext,
             Self::Entity,
@@ -193,6 +197,7 @@ impl NodeKind {
             Self::Journey,
             Self::QualityDemand,
             Self::OpenQuestion,
+            Self::ActorKind,
         ]
     }
 
@@ -230,6 +235,7 @@ impl NodeKind {
             Self::Journey => "Journey",
             Self::QualityDemand => "QualityDemand",
             Self::OpenQuestion => "OpenQuestion",
+            Self::ActorKind => "ActorKind",
         }
     }
 
@@ -267,6 +273,7 @@ impl NodeKind {
             Self::Journey => "journey",
             Self::QualityDemand => "quality-demand",
             Self::OpenQuestion => "open-question",
+            Self::ActorKind => "actor-kind",
         }
     }
 

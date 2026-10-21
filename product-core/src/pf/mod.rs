@@ -6,6 +6,7 @@
 //! export + seed, the open-questions facilitation driver, and the session
 //! container that the domain MCP server drives. Pure library — no MCP, no CLI.
 
+pub mod actor_turtle;
 pub mod authoring_scope;
 pub mod authoring_scope_enforce;
 pub mod authoring_scope_join;
@@ -46,6 +47,7 @@ pub mod data_check;
 pub mod build_seam;
 pub mod build_seam_convert;
 pub mod model;
+pub mod model_actor;
 pub mod model_data;
 pub mod model_product;
 pub mod model_question;
@@ -86,6 +88,7 @@ pub mod codegen_types;
 pub mod codegen_web;
 pub mod release;
 pub mod render_contract;
+pub mod rules_actor;
 pub mod rules_data;
 pub mod rules_decider;
 pub mod rules_how;

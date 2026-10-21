@@ -4,6 +4,7 @@
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix sh:   <http://www.w3.org/ns/shacl#> .
 @prefix dct:  <http://purl.org/dc/terms/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 
 #################################################################
 #  The Product Framework — Core Ontology
@@ -154,6 +155,25 @@ pf:ReificationRule a owl:Class ;
   rdfs:subClassOf pf:Artifact ;
   rdfs:label "Reification Rule" ;
   rdfs:comment "§4.5 — a reify(AIO, context) → CIO rule carrying its UX rationale." .
+
+#################################################################
+#  WHAT — §3.7 Actors and authorization
+#
+#  The product's own authorization — who may act IN the product
+#  being specified. Authority OVER the specification (who may
+#  sign a decision about it) is not in this vocabulary. The
+#  framework defines the shape and ships no actor kinds or roles.
+#################################################################
+
+pf:Trigger a owl:Class ;
+  rdfs:subClassOf pf:Artifact ;
+  rdfs:label "Trigger" ;
+  rdfs:comment "What initiates a command (§3.2.0). Its pf:source (user | external | automated) is the channel the patterns are checked by; pf:actsAs names who acts through it (§3.7)." .
+
+pf:ActorKind a owl:Class ;
+  rdfs:subClassOf pf:Artifact ;
+  rdfs:label "Actor Kind" ;
+  rdfs:comment "A kind of principal — customer, staff, automated process, external system (§3.7). Domain-level: every system over the domain agrees on it. Carries a closed pf:actorNature and typed claims (pf:hasField). Authenticated in the How (pf:authenticatedBy, §4.2); the What names no identity provider." .
 
 #################################################################
 #  HOW — §4.1 the Why (decisions, principles, patterns)
@@ -376,6 +396,66 @@ pf:typedAs a owl:ObjectProperty ;
   rdfs:label "typed_as" ;
   rdfs:range pf:Aio ;
   rdfs:comment "§3.2.1 A UI step's interaction is typed against an Abstract Interaction Object (an AIO), never a concrete control (a CIO)." .
+
+#################################################################
+#  WHAT — §3.7 actor links
+#################################################################
+
+pf:hasField a owl:ObjectProperty ;
+  rdfs:label "has_field" ;
+  rdfs:comment "A command's or event's payload field (§3.2), or an actor kind's claim (§3.7), as a blank node [ attr_name ; attr_type? ]. A claim may add pf:claimMany and pf:valuesFrom." .
+
+pf:actorNature a owl:DatatypeProperty ; rdfs:label "actor_nature" ;
+  rdfs:domain pf:ActorKind ;
+  rdfs:comment "§3.7 human | process | external — closed, framework-defined; not a role. Must agree with the pf:source of any trigger that acts as the kind (user→human, automated→process, external→external)." ; rdfs:range rdfs:Literal .
+pf:claimMany a owl:DatatypeProperty ; rdfs:label "claim_many" ;
+  rdfs:comment "§3.7 The claim is set-valued (a role set, a tenant list) — the one array position on the conformance wire (§6.3.1)." ; rdfs:range xsd:boolean .
+
+pf:valuesFrom a owl:ObjectProperty ;
+  rdfs:label "values_from" ;
+  rdfs:comment "§3.7 The reference data (§3.1) a claim's values are drawn from — the constitutive value space." .
+
+pf:actsAs a owl:ObjectProperty ;
+  rdfs:label "acts_as" ;
+  rdfs:domain pf:Trigger ;
+  rdfs:range pf:ActorKind ;
+  rdfs:comment "§3.7 The actor kind this trigger issues its command as." .
+
+pf:offeredTo a owl:ObjectProperty ;
+  rdfs:label "offered_to" ;
+  rdfs:domain pf:WireframeStep ;
+  rdfs:range pf:ActorKind ;
+  rdfs:comment "§3.7 System-level surface authorization: this UI step is offered to this (human) actor kind." .
+
+pf:publicView a owl:DatatypeProperty ; rdfs:label "public" ;
+  rdfs:domain pf:ReadModel ;
+  rdfs:comment "§3.7 Every actor sees every row of this View. Exclusive with pf:scopedBy." ; rdfs:range xsd:boolean .
+
+pf:scopedBy a owl:ObjectProperty ;
+  rdfs:label "scoped_by" ;
+  rdfs:domain pf:ReadModel ;
+  rdfs:comment "§3.7 A scope rule of this View, as a blank node [ pf:forActor ; pf:scopeKey* ]. One rule per actor kind; an actor kind with no rule on a scoped View sees nothing." .
+
+pf:forActor a owl:ObjectProperty ;
+  rdfs:label "for_actor" ;
+  rdfs:range pf:ActorKind ;
+  rdfs:comment "§3.7 The actor kind a scope rule describes. A rule with no pf:scopeKey is a declared 'every row'." .
+
+pf:scopeKey a owl:ObjectProperty ;
+  rdfs:label "scope_key" ;
+  rdfs:comment "§3.7 One conjunct of a scope rule, as a blank node [ pf:viewField ; pf:claim ]: the row's field equals (or, for a set-valued claim, is a member of) the actor's claim." .
+
+pf:viewField a owl:DatatypeProperty ; rdfs:label "view_field" ;
+  rdfs:comment "§3.7 The View field a scope key compares — a field the View's Projector is keyed by (pf:keyedBy, §3.4)." ; rdfs:range rdfs:Literal .
+pf:claim a owl:DatatypeProperty ; rdfs:label "claim" ;
+  rdfs:comment "§3.7 The claim a scope key compares with — carried by the rule's actor kind." ; rdfs:range rdfs:Literal .
+pf:keyedBy a owl:DatatypeProperty ; rdfs:label "keyed_by" ;
+  rdfs:comment "§3.4 A field this Projector's fold is partitioned by: one fold per key value, shared by every actor; a scope selects partitions at the seam." ; rdfs:range rdfs:Literal .
+
+pf:authenticatedBy a owl:ObjectProperty ;
+  rdfs:label "authenticated_by" ;
+  rdfs:domain pf:InfrastructureContract ;
+  rdfs:comment "§4.2 In this DeployableUnit's infrastructure contract, an actor kind is authenticated by an identity provider (OIDC issuer, §4.4) with a claim mapping from token claims to the kind's declared claims. How, never What." .
 
 #################################################################
 #  COMMON DATATYPE PROPERTIES

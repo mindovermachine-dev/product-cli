@@ -97,6 +97,7 @@ fn parse_wireframes(store: &Store, g: &mut DomainGraph) -> Result<()> {
             styles: styles.get(&id).cloned().unwrap_or_default(),
             triggers: opt(row.get("triggers")).map(|_| local(row.get("triggers"))),
             displays: opt(row.get("displays")).map(|_| local(row.get("displays"))),
+            offered_to: Vec::new(), // §3.7 — patched by `actor_turtle::parse_actors`.
             id,
         });
     }

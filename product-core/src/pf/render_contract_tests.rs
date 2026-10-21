@@ -5,7 +5,7 @@ use crate::pf::model::*;
 
 fn graph() -> DomainGraph {
     let mut g = DomainGraph::default();
-    g.read_models.push(ReadModel { id: "Cart".into(), label: "Cart".into(), projects: vec!["O".into()], states: vec!["empty".into(), "present".into()] });
+    g.read_models.push(ReadModel { id: "Cart".into(), label: "Cart".into(), projects: vec!["O".into()], states: vec!["empty".into(), "present".into()], ..Default::default() });
     g.application_roots.push(ApplicationRoot { id: "root".into(), label: Some("Root".into()), navigates_from_root: vec!["Review".into()] });
     g.wireframe_steps.push(WireframeStep {
         id: "Review".into(), label: "Review".into(), intent: Some("Confirm before paying".into()),

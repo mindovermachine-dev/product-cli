@@ -64,6 +64,10 @@ pub struct WireframeStep {
     pub triggers: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub displays: Option<String>,
+    /// §3.7 — the actor kinds this step is offered to (its commands and its
+    /// surfaces). System-level surface authorization: it varies per system.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub offered_to: Vec<String>,
 }
 
 /// §3.2 — an ordered behaviour assembling steps into a timeline. §3.2.4 — a
@@ -141,6 +145,10 @@ pub struct Trigger {
     /// §3.2.0 — the source system a Translation trigger reads events from.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub translates_from: Option<String>,
+    /// §3.7 — the actor kind this trigger acts as. `source` stays the channel
+    /// (it is the pattern discriminator); this names who.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub acts_as: Option<String>,
 }
 
 /// §4.5 — a declared, deliberate coverage gap: an AIO that cannot honestly be

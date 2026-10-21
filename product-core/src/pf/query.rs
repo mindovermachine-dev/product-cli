@@ -78,6 +78,7 @@ pub fn node_value(graph: &DomainGraph, id: &str) -> Option<Value> {
     find!(graph.journeys);
     find!(graph.quality_demands);
     find!(graph.open_questions);
+    find!(graph.actor_kinds);
     None
 }
 

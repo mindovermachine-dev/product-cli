@@ -21,6 +21,7 @@ mod dispatch;
 mod domain;
 mod domain_data;
 mod domain_fields;
+mod domain_fields_actor;
 mod domain_fields_v16;
 mod domain_rows;
 mod guide;

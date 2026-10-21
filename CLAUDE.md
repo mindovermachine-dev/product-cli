@@ -4,7 +4,8 @@
 
 Product is a Rust CLI and MCP server for the **Product Framework** — the open
 What/How specification graph (`docs/product-framework-open.md`, currently
-v1.9.1). It captures and verifies a product's *What* (domain model, event model,
+v1.9.1 plus the §3.7 actors draft, upstream as 1.11.0; the mirror has not
+taken canonical 1.10.0's §2.2/§5.3). It captures and verifies a product's *What* (domain model, event model,
 Deciders, Projectors, systems, triggers, UI/AIO model) and *How* (contracts,
 reification, delivery), all under `.product/`. Every product has one home,
 `.product/products/<name>/`; the reference What lives in
@@ -158,7 +159,9 @@ Use the `product` CLI (or MCP tools) to author and verify a What/How graph under
 - **Author the What** — `product domain new <kind> <id> …` captures domain nodes
   (entity, command, event, read-model, ui-step, **system**, trigger, **product**
   (§3.0 root owning domains+systems), **journey** (§3.0.1 cross-system flow
-  composition), **quality-demand** (§3.6 runtime-bound / architectural NFR), …);
+  composition), **quality-demand** (§3.6 runtime-bound / architectural NFR),
+  **actor-kind** (§3.7 a kind of principal: `--nature human|process|external`,
+  `--claims name[:type][[]][@reference-set]`), …);
   `product domain show/list` inspects them; `product domain export` emits Turtle.
   A **system** must also declare its §3.2.5 sub-kind: `product domain new system
   <id> --system-kind service|application|website|cli --purpose … ` (the top-level
@@ -168,7 +171,11 @@ Use the `product` CLI (or MCP tools) to author and verify a What/How graph under
   (flow ownership §3.2.5, the Command pattern §3.2.0, view consumption §3.4, the
   unreifiable seam §4.5, **journey conformance §3.0.1** — every crossing a
   Translation — and, when a How contract is present, that an architectural
-  quality demand's `constrains` binds a real How element §3.6).
+  quality demand's `constrains` binds a real How element §3.6; and, once any
+  **actor kind** exists, the §3.7 surface half of actor coverage — every UI
+  step `--offered-to` an actor kind, every automated/external trigger
+  `--acts-as` one — plus scope coverage: every surfaced View `--public` or
+  `--scoped-by actor[:field=claim]` for each actor kind its step is offered to).
 - **Open questions** — what the graph *cannot yet decide* is an authored node:
   `kind=open-question` (ids `q-*`, `pf:OpenQuestion`) with `statement`,
   `concerns` (≥ 1 node, must resolve while open), `status`

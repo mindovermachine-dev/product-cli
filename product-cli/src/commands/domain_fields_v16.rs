@@ -3,10 +3,13 @@
 //! A second flattened `clap` group beside [`super::domain_fields::NodeFields`],
 //! split out to keep each under the 400-line gate. Carries the flags for the
 //! `product`, `journey`, `quality-demand` and `open-question` kinds (and a
-//! system's `references-domain`); merged into the same JSON field map `pf::edit` consumes.
+//! system's `references-domain`), plus the flattened §3.7 actor flags; merged
+//! into the same JSON field map `pf::edit` consumes.
 
 use clap::Args;
 use serde_json::{json, Map, Value};
+
+use super::domain_fields_actor::ActorFields;
 
 /// The 1.6.0 product-boundary flags (product / journey / quality demand).
 #[derive(Args, Default)]
@@ -65,6 +68,9 @@ pub struct V16Fields {
     /// Open question: ids of what answered it (comma-separated)
     #[arg(long = "resolved-by", value_delimiter = ',')]
     resolved_by: Option<Vec<String>>,
+    /// §3.7 the actor-layer flags.
+    #[command(flatten)]
+    actor: ActorFields,
 }
 
 impl V16Fields {
@@ -89,5 +95,6 @@ impl V16Fields {
         if let Some(v) = &self.question_status { put("status", json!(v)); }
         if let Some(v) = &self.resolution { put("resolution", json!(v)); }
         if let Some(v) = &self.resolved_by { put("resolved_by", json!(v)); }
+        self.actor.merge_into(m);
     }
 }

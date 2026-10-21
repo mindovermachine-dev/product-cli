@@ -36,6 +36,14 @@ fn canon_boundary(g: &mut DomainGraph) {
     });
     g.quality_demands.sort_by(|a, b| a.id.cmp(&b.id));
     g.open_questions.sort_by(|a, b| a.id.cmp(&b.id));
+    g.actor_kinds.sort_by(|a, b| a.id.cmp(&b.id));
+    g.actor_kinds.iter_mut().for_each(|a| a.claims.sort_by(|x, y| x.name.cmp(&y.name)));
+    // §3.7 — the actor edges on existing nodes come back from SPARQL unordered.
+    g.wireframe_steps.iter_mut().for_each(|w| w.offered_to.sort());
+    g.read_models.iter_mut().for_each(|r| {
+        r.scoped_by.sort_by(|x, y| x.actor.cmp(&y.actor));
+        r.scoped_by.iter_mut().for_each(|s| s.keys.sort_by(|x, y| (&x.field, &x.claim).cmp(&(&y.field, &y.claim))));
+    });
     g.open_questions.iter_mut().for_each(|q| {
         q.concerns.sort();
         q.resolved_by.sort();

@@ -56,11 +56,18 @@ pub fn from_turtle(turtle: &str) -> Result<DomainGraph> {
     parse_products(&store, &mut g)?;
     parse_journeys(&store, &mut g)?;
     parse_quality_demands(&store, &mut g)?;
-    super::question_turtle::parse_open_questions(&store, &mut g)?;
-    super::seed_ui::parse_ui(&store, &mut g)?;
-    super::seed_data::parse_data(&store, &mut g)?;
+    parse_layers(&store, &mut g)?;
     super::seed_canon::canonicalize(&mut g);
     Ok(g)
+}
+
+/// The layers parsed by their own modules. The actor layer runs last: it
+/// patches its edges onto the triggers, steps, and read models parsed before it.
+fn parse_layers(store: &Store, g: &mut DomainGraph) -> Result<()> {
+    super::question_turtle::parse_open_questions(store, g)?;
+    super::seed_ui::parse_ui(store, g)?;
+    super::seed_data::parse_data(store, g)?;
+    super::actor_turtle::parse_actors(store, g)
 }
 
 fn parse_unreifiable(store: &Store, g: &mut DomainGraph) -> Result<()> {
@@ -82,6 +89,7 @@ fn parse_triggers(store: &Store, g: &mut DomainGraph) -> Result<()> {
             source: lit(row.get("source")), issues: local(row.get("issues")),
             watches: opt(row.get("watches")).map(|_| local(row.get("watches"))),
             translates_from: opt(row.get("from")).map(|_| local(row.get("from"))),
+            acts_as: None, // §3.7 — patched by `actor_turtle::parse_actors`.
         });
     }
     Ok(())
@@ -249,6 +257,7 @@ fn parse_read_models(store: &Store, g: &mut DomainGraph) -> Result<()> {
             projects: projects.get(&id).cloned().unwrap_or_default(),
             states: states.get(&id).cloned().unwrap_or_default(),
             id: id.clone(), label: lit(row.get("label")),
+            ..Default::default() // §3.7 scope — patched by `actor_turtle::parse_actors`.
         });
     }
     Ok(())

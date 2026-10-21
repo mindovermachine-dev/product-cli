@@ -68,7 +68,7 @@ fn journey_conformance_requires_every_crossing_to_be_a_translation() {
     g.read_models.push(ReadModel { id: "Orders".into(), label: "Orders".into(), projects: vec!["Placed".into()], ..Default::default() });
     g.systems.push(System { id: "sys".into(), label: "S".into(), kind: "application".into(), purpose: "store".into(), ..Default::default() });
     // A Translation trigger (reads from a source system).
-    g.triggers.push(Trigger { id: "trans".into(), label: "X".into(), source: "automated".into(), issues: "Place".into(), watches: Some("Orders".into()), translates_from: Some("sys".into()) });
+    g.triggers.push(Trigger { id: "trans".into(), label: "X".into(), source: "automated".into(), issues: "Place".into(), watches: Some("Orders".into()), translates_from: Some("sys".into()), ..Default::default() });
     // A plain (non-Translation) trigger.
     g.triggers.push(Trigger { id: "plain".into(), label: "Y".into(), source: "user".into(), issues: "Place".into(), ..Default::default() });
 

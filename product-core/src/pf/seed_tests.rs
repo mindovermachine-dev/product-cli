@@ -79,6 +79,7 @@ fn triggers_round_trip() {
     g.triggers.push(Trigger {
         id: "t-auto".into(), label: "Restock".into(), source: "automated".into(),
         issues: "Restock".into(), watches: Some("LowStock".into()), translates_from: Some("sys-wms".into()),
+        acts_as: Some("restocker".into()),
     });
     let parsed = from_turtle(&to_turtle(&g, "demo")).expect("parse seed");
     assert_eq!(parsed.triggers.len(), 2);
@@ -89,6 +90,8 @@ fn triggers_round_trip() {
     assert_eq!(auto.source, "automated");
     assert_eq!(auto.watches.as_deref(), Some("LowStock"));
     assert_eq!(auto.translates_from.as_deref(), Some("sys-wms"));
+    assert_eq!(auto.acts_as.as_deref(), Some("restocker"));
+    assert_eq!(user.acts_as, None);
 }
 
 /// A graph with one node of every kind, every field populated — the spec for
@@ -128,6 +131,14 @@ fn max_boundary(g: &mut DomainGraph) {
         answered_at: Some("2026-01-02T00:00:00Z".into()),
         raised_in_session: Some("s1".into()), answered_in_session: Some("s2".into()),
     });
+    g.actor_kinds.push(ActorKind {
+        id: "actor".into(), label: "Customer".into(), nature: "human".into(),
+        claims: vec![
+            Claim { name: "sub".into(), ty: Some("string".into()), many: false, values_from: None },
+            Claim { name: "tenants".into(), ty: Some("string".into()), many: true, values_from: Some("refset".into()) },
+        ],
+    });
+    g.actor_kinds.push(ActorKind { id: "actor-staff".into(), label: "Staff".into(), nature: "human".into(), claims: vec![] });
 }
 
 fn max_structure(g: &mut DomainGraph) {
@@ -147,10 +158,15 @@ fn max_behaviour(g: &mut DomainGraph) {
     g.commands.push(Command { fields: vec![Attribute { name: "amount".into(), ty: Some("integer".into()) }, Attribute { name: "note".into(), ty: None }], id: "cmd".into(), label: "Do".into(), context: "ctx".into(), targets: "ent".into(), emits: vec!["ev".into(), "ev2".into()] });
     g.events.push(Event { fields: vec![Attribute { name: "amount".into(), ty: Some("integer".into()) }], id: "ev".into(), label: "Done".into(), context: "ctx".into(), changes: "ent".into() });
     g.events.push(Event { fields: vec![], id: "ev2".into(), label: "Also".into(), context: "ctx".into(), changes: "ent".into() });
-    g.read_models.push(ReadModel { id: "rm".into(), label: "View".into(), projects: vec!["ent".into(), "ev".into()], states: vec!["loading".into(), "empty".into()] });
+    g.read_models.push(ReadModel { id: "rm".into(), label: "View".into(), projects: vec!["ent".into(), "ev".into()], states: vec!["loading".into(), "empty".into()],
+        public: false, scoped_by: vec![
+            ScopeRule { actor: "actor".into(), keys: vec![ScopeKey { field: "owner".into(), claim: "sub".into() }, ScopeKey { field: "tenant".into(), claim: "tenants".into() }] },
+            ScopeRule { actor: "actor-staff".into(), keys: vec![] },
+        ] });
+    g.read_models.push(ReadModel { id: "rm-pub".into(), label: "Catalogue".into(), projects: vec!["ent".into()], public: true, ..Default::default() });
     g.flows.push(Flow { id: "flow".into(), label: "Journey".into(), steps: vec!["step".into()], entry_page: Some("step".into()), system: Some("sys".into()) });
     g.systems.push(System { id: "sys".into(), label: "App".into(), kind: "application".into(), purpose: "do things".into(), target_platforms: vec!["web".into()], target_classes: vec!["gui".into()], root: Some("root".into()), references_domain: vec![] });
-    g.triggers.push(Trigger { id: "trig".into(), label: "Init".into(), source: "automated".into(), issues: "cmd".into(), watches: Some("rm".into()), translates_from: Some("sys".into()) });
+    g.triggers.push(Trigger { id: "trig".into(), label: "Init".into(), source: "automated".into(), issues: "cmd".into(), watches: Some("rm".into()), translates_from: Some("sys".into()), acts_as: Some("actor".into()) });
 }
 
 fn max_ui(g: &mut DomainGraph) {
@@ -167,6 +183,7 @@ fn max_ui(g: &mut DomainGraph) {
         content_refs: vec![ContentRef { key: "heading".into(), role: "heading".into() }],
         styles: vec!["color-primary".into()],
         triggers: Some("trig".into()), displays: Some("rm".into()),
+        offered_to: vec!["actor".into(), "actor-staff".into()],
     });
     g.aios.push(Aio { id: "aio".into(), label: "Range".into(), means: Some("pick a range".into()), must_satisfy: vec!["wcag-1".into()] });
     g.contexts_of_use.push(ContextOfUse { id: "cou".into(), label: "Mobile".into(), dimension: Some("form-factor".into()), value: Some("handset".into()) });

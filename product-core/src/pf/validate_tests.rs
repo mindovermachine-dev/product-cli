@@ -119,7 +119,7 @@ fn automation_and_translation_patterns_are_checked() {
     g.read_models.push(ReadModel { id: "Todo".into(), label: "Todo".into(), projects: vec!["Order".into()], ..Default::default() });
     g.triggers[0] = Trigger {
         id: "t".into(), label: "Xlate".into(), source: "automated".into(), issues: "Place".into(),
-        watches: Some("Todo".into()), translates_from: Some("ghost-system".into()),
+        watches: Some("Todo".into()), translates_from: Some("ghost-system".into()), ..Default::default()
     };
     let vs = validate_node(&g, "t");
     assert_eq!(vs.len(), 1);

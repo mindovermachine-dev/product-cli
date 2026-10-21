@@ -91,6 +91,7 @@ pub fn validate_graph(graph: &DomainGraph) -> Vec<Violation> {
     }
     super::validate_product::check_all(graph, &mut v);
     super::question::check_all(graph, &mut v);
+    super::rules_actor::check_all(graph, &mut v);
     graph_rules(graph, &mut v);
     v
 }
@@ -168,7 +169,7 @@ fn check_local_shape(graph: &DomainGraph, id: &str, v: &mut Vec<Violation>) {
             if let Some(q) = graph.open_questions.iter().find(|n| n.id == id) { super::question::check_open_question(q, graph, v); }
         }
         // Event/Command cross-references are graph rules (below); ValueObject,
-        // WireframeStep have no blocking shape.
+        // WireframeStep have no blocking shape (beyond the actor shapes).
         _ => {}
     }
 }
@@ -280,6 +281,7 @@ fn check_flow(f: &super::model::Flow, graph: &DomainGraph, v: &mut Vec<Violation
 pub fn validate_node(graph: &DomainGraph, id: &str) -> Vec<Violation> {
     let mut v = Vec::new();
     check_local_shape(graph, id, &mut v);
+    super::rules_actor::check_local(graph, id, &mut v);
     // §3.1/§3.2/§3.2.1 cross-references run as SPARQL over the projection,
     // scoped to the node just built (the ADR-053 in-loop path).
     let projection = ui_projection(graph);
