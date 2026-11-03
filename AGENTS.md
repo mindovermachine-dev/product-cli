@@ -14,10 +14,85 @@ ADRs and its tests**, and its release descriptors (D1.24).
 - `docs/traceability/` holds one record per agent session (ADR-0007 D2).
 - `releases/` holds the release descriptors (ADR-0007 D3).
 - `eng/gates/` holds the checks `.github/workflows/gates.yml` runs.
+- `src/` holds the eight layer projects, `tests/` their tests and the probes
+  under `tests/fixtures/` (slice 0, D1.25, #167).
 
-There is no source code yet. Slice 0 (ADR-0002, ADR-0003, ADR-0004) brings
-the eight layer projects, the layering analyzer, the AOT publish gate and the
-package register, in its own pull request.
+## Build, test, publish
+
+The SDK is pinned in `global.json` (`10.0.401`, `rollForward: latestFeature`),
+with Microsoft.Testing.Platform as the test runner. Warnings are errors.
+
+```bash
+dotnet build ProductCli.slnx -c Release
+```
+
+```bash
+dotnet test -c Release --no-build
+```
+
+```bash
+dotnet publish src/ProductCli.Host/ProductCli.Host.csproj -c Release -r linux-x64 -o artifacts/publish/linux-x64
+```
+
+```bash
+eng/gates/smoke.sh artifacts/publish/linux-x64/product "$(dotnet msbuild src/ProductCli.Host/ProductCli.Host.csproj -getProperty:Version)" "$(git rev-parse HEAD)"
+```
+
+- **Build the solution before testing.** The layering and build-policy probes
+  are built by the tests with `dotnet build`, against the solution's outputs.
+- **Native AOT publishes on its own operating system only.** The supported
+  runtime identifiers are `ProductCliRuntimeIdentifiers` in
+  `Directory.Build.props`: `linux-x64`, `linux-arm64`, `osx-arm64` and
+  `win-x64` (ADR-0003 D5). CI publishes each one on its own runner.
+- **`product --version`** is the host's one behaviour in slice 0. Every other
+  argument exits 2 with one line on stderr naming the step of the order of
+  work its verb arrives in. **That line is not a format**: it is for a person,
+  nothing may parse it, and it changes as verbs are built.
+
+## The layers
+
+ADR-0002 D1. Each project references only the one below it, Varve and the
+BCL. `ArchLayer` is set in each project file, `ArchFamily` is `ProductCli`,
+and DD0001 (`DecisionDriven.Analyzers`, ADR-0013) fails the build on a
+reference that is not strictly downward, and on a `ProductCli.*` project with
+no layer (`.globalconfig`).
+
+| Layer | Project | Holds |
+|---|---|---|
+| 0 | `ProductCli.Vocabulary` | the generated node records, the `sdlc:` terms, the edition |
+| 1 | `ProductCli.Canonical` | the RDFC graph, the exporters, the `dpp/1` record; references `Varve.Rdf` |
+| 2 | `ProductCli.Shapes` | the shape-engine contract, over Varve |
+| 3 | `ProductCli.Draft` | the draft-store contract, over Varve; DPP commits |
+| 4 | `ProductCli.Simulation` | derivation, rule evaluation, findings |
+| 5 | `ProductCli.Runner` | the wire protocol, conformance |
+| 6 | `ProductCli.Session` | the verbs, the phase gate |
+| 7 | `ProductCli.Host` | the composition root and the only executable, `product` (Native AOT) |
+
+Every library is `IsAotCompatible` and `IsTrimmable`, with the AOT and trim
+analyzers' diagnostics as errors (ADR-0003 D2), and has a public API baseline,
+`PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`, beside its project
+file (ADR-0002 D3). A new public member is a line in that diff.
+
+`ProductCli.Vocabulary.Generator`, `ProductCli.Workbench` and
+`ProductCli.Workbench.Contracts` do not exist yet: each arrives with the slice
+that needs it.
+
+## Packages
+
+`Directory.Packages.props` is the register (ADR-0004, as amended by
+ADR-0013 D4). Versions are central: no project file carries one.
+
+- **A new package needs an ADR**, and a `PackageVersion` entry whose `Adr=`
+  names it. A test-only entry also carries `Scope="tests/"`.
+- **The build fails** on an entry without `Adr=` (`PCLI0001`), on an `Adr=`
+  naming no file in `docs/decisions/` (`PCLI0002`), and on a reference from
+  outside an entry's `Scope=` (`PCLI0003`). `BuildPolicyTests` builds each
+  failing case on every run.
+- **Versions are resolved from nuget.org**, never from memory, and the date is
+  recorded in the commit that adds or changes them.
+- Every `DecisionDriven.Analyzers` rule is on, as an error. The first public
+  interface needs a decision set in that package's format, so that
+  `[Contract]` can cite it (ADR-0013, Consequences).
 
 **The Rust workspace is frozen at the tag `rust-final`** (commit `70395df`).
 Nothing at the tag changes. Anything the rewrite reads from the Rust tool — the
@@ -56,8 +131,8 @@ interim rule of Writ ADR 0008); `docs/decisions/README.md` states the rule.
   were.
 - ADR-0001 to ADR-0012 are held byte for byte against
   `docs/decisions/collected-2026-11-03.md`; `adr-text` checks it.
-- Every `PackageReference` carries `Adr=` naming the ADR that admits it
-  (ADR-0004), from slice 0.
+- Every `PackageVersion` in `Directory.Packages.props` carries `Adr=` naming
+  the ADR that admits it (ADR-0004 D1, as amended by ADR-0013 D4).
 
 ## Gates
 
@@ -70,8 +145,10 @@ is a Bash script in `eng/gates/` and runs locally the same way:
 | `signatures` | `eng/gates/signatures.sh <commits.json>` | GitHub does not report a commit of the pull request as verified |
 | `adr-shape` | `eng/gates/adr-shape.sh [dir]` | an ADR lacks its number, status, alternatives or consequences, or an unexpected file is in `docs/decisions/` |
 | `adr-text` | `eng/gates/adr-text.sh [dir]` | ADR-0001 to ADR-0012 differ by a byte from their sections of the collected file, with the Draft 4 notes |
-| `no-toolchain` | `eng/gates/no-toolchain.sh [root]` | a Rust, Node or Python toolchain file is at the root |
-| `selftest` | `eng/gates/selftest.sh` | any check above passes on the case planted for it |
+| `no-toolchain` | `eng/gates/no-toolchain.sh [root]` | a Rust, Node or Python toolchain file is anywhere in the tree, or `global.json` is missing, pins another SDK, roll-forward or test runner, or has a second copy below the root |
+| `selftest` | `eng/gates/selftest.sh` | any check above, or `smoke.sh`, passes on the case planted for it |
+| `build-test` | `dotnet build` then `dotnet test`, both `-c Release` | the build has a warning or error, or a test fails |
+| `aot (<rid>)` | `dotnet publish -r <rid>`, then `eng/gates/smoke.sh <binary> <version> <commit>` | the Native AOT publish fails on that runtime's own runner, or the binary's `--version` bytes, its exit code, or its refusal of a verb are not as required |
 
 `selftest` plants a failing case for every check in a scratch repository on
 the runner, so each run shows that each check still fails when it should.
@@ -145,7 +222,8 @@ verb's result is rejected in review.
 - **A suppression of any rule** (ADR-0007 D6).
 - **Copied Rust code.** The Rust tool is read at `rust-final` for its
   behaviour, and its bytes are never carried.
-- **A package without `Adr=`**, or a version taken from memory (ADR-0004).
+- **A package without `Adr=`**, or a version taken from memory (ADR-0004, as
+  amended by ADR-0013).
 - **A commit** unsigned, without `Refs #N` or a DCO sign-off, or naming a model.
 - **Rewriting or deleting a tag or a branch**, force-pushing `main`, or
   changing anything at `rust-final`.

@@ -25,6 +25,40 @@ The product is defined in decision-driven-design:
 This repository holds the tool, its ADRs (`docs/decisions/`) and its tests.
 Agents start at [`AGENTS.md`](AGENTS.md).
 
+## Build and test
+
+The repository is the skeleton of slice 0 (D1.25): the eight layer projects
+under `src/`, their tests under `tests/`, and a host whose only behaviour is
+`product --version`. It needs the .NET SDK that `global.json` pins (10.0.401,
+or a later feature band of 10.0) and nothing else.
+
+```bash
+dotnet build ProductCli.slnx -c Release
+```
+
+```bash
+dotnet test -c Release --no-build
+```
+
+The tests build probe projects with `dotnet build` against the solution's
+outputs, so build the solution first.
+
+To publish the native binary, `product`, for your platform: Native AOT
+compiles for the operating system it runs on, and needs that platform's
+native toolchain (clang on Linux, Xcode on macOS, the Visual C++ build tools
+on Windows).
+
+```bash
+dotnet publish src/ProductCli.Host/ProductCli.Host.csproj -c Release -r linux-x64 -o artifacts/publish/linux-x64
+```
+
+```bash
+artifacts/publish/linux-x64/product --version
+```
+
+The supported runtime identifiers are `linux-x64`, `linux-arm64`, `osx-arm64`
+and `win-x64`.
+
 ## The Rust tool
 
 The Rust workspace is frozen at the tag
