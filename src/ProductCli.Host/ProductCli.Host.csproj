@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Layer 7 of ADR-0002 D1: the composition root, and the only executable.
+    It publishes one Native AOT binary, `product`, per supported runtime
+    identifier (ADR-0003 D1, D5; ProductCliRuntimeIdentifiers).
+  -->
+  <PropertyGroup>
+    <ArchLayer>7</ArchLayer>
+    <ArchCompositionRoot>true</ArchCompositionRoot>
+    <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ProductCliStampSourceCommit>true</ProductCliStampSourceCommit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProductCli.Session/ProductCli.Session.csproj" />
+  </ItemGroup>
+
+  <!--
+    The assembly keeps its family name, ProductCli.Host, because DD0001 reads
+    the family from assembly names. The published executable is `product`.
+    Its symbol file keeps the assembly's name, which the binary's debug link
+    records.
+  -->
+  <Target Name="ProductCliNameTheBinary" AfterTargets="CopyNativeBinary">
+    <Copy SourceFiles="$(PublishDir)$(TargetName)$(NativeBinaryExt)"
+          DestinationFiles="$(PublishDir)product$(NativeBinaryExt)" />
+    <Delete Files="$(PublishDir)$(TargetName)$(NativeBinaryExt)" />
+    <Message Importance="high" Text="$(MSBuildProjectName) -> $([System.IO.Path]::GetFullPath('$(PublishDir)product$(NativeBinaryExt)'))" />
+  </Target>
+
+  <!-- The publish folder holds the binary and its symbols: the libraries are
+       compiled into the binary, so their documentation and pdb files have no
+       use beside it. -->
+  <PropertyGroup>
+    <PublishDocumentationFile>false</PublishDocumentationFile>
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
+    <AllowedReferenceRelatedFileExtensions>.none</AllowedReferenceRelatedFileExtensions>
+  </PropertyGroup>
+
+</Project>

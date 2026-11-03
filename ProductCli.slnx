@@ -7,5 +7,6 @@
     <Project Path="src/ProductCli.Simulation/ProductCli.Simulation.csproj" />
     <Project Path="src/ProductCli.Runner/ProductCli.Runner.csproj" />
     <Project Path="src/ProductCli.Session/ProductCli.Session.csproj" />
+    <Project Path="src/ProductCli.Host/ProductCli.Host.csproj" />
   </Folder>
 </Solution>
