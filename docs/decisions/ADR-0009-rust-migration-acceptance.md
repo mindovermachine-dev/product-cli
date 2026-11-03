@@ -4,6 +4,16 @@
 **Date:** 2026-10-30
 **Definition:** D1.4 (chapter 7, Acceptance)
 
+> **Note (2026-11-03, Draft 4)**
+>
+> D1.4 is amended by D1.21:
+>
+> - the frozen input is pinned by graph hash at `rust-final` (`70395df`). The Rust tool has no `--canonical`, so D1's "canonical export" reads as `product domain export --product product-cli`;
+> - D4 is amended. A `pf:` term outside the What (the How kinds) is dropped by name, with a reason, in the term map. A What term with no mapping still fails the migration;
+> - wire names are authored by the lift's rule and adopted in review, not carried;
+> - `acme-shop-4.ttl` is a second acceptance fixture, for behaviour;
+> - D5's "untouched" now means read at the tag (D1.24).
+
 ## Context
 
 Draft 1's acceptance test was byte identity with the Rust tool's export. D1.1 made that impossible: the Rust export uses `pf:` and its own IRIs, while the new tool exports `sdlc:` with flat ULID IRIs. Chapter 8 still carries the self-hosted What over as the first fixture, so it needs a path in.

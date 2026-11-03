@@ -5,6 +5,14 @@
 **Definition:** D1.11, D1.12, D1.14 (chapter 3 "Proposals and decisions", chapter 4 "Decision records and the profile", W10 to W12)
 **Rests on:** `dpp/1`, specification 1.0, draft of 2026-10-27 (decision-driven-design `spec/decision-provenance/dpp-1.md`)
 
+> **Note (2026-11-03, Draft 4)**
+>
+> D1.14 is superseded by D1.17. The What-version record takes `DDD-dec-63` §6's ruled shape:
+>
+> - `dk.decision-driven-design.sdlc` holds `edition`, `canon`, `graphHash` and `elements`;
+> - this tool's own dotted member holds the format IRI, the simulation status and the logic artefacts;
+> - `basedOn` pins every decision in force. That reverses the alternative this ADR rejected ("`basedOn` lists every adoption ever"). D1.17 accepts the size, which stays well under §3.1 for several thousand decisions, in exchange for a record whose `basedOn` is complete on its own.
+
 ## Context
 
 The author should adopt each step the agent proposes, and that adoption should create provenance (D1.10). The protocol now lives in decision-driven-design as `dpp/1`, shared by any system that records decisions. What it fixes and what it leaves out decides the design:

@@ -4,6 +4,10 @@
 **Date:** 2026-10-30
 **Definition:** chapter 8, "Decision-driven, like Writ"
 
+> **Note (2026-11-03, Draft 4)**
+>
+> D1 now reads `docs/decisions/ADR-####-<slug>.md` (D1.22). The first PR carries ADR-0001 to ADR-0012.
+
 ## Context
 
 product-cli signs nothing (W10), but the repository that builds it is governed. Chapter 8 requires an embedded `writ` from the first commit, ADRs in its log, code landed through `writ land`, and a baseline on day one. Writ's `land` may not exist when this repository starts. Writ resolved the same bootstrap problem with ADR-level discipline by review (Writ ADR 0008).

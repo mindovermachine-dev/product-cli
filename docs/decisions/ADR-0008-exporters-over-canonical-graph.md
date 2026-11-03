@@ -4,6 +4,14 @@
 **Date:** 2026-10-30
 **Definition:** D1.2, D1.3, D1.5, D1.7
 
+> **Note (2026-11-03, Draft 4)**
+>
+> D1.7 is superseded by D1.16: the logic is artefacts held by digest, not triples in the graph. When this ADR is next touched:
+>
+> - an exporter's input becomes `CanonicalGraph` plus the logic artefacts its digests name, and D2's interface gains them;
+> - the canonical export is the N-Quads plus those artefacts (D1.3 as amended);
+> - D7's format IRI goes in this tool's dotted member (D1.17).
+
 ## Context
 
 The canonical document is the only thing that crosses the seam to Writ (W7, W8, W10). By D1.3, it is the RDFC-1.0 canonical N-Quads of the What graph. Other renderings of the same What are wanted, starting with graph serialisations, and adding one must be cheap. Three constraints apply:
