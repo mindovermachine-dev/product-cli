@@ -177,17 +177,58 @@ expect_fail "adr-text: an ADR file missing" "ADR-0012: expected one file, found 
 
 # --- no-toolchain ------------------------------------------------------------
 
-mkdir -p "$work/root-clean"
-cp -R "$repo/docs" "$work/root-clean/" 2>/dev/null || true
-expect_pass "no-toolchain" "$gates/no-toolchain.sh" "$work/root-clean"
+# A root with the .NET pin and a project tree, which every plant starts from.
+toolchain_root() {  # toolchain_root <name>
+  local r="$work/$1"
+  rm -rf "$r"
+  mkdir -p "$r/src/ProductCli.Probe" "$r/tests"
+  cp "$repo/global.json" "$r/global.json"
+  : > "$r/src/ProductCli.Probe/ProductCli.Probe.csproj"
+  echo "$r"
+}
+
+r=$(toolchain_root root-clean)
+expect_pass "no-toolchain" "$gates/no-toolchain.sh" "$r"
+
+# bin/, obj/ and .git/ are not the tree: a file in them is not a toolchain.
+r=$(toolchain_root root-ignored)
+mkdir -p "$r/src/ProductCli.Probe/obj" "$r/.git"
+: > "$r/src/ProductCli.Probe/obj/package.json"
+: > "$r/.git/global.json"
+expect_pass "no-toolchain: bin, obj and .git are not the tree" "$gates/no-toolchain.sh" "$r"
+
 for f in Cargo.toml rust-toolchain.toml package.json pnpm-lock.yaml pyproject.toml requirements.txt .python-version; do
-  r="$work/root-$f"
-  mkdir -p "$r"
+  r=$(toolchain_root "root-$f")
   : > "$r/$f"
-  expect_fail "no-toolchain: $f" "no-toolchain: $f is at the root" "$gates/no-toolchain.sh" "$r"
+  expect_fail "no-toolchain: $f" "no-toolchain: $f is a non-.NET toolchain file" "$gates/no-toolchain.sh" "$r"
 done
-mkdir -p "$work/root-cargo-dir/.cargo"
-expect_fail "no-toolchain: .cargo/" "no-toolchain: .cargo is at the root" "$gates/no-toolchain.sh" "$work/root-cargo-dir"
+r=$(toolchain_root root-cargo-dir)
+mkdir -p "$r/.cargo"
+expect_fail "no-toolchain: .cargo/" "no-toolchain: .cargo is a non-.NET toolchain file" "$gates/no-toolchain.sh" "$r"
+
+r=$(toolchain_root root-nested-node)
+: > "$r/src/ProductCli.Probe/package.json"
+expect_fail "no-toolchain: package.json under src/" "no-toolchain: src/ProductCli.Probe/package.json is a non-.NET toolchain file" "$gates/no-toolchain.sh" "$r"
+
+r=$(toolchain_root root-no-pin)
+rm "$r/global.json"
+expect_fail "no-toolchain: no global.json" "no-toolchain: global.json is not at the root" "$gates/no-toolchain.sh" "$r"
+
+r=$(toolchain_root root-wrong-sdk)
+jq '.sdk.version = "9.0.100"' "$repo/global.json" > "$r/global.json"
+expect_fail "no-toolchain: another SDK version" "global.json .sdk.version is 9.0.100, not 10.0.401" "$gates/no-toolchain.sh" "$r"
+
+r=$(toolchain_root root-wrong-rollforward)
+jq '.sdk.rollForward = "latestMajor"' "$repo/global.json" > "$r/global.json"
+expect_fail "no-toolchain: another rollForward" "global.json .sdk.rollForward is latestMajor, not latestFeature" "$gates/no-toolchain.sh" "$r"
+
+r=$(toolchain_root root-no-runner)
+jq 'del(.test)' "$repo/global.json" > "$r/global.json"
+expect_fail "no-toolchain: no test runner" "global.json .test.runner is (absent), not Microsoft.Testing.Platform" "$gates/no-toolchain.sh" "$r"
+
+r=$(toolchain_root root-second-pin)
+cp "$repo/global.json" "$r/tests/global.json"
+expect_fail "no-toolchain: a second global.json" "no-toolchain: tests/global.json is a second global.json" "$gates/no-toolchain.sh" "$r"
 
 if [ "$failed" -ne 0 ]; then
   echo "selftest: a check did not behave as its plant requires"
