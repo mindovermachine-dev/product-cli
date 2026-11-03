@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Layer 5 of ADR-0002 D1: the wire protocol (6.3.1), conformance. -->
+  <PropertyGroup>
+    <ArchLayer>5</ArchLayer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProductCli.Simulation/ProductCli.Simulation.csproj" />
+  </ItemGroup>
+
+</Project>

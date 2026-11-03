@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Layer 0 of ADR-0002 D1: the generated node records, the sdlc: terms, the edition. -->
+  <PropertyGroup>
+    <ArchLayer>0</ArchLayer>
+  </PropertyGroup>
+
+</Project>

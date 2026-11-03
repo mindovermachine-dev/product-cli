@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Layer 4 of ADR-0002 D1: derivation, rule evaluation, findings. -->
+  <PropertyGroup>
+    <ArchLayer>4</ArchLayer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProductCli.Draft/ProductCli.Draft.csproj" />
+  </ItemGroup>
+
+</Project>

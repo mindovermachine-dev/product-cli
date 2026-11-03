@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Layer 2 of ADR-0002 D1: the shape-engine contract, over Varve. -->
+  <PropertyGroup>
+    <ArchLayer>2</ArchLayer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProductCli.Canonical/ProductCli.Canonical.csproj" />
+  </ItemGroup>
+
+</Project>

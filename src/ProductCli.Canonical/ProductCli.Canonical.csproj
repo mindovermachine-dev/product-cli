@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Layer 1 of ADR-0002 D1: the RDFC graph, the exporters, the dpp/1 record. -->
+  <PropertyGroup>
+    <ArchLayer>1</ArchLayer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProductCli.Vocabulary/ProductCli.Vocabulary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Varve.Rdf" />
+  </ItemGroup>
+
+</Project>

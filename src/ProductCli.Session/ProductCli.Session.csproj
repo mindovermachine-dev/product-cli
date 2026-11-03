@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Layer 6 of ADR-0002 D1: the verbs, the phase gate. -->
+  <PropertyGroup>
+    <ArchLayer>6</ArchLayer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProductCli.Runner/ProductCli.Runner.csproj" />
+  </ItemGroup>
+
+</Project>

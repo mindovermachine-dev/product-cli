@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Layer 3 of ADR-0002 D1: the draft-store contract, over Varve; DPP commits. -->
+  <PropertyGroup>
+    <ArchLayer>3</ArchLayer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ProductCli.Shapes/ProductCli.Shapes.csproj" />
+  </ItemGroup>
+
+</Project>

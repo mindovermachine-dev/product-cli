@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ProductCli.Vocabulary/ProductCli.Vocabulary.csproj" />
+    <Project Path="src/ProductCli.Canonical/ProductCli.Canonical.csproj" />
+    <Project Path="src/ProductCli.Shapes/ProductCli.Shapes.csproj" />
+    <Project Path="src/ProductCli.Draft/ProductCli.Draft.csproj" />
+    <Project Path="src/ProductCli.Simulation/ProductCli.Simulation.csproj" />
+    <Project Path="src/ProductCli.Runner/ProductCli.Runner.csproj" />
+    <Project Path="src/ProductCli.Session/ProductCli.Session.csproj" />
+  </Folder>
+</Solution>
