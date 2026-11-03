@@ -21,7 +21,7 @@ basis:
   - adr: "0010"
   - adr: "0011"
   - adr: "0012"
-# accepted-by is the maintainer's line, written on approval; a session never writes it.
+accepted-by: mailto:emil@okkels-klein.dk
 summary: |
   ### The rewrite begins (#165)
 
