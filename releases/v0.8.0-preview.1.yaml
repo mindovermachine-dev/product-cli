@@ -1,0 +1,55 @@
+format: 1
+version: v0.8.0-preview.1
+title: The rewrite begins — the Rust tree leaves main
+date: 2026-11-03
+basis:
+  - issue: 165
+  - tag: rust-final
+  - rust-final-tag-object: d0cf1f1ec40eb55c271b8d4dadfefcd260c03312
+  - rust-final-commit: 70395dfe317cb9a00665433813766ca763f3c58a
+  - sdlc-edition: pending
+  - sdlc-version-iri: https://decision-driven-design.dk/ns/sdlc/1
+  - adr: "0001"
+  - adr: "0002"
+  - adr: "0003"
+  - adr: "0004"
+  - adr: "0005"
+  - adr: "0006"
+  - adr: "0007"
+  - adr: "0008"
+  - adr: "0009"
+  - adr: "0010"
+  - adr: "0011"
+  - adr: "0012"
+# accepted-by is the maintainer's line, written on approval; a session never writes it.
+summary: |
+  ### The rewrite begins (#165)
+
+  `main` no longer holds the Rust workspace. It is frozen at the tag
+  `rust-final` (tag object `d0cf1f1`, commit `70395df`), as the product
+  definition rules in D1.24, and stays readable there in full under the MIT
+  licence it was published with. **No Rust release follows `rust-final`**:
+  the last is `v0.7.0`, and every published Rust release keeps working.
+
+  This release ships no binary. It carries the repository the rewrite is
+  built in: `AGENTS.md`, the Apache-2.0 licence, ADR-0001 to ADR-0012 under
+  `docs/decisions/` (the interim rule of D1.22), and the `gates.yml`
+  checks. It is cut once the repository has a release path, which slice 0
+  (ADR-0002, ADR-0003, ADR-0004) brings with the first binary.
+
+  #### The edition
+
+  The `sdlc:` edition this repository will pin is **edition 1**,
+  `owl:versionIRI <https://decision-driven-design.dk/ns/sdlc/1>`. It is
+  **pending**: decision-driven-design has not tagged it, so its pin, the
+  sha256 over `ontology.ttl` then `shapes.ttl` (D1.20), is not yet fixed.
+  Pinning it is step 1 of the order of work.
+
+  #### Changed
+
+  - **Licence.** Apache-2.0 replaces MIT from this release on (`LICENSE`,
+    `NOTICE`). MIT still governs everything at `rust-final` and before.
+  - **Decisions.** The Rust ledger (`.decisions/`) and its exports
+    (`docs/decisions/hafeok.ddd.nt`, `hafeok.ledger.nt`) leave with the
+    tree. `writ import` reads the ledger at `rust-final`, so no decision is
+    lost.
