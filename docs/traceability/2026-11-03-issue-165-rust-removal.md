@@ -287,3 +287,18 @@ description.
   reason above.
 - **The default commit attribution** of this environment adds a co-author
   trailer naming a model; it was left out, as the rules require.
+
+## Addendum, 2026-11-03
+
+Adds to the record and changes nothing above. After the pull request was
+opened and its gates were green, the maintainer, the copyright holder named in
+the MIT file, confirmed the relicensing in the session:
+
+> “As copyright holder I relicense this repository from MIT to Apache-2.0 from this PR onward; MIT continues to govern everything at rust-final and earlier.”
+
+`LICENSE` and `NOTICE` already say this, and nothing in them changes.
+
+Commits after this record's first version, with the same trailers and
+signature as above:
+
+- this addendum
