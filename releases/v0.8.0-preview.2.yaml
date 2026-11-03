@@ -1,0 +1,66 @@
+format: 1
+version: v0.8.0-preview.2
+title: The repository skeleton — eight layers, one native binary
+date: 2026-11-03
+basis:
+  - issue: 167
+  - definition: mindovermachine-dev/decision-driven-design@799cbe84f2a010fb5b65a687eb253666948c73c8
+  - definition-ruling: D1.25
+  - sdlc-edition: none (slice 0 needs no edition)
+  - varve: Varve.Rdf 0.1.0-preview.15
+  - adr: "0002"
+  - adr: "0003"
+  - adr: "0004"
+  - adr: "0013"
+summary: |
+  ### The repository skeleton (#167)
+
+  Step 0 of the order of work, D1.25. The repository builds the product as
+  ADR-0002, ADR-0003 and ADR-0004 rule, and ships its first binary,
+  `product`, whose only behaviour is `product --version`. It adds no
+  vocabulary, no node kind and no product behaviour, and needs no `sdlc:`
+  edition.
+
+  #### Added
+
+  - **The eight layer projects** of ADR-0002 D1, `ProductCli.Vocabulary`
+    (0) to `ProductCli.Host` (7), each referencing only the layer below it.
+    Each library has a public API baseline and is AOT-compatible and
+    trimmable, with the AOT and trim analyzers' diagnostics as errors.
+  - **The layering rule**, DD0001 of `DecisionDriven.Analyzers`, with every
+    project placed. One test per layer builds a probe that references the
+    layer above and reads DD0001 in the compiler's output.
+  - **The package register**, `Directory.Packages.props`. Every entry names
+    the ADR that admits it, and the build fails when one does not, when the
+    ADR does not exist, or when a test-only package is referenced from
+    product code. ADR-0013 admits the analyzers, names the test stack
+    (xunit v3 on Microsoft.Testing.Platform, and CsCheck), and amends
+    ADR-0004 D1's wording: the register entry is the `PackageVersion`.
+  - **`product`**, one Native AOT executable per supported runtime
+    identifier. `product --version` prints
+    `product 0.8.0-preview.2 (commit <sha>)` and exits 0. Every other
+    argument exits 2 with one line naming the step its verb arrives in.
+  - **CI on every pull request**: the build and tests with warnings as
+    errors, and the Native AOT publish and smoke test of the binary on each
+    runtime's own runner.
+
+  | Runtime | Runner | Binary size |
+  |---|---|---|
+  | `linux-x64` | `ubuntu-24.04` | 1,829,032 bytes |
+  | `linux-arm64` | `ubuntu-24.04-arm` | 1,914,896 bytes |
+  | `osx-arm64` | `macos-15` | 1,766,640 bytes |
+  | `win-x64` | `windows-2025` | 1,692,672 bytes (`product.exe`) |
+
+  #### Varve
+
+  `Varve.Rdf` and `Varve.Turtle` `0.1.0-preview.15` are admitted on
+  evidence: they reproduce decision-driven-design's published RDFC-1.0
+  graph hash of `acme-shop.ttl`,
+  `sha256:10cd90893f7fadb1bdf80064a43795be95e2175684c6d3a93a7736abc7c2156b`,
+  byte for byte.
+
+  #### Changed
+
+  - **`no-toolchain`** now requires exactly one toolchain, .NET, pinned in
+    `global.json`. A Rust, Node or Python toolchain file anywhere in the
+    tree fails it, not only one at the root.
