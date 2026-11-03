@@ -1,8 +1,0 @@
-name = "product-cli"
-version = "0.7.0"
-schema-version = "1"
-
-[mcp]
-write = true
-port = 7777
-cors-origins = []

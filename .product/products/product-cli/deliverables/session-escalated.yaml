@@ -1,8 +1,0 @@
-id: session-escalated
-feature: spec-depth-metric
-acceptance:
-- id: escalated-predicate
-  statement: BuildSession::escalated() is true exactly when the calls used more than one distinct capability
-  status: passing
-  runner: cargo-test
-  runner_args: tc_session_escalated

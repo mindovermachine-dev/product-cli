@@ -1,8 +1,0 @@
-id: busiest-gate
-feature: spec-depth-metric
-acceptance:
-- id: busiest-gate-fn
-  statement: BuildSession::busiest_gate() returns the gate with the most calls, or None when there are no calls
-  status: passing
-  runner: cargo-test
-  runner_args: tc_busiest_gate
