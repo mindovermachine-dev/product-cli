@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The build-policy probe (ADR-0003 D2, ADR-0013 D4). A library, checked as
+    product code at src/ProductCli.PolicyProbe/. With no ProbePlant it builds
+    clean; each plant breaks one rule, and BuildPolicyTests reads the error the
+    build reports for it.
+  -->
+  <PropertyGroup>
+    <ArchLayer>0</ArchLayer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Plants/**" />
+  </ItemGroup>
+
+  <!-- PCLI0001: a register entry that cites no ADR. -->
+  <ItemGroup Condition="'$(ProbePlant)' == 'no-adr'">
+    <PackageVersion Include="ProductCli.PlantedPackage" Version="1.0.0" />
+  </ItemGroup>
+
+  <!-- PCLI0002: a register entry citing an ADR that does not exist. -->
+  <ItemGroup Condition="'$(ProbePlant)' == 'dangling-adr'">
+    <PackageVersion Include="ProductCli.PlantedPackage" Version="1.0.0" Adr="9999" />
+  </ItemGroup>
+
+  <!-- PCLI0003: a test-only package referenced from product code. -->
+  <ItemGroup Condition="'$(ProbePlant)' == 'out-of-scope'">
+    <PackageReference Include="CsCheck" />
+  </ItemGroup>
+
+  <!-- IL2026 and IL3050: reflection-based System.Text.Json in a library. -->
+  <ItemGroup Condition="'$(ProbePlant)' == 'reflection-json'">
+    <Compile Include="Plants/ReflectionJson.cs" />
+  </ItemGroup>
+
+</Project>

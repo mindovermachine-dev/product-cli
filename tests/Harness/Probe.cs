@@ -40,6 +40,18 @@ internal static class Probe
         return Build("tests/fixtures/layering/ProductCli.Probe.csproj", properties);
     }
 
+    /// <summary>The build-policy probe, with one plant (none if null).</summary>
+    internal static CommandResult BuildPolicy(string? plant)
+    {
+        Dictionary<string, string> properties = [];
+        if (plant is not null)
+        {
+            properties["ProbePlant"] = plant;
+        }
+
+        return Build("tests/fixtures/build-policy/ProductCli.PolicyProbe.csproj", properties);
+    }
+
     private static CommandResult Build(string probe, Dictionary<string, string> properties)
     {
         string artifacts = Path.Combine(Path.GetTempPath(), "productcli-probe-" + Guid.NewGuid().ToString("N"));
