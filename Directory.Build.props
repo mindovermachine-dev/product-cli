@@ -1,0 +1,91 @@
+<Project>
+
+  <!--
+    The build policy (ADR-0002, ADR-0003, ADR-0004 as amended by ADR-0013).
+    Imported before every project body. Directory.Build.targets, imported
+    after it, applies what depends on the project's own settings, and holds
+    the checks that fail the build.
+  -->
+
+  <PropertyGroup>
+    <ProductCliRoot>$([MSBuild]::EnsureTrailingSlash('$(MSBuildThisFileDirectory)'))</ProductCliRoot>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <!-- A file's dependencies are visible in the file. -->
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Two builds of one commit produce the same bytes. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' != ''">true</ContinuousIntegrationBuild>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <!--
+    The analyzer configuration is the root's .editorconfig and .globalconfig,
+    named here for every project. The SDK's discovery finds them only above a
+    project's source files, at evaluation, and a library with no source yet
+    (every library of slice 0) has none, so it would build without them:
+    without dd_require_layer, and without the IL severities. Discovery is off,
+    so that a project with sources does not get the same file twice.
+  -->
+  <PropertyGroup>
+    <DiscoverEditorConfigFiles>false</DiscoverEditorConfigFiles>
+    <DiscoverGlobalAnalyzerConfigFiles>false</DiscoverGlobalAnalyzerConfigFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Include="$(ProductCliRoot).editorconfig" />
+    <GlobalAnalyzerConfigFiles Include="$(ProductCliRoot).globalconfig" />
+    <EditorConfigFiles Include="$(ProductCliRoot).globalconfig" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Nothing is a NuGet package. The product ships as one binary (ADR-0003 D1). -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The product version, which the host prints for its version flag, and the version
+         of the release descriptor this build belongs to (releases/). -->
+    <Version>0.8.0-preview.2</Version>
+    <!-- The source commit is stamped as its own assembly metadata, so the
+         informational version stays the bare version. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- ADR-0003 D5: the supported runtime identifiers. CI publishes the host
+         natively for each one, on a runner of its operating system. -->
+    <ProductCliRuntimeIdentifiers>linux-x64;linux-arm64;osx-arm64;win-x64</ProductCliRuntimeIdentifiers>
+  </PropertyGroup>
+
+  <!--
+    ADR-0002 D3, ADR-0013 D2: the layering rule. ArchFamily is the family of
+    every ProductCli.* assembly; ArchLayer is set in each project file, from
+    ADR-0002 D1's table. .globalconfig sets dd_require_layer, so a ProductCli
+    project with no layer fails. Build-time only: PrivateAssets keeps the
+    package out of every output, and IncludeAssets takes its analyzers and its
+    build props and targets and nothing else (ADR-0013 D3).
+  -->
+  <PropertyGroup>
+    <ArchFamily>ProductCli</ArchFamily>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DecisionDriven.Analyzers" PrivateAssets="all" IncludeAssets="analyzers;build" />
+  </ItemGroup>
+
+</Project>

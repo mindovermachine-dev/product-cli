@@ -1,0 +1,6 @@
+# Line feeds in every checkout, Windows included: the gate scripts run under
+# bash on every runner, and a build's bytes do not depend on the platform.
+* text=auto eol=lf
+
+# The vendored fixtures are compared by sha256, so git never touches their bytes.
+tests/fixtures/ddd/** -text

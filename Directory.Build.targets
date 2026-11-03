@@ -1,0 +1,134 @@
+<Project>
+
+  <!--
+    Imported after every project body, so it sees the project's own settings.
+
+    A project's place in the policy comes from its path:
+      src/<name>/              product code: a library, or the host
+      tests/<name>.Tests/      a test project
+      tests/fixtures/<dir>/    a probe, built as product code: it is checked
+                               as if it were at src/<name>/, which is what lets
+                               a probe stand in for a library (BuildPolicyTests,
+                               the layering tests).
+  -->
+  <PropertyGroup>
+    <_ProductCliPath>$([MSBuild]::MakeRelative('$(ProductCliRoot)', '$(MSBuildProjectDirectory)').Replace('\', '/').TrimEnd('/'))/</_ProductCliPath>
+    <ProductCliPolicyPath Condition="$(_ProductCliPath.StartsWith('tests/fixtures/'))">src/$(MSBuildProjectName)/</ProductCliPolicyPath>
+    <ProductCliPolicyPath Condition="'$(ProductCliPolicyPath)' == ''">$(_ProductCliPath)</ProductCliPolicyPath>
+    <ProductCliIsProductCode Condition="$(ProductCliPolicyPath.StartsWith('src/'))">true</ProductCliIsProductCode>
+    <ProductCliIsLibrary Condition="'$(ProductCliIsProductCode)' == 'true' and '$(OutputType)' == 'Library'">true</ProductCliIsLibrary>
+    <ProductCliIsTest Condition="$(ProductCliPolicyPath.StartsWith('tests/'))">true</ProductCliIsTest>
+  </PropertyGroup>
+
+  <!--
+    ADR-0003 D2: every library is AOT-compatible and trimmable, with the AOT,
+    trim and single-file analyzers on. Their IL diagnostics are errors
+    (.editorconfig, and TreatWarningsAsErrors). Set here, after the project
+    body, so no project can turn them off. The host sets PublishAot, which
+    turns on the same analyzers.
+  -->
+  <PropertyGroup Condition="'$(ProductCliIsLibrary)' == 'true'">
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ProductCliIsProductCode)' == 'true'">
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+  </PropertyGroup>
+
+  <!--
+    ADR-0002 D3, ADR-0013 D2: every library has a public API baseline beside
+    its project file. Every new public member is then a line in a reviewed
+    diff.
+  -->
+  <ItemGroup Condition="'$(ProductCliIsLibrary)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/PublicAPI.Shipped.txt" Condition="Exists('$(MSBuildProjectDirectory)/PublicAPI.Shipped.txt')" />
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/PublicAPI.Unshipped.txt" Condition="Exists('$(MSBuildProjectDirectory)/PublicAPI.Unshipped.txt')" />
+  </ItemGroup>
+
+  <!-- ADR-0003 D4, ADR-0013 D2: no reflection that defeats trimming or AOT, in any product code. -->
+  <ItemGroup Condition="'$(ProductCliIsProductCode)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(ProductCliRoot)eng/BannedSymbols.txt" />
+  </ItemGroup>
+
+  <!--
+    What a test reads about the build it belongs to: the configuration it was
+    built in (a probe builds against the same outputs) and the product version
+    (the host tests compare the host's bytes with it).
+  -->
+  <ItemGroup Condition="'$(ProductCliIsTest)' == 'true'">
+    <AssemblyMetadata Include="ProductCliConfiguration" Value="$(Configuration)" />
+    <AssemblyMetadata Include="ProductCliVersion" Value="$(Version)" />
+  </ItemGroup>
+
+  <!--
+    The host prints the commit it was built from (ADR-0003 D3's smoke test
+    reads it). SourceRevisionId comes from the SDK's source control
+    integration; a host built without a commit fails rather than printing an
+    empty one (PCLI0005).
+  -->
+  <Target Name="ProductCliStampSourceCommit"
+          Condition="'$(ProductCliStampSourceCommit)' == 'true'"
+          BeforeTargets="GetAssemblyAttributes"
+          DependsOnTargets="InitializeSourceControlInformation">
+    <Error Condition="'$(SourceRevisionId)' == ''"
+           Code="PCLI0005"
+           File="$(MSBuildProjectFullPath)"
+           Text="$(MSBuildProjectName) has no source commit to stamp (SourceRevisionId is empty). Build it from a git checkout." />
+    <ItemGroup>
+      <AssemblyMetadata Include="SourceCommit" Value="$(SourceRevisionId)" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    The package register (ADR-0004 as amended by ADR-0013 D4). Every
+    PackageVersion names the ADR that admits it, and a scoped entry is
+    referenced only from inside its scope. Runs in every project's build, so a
+    register defect fails the first project built.
+
+      PCLI0001  a PackageVersion has no Adr=
+      PCLI0002  Adr= names no docs/decisions/ADR-NNNN-*.md
+      PCLI0003  a project outside an entry's Scope= references it
+      PCLI0004  a library has no public API baseline
+  -->
+  <Target Name="ProductCliBuildPolicy" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <_ProductCliAdrFile Include="$(ProductCliRoot)docs/decisions/ADR-*.md" />
+      <_ProductCliAdrNumber Include="$([System.String]::Copy('%(_ProductCliAdrFile.Filename)').Substring(4, 4))" />
+
+      <_ProductCliEntry Include="@(PackageVersion)" PackageId="%(Identity)" DefinedIn="%(DefiningProjectFullPath)" />
+      <_ProductCliCitation Include="@(_ProductCliEntry->'%(Adr)')" Condition="'%(_ProductCliEntry.Adr)' != ''" />
+      <_ProductCliDangling Include="@(_ProductCliCitation)" Exclude="@(_ProductCliAdrNumber)" />
+
+      <_ProductCliScoped Include="@(PackageVersion)" Condition="'%(PackageVersion.Scope)' != ''" />
+      <_ProductCliScopedUnused Include="@(_ProductCliScoped)" Exclude="@(PackageReference)" />
+      <_ProductCliScopedUsed Include="@(_ProductCliScoped)" Exclude="@(_ProductCliScopedUnused)" />
+      <_ProductCliScopedUsed Update="@(_ProductCliScopedUsed)" InScope="$(ProductCliPolicyPath.StartsWith('%(Scope)'))" />
+    </ItemGroup>
+
+    <Error Condition="'%(PackageVersion.Adr)' == ''"
+           Code="PCLI0001"
+           File="%(PackageVersion.DefiningProjectFullPath)"
+           Text="PackageVersion '%(PackageVersion.Identity)' carries no Adr= naming the ADR that admits it (ADR-0004 D1, as amended by ADR-0013 D4)." />
+
+    <Error Condition="'@(_ProductCliDangling)' != ''"
+           Code="PCLI0002"
+           File="%(_ProductCliDangling.DefinedIn)"
+           Text="PackageVersion '%(_ProductCliDangling.PackageId)' cites Adr=&quot;%(_ProductCliDangling.Identity)&quot;, and docs/decisions/ holds no ADR-%(_ProductCliDangling.Identity)-*.md (ADR-0013 D4)." />
+
+    <Error Condition="'%(_ProductCliScopedUsed.InScope)' == 'False'"
+           Code="PCLI0003"
+           File="$(MSBuildProjectFullPath)"
+           Text="$(MSBuildProjectName) ($(ProductCliPolicyPath)) references '%(_ProductCliScopedUsed.Identity)', whose register entry is scoped to %(_ProductCliScopedUsed.Scope) (ADR-0013 D4)." />
+
+    <Error Condition="'$(ProductCliIsLibrary)' == 'true' and (!Exists('$(MSBuildProjectDirectory)/PublicAPI.Shipped.txt') or !Exists('$(MSBuildProjectDirectory)/PublicAPI.Unshipped.txt'))"
+           Code="PCLI0004"
+           File="$(MSBuildProjectFullPath)"
+           Text="$(MSBuildProjectName) is a library and has no PublicAPI.Shipped.txt and PublicAPI.Unshipped.txt beside its project file (ADR-0002 D3)." />
+  </Target>
+
+</Project>

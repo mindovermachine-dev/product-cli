@@ -1,0 +1,30 @@
+// Banned symbols, for all product code (src/). Directory.Build.targets passes
+// this file to Microsoft.CodeAnalysis.BannedApiAnalyzers (ADR-0013 D2).
+//
+// ADR-0003 D4: no reflection, Reflection.Emit or dynamic in shipped code. Each
+// entry below defeats trimming or does not exist under Native AOT, so it is
+// banned outright rather than left for the trim analyzer to catch at a call
+// site. `dynamic` is DD0020's (ADR-0013 D2).
+//
+// Format: one documentation ID per line, ';', then the message shown at the
+// call site. Every message cites the decision that bans it.
+
+// Runtime code generation: none under Native AOT.
+N:System.Reflection.Emit; Native AOT has no Reflection.Emit; generate the code at compile time. ADR-0003 D4.
+
+// Types named in strings: the trimmer cannot see the reference.
+M:System.Type.GetType(System.String); A type named in a string defeats trimming; name the type in code. ADR-0003 D4.
+M:System.Type.GetType(System.String,System.Boolean); A type named in a string defeats trimming; name the type in code. ADR-0003 D4.
+M:System.Type.GetType(System.String,System.Boolean,System.Boolean); A type named in a string defeats trimming; name the type in code. ADR-0003 D4.
+
+// Reflective activation.
+M:System.Activator.CreateInstance(System.Type); Reflective activation defeats trimming; call a constructor or a factory. ADR-0003 D4.
+M:System.Activator.CreateInstance(System.Type,System.Boolean); Reflective activation defeats trimming; call a constructor or a factory. ADR-0003 D4.
+M:System.Activator.CreateInstance(System.Type,System.Object[]); Reflective activation defeats trimming; call a constructor or a factory. ADR-0003 D4.
+M:System.Activator.CreateInstance(System.String,System.String); Reflective activation defeats trimming; call a constructor or a factory. ADR-0003 D4.
+
+// Loading assemblies at run time: none under Native AOT.
+M:System.Reflection.Assembly.Load(System.String); Native AOT loads no assembly at run time. ADR-0003 D4.
+M:System.Reflection.Assembly.Load(System.Byte[]); Native AOT loads no assembly at run time. ADR-0003 D4.
+M:System.Reflection.Assembly.LoadFrom(System.String); Native AOT loads no assembly at run time. ADR-0003 D4.
+M:System.Reflection.Assembly.LoadFile(System.String); Native AOT loads no assembly at run time. ADR-0003 D4.

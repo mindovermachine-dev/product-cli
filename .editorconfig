@@ -1,0 +1,49 @@
+# The style and analyzer severities of the build (ADR-0002 D3, ADR-0003 D2).
+# Nothing here lowers a rule's severity (ADR-0007 D6).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{csproj,props,targets,slnx,config,json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+# Usings are explicit (ImplicitUsings disable), and an unused one is an error.
+dotnet_diagnostic.IDE0005.severity = warning
+csharp_style_namespace_declarations = file_scoped:warning
+dotnet_diagnostic.IDE0161.severity = warning
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+
+# ADR-0003 D2: the trim, AOT and single-file analyzers' diagnostics are
+# errors, whatever their default severity.
+dotnet_diagnostic.IL2026.severity = error
+dotnet_diagnostic.IL2046.severity = error
+dotnet_diagnostic.IL2050.severity = error
+dotnet_diagnostic.IL2055.severity = error
+dotnet_diagnostic.IL2057.severity = error
+dotnet_diagnostic.IL2058.severity = error
+dotnet_diagnostic.IL2059.severity = error
+dotnet_diagnostic.IL2060.severity = error
+dotnet_diagnostic.IL2062.severity = error
+dotnet_diagnostic.IL2067.severity = error
+dotnet_diagnostic.IL2070.severity = error
+dotnet_diagnostic.IL2072.severity = error
+dotnet_diagnostic.IL2075.severity = error
+dotnet_diagnostic.IL2087.severity = error
+dotnet_diagnostic.IL2091.severity = error
+dotnet_diagnostic.IL3000.severity = error
+dotnet_diagnostic.IL3001.severity = error
+dotnet_diagnostic.IL3002.severity = error
+dotnet_diagnostic.IL3050.severity = error
+dotnet_diagnostic.IL3051.severity = error
+dotnet_diagnostic.IL3053.severity = error

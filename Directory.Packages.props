@@ -1,0 +1,59 @@
+<Project>
+
+  <!--
+    THE PACKAGE REGISTER (ADR-0004, as amended by ADR-0013 D4).
+
+    Central package management: no project file carries a version, and none
+    can pin a different one.
+
+    Every PackageVersion carries Adr="NNNN", naming the ADR in docs/decisions/
+    that admits it. A test-only entry also carries Scope="<path prefix>", and
+    only a project under that prefix may reference it. The build fails on an
+    entry without Adr= (PCLI0001), on an Adr= naming no ADR (PCLI0002), and on
+    a reference from outside the scope (PCLI0003); Directory.Build.targets
+    holds the checks, and BuildPolicyTests builds each failing case.
+
+    Versions are resolved from nuget.org when an entry is added or changed,
+    never from memory. These were resolved on 2026-11-03.
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Varve: runtime (ADR-0004 D2)">
+    <!-- RDF terms and RDFC-1.0, the canonical form (ADR-0002 D5). MPL-2.0,
+         managed, AOT-compatible. Referenced by ProductCli.Canonical. -->
+    <PackageVersion Include="Varve.Rdf" Version="0.1.0-preview.15" Adr="0004" />
+    <!-- A dependency of Varve.Rdf, pinned so that the register shows it. No
+         dependencies of its own. -->
+    <PackageVersion Include="Varve.Iri" Version="0.1.0-preview.15" Adr="0004" />
+  </ItemGroup>
+
+  <ItemGroup Label="Varve: test-only (ADR-0004 D2)">
+    <!-- The Turtle parser of the Varve admission test (ProductCli.Canonical.Tests).
+         No product code parses Turtle in slice 0. -->
+    <PackageVersion Include="Varve.Turtle" Version="0.1.0-preview.15" Adr="0004" Scope="tests/" />
+  </ItemGroup>
+
+  <ItemGroup Label="The test stack: test-only (ADR-0004 D2, named by ADR-0013 D1)">
+    <!-- xunit v3 on Microsoft.Testing.Platform (global.json). Apache-2.0.
+         Brings xunit.v3.mtp-v2, the platform's v2 adapter. -->
+    <PackageVersion Include="xunit.v3" Version="4.0.2" Adr="0004" Scope="tests/" />
+    <!-- Property tests. Apache-2.0, no dependencies of its own; FsCheck was
+         rejected for FSharp.Core (ADR-0013). -->
+    <PackageVersion Include="CsCheck" Version="5.0.1" Adr="0004" Scope="tests/" />
+  </ItemGroup>
+
+  <ItemGroup Label="Analyzers: build-time only, never shipped (ADR-0013 D2, D3)">
+    <!-- DD0001, the layering rule, and the package's other rules, all errors
+         (ADR-0002 D3). Referenced from Directory.Build.props by every project. -->
+    <PackageVersion Include="DecisionDriven.Analyzers" Version="0.1.0-preview.10" Adr="0013" />
+    <!-- The public API baselines, on every library (ADR-0002 D3). -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" Adr="0013" />
+    <!-- eng/BannedSymbols.txt, on all product code (ADR-0003 D4). -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" Adr="0013" />
+  </ItemGroup>
+
+</Project>

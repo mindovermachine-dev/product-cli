@@ -1,0 +1,6 @@
+# Analyzer options for the whole compilation (ADR-0002 D3, ADR-0013 D2).
+is_global = true
+
+# DD0001: a ProductCli.* project that declares no ArchLayer is itself an error,
+# so no project can stay unplaced in the layer table.
+dd_require_layer = true
