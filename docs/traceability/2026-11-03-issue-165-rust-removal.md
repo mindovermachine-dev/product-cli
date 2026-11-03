@@ -298,7 +298,18 @@ the MIT file, confirmed the relicensing in the session:
 
 `LICENSE` and `NOTICE` already say this, and nothing in them changes.
 
+The maintainer then stated the boundary exactly:
+
+> Licence. Apache-2.0, from the commit after rust-final that replaced the licence. MIT governs everything at rust-final and before it, and the Rust tool’s releases.
+
+That commit is `59553eee80d1660e0a1c5f03f55c009dc8b4c78b` ("licence:
+Apache-2.0 replaces MIT; add NOTICE"). `NOTICE` states the same boundary:
+Apache-2.0 "from the commit that replaced the licence onwards", MIT for
+"everything at rust-final and every commit before it, and the releases built
+from them".
+
 Commits after this record's first version, with the same trailers and
 signature as above:
 
-- this addendum
+- `d4ea57b` docs(traceability): the relicensing confirmation, as an addendum
+- the boundary, added to this addendum
