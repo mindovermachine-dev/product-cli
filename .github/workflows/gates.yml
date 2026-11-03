@@ -14,6 +14,10 @@ concurrency:
   group: gates-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+
 jobs:
   commits:
     name: commits
@@ -73,3 +77,77 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Each check fails on its plant and passes its clean case
         run: eng/gates/selftest.sh
+
+  # The .NET build (ADR-0002, ADR-0003, ADR-0013). Checked out at the pull
+  # request's head, not GitHub's merge commit, so the commit the host stamps
+  # is the head that is reviewed.
+  build-test:
+    name: build-test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Build, warnings as errors
+        run: dotnet build ProductCli.slnx -c Release
+      - name: Test, the layering and build-policy probes included
+        run: dotnet test -c Release --no-build
+
+  # ADR-0003 D3, D5: the Native AOT publish of the host on every supported
+  # runtime identifier, each on a runner of its own operating system (Native
+  # AOT does not cross-compile between them), and the smoke test of the
+  # published binary.
+  aot:
+    name: aot (${{ matrix.rid }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            os: ubuntu-24.04
+          - rid: linux-arm64
+            os: ubuntu-24.04-arm
+          - rid: osx-arm64
+            os: macos-15
+          - rid: win-x64
+            os: windows-2025
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: The runtime identifier is one the build policy supports
+        env:
+          RID: ${{ matrix.rid }}
+        run: |
+          supported=$(dotnet msbuild src/ProductCli.Host/ProductCli.Host.csproj -getProperty:ProductCliRuntimeIdentifiers)
+          echo "supported: $supported"
+          case ";$supported;" in
+            *";$RID;"*) ;;
+            *) echo "aot: $RID is not in ProductCliRuntimeIdentifiers"; exit 1 ;;
+          esac
+      - name: Publish, Native AOT
+        env:
+          RID: ${{ matrix.rid }}
+        run: dotnet publish src/ProductCli.Host/ProductCli.Host.csproj -c Release -r "$RID" -o "artifacts/publish/$RID"
+      - name: Smoke test of the published binary
+        env:
+          RID: ${{ matrix.rid }}
+        run: |
+          ext=""
+          if [ "$RID" = win-x64 ]; then ext=.exe; fi
+          binary="artifacts/publish/$RID/product$ext"
+          version=$(dotnet msbuild src/ProductCli.Host/ProductCli.Host.csproj -getProperty:Version)
+          eng/gates/smoke.sh "$binary" "$version" "$(git rev-parse HEAD)"
+          size=$(wc -c < "$binary" | tr -d ' ')
+          echo "aot: $RID: $binary is $size bytes"
+          echo "| $RID | \`product$ext\` | $size bytes |" >> "$GITHUB_STEP_SUMMARY"

@@ -230,6 +230,39 @@ r=$(toolchain_root root-second-pin)
 cp "$repo/global.json" "$r/tests/global.json"
 expect_fail "no-toolchain: a second global.json" "no-toolchain: tests/global.json is a second global.json" "$gates/no-toolchain.sh" "$r"
 
+# --- smoke -------------------------------------------------------------------
+
+# Each stub stands in for a published binary. The clean one behaves as the
+# host must; each plant breaks one thing the smoke test reads.
+sha=0123456789abcdef0123456789abcdef01234567
+stub() {  # stub <name> <body>: an executable script
+  local f="$work/stub-$1"
+  printf '#!/usr/bin/env bash\n%s\n' "$2" > "$f"
+  chmod +x "$f"
+  echo "$f"
+}
+good_version="printf 'product 1.2.3 (commit $sha)\\n'"
+good_domain="echo \"product: 'domain' arrives in step 4\" >&2; exit 2"
+body() {  # body <version branch> <domain branch>
+  printf 'if [ "$1" = --version ]; then %s; else %s; fi' "$1" "$2"
+}
+
+expect_pass "smoke" "$gates/smoke.sh" "$(stub clean "$(body "$good_version" "$good_domain")")" 1.2.3 "$sha"
+expect_fail "smoke: another version" "smoke: --version wrote other bytes than expected" \
+  "$gates/smoke.sh" "$(stub version "$(body "printf 'product 1.2.4 (commit $sha)\\n'" "$good_domain")")" 1.2.3 "$sha"
+expect_fail "smoke: another commit" "smoke: --version wrote other bytes than expected" \
+  "$gates/smoke.sh" "$(stub commit "$(body "printf 'product 1.2.3 (commit ffff)\\n'" "$good_domain")")" 1.2.3 "$sha"
+expect_fail "smoke: a CRLF line end" "smoke: --version wrote other bytes than expected" \
+  "$gates/smoke.sh" "$(stub crlf "$(body "printf 'product 1.2.3 (commit $sha)\\r\\n'" "$good_domain")")" 1.2.3 "$sha"
+expect_fail "smoke: --version exits 1" "smoke: --version exited 1, not 0" \
+  "$gates/smoke.sh" "$(stub exit1 "$(body "$good_version; exit 1" "$good_domain")")" 1.2.3 "$sha"
+expect_fail "smoke: --version writes to stderr" "smoke: --version wrote to stderr" \
+  "$gates/smoke.sh" "$(stub stderr "$(body "$good_version; echo warning >&2" "$good_domain")")" 1.2.3 "$sha"
+expect_fail "smoke: a verb exits 0" "smoke: 'domain' exited 0, not 2" \
+  "$gates/smoke.sh" "$(stub verb0 "$(body "$good_version" "exit 0")")" 1.2.3 "$sha"
+expect_fail "smoke: a verb writes to stdout" "smoke: 'domain' wrote to stdout" \
+  "$gates/smoke.sh" "$(stub verbout "$(body "$good_version" "echo nodes; exit 2")")" 1.2.3 "$sha"
+
 if [ "$failed" -ne 0 ]; then
   echo "selftest: a check did not behave as its plant requires"
   exit 1
