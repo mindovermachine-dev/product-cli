@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The layering probe (ADR-0002 D3). A test sets ProbeLayer, the layer the
+    probe declares, and ProbeReference, the project it references. It is
+    checked as product code at src/ProductCli.Probe/ (Directory.Build.targets),
+    so DD0001 judges it as it judges a library. ProbeLayer unset leaves the
+    probe unplaced, which dd_require_layer refuses.
+  -->
+  <PropertyGroup>
+    <ArchLayer>$(ProbeLayer)</ArchLayer>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(ProbeReference)' != ''">
+    <ProjectReference Include="$(ProbeReference)" />
+  </ItemGroup>
+
+</Project>

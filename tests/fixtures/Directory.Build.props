@@ -1,0 +1,16 @@
+<Project>
+
+  <!--
+    The probes. Each is built by a test with `dotnet build`, under the
+    repository's build files, which this file imports unchanged. A test passes
+    ProbeArtifacts, a temporary directory, so that every probe build has its
+    own obj/ and bin/ and runs in parallel with the others.
+  -->
+  <PropertyGroup Condition="'$(ProbeArtifacts)' != ''">
+    <BaseIntermediateOutputPath>$(ProbeArtifacts)/obj/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(ProbeArtifacts)/bin/</BaseOutputPath>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+</Project>

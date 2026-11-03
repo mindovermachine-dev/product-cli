@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The tests of ProductCli.Session, layer 6 of ADR-0002 D1. Unlayered: DD0001 does not check a *.Tests assembly. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/ProductCli.Session/ProductCli.Session.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../Harness/*.cs" LinkBase="Harness" />
+  </ItemGroup>
+
+</Project>

@@ -9,4 +9,14 @@
     <Project Path="src/ProductCli.Session/ProductCli.Session.csproj" />
     <Project Path="src/ProductCli.Host/ProductCli.Host.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ProductCli.Vocabulary.Tests/ProductCli.Vocabulary.Tests.csproj" />
+    <Project Path="tests/ProductCli.Canonical.Tests/ProductCli.Canonical.Tests.csproj" />
+    <Project Path="tests/ProductCli.Shapes.Tests/ProductCli.Shapes.Tests.csproj" />
+    <Project Path="tests/ProductCli.Draft.Tests/ProductCli.Draft.Tests.csproj" />
+    <Project Path="tests/ProductCli.Simulation.Tests/ProductCli.Simulation.Tests.csproj" />
+    <Project Path="tests/ProductCli.Runner.Tests/ProductCli.Runner.Tests.csproj" />
+    <Project Path="tests/ProductCli.Session.Tests/ProductCli.Session.Tests.csproj" />
+    <Project Path="tests/ProductCli.Host.Tests/ProductCli.Host.Tests.csproj" />
+  </Folder>
 </Solution>
