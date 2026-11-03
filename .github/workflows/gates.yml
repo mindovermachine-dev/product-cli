@@ -1,0 +1,75 @@
+# The gates (AGENTS.md, "Gates"). Every check is a script in eng/gates/ and
+# runs locally the same way. No rule is suppressed (ADR-0007 D6).
+name: gates
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: gates-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  commits:
+    name: commits
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Refs, sign-off, and no model named, on every commit
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: eng/gates/commits.sh "$BASE" "$HEAD"
+
+  signatures:
+    name: signatures
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Every commit verified by GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api --paginate "repos/$REPO/pulls/$PR/commits" --jq '.[]' | jq -s . > "$RUNNER_TEMP/commits.json"
+          eng/gates/signatures.sh "$RUNNER_TEMP/commits.json"
+
+  adr-shape:
+    name: adr-shape
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Every file under docs/decisions/ has the ADR shape
+        run: eng/gates/adr-shape.sh docs/decisions
+
+  adr-text:
+    name: adr-text
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: ADR-0001 to ADR-0012 equal the collected file
+        run: eng/gates/adr-text.sh docs/decisions
+
+  no-toolchain:
+    name: no-toolchain
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: No Rust, Node or Python toolchain file at the root
+        run: eng/gates/no-toolchain.sh .
+
+  selftest:
+    name: selftest
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Each check fails on its plant and passes its clean case
+        run: eng/gates/selftest.sh
