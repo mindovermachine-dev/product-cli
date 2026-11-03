@@ -1,0 +1,22 @@
+product-cli
+
+Copyright 2026 Emil Okkels Klein
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+
+The Rust workspace that this repository held until the tag rust-final
+(commit 70395dfe317cb9a00665433813766ca763f3c58a) was published under the MIT
+licence, "Copyright (c) 2026 Emil Klein". That licence still governs
+everything at rust-final and every commit before it, and the releases built
+from them. Apache-2.0 governs this repository from the commit that replaced
+the licence onwards.
