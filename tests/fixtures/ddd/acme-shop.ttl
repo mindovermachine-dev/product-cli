@@ -1,0 +1,124 @@
+# The acme-shop What — the worked example of applications/sdlc/what.md.
+#
+# The How test product's What (applications/sdlc/how-examples/), landed in the ruled identity
+# form (DDD-dec-63): the product node is the product IRI; every other element is
+# P/what/<ULID>, minted once by what/mint.py on 2026-10-28 and never changed. Names are
+# rdfs:label. A test product only: nothing here is acceptable into a real product (ruling 4 of
+# 2026-10-28). Blank nodes appear only inside an element's description (scenario lists, scope
+# keys, payload bindings).
+@prefix sdlc: <https://decision-driven-design.dk/ns/sdlc#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix w:    <https://acme.example/products/shop/what/> .
+
+<https://acme.example/products/shop> a sdlc:Product ;
+    rdfs:label "Acme Shop" ;
+    sdlc:purpose "Sell to consumers and refund them, over one ordering model." .
+
+# ---- §3.1 the Ordering domain
+w:01M610JNAMYTKTBXP8KD0BQ2G0 a sdlc:Domain ; sdlc:within <https://acme.example/products/shop> ; rdfs:label "Ordering" .
+w:01M610JNAMH5Y3FP9BFRZJ6QSS a sdlc:BoundedContext ; sdlc:within w:01M610JNAMYTKTBXP8KD0BQ2G0 ; rdfs:label "Ordering" ;
+    sdlc:ubiquitousTerm "Order" , "Refund" .
+
+w:01M610JNAMCAGMKBDKSY0GQ0S1 a sdlc:Entity ; sdlc:within w:01M610JNAMH5Y3FP9BFRZJ6QSS ; rdfs:label "Order" ;
+    sdlc:definition "A placed, paid order." ; sdlc:isAggregateRoot true .
+w:01M610JNAM71CMH9AJ4YSGX3MV a sdlc:Field ; sdlc:within w:01M610JNAMCAGMKBDKSY0GQ0S1 ; rdfs:label "customer_id" ; sdlc:fieldType xsd:string .
+w:01M610JNAMBV0GKE9KYASYPJCA a sdlc:Field ; sdlc:within w:01M610JNAMCAGMKBDKSY0GQ0S1 ; rdfs:label "paid_total" ; sdlc:fieldType xsd:integer .
+w:01M610JNAMHGKDY5GHJRB7FGRM a sdlc:Field ; sdlc:within w:01M610JNAMCAGMKBDKSY0GQ0S1 ; rdfs:label "refunded_total" ; sdlc:fieldType xsd:integer .
+
+w:01M610JNAMBF0DD4V6Y2W1XFC7 a sdlc:Invariant ; sdlc:within w:01M610JNAMCAGMKBDKSY0GQ0S1 ; rdfs:label "order has lines" ;
+    sdlc:wireName "order-has-lines" ; sdlc:statement "An order cannot be placed with no lines." .
+w:01M610JNAMRDJE9PM59PYRRD3J a sdlc:Invariant ; sdlc:within w:01M610JNAMCAGMKBDKSY0GQ0S1 ; rdfs:label "refund by owner" ;
+    sdlc:wireName "refund-by-owner" ; sdlc:statement "Only the order's customer may request its refund." .
+w:01M610JNAMBBMM4NHG16BQTNRE a sdlc:Invariant ; sdlc:within w:01M610JNAMCAGMKBDKSY0GQ0S1 ; rdfs:label "refund within paid" ;
+    sdlc:wireName "refund-within-paid" ; sdlc:statement "refunded_total + amount <= paid_total." .
+
+# ---- §3.2 events and commands, with payload fields in order
+w:01M610JNAMCQ2R6MG31Q07DWMX a sdlc:Command ; sdlc:within w:01M610JNAMH5Y3FP9BFRZJ6QSS ; rdfs:label "Place order" ; sdlc:wireName "place-order" ;
+    sdlc:targets w:01M610JNAMCAGMKBDKSY0GQ0S1 ; sdlc:emits w:01M610JNAM3FKSYQJ0NPEMRJQ5 ; sdlc:fieldOrder ( w:01M610JNAMPJPTACP44JCE5B2S ) .
+w:01M610JNAMPJPTACP44JCE5B2S a sdlc:Field ; sdlc:within w:01M610JNAMCQ2R6MG31Q07DWMX ; rdfs:label "lines" ; sdlc:wireName "lines" ; sdlc:fieldType xsd:integer .
+w:01M610JNAMC74SDA3DVDE332WB a sdlc:Command ; sdlc:within w:01M610JNAMH5Y3FP9BFRZJ6QSS ; rdfs:label "Refund order" ; sdlc:wireName "refund-order" ;
+    sdlc:targets w:01M610JNAMCAGMKBDKSY0GQ0S1 ; sdlc:emits w:01M610JNAMJPDE0DG2T4TY6X9A ; sdlc:fieldOrder ( w:01M610JNAMXAPW6HP60ZS6H37V ) .
+w:01M610JNAMXAPW6HP60ZS6H37V a sdlc:Field ; sdlc:within w:01M610JNAMC74SDA3DVDE332WB ; rdfs:label "amount" ; sdlc:wireName "amount" ; sdlc:fieldType xsd:integer .
+
+w:01M610JNAM3FKSYQJ0NPEMRJQ5 a sdlc:Event ; sdlc:within w:01M610JNAMH5Y3FP9BFRZJ6QSS ; rdfs:label "Order placed" ; sdlc:wireName "order-placed" ;
+    sdlc:changes w:01M610JNAMCAGMKBDKSY0GQ0S1 ; sdlc:fieldOrder ( w:01M610JNAM0RKJ7T4099SW1N77 w:01M610JNAM959BR6Y50HZ3WME4 ) .
+w:01M610JNAM0RKJ7T4099SW1N77 a sdlc:Field ; sdlc:within w:01M610JNAM3FKSYQJ0NPEMRJQ5 ; rdfs:label "customer_id" ; sdlc:wireName "customer_id" ; sdlc:fieldType xsd:string .
+w:01M610JNAM959BR6Y50HZ3WME4 a sdlc:Field ; sdlc:within w:01M610JNAM3FKSYQJ0NPEMRJQ5 ; rdfs:label "paid_total" ; sdlc:wireName "paid_total" ; sdlc:fieldType xsd:integer .
+w:01M610JNAMJPDE0DG2T4TY6X9A a sdlc:Event ; sdlc:within w:01M610JNAMH5Y3FP9BFRZJ6QSS ; rdfs:label "Order refunded" ; sdlc:wireName "order-refunded" ;
+    sdlc:changes w:01M610JNAMCAGMKBDKSY0GQ0S1 ; sdlc:fieldOrder ( w:01M610JNAM2HPRB9QBTYD15XZ7 ) .
+w:01M610JNAM2HPRB9QBTYD15XZ7 a sdlc:Field ; sdlc:within w:01M610JNAMJPDE0DG2T4TY6X9A ; rdfs:label "amount" ; sdlc:wireName "amount" ; sdlc:fieldType xsd:integer .
+
+# ---- §3.3 the Decider, its logic by digest, and one scenario
+w:01M610JNAMMP5V59XRNHD39R5A a sdlc:Decider ; sdlc:within w:01M610JNAMH5Y3FP9BFRZJ6QSS ; rdfs:label "Order" ;
+    sdlc:decidesFor w:01M610JNAMCAGMKBDKSY0GQ0S1 ; sdlc:handles w:01M610JNAMCQ2R6MG31Q07DWMX , w:01M610JNAMC74SDA3DVDE332WB ;
+    sdlc:reads w:01M610JNAM71CMH9AJ4YSGX3MV , w:01M610JNAMBV0GKE9KYASYPJCA , w:01M610JNAMHGKDY5GHJRB7FGRM , w:01M610JNAMQHZ7H4Y0GVEQAWBG ;
+    sdlc:rejects w:01M610JNAMBF0DD4V6Y2W1XFC7 , w:01M610JNAMRDJE9PM59PYRRD3J , w:01M610JNAMBBMM4NHG16BQTNRE ;
+    sdlc:logic "sha256:24c18e0148752eab9667545a85182b9ee7ab03d8d7c60d8259f5b69e6a260e6b" ; sdlc:logicMediaType "application/yaml" .
+w:01M610JNAM51J0KCR35NQCD9YC a sdlc:Scenario ; sdlc:within w:01M610JNAMMP5V59XRNHD39R5A ; rdfs:label "refund beyond what was paid" ;
+    sdlc:given ( [ sdlc:event w:01M610JNAM3FKSYQJ0NPEMRJQ5 ;
+                   sdlc:with [ sdlc:field w:01M610JNAM0RKJ7T4099SW1N77 ; sdlc:value "c-1" ] , [ sdlc:field w:01M610JNAM959BR6Y50HZ3WME4 ; sdlc:value "100"^^xsd:integer ] ] ) ;
+    sdlc:when [ sdlc:command w:01M610JNAMC74SDA3DVDE332WB ; sdlc:asSubject w:01M610JNAMMSAY8ZWD1TMMZ8HH ;
+                sdlc:with [ sdlc:field w:01M610JNAMXAPW6HP60ZS6H37V ; sdlc:value "150"^^xsd:integer ] , [ sdlc:field w:01M610JNAMQHZ7H4Y0GVEQAWBG ; sdlc:value "c-1" ] ] ;
+    sdlc:thenReject w:01M610JNAMBBMM4NHG16BQTNRE .
+
+# ---- §3.2, §3.4 the View and its Projector, keyed for scoping
+w:01M610JNAMFTV81M9FR1TXEN03 a sdlc:View ; sdlc:within w:01M610JNAMH5Y3FP9BFRZJ6QSS ; rdfs:label "Order summary" ;
+    sdlc:projects w:01M610JNAM3FKSYQJ0NPEMRJQ5 , w:01M610JNAMJPDE0DG2T4TY6X9A ; sdlc:hasState sdlc:statePresent , sdlc:stateEmpty .
+w:01M610JNAM10QDGKF29GWXSHK1 a sdlc:Field ; sdlc:within w:01M610JNAMFTV81M9FR1TXEN03 ; rdfs:label "customer_id" ; sdlc:wireName "customer_id" ; sdlc:fieldType xsd:string .
+w:01M610JNAMD2PDDKQRCW18Z0E4 a sdlc:Projector ; sdlc:within w:01M610JNAMH5Y3FP9BFRZJ6QSS ; rdfs:label "Order summary" ;
+    sdlc:projectsFor w:01M610JNAMFTV81M9FR1TXEN03 ; sdlc:folds w:01M610JNAM3FKSYQJ0NPEMRJQ5 , w:01M610JNAMJPDE0DG2T4TY6X9A ; sdlc:keyedBy w:01M610JNAM10QDGKF29GWXSHK1 ;
+    sdlc:logic "sha256:a39a05f9c3f992f4f839c892bab65c7d45fc23a1f5e52a1ca9a793045f93770d" ; sdlc:logicMediaType "application/yaml" .
+
+# ---- §3.7 subject kinds, their claims, and the View's scope
+w:01M610JNAMMSAY8ZWD1TMMZ8HH a sdlc:SubjectKind ; sdlc:within w:01M610JNAMYTKTBXP8KD0BQ2G0 ; rdfs:label "Customer" ; sdlc:wireName "customer" ; sdlc:nature sdlc:natureHuman .
+w:01M610JNAMQHZ7H4Y0GVEQAWBG a sdlc:Field ; sdlc:within w:01M610JNAMMSAY8ZWD1TMMZ8HH ; rdfs:label "customer_id" ; sdlc:wireName "customer_id" ; sdlc:fieldType xsd:string .
+w:01M610JNAMHKDH8MYYBGG3DBMA a sdlc:SubjectKind ; sdlc:within w:01M610JNAMYTKTBXP8KD0BQ2G0 ; rdfs:label "Staff" ; sdlc:wireName "staff" ; sdlc:nature sdlc:natureHuman .
+w:01M610JNAMF373V3PH2FNTY837 a sdlc:ScopeRule ; sdlc:within w:01M610JNAMFTV81M9FR1TXEN03 ; rdfs:label "customers see their own orders" ;
+    sdlc:forSubject w:01M610JNAMMSAY8ZWD1TMMZ8HH ;
+    sdlc:key [ sdlc:viewField w:01M610JNAM10QDGKF29GWXSHK1 ; sdlc:claim w:01M610JNAMQHZ7H4Y0GVEQAWBG ; sdlc:operator "equals" ] .
+w:01M610JNAM10YNEPYPSXB6RMCT a sdlc:ScopeRule ; sdlc:within w:01M610JNAMFTV81M9FR1TXEN03 ; rdfs:label "staff see every order" ;
+    sdlc:forSubject w:01M610JNAMHKDH8MYYBGG3DBMA .
+
+# ---- §3.2.5 the systems
+w:01M610JNAMV23W7Y9YQKZPJ4ZA a sdlc:System ; sdlc:within <https://acme.example/products/shop> ; rdfs:label "shop-api" ;
+    sdlc:systemKind "service" ; sdlc:purpose "The ordering service other systems call." ;
+    sdlc:referencesDomain w:01M610JNAMYTKTBXP8KD0BQ2G0 .
+w:01M610JNAM8K9PG653537FE7EG a sdlc:System ; sdlc:within <https://acme.example/products/shop> ; rdfs:label "shop-bff" ;
+    sdlc:systemKind "application" ; sdlc:purpose "The customer-facing web shop." ;
+    sdlc:referencesDomain w:01M610JNAMYTKTBXP8KD0BQ2G0 ; sdlc:targetsClass sdlc:GUI ; sdlc:targetsContext w:01M610JNAMPMZF1RVXMWH5WTHK .
+w:01M610JNAMPMZF1RVXMWH5WTHK a sdlc:ContextOfUse ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "web" ; sdlc:dimension "platform" .
+w:01M610JNAMM87QX4FY174WWP2R a sdlc:DeclaredTarget ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "Acme design system" ;
+    sdlc:targetKind "design-system" ; sdlc:edition "DS@1@https://design.acme.example/packages/acme-ds" .
+w:01M610JNAM4J9NN1M290V2F9WH a sdlc:DeclaredTarget ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "Acme content store" ;
+    sdlc:targetKind "content-store" ; sdlc:edition "CS@1@https://design.acme.example/packages/acme-content" ;
+    sdlc:locale "en-GB" , "da-DK" .
+
+# ---- §3.2.0, §3.2.1, §3.2.4 triggers, a flow, a UI step, the root
+w:01M610JNAMGPYXD4X3VAE9RBC0 a sdlc:Trigger ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "customer places an order" ;
+    sdlc:source sdlc:sourceUser ; sdlc:subject w:01M610JNAMMSAY8ZWD1TMMZ8HH ; sdlc:issues w:01M610JNAMCQ2R6MG31Q07DWMX .
+w:01M610JNAMHZ5N0XY7Z0YCH227 a sdlc:Trigger ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "customer asks for a refund" ;
+    sdlc:source sdlc:sourceUser ; sdlc:subject w:01M610JNAMMSAY8ZWD1TMMZ8HH ; sdlc:issues w:01M610JNAMC74SDA3DVDE332WB .
+
+w:01M610JNAM18X2V4SPKEV6G1M5 a sdlc:SystemRoot ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "shop-bff root" ; sdlc:navigatesFromRoot w:01M610JNAMWPGKQNH3B0N3KBTH .
+w:01M610JNAMWPGKQNH3B0N3KBTH a sdlc:Flow ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "refund" ; sdlc:entryPage w:01M610JNAM76HYQ9AXTP6ZDY81 .
+w:01M610JNAM76HYQ9AXTP6ZDY81 a sdlc:UIStep ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "Order detail" ; sdlc:inFlow w:01M610JNAMWPGKQNH3B0N3KBTH ;
+    sdlc:intent "The customer checks an order and asks for part of it back." ;
+    sdlc:emphasis "What is still refundable." ;
+    sdlc:offeredTo w:01M610JNAMMSAY8ZWD1TMMZ8HH ;
+    sdlc:references w:01M610JNAM8Y7FS4CTRQQV5KR5 ;
+    sdlc:mustSatisfy <https://www.w3.org/TR/WCAG22/#target-size-minimum> .
+w:01M610JNAM967F0A5307C936ZR a sdlc:Interaction ; sdlc:within w:01M610JNAM76HYQ9AXTP6ZDY81 ; rdfs:label "show the order" ;
+    sdlc:projection w:01M610JNAMFTV81M9FR1TXEN03 ; sdlc:typedAs sdlc:aioDisplayValue .
+w:01M610JNAM9S56WC3FTWZWGS35 a sdlc:Interaction ; sdlc:within w:01M610JNAM76HYQ9AXTP6ZDY81 ; rdfs:label "enter the amount" ;
+    sdlc:field w:01M610JNAMXAPW6HP60ZS6H37V ; sdlc:typedAs sdlc:aioNumericEntry .
+w:01M610JNAMEGJXF540DC0FMQXC a sdlc:Interaction ; sdlc:within w:01M610JNAM76HYQ9AXTP6ZDY81 ; rdfs:label "ask for the refund" ;
+    sdlc:command w:01M610JNAMC74SDA3DVDE332WB ; sdlc:typedAs sdlc:aioTriggerAction .
+w:01M610JNAMJD5JN6VT0J0KZQW0 a sdlc:StateAnnotation ; sdlc:within w:01M610JNAM76HYQ9AXTP6ZDY81 ; rdfs:label "no such order" ;
+    sdlc:forState sdlc:stateEmpty ; sdlc:meaning "The order is not the customer's or does not exist; offer the way back to their orders." .
+w:01M610JNAM8Y7FS4CTRQQV5KR5 a sdlc:ContentKey ; sdlc:within w:01M610JNAM8K9PG653537FE7EG ; rdfs:label "order detail heading" ; sdlc:role "heading" .
+
+# ---- §3.6 a product-wide architectural constraint
+w:01M610JNAMGQQ2DJENWGA6MWCK a sdlc:ArchitecturalConstraint ; sdlc:within <https://acme.example/products/shop> ;
+    rdfs:label "personal data resides in the EU" ;
+    sdlc:statement "Every store of personal data, in every deployment of every system, is in an EU-jurisdiction region." .

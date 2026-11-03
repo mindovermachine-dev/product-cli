@@ -1,0 +1,192 @@
+{
+ "canon": "rdfc-1.0",
+ "hash": "sha256",
+ "example": "examples/acme-shop.ttl",
+ "graphHash": "sha256:10cd90893f7fadb1bdf80064a43795be95e2175684c6d3a93a7736abc7c2156b",
+ "synthetic": {
+  "nTriples": "<https://x.example/p/what/01M610JNAMYTKTBXP8KD0BQ2G0> <https://decision-driven-design.dk/ns/sdlc#given> _:l1 .\n_:l1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> _:e1 .\n_:l1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .\n_:e1 <https://decision-driven-design.dk/ns/sdlc#value> \"100\"^^<http://www.w3.org/2001/XMLSchema#integer> .\n",
+  "hash": "sha256:456983e04c5fbe95df100d4fe330cb44580bc308f0a2c1ee414e580e6f7a32b7"
+ },
+ "elements": [
+  {
+   "iri": "https://acme.example/products/shop",
+   "hash": "sha256:2b1fdeb864fe39e494867c78a6227bccf93806f99ec65ce34721cf3cb6ca801a"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM0RKJ7T4099SW1N77",
+   "hash": "sha256:72c87f19698b2a2b3103387446144aae421202dc183f3594697a040669c6cae4"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM10QDGKF29GWXSHK1",
+   "hash": "sha256:73a035341e751ed2bb8baf42086a23a3aff143dcb6a8e8ab50f6de3a75d706da"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM10YNEPYPSXB6RMCT",
+   "hash": "sha256:ce5ba6ea8c44df4a1da04bf9b0e480f551d9472cb57174859ea69520dafeb1c6"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM18X2V4SPKEV6G1M5",
+   "hash": "sha256:c7b1df959361273c1efff04d77cee49748dc0ee294510c0f5492c31ab96ba9ba"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM2HPRB9QBTYD15XZ7",
+   "hash": "sha256:68bc7bcf89accbbf5d397bbe4539a78eaa687cf00ae61a7dea393cdf93cb247b"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM3FKSYQJ0NPEMRJQ5",
+   "hash": "sha256:f580f283b177fbbf9ee09b4d6216be4f0aeb7b7926c5a8e1963961c958d449ac"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM4J9NN1M290V2F9WH",
+   "hash": "sha256:8ddcd598734a2836d2aba2c9d8cd590f4c69367cf0a17d33a0ccbdd4ba95f286"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM51J0KCR35NQCD9YC",
+   "hash": "sha256:1ec36c54959643ae45a5c1ed74a633582ed09d775572d61917c3ad4841b9e38b"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM71CMH9AJ4YSGX3MV",
+   "hash": "sha256:b8c8d3a1ae709a8073b97c70159bf1b07ef59209419ffaa70f31bb1a8af17df5"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM76HYQ9AXTP6ZDY81",
+   "hash": "sha256:d1964da52198c7e58de9cd9583af19de9bde843710c43693ab6e9e876b70e1e0"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM8K9PG653537FE7EG",
+   "hash": "sha256:a0fd4bd4b34119fc14df665d4a313b245d9ef3c5d84698aecd8fe8e9e4cab6dc"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM8Y7FS4CTRQQV5KR5",
+   "hash": "sha256:dacbef67f039a6e756adca389f862d4bbd602318125305dcbd742dbae461ce47"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM959BR6Y50HZ3WME4",
+   "hash": "sha256:2d09be2ea9b1772167c21d1688fa9cc0a853932e0d8dc09ac6bdee110ed98538"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM967F0A5307C936ZR",
+   "hash": "sha256:122c07c9a064755f5577dc07357c10a7f4dbdf730422cba9de133e3105f2495f"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAM9S56WC3FTWZWGS35",
+   "hash": "sha256:358128c01b3ef343e2835440f9681ec596edaa869969cc7e6880e5b733806530"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMBBMM4NHG16BQTNRE",
+   "hash": "sha256:e9699fa7cdaec72cc90b0ecc011f7e5548424fd82efb3a744c35ad63a20210df"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMBF0DD4V6Y2W1XFC7",
+   "hash": "sha256:f918db3aeec1bafa5c474d4f7e983c89452261887b84ddf3e5cba5994f5d6248"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMBV0GKE9KYASYPJCA",
+   "hash": "sha256:0982b5a8549d51a9fa73072dd95242ef31574d795c36a789c1cef6e90db21d65"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMC74SDA3DVDE332WB",
+   "hash": "sha256:d95e8e5672e128ce12754bc5caeac974c19ddc9a6d0cc339a8a5964c52530883"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMCAGMKBDKSY0GQ0S1",
+   "hash": "sha256:ea78cb132a964543c8fa416c6ccf608c02e5789bdfe0525526d7a196f1b6c8d3"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMCQ2R6MG31Q07DWMX",
+   "hash": "sha256:2698921179975ced5d453809017bdc4df7cfe0ceae4b5c9a2eab04e6a5d7a7e4"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMD2PDDKQRCW18Z0E4",
+   "hash": "sha256:57c43ce99d87d2c3ea3cdb718408cfe5a819d23d393197e083c5082c863638d4"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMEGJXF540DC0FMQXC",
+   "hash": "sha256:b5bc478d40165d620c055e4cd3b4374b9395ba43e6b8e928366b55e8a9c539a9"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMF373V3PH2FNTY837",
+   "hash": "sha256:034943505fd3432d08a18666febb9139de521368940fa5d0d8cb168536e43df1"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMFTV81M9FR1TXEN03",
+   "hash": "sha256:0260544ff84f19c4792ca6655ea5fcf354bffd24fedd83a99660d201963e6672"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMGPYXD4X3VAE9RBC0",
+   "hash": "sha256:de8f2e6465fad36c039a11481acdf086cc479f7e33d08186b56040ee02075deb"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMGQQ2DJENWGA6MWCK",
+   "hash": "sha256:f08812d331db9438f22bac784a574a144f834c7f6848184f0676be201873d76a"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMH5Y3FP9BFRZJ6QSS",
+   "hash": "sha256:e12084a29798c0d791774b33d564aa6415e161540eb36a6951e23ee32f84abc4"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMHGKDY5GHJRB7FGRM",
+   "hash": "sha256:69b19ceafacf094a024cbe44d474789d7656772b805c849c9744badb61867b96"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMHKDH8MYYBGG3DBMA",
+   "hash": "sha256:a1736d09f1f5f8eac3a2f4cbf70a7ef89c094a286c4d54e2808b37e97fba5cd4"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMHZ5N0XY7Z0YCH227",
+   "hash": "sha256:45a388b9644baa86747cdc5736a5ca67ae369618259a36c491be9f90c82c825d"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMJD5JN6VT0J0KZQW0",
+   "hash": "sha256:6e7c0e57645eecc4e726b9ad0c2ae0f0525a7db11b24521548a9ac0f1d2acd97"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMJPDE0DG2T4TY6X9A",
+   "hash": "sha256:877eea6beb5557dd8f8c8455528dd8263381a1e8f68e722ea6822c324b27ab7f"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMM87QX4FY174WWP2R",
+   "hash": "sha256:a70da49495a985695dbe520369e092b7758a857a85618910db49c13b23e0b63f"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMMP5V59XRNHD39R5A",
+   "hash": "sha256:e7c5a0997a329eefb5241a729cf9c772f20d1809a204bd019daebf727670ac58"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMMSAY8ZWD1TMMZ8HH",
+   "hash": "sha256:f1771b80380ac51d0b6d4dead9249d6a66bd5b598441f1d256d4b849db85aff6"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMPJPTACP44JCE5B2S",
+   "hash": "sha256:3bde8df54e6abcff04036c81ae1381314fd5632ac42d043280062e9b2f62da16"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMPMZF1RVXMWH5WTHK",
+   "hash": "sha256:bcefd002d99a0cb6206ed7257ca6598d2483e61d1c3bc40826e3da01342d82e5"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMQHZ7H4Y0GVEQAWBG",
+   "hash": "sha256:44dbe676eab651b267e32b17bb15c115ee445c1b7b8777ffe9aba773cf4d93e2"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMRDJE9PM59PYRRD3J",
+   "hash": "sha256:d4b648f82fa281f0717d3ed1e3c8874f32564b97bac5d759516ef1dcd44eb143"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMV23W7Y9YQKZPJ4ZA",
+   "hash": "sha256:e5481e46700d51bbb6dd7ae417f94a02fa02bb31b600c14d409d528c15fde3e2"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMWPGKQNH3B0N3KBTH",
+   "hash": "sha256:93ecfa4f32a1190fe88899305bb1ebd59d0077b8f27b52ff76bf38e004c62dfc"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMXAPW6HP60ZS6H37V",
+   "hash": "sha256:e90a552b7259f80968ee6e67653667161ae1a74c124dcb40f9795bde96ee359d"
+  },
+  {
+   "iri": "https://acme.example/products/shop/what/01M610JNAMYTKTBXP8KD0BQ2G0",
+   "hash": "sha256:3803a2cd3f5997d78955df34358001c6426d32698d98d15e910fd1b7eee232d7"
+  }
+ ]
+}
