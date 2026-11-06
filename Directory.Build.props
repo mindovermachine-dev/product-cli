@@ -60,7 +60,7 @@
   <PropertyGroup>
     <!-- The product version, which the host prints for its version flag, and the version
          of the release descriptor this build belongs to (releases/). -->
-    <Version>0.8.0-preview.2</Version>
+    <Version>0.8.0-preview.3</Version>
     <!-- The source commit is stamped as its own assembly metadata, so the
          informational version stays the bare version. -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>

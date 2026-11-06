@@ -263,6 +263,50 @@ expect_fail "smoke: a verb exits 0" "smoke: 'domain' exited 0, not 2" \
 expect_fail "smoke: a verb writes to stdout" "smoke: 'domain' wrote to stdout" \
   "$gates/smoke.sh" "$(stub verbout "$(body "$good_version" "echo nodes; exit 2")")" 1.2.3 "$sha"
 
+# --- claude-workflow ---------------------------------------------------------
+
+# Each plant is a copy of the real workflow with one thing broken.
+wf="$repo/.github/workflows/claude.yml"
+plant_wf() {  # plant_wf <name> <sed script>: a planted copy of claude.yml
+  local f="$work/claude-$1.yml"
+  sed -E "$2" "$wf" > "$f"
+  if cmp -s "$wf" "$f"; then
+    echo "selftest: plant  claude-workflow: $1: the plant changed nothing" >&2
+    failed=1
+  fi
+  echo "$f"
+}
+
+expect_pass "claude-workflow" "$gates/claude-workflow.sh" "$wf"
+expect_fail "claude-workflow: an action pinned to a tag" "an action not pinned to a commit SHA" \
+  "$gates/claude-workflow.sh" "$(plant_wf unpinned 's|anthropics/claude-code-action@[0-9a-f]{40} # v1.0.268|anthropics/claude-code-action@v1|')"
+expect_fail "claude-workflow: a SHA with no version comment" "an action not pinned to a commit SHA" \
+  "$gates/claude-workflow.sh" "$(plant_wf no-version 's|(actions/checkout@[0-9a-f]{40}) # v7.0.1|\1|')"
+expect_fail "claude-workflow: a workflows: write permission" "the workflows permission is refused" \
+  "$gates/claude-workflow.sh" "$(plant_wf workflows-write 's|^  pull-requests: write$|  pull-requests: write\n  workflows: write|')"
+expect_fail "claude-workflow: an id-token: write permission" "the id-token permission is refused" \
+  "$gates/claude-workflow.sh" "$(plant_wf id-token 's|^  issues: write$|  issues: write\n  id-token: write|')"
+expect_fail "claude-workflow: a job's own permissions" "a job declares its own permissions" \
+  "$gates/claude-workflow.sh" "$(plant_wf job-permissions 's|^    runs-on: ubuntu-24.04$|    permissions:\n      contents: read\n    runs-on: ubuntu-24.04|')"
+expect_fail "claude-workflow: no actor check on the label" "lacks the check github.event.sender.login == 'Hafeok'" \
+  "$gates/claude-workflow.sh" "$(plant_wf no-sender '/github.event.sender.login == .Hafeok./d; s|&& github.event.label.name == .claude.$|&)|')"
+expect_fail "claude-workflow: no actor check on the comment" "lacks the check github.event.comment.user.login == 'Hafeok'" \
+  "$gates/claude-workflow.sh" "$(plant_wf no-commenter '/github.event.comment.user.login == .Hafeok./d')"
+expect_fail "claude-workflow: an actor check only in a comment" "lacks the check github.event.sender.login == 'Hafeok'" \
+  "$gates/claude-workflow.sh" "$(plant_wf comment-only 's|^( +)&& github.event.sender.login == .Hafeok.\)$|\1)\n      # \&\& github.event.sender.login == '"'"'Hafeok'"'"'|')"
+expect_fail "claude-workflow: comments on pull requests admitted" "lacks the check !github.event.issue.pull_request" \
+  "$gates/claude-workflow.sh" "$(plant_wf pr-comments '/!github.event.issue.pull_request/d')"
+expect_fail "claude-workflow: a pull_request_target trigger" "a trigger beyond issues and issue_comment" \
+  "$gates/claude-workflow.sh" "$(plant_wf pr-target 's|^  issue_comment:$|  pull_request_target:\n  issue_comment:|')"
+expect_fail "claude-workflow: allowed_bots" "allowed_bots is refused by ADR-0014" \
+  "$gates/claude-workflow.sh" "$(plant_wf bots 's|^          label_trigger: claude$|          label_trigger: claude\n          allowed_bots: "*"|')"
+expect_fail "claude-workflow: a prompt input" "a prompt input is refused" \
+  "$gates/claude-workflow.sh" "$(plant_wf prompt 's|^          label_trigger: claude$|          label_trigger: claude\n          prompt: do it|')"
+expect_fail "claude-workflow: attribution left on" "no '\"attribution\": { \"commit\": \"\", \"pr\": \"\" }'" \
+  "$gates/claude-workflow.sh" "$(plant_wf attribution '/"attribution"/d')"
+expect_fail "claude-workflow: no timeout" "the job has no timeout-minutes" \
+  "$gates/claude-workflow.sh" "$(plant_wf timeout '/timeout-minutes/d')"
+
 if [ "$failed" -ne 0 ]; then
   echo "selftest: a check did not behave as its plant requires"
   exit 1
