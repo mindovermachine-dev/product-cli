@@ -1,6 +1,6 @@
 # ADR-0013: Build-time analyzers and the test stack
 
-**Status:** Proposed
+**Status:** Accepted (2026-11-03)
 **Date:** 2026-11-03
 **Definition:** chapter 7, Constraints; D1.25
 **Amends:** ADR-0004 D1 (its wording only, D4 below)

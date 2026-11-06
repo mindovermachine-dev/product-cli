@@ -12,6 +12,7 @@ basis:
   - adr: "0003"
   - adr: "0004"
   - adr: "0013"
+accepted-by: mailto:emil@okkels-klein.dk
 summary: |
   ### The repository skeleton (#167)
 
