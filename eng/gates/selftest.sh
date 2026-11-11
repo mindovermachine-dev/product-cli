@@ -265,47 +265,64 @@ expect_fail "smoke: a verb writes to stdout" "smoke: 'domain' wrote to stdout" \
 
 # --- claude-workflow ---------------------------------------------------------
 
-# Each plant is a copy of the real workflow with one thing broken.
+# Each plant is a copy of the workflow or of the prompt with one thing changed;
+# the other file is the real one.
 wf="$repo/.github/workflows/claude.yml"
-plant_wf() {  # plant_wf <name> <sed script>: a planted copy of claude.yml
-  local f="$work/claude-$1.yml"
-  sed -E "$2" "$wf" > "$f"
-  if cmp -s "$wf" "$f"; then
-    echo "selftest: plant  claude-workflow: $1: the plant changed nothing" >&2
+rp="$repo/eng/routines/issue-session.md"
+plant_copy() {  # plant_copy <source> <name> <sed script>: a planted copy
+  local f="$work/claude-$2.${1##*.}"
+  sed -E "$3" "$1" > "$f"
+  if cmp -s "$1" "$f"; then
+    echo "selftest: plant  claude-workflow: $2: the plant changed nothing" >&2
     failed=1
   fi
   echo "$f"
 }
+gate_wf() {  # gate_wf <label> <finding> <name> <sed script>: a planted workflow
+  expect_fail "claude-workflow: $1" "$2" "$gates/claude-workflow.sh" "$(plant_copy "$wf" "$3" "$4")" "$rp"
+}
+gate_rp() {  # gate_rp <label> <finding> <name> <sed script>: a planted prompt
+  expect_fail "claude-workflow: $1" "$2" "$gates/claude-workflow.sh" "$wf" "$(plant_copy "$rp" "$3" "$4")"
+}
 
-expect_pass "claude-workflow" "$gates/claude-workflow.sh" "$wf"
-expect_fail "claude-workflow: an action pinned to a tag" "an action not pinned to a commit SHA" \
-  "$gates/claude-workflow.sh" "$(plant_wf unpinned 's|anthropics/claude-code-action@[0-9a-f]{40} # v1.0.268|anthropics/claude-code-action@v1|')"
-expect_fail "claude-workflow: a SHA with no version comment" "an action not pinned to a commit SHA" \
-  "$gates/claude-workflow.sh" "$(plant_wf no-version 's|(actions/checkout@[0-9a-f]{40}) # v7.0.1|\1|')"
-expect_fail "claude-workflow: a workflows: write permission" "the workflows permission is refused" \
-  "$gates/claude-workflow.sh" "$(plant_wf workflows-write 's|^  pull-requests: write$|  pull-requests: write\n  workflows: write|')"
-expect_fail "claude-workflow: an id-token: write permission" "the id-token permission is refused" \
-  "$gates/claude-workflow.sh" "$(plant_wf id-token 's|^  issues: write$|  issues: write\n  id-token: write|')"
-expect_fail "claude-workflow: a job's own permissions" "a job declares its own permissions" \
-  "$gates/claude-workflow.sh" "$(plant_wf job-permissions 's|^    runs-on: ubuntu-24.04$|    permissions:\n      contents: read\n    runs-on: ubuntu-24.04|')"
-expect_fail "claude-workflow: no actor check on the label" "lacks the check github.event.sender.login == 'Hafeok'" \
-  "$gates/claude-workflow.sh" "$(plant_wf no-sender '/github.event.sender.login == .Hafeok./d; s|&& github.event.label.name == .claude.$|&)|')"
-expect_fail "claude-workflow: no actor check on the comment" "lacks the check github.event.comment.user.login == 'Hafeok'" \
-  "$gates/claude-workflow.sh" "$(plant_wf no-commenter '/github.event.comment.user.login == .Hafeok./d')"
-expect_fail "claude-workflow: an actor check only in a comment" "lacks the check github.event.sender.login == 'Hafeok'" \
-  "$gates/claude-workflow.sh" "$(plant_wf comment-only 's|^( +)&& github.event.sender.login == .Hafeok.\)$|\1)\n      # \&\& github.event.sender.login == '"'"'Hafeok'"'"'|')"
-expect_fail "claude-workflow: comments on pull requests admitted" "lacks the check !github.event.issue.pull_request" \
-  "$gates/claude-workflow.sh" "$(plant_wf pr-comments '/!github.event.issue.pull_request/d')"
-expect_fail "claude-workflow: a pull_request_target trigger" "a trigger beyond issues and issue_comment" \
-  "$gates/claude-workflow.sh" "$(plant_wf pr-target 's|^  issue_comment:$|  pull_request_target:\n  issue_comment:|')"
-expect_fail "claude-workflow: allowed_bots" "allowed_bots is refused by ADR-0014" \
-  "$gates/claude-workflow.sh" "$(plant_wf bots 's|^          label_trigger: claude$|          label_trigger: claude\n          allowed_bots: "*"|')"
-expect_fail "claude-workflow: a prompt input" "a prompt input is refused" \
-  "$gates/claude-workflow.sh" "$(plant_wf prompt 's|^          label_trigger: claude$|          label_trigger: claude\n          prompt: do it|')"
-expect_fail "claude-workflow: attribution left on" "no '\"attribution\": { \"commit\": \"\", \"pr\": \"\" }'" \
-  "$gates/claude-workflow.sh" "$(plant_wf attribution '/"attribution"/d')"
-expect_fail "claude-workflow: no timeout" "the job has no timeout-minutes" \
-  "$gates/claude-workflow.sh" "$(plant_wf timeout '/timeout-minutes/d')"
+expect_pass "claude-workflow" "$gates/claude-workflow.sh" "$wf" "$rp"
+
+gate_wf "the old action" "a uses: other than actions/checkout pinned" old-action \
+  's|^    steps:$|    steps:\n      - uses: anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c # v1.0.268|'
+gate_wf "a third secret" "a secret beyond ROUTINE_FIRE_URL and ROUTINE_FIRE_TOKEN: secrets.CLAUDE_CODE_OAUTH_TOKEN" third-secret \
+  's|^(          ROUTINE_FIRE_TOKEN: .*)$|\1\n          OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}|'
+gate_wf "checkout pinned to a tag" "a uses: other than actions/checkout pinned" checkout-tag \
+  's|^    steps:$|    steps:\n      - uses: actions/checkout@v7|'
+gate_wf "a second curl" "2 curl commands, not exactly one" second-curl \
+  's|^(          echo "claude: .*)$|\1\n          curl -X POST "$ROUTINE_FIRE_URL"|'
+gate_wf "curl to a hard-coded URL" 'the curl lacks -X POST "$ROUTINE_FIRE_URL"' hard-url \
+  's|-X POST "\$ROUTINE_FIRE_URL"|-X POST https://api.anthropic.com/v1/claude_code/routines/trig_x/fire|'
+gate_wf "a curl that retries" "the curl retries" retry \
+  's|--max-time 30|--max-time 30 --retry 3|'
+gate_wf "contents: write" "the top-level permissions are not exactly contents: read" write \
+  's|^  contents: read$|  contents: write|'
+gate_wf "no actor check on the label" "lacks the check on github.event.sender.login" no-sender \
+  '/github.event.sender.login == .Hafeok./d; s|&& github.event.label.name == .claude.$|&)|'
+gate_wf "no actor check on the comment" "lacks the check on github.event.comment.user.login" no-commenter \
+  '/github.event.comment.user.login == .Hafeok./d'
+gate_wf "an actor check only in a comment" "lacks the check on github.event.sender.login" comment-only \
+  's|^( +)&& github.event.sender.login == .Hafeok.\)$|\1)\n      # \&\& github.event.sender.login == '"'"'Hafeok'"'"'|'
+gate_wf "a comment made through an app admitted" "lacks the check on github.event.comment.performed_via_github_app" app-comment \
+  '/performed_via_github_app == null/d'
+gate_wf "an expression inside run:" "an expression inside a run: block" run-expression \
+  's|"issue: \$ISSUE"|"issue: ${{ github.event.issue.number }}"|'
+gate_wf "comment text in the payload" "issue or comment text in the steps" comment-body \
+  's|^(          COMMENT_AUTHOR: .*)$|\1\n          COMMENT_BODY: ${{ github.event.comment.body }}|'
+gate_wf "a pull_request_target trigger" "a trigger beyond issues and issue_comment" pr-target \
+  's|^  issue_comment:$|  pull_request_target:\n  issue_comment:|'
+gate_wf "no timeout" "the job has no timeout-minutes" timeout \
+  '/timeout-minutes/d'
+gate_rp "the prompt's Actor is another login" "and the prompt's Actor is 'someone-else'" actor \
+  's/^\| Actor \| `Hafeok` \|$/| Actor | `someone-else` |/'
+gate_rp "the prompt without Plan first" "no section 'Plan first'" no-plan-first \
+  's/^## Plan first$/## Planning/'
+gate_rp "the prompt's start check without the app check" "'Check the start' does not check the Actor and performed_via_github_app" no-app-check \
+  '/^## Check the start/,/^## /s/ and no `performed_via_github_app`|, it has no `performed_via_github_app`//'
 
 if [ "$failed" -ne 0 ]; then
   echo "selftest: a check did not behave as its plant requires"

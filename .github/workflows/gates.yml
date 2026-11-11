@@ -75,8 +75,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: The issue-session workflow is as ADR-0014 states it
-        run: eng/gates/claude-workflow.sh .github/workflows/claude.yml
+      - name: The issue-session bridge is as ADR-0014 states it, and agrees with the routine's prompt
+        run: eng/gates/claude-workflow.sh .github/workflows/claude.yml eng/routines/issue-session.md
 
   selftest:
     name: selftest
