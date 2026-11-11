@@ -146,7 +146,7 @@ is a Bash script in `eng/gates/` and runs locally the same way:
 | `adr-shape` | `eng/gates/adr-shape.sh [dir]` | an ADR lacks its number, status, alternatives or consequences, or an unexpected file is in `docs/decisions/` |
 | `adr-text` | `eng/gates/adr-text.sh [dir]` | ADR-0001 to ADR-0012 differ by a byte from their sections of the collected file, with the Draft 4 notes |
 | `no-toolchain` | `eng/gates/no-toolchain.sh [root]` | a Rust, Node or Python toolchain file is anywhere in the tree, or `global.json` is missing, pins another SDK, roll-forward or test runner, or has a second copy below the root |
-| `claude-workflow` | `eng/gates/claude-workflow.sh [workflow] [prompt]` | `.github/workflows/claude.yml` departs from ADR-0014 (a trigger, permission, action, secret or `if:` check beyond or short of the bridge's, the typed-by-hand check included; not exactly one `curl` to the fire URL; a retry; an expression in `run:`; no timeout or concurrency group), or disagrees with `eng/routines/issue-session.md` on the actor, label, prefixes or rule sections |
+| `claude-workflow` | `eng/gates/claude-workflow.sh [workflow] [prompt]` | `.github/workflows/claude.yml` departs from ADR-0014 (a trigger, permission, action, secret or `if:` check beyond or short of the bridge's, the typed-by-hand check included; a job without exactly `environment: claude-routine`; not exactly one `curl` to the fire URL; a retry; an expression in `run:`; no timeout or concurrency group), or disagrees with `eng/routines/issue-session.md` on the actor, label, prefixes or rule sections |
 | `selftest` | `eng/gates/selftest.sh` | any check above, or `smoke.sh`, passes on the case planted for it |
 | `build-test` | `dotnet build` then `dotnet test`, both `-c Release` | the build has a warning or error, or a test fails |
 | `aot (<rid>)` | `dotnet publish -r <rid>`, then `eng/gates/smoke.sh <binary> <version> <commit>` | the Native AOT publish fails on that runtime's own runner, or the binary's `--version` bytes, its exit code, or its refusal of a verb are not as required |
@@ -198,7 +198,10 @@ Conventional commits, one logical change each (ADR-0007 D1):
 A session can also start from its issue (ADR-0014). It runs as a Claude Code
 routine in Emil's cloud environment, which holds the signing key, and follows
 every rule of this file. `.github/workflows/claude.yml` only starts it,
-through the routine's API trigger.
+through the routine's API trigger. Its two secrets, `ROUTINE_FIRE_URL` and
+`ROUTINE_FIRE_TOKEN`, live in the GitHub environment `claude-routine`, whose
+deployment branches are limited to `main`, never as repository secrets, so no
+workflow on another branch can read them.
 
 **Where its prompt lives:** `eng/routines/issue-session.md`. Emil pastes that
 file, whole, into the routine. A change to the prompt is a pull request to the

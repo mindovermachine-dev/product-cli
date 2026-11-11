@@ -25,8 +25,10 @@ summary: |
 
   - **ADR-0014**, proposed. A GitHub workflow starts the routine through its
     API trigger. It holds two secrets, the routine's fire URL and its token,
-    which starts that one routine and reads nothing. No login and no key
-    leave the environment.
+    which starts that one routine and reads nothing. They live in the GitHub
+    environment `claude-routine`, limited to `main`, so no workflow on
+    another branch can read them. No login and no key leave Emil's cloud
+    environment.
     - **Who starts a run.** Only `Hafeok`, typing by hand: a comment made
       through an app, every Claude session's included, starts and approves
       nothing. The session checks the start again against GitHub before it
@@ -48,5 +50,7 @@ summary: |
   #### Before the first run
 
   Emil creates the routine (product-cli, his key-holding environment, an API
-  trigger), pastes the prompt, generates its token, and adds the secrets
-  `ROUTINE_FIRE_URL` and `ROUTINE_FIRE_TOKEN`.
+  trigger), pastes the prompt, and generates its token. He creates the GitHub
+  environment `claude-routine`, with deployment branches limited to `main`
+  and no required reviewers, and adds `ROUTINE_FIRE_URL` and
+  `ROUTINE_FIRE_TOKEN` to it as environment secrets.
