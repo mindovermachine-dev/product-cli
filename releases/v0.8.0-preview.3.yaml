@@ -47,6 +47,7 @@ summary: |
     rule.
   - **`AGENTS.md`**: how a run starts, where its prompt lives, what it may
     do, and which issues must not get the label.
+    Its gates section now lists the scripts in `eng/gates/` (#172).
 
   #### Before the first run
 
