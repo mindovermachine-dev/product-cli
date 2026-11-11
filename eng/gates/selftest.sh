@@ -317,6 +317,12 @@ gate_wf "a pull_request_target trigger" "a trigger beyond issues and issue_comme
   's|^  issue_comment:$|  pull_request_target:\n  issue_comment:|'
 gate_wf "no timeout" "the job has no timeout-minutes" timeout \
   '/timeout-minutes/d'
+gate_wf "no environment" "the job does not declare exactly environment: claude-routine" no-environment \
+  '/^    environment: claude-routine$/d'
+gate_wf "another environment" "the job does not declare exactly environment: claude-routine" other-environment \
+  's|^    environment: claude-routine$|    environment: production|'
+gate_wf "the environment as an object" "the job does not declare exactly environment: claude-routine" environment-object \
+  's|^    environment: claude-routine$|    environment:\n      name: claude-routine|'
 gate_rp "the prompt's Actor is another login" "and the prompt's Actor is 'someone-else'" actor \
   's/^\| Actor \| `Hafeok` \|$/| Actor | `someone-else` |/'
 gate_rp "the prompt without Plan first" "no section 'Plan first'" no-plan-first \

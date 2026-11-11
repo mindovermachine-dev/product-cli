@@ -12,6 +12,8 @@
 #   - uses any action but actions/checkout pinned to a SHA with its version;
 #   - names a secret but ROUTINE_FIRE_URL and ROUTINE_FIRE_TOKEN, lacks
 #     either, or uses the job token (D3, D4);
+#   - does not declare exactly `environment: claude-routine` on its job, the
+#     environment that holds the two secrets (D4);
 #   - has not exactly one curl, posting to "$ROUTINE_FIRE_URL" with the bearer
 #     token, anthropic-version and Content-Type, or has a curl that retries
 #     (D3, D7);
@@ -115,6 +117,10 @@ for s in ROUTINE_FIRE_URL ROUTINE_FIRE_TOKEN; do
 done
 if lines | grep -qE 'github\.token|GITHUB_TOKEN'; then
   report "the job token is used"
+fi
+envs=$(lines | grep -E '^[[:space:]]*environment:' || true)
+if [ "$envs" != "    environment: claude-routine" ]; then
+  report "the job does not declare exactly environment: claude-routine"
 fi
 
 curls=$(grep -cE '(^|[[:space:]])curl[[:space:]]' <<<"$steps" || true)
