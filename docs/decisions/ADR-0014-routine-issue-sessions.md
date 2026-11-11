@@ -49,7 +49,11 @@ Agent sessions run in a cloud session that holds the agent's signing key, starte
   - **curl makes one attempt and never retries.** Any non-2xx fails the job and prints the API's error.
   - **The response is kept out of the public log**, because it names the session. Emil sees the session in the routine's runs list.
 
-- **D4. The secrets.** There are only `ROUTINE_FIRE_URL` and `ROUTINE_FIRE_TOKEN`. The token starts this one routine and grants no read access. Generating a new one revokes the old. No Anthropic login and no signing key are copied to GitHub, and the bridge uses no job token.
+- **D4. The secrets, in a GitHub environment.** There are only `ROUTINE_FIRE_URL` and `ROUTINE_FIRE_TOKEN`. The token starts this one routine and grants no read access. Generating a new one revokes the old. No Anthropic login and no signing key are copied to GitHub, and the bridge uses no job token.
+  - **They live in the environment `claude-routine`, not as repository secrets.** The environment's deployment branches are limited to `main`, and it has no required reviewers. The bridge job declares exactly `environment: claude-routine`.
+  - **This keeps the token out of reach of workflows on other branches.** A repository secret is readable by any workflow that runs in the repository, including one added or changed on a branch. An environment secret is given only to a job that names the environment and runs from a branch its rules admit.
+  - **Real starts are admitted.** GitHub runs a workflow for `issues` and `issue_comment` events from the default branch, with `GITHUB_REF` `refs/heads/main`. A workflow on any other branch, or run for a pull request, is refused the environment and its secrets.
+  - **No required reviewers,** so a start is not held for approval. The `if:` and the session's own checks are the gate on who starts (D2, D5).
 
 - **D5. The session's rules** are the prompt's sections, so the session acts only on what GitHub confirms:
   - **Check the start against GitHub, before anything else.** The repository is product-cli, and the issue is not a pull request. A label start's newest `labeled` event for `claude` has actor `Hafeok` and no `performed_via_github_app`, and the label is still on the issue. A comment start's comment is on the issue, by `Hafeok`, with no `performed_via_github_app`, and starts `@claude`. Otherwise the session stops and posts nothing.
@@ -79,7 +83,7 @@ Agent sessions run in a cloud session that holds the agent's signing key, starte
   - its triggers and permissions;
   - one job, with every check in its `if:`, the `performed_via_github_app == null` check included;
   - no `uses:` but a pinned `actions/checkout`;
-  - no secret but the two, and no job token;
+  - no secret but the two, no job token, and exactly `environment: claude-routine` on the job;
   - exactly one `curl`, to the fire URL, with its headers and no retry;
   - no expression inside `run:`, and no issue or comment text in the steps;
   - the timeout and the concurrency group.
@@ -107,5 +111,9 @@ Agent sessions run in a cloud session that holds the agent's signing key, starte
 - **Comments a session writes as `Hafeok` cannot start or approve a run,** whatever they say: the bridge and the session both refuse a comment made through an app. Emil starts and approves only by typing on GitHub. A comment he has a Claude session write for him is data to a run.
 - **The boundary rests on GitHub's `performed_via_github_app` field,** in the webhook payload for the bridge and in the REST API for the session. Emil's first test run after the merge confirms that the field reaches the `if:`.
 - **The routine's saved prompt can drift from the file.** The version in each session record shows which paste ran.
-- **Emil sets up the routine:** at claude.ai/code/routines, with product-cli, his key-holding environment and an API trigger, the prompt pasted from the file, its token, and the two secrets.
+- **Emil sets up the routine and the environment.**
+  - The routine, at claude.ai/code/routines: product-cli, his key-holding environment, an API trigger, the prompt pasted from the file, and its token.
+  - The GitHub environment `claude-routine`: deployment branches limited to `main`, no required reviewers, and the two secrets.
+  - The environment must exist before the first start: a job that names a missing environment creates it with no protection rules.
+- **Each start shows as a deployment to `claude-routine`** in the repository's environments, with its workflow run.
 - **`AGENTS.md`** says how a session starts, where its prompt lives, and which issues must not get the label. Its gates table has a row for `claude-workflow`.
