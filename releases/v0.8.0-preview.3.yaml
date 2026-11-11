@@ -1,44 +1,52 @@
 format: 1
 version: v0.8.0-preview.3
-title: Issue sessions — the Claude Code action, started by the claude label
-date: 2026-11-06
+title: Issue sessions — a Claude Code routine, started from the issue
+date: 2026-11-11
 basis:
   - issue: 170
   - definition: none (no change to the What; chapter 8's process only)
   - sdlc-edition: none
-  - action: anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c (v1.0.268)
+  - routine: a Claude Code routine with an API trigger, prompt eng/routines/issue-session.md version 1
+  - fire-api: anthropic-version 2026-10-21, experimental
   - adr: "0007"
   - adr: "0014"
 summary: |
   ### Issue sessions (#170)
 
   A session can now start from its issue. When Emil labels an issue
-  `claude`, a GitHub Actions run of the Claude Code action reads the issue
-  as its brief, posts a plan on it, and stops. When he comments
-  `@claude approved`, a second run implements that plan on a branch, signed
-  as the agent identity, and posts a link to open the pull request.
-  Landing is unchanged. ADR-0014 states the rules; the product itself is
-  unchanged, and `product --version` reports this version.
+  `claude`, a Claude Code routine in his cloud environment, which holds the
+  signing key, reads the issue as its brief, posts a plan on it, and stops.
+  When he comments `@claude approved`, a session implements that plan,
+  signed as the agent identity, and opens the pull request itself, so the
+  gates run. Landing is unchanged. ADR-0014 states the rules; the product
+  itself is unchanged, and `product --version` reports this version.
 
   #### Added
 
-  - **ADR-0014**, proposed. It admits `anthropics/claude-code-action`
-    v1.0.268, pinned by SHA. Runs start only from `Hafeok`, on an issue,
-    behind the action's own write-access check. Commits are signed with
-    the agent key as `Claude (Emil)`, and Claude Code's attribution is
-    off, so no model is named. Authentication is the OAuth token. A run
-    plans first; a `@claude` comment revises the plan; `@claude approved`
-    approves the newest one. One repository, 180 minutes, one run per
-    issue, and no `workflows` permission.
-  - **`.github/workflows/claude.yml`**, as ADR-0014 states it.
-  - **`claude-workflow`**, a gate that fails when `claude.yml` departs from
-    ADR-0014, with a plant in `selftest` for each rule it checks.
-  - **`AGENTS.md`**: how to start a run, what it may do, and which issues
-    must not get the label.
+  - **ADR-0014**, proposed. A GitHub workflow starts the routine through its
+    API trigger. It holds two secrets, the routine's fire URL and its token,
+    which starts that one routine and reads nothing. No login and no key
+    leave the environment.
+    - **Who starts a run.** Only `Hafeok`, typing by hand: a comment made
+      through an app, every Claude session's included, starts and approves
+      nothing. The session checks the start again against GitHub before it
+      acts, and treats the start's payload as data.
+    - **How a run works.** It plans first, takes revisions, and implements
+      only the newest plan an approval names.
+    - **Duplicates.** There is no idempotency: one attempt, one start at a
+      time per issue, and the session's own check for a duplicate.
+  - **`.github/workflows/claude.yml`**, the bridge: one `curl` step, with
+    `contents: read`.
+  - **`eng/routines/issue-session.md`**, the routine's prompt, pasted into the
+    routine.
+  - **`claude-workflow`**, a gate that fails when the bridge departs from
+    ADR-0014 or disagrees with the prompt, with a plant in `selftest` for each
+    rule.
+  - **`AGENTS.md`**: how a run starts, where its prompt lives, what it may
+    do, and which issues must not get the label.
 
   #### Before the first run
 
-  Emil adds the secrets `CLAUDE_CODE_OAUTH_TOKEN` and
-  `AGENT_SSH_SIGNING_KEY`. Pushes made with the job token start no
-  workflow, so Emil opens each run's pull request from its link, and checks
-  that `gates.yml` ran on the head before approving it.
+  Emil creates the routine (product-cli, his key-holding environment, an API
+  trigger), pastes the prompt, generates its token, and adds the secrets
+  `ROUTINE_FIRE_URL` and `ROUTINE_FIRE_TOKEN`.
