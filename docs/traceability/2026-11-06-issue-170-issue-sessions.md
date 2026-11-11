@@ -429,3 +429,41 @@ This part of the record follows, in its own commit.
 
 None. `main` stayed at `4ce90e9`, and #169 had not landed when this part was
 written.
+
+---
+
+# Part 3: the secrets move into a GitHub environment (2026-11-11)
+
+Before landing, Emil asked for one change, in the session:
+
+> One change before I land: put the bridge job in a GitHub environment so the fire token is out of reach of workflows on other branches. Add `environment: claude-routine` to the start-routine job. I create the environment with deployment branches limited to `main` and no required reviewers, and the two secrets live there, not as repository secrets. Update the claude-workflow gate (the job must declare exactly `environment: claude-routine`), with a plant without it. Update ADR-0014 D4 and AGENTS.md to match, and the setup steps you gave me.
+
+## What the session found
+
+- **Real starts are admitted.** GitHub runs a workflow for `issues` and `issue_comment` events from the default branch, with `GITHUB_REF` `refs/heads/main`. The `main` deployment-branch rule therefore admits every real start, and refuses a workflow run from any other branch or for a pull request.
+- **A missing environment is created on first use.** A job that names an environment that does not exist creates it, with no protection rules. So the environment must exist, limited to `main`, before the first start. ADR-0014's Consequences say so.
+
+## Commits
+
+On `5567910`, verified by GitHub as above:
+
+| SHA | verified | reason | attributed to | subject |
+|---|---|---|---|---|
+| `4edf89a2466e3f299987271487448b9ff8484600` | true | valid | `Hafeok` | ci(claude): the bridge job runs in the environment claude-routine |
+| `f4fb70ea96dbac6d6ecd3723f5e743926975945d` | true | valid | `Hafeok` | ci(gates): claude-workflow requires exactly environment: claude-routine |
+| `f95fbbd27cce004e86c69674bd3d07ff3937a52c` | true | valid | `Hafeok` | docs(adr): ADR-0014 D4, the secrets live in the environment claude-routine |
+| `0189c9f7357117201a304018137e3ad41aa9ef6b` | true | valid | `Hafeok` | docs: AGENTS.md and the preview.3 descriptor name the environment |
+
+## Checks
+
+- **Each commit on its own**, in a clean worktree: `commits`, `adr-shape`, `adr-text`, `no-toolchain`, `claude-workflow` and `selftest` all pass.
+- **No source, project or test file changed**, so the build and tests were not re-run locally; `gates.yml` runs them on the pull request.
+- **The new plants.** Each fails with `the job does not declare exactly environment: claude-routine`:
+  - a job without the environment;
+  - a job naming another environment;
+  - a job naming `claude-routine` in the object form.
+
+## Deviations
+
+- **Two plants beyond the one asked for:** another environment's name, and the object form. The check requires the short form so that one line can be compared.
+- **The release descriptor** also names the environment, in its summary and its setup paragraph.
