@@ -10,6 +10,7 @@ basis:
   - fire-api: anthropic-version 2026-10-21, experimental
   - adr: "0007"
   - adr: "0014"
+accepted-by: mailto:emil@okkels-klein.dk
 summary: |
   ### Issue sessions (#170)
 

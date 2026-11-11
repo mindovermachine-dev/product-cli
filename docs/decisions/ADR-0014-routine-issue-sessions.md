@@ -1,6 +1,6 @@
 # ADR-0014: Issue sessions run as a Claude Code routine
 
-**Status:** Proposed
+**Status:** Accepted (2026-11-11)
 **Date:** 2026-11-11
 **Definition:** chapter 8, "Decision-driven, like Writ"
 **Refs:** #170
