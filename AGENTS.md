@@ -151,6 +151,17 @@ is a Bash script in `eng/gates/` and runs locally the same way:
 | `build-test` | `dotnet build` then `dotnet test`, both `-c Release` | the build has a warning or error, or a test fails |
 | `aot (<rid>)` | `dotnet publish -r <rid>`, then `eng/gates/smoke.sh <binary> <version> <commit>` | the Native AOT publish fails on that runtime's own runner, or the binary's `--version` bytes, its exit code, or its refusal of a verb are not as required |
 
+The scripts in `eng/gates/`:
+
+- `adr-shape.sh` checks that every file in `docs/decisions/` is an ADR of the required shape, with a number no other ADR has.
+- `adr-text.sh` checks that ADR-0001 to ADR-0012 equal their sections of the collected file, byte for byte.
+- `claude-workflow.sh` checks that `.github/workflows/claude.yml` is the bridge ADR-0014 states, and agrees with the routine's prompt.
+- `commits.sh` checks that every commit in a range carries `Refs #N` and a person's `Signed-off-by:`, and names no model.
+- `no-toolchain.sh` checks that .NET is the only toolchain in the tree, pinned once, in the root `global.json`.
+- `selftest.sh` checks the checks: each passes its clean case and fails every case planted for it.
+- `signatures.sh` checks that GitHub reports every commit of a pull request as verified.
+- `smoke.sh` checks a published binary's `--version` bytes, its exit codes, and its refusal of a verb.
+
 `selftest` plants a failing case for every check in a scratch repository on
 the runner, so each run shows that each check still fails when it should.
 
