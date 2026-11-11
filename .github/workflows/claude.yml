@@ -28,6 +28,9 @@ jobs:
         && github.event.comment.performed_via_github_app == null
         && startsWith(github.event.comment.body, '@claude'))
     runs-on: ubuntu-24.04
+    # D4: the two secrets live in this environment, whose deployment
+    # branches are limited to main, not in the repository.
+    environment: claude-routine
     timeout-minutes: 5
     concurrency:
       group: claude-issue-${{ github.event.issue.number }}
